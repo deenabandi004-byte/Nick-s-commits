@@ -13,6 +13,7 @@ from app.routes.resume import resume_bp
 from app.routes.coffee_chat_prep import coffee_chat_bp
 from app.routes.billing import billing_bp
 from app.routes.users import users_bp
+from app.routes.firm_search import firm_search_bp
 
 __all__ = [
     'health_bp',
@@ -27,6 +28,7 @@ __all__ = [
     'coffee_chat_bp',
     'billing_bp',
     'users_bp',
+    'firm_search_bp',
     'outbox_bp' 
 ]
 

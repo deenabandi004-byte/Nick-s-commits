@@ -129,7 +129,7 @@ const Pricing = () => {
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          priceId: "price_1S9ertERY2WrVHp1hyxo8qL6",
+          priceId: "price_1SQ0IJERY2WrVHp1Ul5OrP63",
           userId: user.uid,
           userEmail: user.email,
           successUrl: `${window.location.origin}/payment-success`,
@@ -229,7 +229,7 @@ const Pricing = () => {
             </div>
           </div>
           <h1 className="text-5xl lg:text-6xl font-bold mb-6">
-            Choose <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-blue-400 bg-[length:200%_auto] bg-clip-text text-transparent animate-gradient">your plan</span> today
+            Choose <span className="text-[hsl(var(--accent-solid))]">your plan</span> today
           </h1>
           <p className="text-gray-400 text-lg mb-8">
             15 credits per contact. When you run out of credits, no more contacts.
@@ -274,9 +274,9 @@ const Pricing = () => {
             </div>
 
             {/* Pro Plan */}
-            <div className="relative bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-2 border-blue-500/50 rounded-2xl p-10 backdrop-blur-sm transform transition-all hover:scale-[1.02]">
+            <div className="relative bg-[hsl(var(--bg-secondary))] border-2 border-[hsl(var(--accent-solid))] rounded-xl p-10 transform transition-all hover:scale-[1.02] hover:shadow-lg">
               <div className="absolute top-4 right-4">
-                <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
+                <span className="bg-[hsl(var(--accent-solid))] text-white text-xs px-2 py-1 rounded-full font-medium">
                   {isProUser ? 'ACTIVE' : 'RECOMMENDED'}
                 </span>
               </div>
@@ -319,7 +319,8 @@ const Pricing = () => {
               </div>
 
               <Button 
-                className="w-full py-6 px-6 rounded-xl text-lg font-semibold text-white bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 bg-[length:200%_auto] hover:from-blue-600 hover:to-purple-600 transition-all shadow-lg animate-gradient"
+                size="lg"
+                className="w-full py-6 px-6 rounded-xl text-lg font-semibold"
                 onClick={isProUser ? handleManageSubscription : () => handleUpgrade('pro')}
                 disabled={isLoading}
               >

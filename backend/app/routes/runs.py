@@ -295,11 +295,14 @@ def run_free_tier_enhanced_optimized(job_title, company, location, user_email=No
             except Exception:
                 pass
         
+        # ✅ Limit contacts to batch_size before returning
+        contacts_to_return = contacts[:max_contacts]
+        
         elapsed = time.time() - start_time
-        print(f"✅ Free tier completed in {elapsed:.2f}s - {len(contacts)} contacts, {successful_drafts} drafts")
+        print(f"✅ Free tier completed in {elapsed:.2f}s - {len(contacts_to_return)} contacts (requested: {max_contacts}), {successful_drafts} drafts")
         
         return {
-            'contacts': contacts,
+            'contacts': contacts_to_return,
             'successful_drafts': successful_drafts
         }
         
@@ -376,6 +379,8 @@ def run_pro_tier_enhanced_final_with_text(job_title, company, location, resume_t
         
         tier_max = TIER_CONFIGS['pro']['max_contacts']
         max_contacts = batch_size if batch_size and 1 <= batch_size <= tier_max else tier_max
+        
+        print(f"DEBUG - Pro tier batch_size: {batch_size}, tier_max: {tier_max}, calculated max_contacts: {max_contacts}")
         
         # Search contacts
         contacts = search_contacts_with_smart_location_strategy(
@@ -543,11 +548,14 @@ def run_pro_tier_enhanced_final_with_text(job_title, company, location, resume_t
             except Exception:
                 pass
         
+        # ✅ Limit contacts to batch_size before returning
+        contacts_to_return = contacts[:max_contacts]
+        
         elapsed = time.time() - start_time
-        print(f"✅ Pro tier completed in {elapsed:.2f}s - {len(contacts)} contacts, {successful_drafts} drafts")
+        print(f"✅ Pro tier completed in {elapsed:.2f}s - {len(contacts_to_return)} contacts (requested: {max_contacts}), {successful_drafts} drafts")
         
         return {
-            'contacts': contacts,
+            'contacts': contacts_to_return,
             'successful_drafts': successful_drafts
         }
         
@@ -730,6 +738,11 @@ def pro_run():
             career_interests = data.get("careerInterests") or []
             college_alumni = (data.get("collegeAlumni") or "").strip()
             batch_size = data.get("batchSize")
+            if batch_size is not None:
+                try:
+                    batch_size = int(batch_size)
+                except (ValueError, TypeError):
+                    batch_size = None
         else:
             job_title = (request.form.get("jobTitle") or "").strip()
             company = (request.form.get("company") or "").strip()
@@ -754,8 +767,13 @@ def pro_run():
                 career_interests = []
             college_alumni = (request.form.get("collegeAlumni") or "").strip()
             batch_size = request.form.get("batchSize")
-            if batch_size:
-                batch_size = int(batch_size)
+            if batch_size is not None:
+                try:
+                    batch_size = int(batch_size)
+                except (ValueError, TypeError):
+                    batch_size = None
+            else:
+                batch_size = None
         
         if not job_title or not location:
             missing = []
@@ -767,6 +785,7 @@ def pro_run():
         if resume_text:
             print(f"Resume provided ({len(resume_text)} chars)")
         print(f"DEBUG - college_alumni received: {college_alumni!r}")
+        print(f"DEBUG - batch_size received: {batch_size} (type: {type(batch_size)})")
         
         result = run_pro_tier_enhanced_final_with_text(
             job_title,

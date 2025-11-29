@@ -1,7 +1,6 @@
 import { useState } from "react";
 import {
   Home,
-  BarChart3,
   User,
   Zap,
   Info,
@@ -9,15 +8,19 @@ import {
   CreditCard,
   ChevronRight,
   ChevronDown,
-  Users,
+  Search,
   Coffee,
+  Building2,
+  Briefcase,
+  Sun,
+  Moon,
 } from "lucide-react";
-import { Mail } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import OfferloopLogo from "../assets/Offerloop-topleft.jpeg";
 import OfferloopIcon from "../assets/icon.png";
 import LightningIcon from "../assets/Lightning.png";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
+import { useTheme } from "../contexts/ThemeContext";
 
 import {
   Sidebar,
@@ -30,7 +33,6 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -41,10 +43,10 @@ import {
 
 const navigationItems = [
   { title: "Home", url: "/home", icon: Home },
-  { title: "Dashboard", url: "/dashboard", icon: BarChart3 },
-  { title: "Contact Table", url: "/contact-directory", icon: Users },
-  { title: "Coffee Chat Library", url: "/coffee-chat-library", icon: Coffee },
-  { title: "Outbox", url: "/outbox", icon: Mail },
+  { title: "Firm Search", url: "/firm-search", icon: Building2 },
+  { title: "Contact Search", url: "/contact-search", icon: Search },
+  { title: "Coffee Chat Prep", url: "/coffee-chat-prep", icon: Coffee },
+  { title: "Interview Prep", url: "/interview-prep", icon: Briefcase },
   { title: "Pricing", url: "/pricing", icon: CreditCard },
 ];
 
@@ -63,19 +65,20 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const { user } = useFirebaseAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path: string) => currentPath === path;
   const isSettingsActive = settingsItems.some((item) => isActive(item.url));
 
   const getNavClass = ({ isActive }: { isActive: boolean }) =>
     isActive
-      ? "bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-purple-700/20 text-white font-medium"
-      : "hover:bg-gradient-to-r hover:from-blue-600/10 hover:via-purple-600/10 hover:to-purple-700/10 text-muted-foreground hover:text-foreground";
+      ? "bg-[hsl(var(--accent-soft))] text-[hsl(var(--accent-solid))] font-medium"
+      : "hover:bg-[hsl(var(--bg-secondary))] text-muted-foreground hover:text-foreground";
 
   const getSettingsClass = () =>
     isSettingsActive || settingsExpanded
       ? "bg-primary text-primary-foreground font-medium"
-      : "hover:bg-gradient-to-r hover:from-blue-600/10 hover:via-purple-600/10 hover:to-purple-700/10 text-muted-foreground hover:text-foreground";
+      : "hover:bg-[hsl(var(--bg-secondary))] text-muted-foreground hover:text-foreground";
 
   // Status message for collapsed tooltip
   const getCreditStatus = () => {
@@ -196,22 +199,22 @@ export function AppSidebar() {
             {state !== "collapsed" ? (
               <>
                 {/* Credits Display */}
-                <div className="text-lg font-medium mb-2 text-white">
+                <div className="text-lg font-medium mb-2 text-foreground">
                   {user?.credits ?? 0}/{user?.maxCredits ?? 120} credits
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mb-4 w-full h-2 bg-transparent border border-white rounded-full overflow-hidden">
+                {/* Progress Bar - Solid purple */}
+                <div className="mb-4 w-full h-2 bg-[hsl(var(--border-light))] rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-blue-600 via-purple-600 to-purple-700 transition-all duration-300"
+                    className="h-full bg-[hsl(var(--accent-solid))] transition-all duration-300"
                     style={{ width: `${((user?.credits ?? 0) / (user?.maxCredits ?? 120)) * 100}%` }}
                   />
                 </div>
 
-                {/* Gradient Upgrade Button */}
+                {/* Upgrade Button - KEEP GRADIENT (Primary CTA) */}
                 <button
                   onClick={() => navigate("/pricing")}
-                  className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-purple-700 rounded-xl py-3 px-4 mb-4 text-white hover:opacity-90 transition-opacity"
+                  className="w-full bg-gradient-to-r from-[hsl(var(--accent-from))] to-[hsl(var(--accent-to))] rounded-xl py-3 px-4 mb-4 text-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 active:scale-[0.98]"
                 >
                   <div className="flex items-center justify-center gap-2">
                     <Zap className="w-5 h-5 text-white" />
@@ -220,13 +223,13 @@ export function AppSidebar() {
                 </button>
               </>
             ) : (
-              // Collapsed view - icon with tooltip
+              // Collapsed view - KEEP GRADIENT (Primary CTA)
               <div className="mb-4">
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => navigate("/pricing")}
-                      className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-purple-700 rounded-xl p-2 text-white hover:opacity-90 transition-opacity flex items-center justify-center"
+                      className="w-full bg-gradient-to-r from-[hsl(var(--accent-from))] to-[hsl(var(--accent-to))] rounded-xl p-2 text-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 active:scale-[0.98] flex items-center justify-center relative"
                     >
                       <img src={LightningIcon} alt="Upgrade" className="h-10 w-10 object-contain brightness-0 invert" />
                       {user?.credits === 0 && (
@@ -247,8 +250,49 @@ export function AppSidebar() {
               </div>
             )}
 
+            {/* Theme Toggle */}
+            <div className="mb-4">
+              {state !== "collapsed" ? (
+                <button
+                  onClick={toggleTheme}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-accent transition-colors"
+                  title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {theme === 'dark' ? (
+                    <>
+                      <Sun className="h-4 w-4" />
+                      <span className="text-sm">Light Mode</span>
+                    </>
+                  ) : (
+                    <>
+                      <Moon className="h-4 w-4" />
+                      <span className="text-sm">Dark Mode</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={toggleTheme}
+                      className="w-full flex items-center justify-center p-2 rounded-lg border border-border hover:bg-accent transition-colors"
+                    >
+                      {theme === 'dark' ? (
+                        <Sun className="h-4 w-4" />
+                      ) : (
+                        <Moon className="h-4 w-4" />
+                      )}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+
             {/* User Profile */}
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center gap-3">
               <Avatar className="h-10 w-10">
                 {user?.picture ? (
                   <img

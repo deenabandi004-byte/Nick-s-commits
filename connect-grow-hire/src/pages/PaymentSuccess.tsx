@@ -4,17 +4,31 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
 import { useEffect, useState } from "react";
 import { getAuth } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { user, refreshUser } = useFirebaseAuth();
+  const { toast } = useToast();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Completing your upgrade...');
 
   const sessionId = params.get("session_id");
+  const canceled = params.get("canceled");
 
   useEffect(() => {
+    // Handle canceled payment
+    if (canceled) {
+      toast({
+        variant: "destructive",
+        title: "Payment Canceled",
+        description: "Your upgrade was canceled. You can try again anytime from the Pricing page.",
+      });
+      setTimeout(() => navigate('/pricing'), 2000);
+      return;
+    }
+
     async function completeUpgrade() {
       if (!user || !sessionId) {
         setStatus('error');
@@ -61,6 +75,13 @@ export default function PaymentSuccess() {
           // Refresh user data
           await refreshUser();
           
+          // Show success toast
+          toast({
+            title: "🎉 Welcome to Pro!",
+            description: "Your account has been upgraded with 1,800 credits. You can now access all premium features!",
+            duration: 5000,
+          });
+          
           // Redirect after 2 seconds
           setTimeout(() => {
             navigate('/home');
@@ -78,8 +99,28 @@ export default function PaymentSuccess() {
       }
     }
 
-    completeUpgrade();
-  }, [user, sessionId, refreshUser, navigate]);
+    if (!canceled) {
+      completeUpgrade();
+    }
+  }, [user, sessionId, refreshUser, navigate, toast, canceled]);
+
+  // Show canceled state
+  if (canceled) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white px-6">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-slate-900 p-8 rounded-lg">
+            <XCircle className="h-16 w-16 text-yellow-400 mx-auto mb-4" />
+            <h1 className="text-3xl font-bold mb-2">Payment Canceled</h1>
+            <p className="text-gray-400 mb-6">
+              You canceled the payment. No charges were made.
+            </p>
+            <p className="text-sm text-gray-600">Redirecting to pricing page...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 text-white px-6">

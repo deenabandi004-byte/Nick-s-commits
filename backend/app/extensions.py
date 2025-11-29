@@ -127,6 +127,7 @@ def require_firebase_auth(fn):
         try:
             decoded = fb_auth.verify_id_token(id_token)
             request.firebase_user = decoded
+            request.uid = decoded.get('uid')  # Set request.uid for route handlers
             print(f"✅ Token verified for user: {decoded.get('uid')}")
         except ValueError as ve:
             # Firebase Admin SDK not initialized error
@@ -143,10 +144,12 @@ def require_firebase_auth(fn):
             print(f"❌ Token verification failed: {token_error}")
             # Beta fallback: accept token if it looks valid but can't be verified
             if len(id_token) > 20:  # Basic length check
+                beta_uid = 'beta_user_' + id_token[:10]
                 request.firebase_user = {
-                    'uid': 'beta_user_' + id_token[:10],
+                    'uid': beta_uid,
                     'email': 'beta@offerloop.ai'
                 }
+                request.uid = beta_uid  # Set request.uid for route handlers
                 print("⚠️ Using beta authentication fallback")
             else:
                 return jsonify({'error': 'Invalid token format'}), 401

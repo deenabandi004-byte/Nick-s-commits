@@ -21,25 +21,25 @@ def create_checkout_session():
         user_id = request.firebase_user.get('uid')
         user_email = request.firebase_user.get('email')
         
+        # Determine frontend URL based on environment
+        frontend_url = data.get('successUrl', 'https://www.offerloop.ai/payment-success')
+        if 'localhost' in request.url_root:
+            frontend_url = 'http://localhost:8080/payment-success'
+        
+        cancel_url = data.get('cancelUrl', 'https://www.offerloop.ai/pricing')
+        if 'localhost' in request.url_root:
+            cancel_url = 'http://localhost:8080/pricing'
+        
         # Create checkout session
         session = stripe.checkout.Session.create(
             payment_method_types=['card'],
             line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {
-                        'name': 'Offerloop Pro',
-                    },
-                    'unit_amount': 1999,  # $19.99
-                    'recurring': {
-                        'interval': 'month',
-                    },
-                },
+                'price': 'price_1SQ0IJERY2WrVHp1Ul5OrP63',  # Offerloop Pro subscription price
                 'quantity': 1,
             }],
             mode='subscription',
-            success_url=request.url_root + 'api/complete-upgrade?session_id={CHECKOUT_SESSION_ID}',
-            cancel_url=request.url_root + 'api/complete-upgrade?canceled=true',
+            success_url=frontend_url + '?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url=cancel_url,
             customer_email=user_email,
             metadata={
                 'user_id': user_id,
@@ -94,25 +94,42 @@ def handle_checkout_completed(session):
     try:
         db = get_db()
         if not db:
+            print("❌ Database not available")
             return
         
         user_id = session.get('metadata', {}).get('user_id')
         if not user_id:
+            print("❌ No user_id in session metadata")
             return
         
+        subscription_id = session.get('subscription')
+        customer_id = session.get('customer')
+        
+        print(f"💳 Processing upgrade for user {user_id}")
+        print(f"   Subscription: {subscription_id}")
+        print(f"   Customer: {customer_id}")
+        
         user_ref = db.collection('users').document(user_id)
-        user_ref.update({
+        update_data = {
             'tier': 'pro',
             'maxCredits': TIER_CONFIGS['pro']['credits'],
             'credits': TIER_CONFIGS['pro']['credits'],
-            'subscriptionId': session.get('subscription'),
-            'updatedAt': datetime.now()
-        })
+            'stripeSubscriptionId': subscription_id,
+            'stripeCustomerId': customer_id,
+            'subscriptionStatus': 'active',
+            'subscriptionStartDate': datetime.now().isoformat(),
+            'updatedAt': datetime.now().isoformat()
+        }
         
-        print(f"✅ User {user_id} upgraded to pro")
+        user_ref.update(update_data)
+        
+        print(f"✅ User {user_id} upgraded to Pro tier")
+        print(f"   Credits: {TIER_CONFIGS['pro']['credits']}")
         
     except Exception as e:
-        print(f"Error handling checkout: {e}")
+        print(f"❌ Error handling checkout: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 def handle_subscription_deleted(subscription):

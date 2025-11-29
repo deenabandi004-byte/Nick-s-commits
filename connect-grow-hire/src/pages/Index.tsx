@@ -9,6 +9,7 @@ import analyticsImage from '@/assets/Analytics.jpeg';
 import lockImg from "@/assets/lock.png";
 import { Sparkles } from 'lucide-react';
 import { BetaBadge } from '@/components/BetaBadges';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import DylanRoby from "@/assets/DylanRoby.png";
 import SaraUcuzoglu from "@/assets/SaraU.png";
 import JacksonLeck from "@/assets/JacksonLeck.png";
@@ -18,6 +19,7 @@ import LucasTurcuato from "@/assets/LucasTurcuato.png";
 import Marquee from "react-fast-marquee";
 import proSearchVideo from "@/assets/Offerloop Professional Search.mp4";
 import directoryVideo from "@/assets/contact directory and emails.mp4";
+import OfferloopLogo from "@/assets/Offerloop-topleft.jpeg";
 
 
 // Company Logos
@@ -238,59 +240,60 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-[#0a0d1a] text-white">
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-gray-900/90 backdrop-blur-md border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-2">
-              <span 
-                className="text-2xl font-bold text-white cursor-pointer"
-                onClick={() => navigate("/")}
-              >
-                Offer<span className="bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">loop</span>.ai
-              </span>
-               
-              <span className="bg-white text-gray-900 text-xs font-semibold px-2 py-1 rounded-md">
-                BETA
-              </span>
-            </div>
-            <nav className="hidden md:flex items-center gap-6">
-              <a href="#features" className="text-gray-300 hover:text-white transition-colors">Features</a>
-              <a 
-                href="#pricing" 
-                className="text-gray-300 hover:text-white transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Pricing
-              </a>
-              <a 
-                href="#privacy" 
-                className="text-gray-300 hover:text-white transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('privacy')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                Privacy
-              </a>
-              <a 
-                href="#about" 
-                className="text-gray-300 hover:text-white transition-colors"
-                onClick={(e) => {
-                  e.preventDefault();
-                  document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                About
-              </a>
-            </nav>
+    <div className="min-h-screen bg-black text-white">
+      {/* Header - Linear Style Layout */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-md border-b border-gray-900">
+        <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+          {/* Logo - Left */}
+          <div 
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => navigate("/")}
+          >
+            <img 
+              src={OfferloopLogo} 
+              alt="Offerloop" 
+              className="h-10"
+            />
           </div>
-          {/* Header CTAs (compact) */}
-          <div className="hidden md:flex items-center">
+          
+          {/* Centered Navigation - Like Linear */}
+          <nav className="hidden md:flex items-center gap-8 absolute left-1/2 transform -translate-x-1/2">
+            <a href="#features" className="text-sm text-gray-400 hover:text-white transition-colors">Features</a>
+            <a 
+              href="#pricing" 
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Pricing
+            </a>
+            <a 
+              href="#privacy" 
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('privacy')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              Privacy
+            </a>
+            <a 
+              href="#about" 
+              className="text-sm text-gray-400 hover:text-white transition-colors"
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+            >
+              About
+            </a>
+          </nav>
+          
+          {/* CTAs - Right */}
+          <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             <CtaButtons compact />
           </div>
         </div>
@@ -298,7 +301,7 @@ const Index = () => {
  
  
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden bg-[#0a0d1a]">
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden bg-black">
         <div className="w-full mx-auto text-center">
           <div className="max-w-4xl mx-auto mb-8">
               <h1 className="text-8xl md:text-[7rem] font-bold mb-12 leading-tight mt-32">
@@ -357,7 +360,7 @@ const Index = () => {
       
       <ClosedBetaStrip />
 {/* Why Choose Section */}
-      <section className="py-24 px-6 bg-[#0a0d1a]">
+      <section className="py-24 px-6 bg-black">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold mb-6 flex items-center justify-center">
@@ -459,7 +462,7 @@ const Index = () => {
         </div>
       </section>
       {/* Smart Filter Section */}
-      <section id="features" className="py-24 px-6 bg-[#0a0d1a]">
+      <section id="features" className="py-24 px-6 bg-black">
         <div className="max-w-7xl mx-auto">
           <div className="grid md:grid-cols-2 gap-16 items-center mb-20">
             <div>
@@ -546,7 +549,7 @@ const Index = () => {
 
 
       {/* Reviews Section */}
-      <section className="py-24 px-6 md:px-12 lg:px-20 overflow-hidden bg-[#0a0d1a]">
+      <section className="py-24 px-6 md:px-12 lg:px-20 overflow-hidden bg-black">
         <div className="w-full max-w-full mx-auto">
           {/* Header */}
           <div className="text-center mb-20">
@@ -776,7 +779,7 @@ const Index = () => {
       </section>
       
       {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-6 bg-[#0a0d1a]">
+      <section id="pricing" className="py-24 px-6 bg-black">
         <div className="max-w-6xl mx-auto">
            <div className="text-center mb-24">
             <h2 className="text-5xl lg:text-7xl font-bold mb-6">
@@ -882,7 +885,7 @@ const Index = () => {
 
 
       {/* About & Mission Section Preview */}
-      <section id="about" className="py-24 px-6 bg-[#0a0d1a]">
+      <section id="about" className="py-24 px-6 bg-black">
         <div className="max-w-7xl mx-auto">
           {/* Mission Section */}
           <div className="mb-20">
@@ -938,7 +941,7 @@ const Index = () => {
        
 
       {/* Data Privacy Section */}
-      <section id="privacy" className="relative py-28 bg-[#0a0d1a]">
+      <section id="privacy" className="relative py-28 bg-black">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center md:space-x-16 px-6">
     
          {/* Icon without heavy gradient */}
@@ -968,7 +971,7 @@ const Index = () => {
     </section>
 
       {/* FAQ */}
-      <section className="py-20 px-6 bg-[#0a0d1a]">
+      <section className="py-20 px-6 bg-black">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
            

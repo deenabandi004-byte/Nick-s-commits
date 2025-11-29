@@ -18,7 +18,7 @@ import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
 
 const getMonthKey = () => new Date().toISOString().slice(0, 7);
-const initialCreditsByTier = (tier: "free" | "pro") => (tier === "free" ? 120 : 840);
+const initialCreditsByTier = (tier: "free" | "pro") => (tier === "free" ? 150 : 1800);
 
 interface User {
   uid: string;
@@ -38,7 +38,12 @@ interface User {
   emailsUsedThisMonth?: number;
   emailsMonthKey?: string;
   needsOnboarding?: boolean;
-
+  
+  // Resume fields
+  resumeUrl?: string;
+  resumeFileName?: string;
+  resumeParsed?: any;
+  resumeUpdatedAt?: string;
 }
 
 type SignInOptions = {
@@ -114,6 +119,11 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
           emailsUsedThisMonth: d.emailsUsedThisMonth ?? 0,
           needsOnboarding: d.needsOnboarding ?? false,
           
+          // Resume fields - load from Firestore for persistence
+          resumeUrl: d.resumeUrl,
+          resumeFileName: d.resumeFileName,
+          resumeParsed: d.resumeParsed,
+          resumeUpdatedAt: d.resumeUpdatedAt,
         });
       } else {
         const newUser: User = {
@@ -122,8 +132,8 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
           name: firebaseUser.displayName || "",
           picture: firebaseUser.photoURL || undefined,
           tier: "free",
-          credits: 120,
-          maxCredits: 120,
+          credits: 150,
+          maxCredits: 150,
           emailsMonthKey: getMonthKey(),
           emailsUsedThisMonth: 0,
           needsOnboarding: true,
@@ -242,21 +252,29 @@ const signIn = async (opts?: SignInOptions): Promise<NextRoute> => {
     if (!user) return;
     const ref = doc(db, "users", user.uid);
 
-    const clean = (obj: any): any => {
-      const out: any = {};
-      Object.keys(obj || {}).forEach((k) => {
-        const v = obj[k];
-        if (v !== undefined) out[k] = typeof v === "object" && v !== null && !Array.isArray(v) ? clean(v) : v;
-      });
-      return out;
-    };
+    // Import resume upload utility
+    const { uploadResume } = await import('../lib/resumeUtils');
 
-    const cleaned = clean(onboardingData);
-    const payload = {
-      ...cleaned,
+    // 1. Upload resume if provided
+    let resumeData = null;
+    if (onboardingData.profile?.resume instanceof File) {
+      try {
+        resumeData = await uploadResume(onboardingData.profile.resume, user.uid, true);
+        console.log('✅ Resume uploaded during onboarding:', resumeData);
+      } catch (error) {
+        console.error('❌ Failed to upload resume during onboarding:', error);
+        // Continue without resume - user can upload later
+      }
+    }
+
+    // 2. Flatten all nested data to root level for flat schema
+    const payload: any = {
       uid: user.uid,
-      email: user.email,
-      name: user.name,
+      email: user.email || onboardingData.profile?.email || '',
+      name: user.name || `${onboardingData.profile?.firstName || ''} ${onboardingData.profile?.lastName || ''}`.trim() || '',
+      firstName: onboardingData.profile?.firstName || '',
+      lastName: onboardingData.profile?.lastName || '',
+      phone: onboardingData.profile?.phone || '',
       picture: user.picture,
       tier: "free",
       credits: initialCreditsByTier("free"),
@@ -265,11 +283,43 @@ const signIn = async (opts?: SignInOptions): Promise<NextRoute> => {
       emailsUsedThisMonth: 0,
       createdAt: new Date().toISOString(),
       needsOnboarding: false,
-       
+      
+      // Academic fields (flat)
+      university: onboardingData.academics?.university || '',
+      college: onboardingData.academics?.university || '', // Backend fallback
+      degree: onboardingData.academics?.degree || '',
+      currentDegree: onboardingData.academics?.degree || '',
+      major: onboardingData.academics?.major || '',
+      fieldOfStudy: onboardingData.academics?.major || '',
+      graduationMonth: onboardingData.academics?.graduationMonth || '',
+      graduationYear: onboardingData.academics?.graduationYear || '',
+      
+      // Location/Career fields (flat)
+      country: onboardingData.location?.country || '',
+      state: onboardingData.location?.state || '',
+      city: onboardingData.location?.city || '',
+      preferredLocation: onboardingData.location?.preferredLocation || [],
+      preferredLocations: onboardingData.location?.preferredLocation || [],
+      jobTypes: onboardingData.location?.jobTypes || [],
+      interests: onboardingData.location?.interests || [],
+      industriesOfInterest: onboardingData.location?.interests || [],
+      careerInterests: onboardingData.location?.interests || [],
+      preferredJobRole: onboardingData.location?.preferredJobRole || '',
     };
 
-    await setDoc(ref, payload);
+    // 3. Add resume data if uploaded
+    if (resumeData) {
+      payload.resumeUrl = resumeData.resumeUrl;
+      payload.resumeFileName = resumeData.resumeFileName;
+      payload.resumeParsed = resumeData.resumeParsed;
+      payload.resumeUpdatedAt = resumeData.resumeUpdatedAt;
+    }
+
+    // 4. Save to Firestore
+    await setDoc(ref, payload, { merge: true });
     setUser({ ...user, ...payload, needsOnboarding: false });
+    
+    console.log('✅ Onboarding data saved with flat schema');
   };
 
   return (

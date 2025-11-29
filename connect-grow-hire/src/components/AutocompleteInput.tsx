@@ -72,11 +72,11 @@ export const AutocompleteInput = ({
   };
 
   const showDropdown = isOpen && !disabled && inputValue.length >= 2;
-  const hasContent = isLoading || suggestions.length > 0 || error;
+  const hasContent = isLoading || suggestions.length > 0 || !!error;
 
   return (
     <div className="relative">
-      <Popover open={showDropdown && hasContent}>
+      <Popover open={!!(showDropdown && hasContent)}>
         <PopoverTrigger asChild>
           <div>
             <Input

@@ -7,10 +7,9 @@ import {
   Search,
   RefreshCw,
   Trash2,
-  ExternalLink,
-  ArrowLeft
+  Download,
+  Linkedin
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import { firebaseApi } from '../services/firebaseApi';
 import type { Contact as ContactApi } from '../services/firebaseApi';
@@ -32,7 +31,6 @@ const STATUS_OPTIONS = [
 ];
 
 const SpreadsheetContactDirectory: React.FC = () => {
-  const navigate = useNavigate();
   const { user: currentUser } = useFirebaseAuth();
   const { isLoading: migrationLoading } = useFirebaseMigration();
 
@@ -51,6 +49,69 @@ const SpreadsheetContactDirectory: React.FC = () => {
 
   const getStorageKey = () => {
     return currentUser ? `contacts_${currentUser.uid}` : 'contacts_anonymous';
+  };
+
+  // CSV Export function - excludes the Actions column
+  const handleExportCsv = () => {
+    if (!contacts || contacts.length === 0) {
+      return;
+    }
+
+    // Define CSV headers - only data columns, excluding the "Actions" column
+    // Matches table columns: Contact, LinkedIn, Email, Company, Role, Location, Status (Actions column excluded)
+    const headers = [
+      'Contact Name',
+      'LinkedIn',
+      'Email',
+      'Company',
+      'Role',
+      'Location',
+      'Status'
+    ] as const;
+
+    const headerRow = headers.join(',');
+
+    // Map contacts to CSV rows
+    const rows = contacts.map((contact) => {
+      const contactName = `${contact.firstName || ''} ${contact.lastName || ''}`.trim();
+      const linkedIn = contact.linkedinUrl || '';
+      const email = contact.email || '';
+      const company = contact.company || '';
+      const role = contact.jobTitle || '';
+      const location = contact.location || '';
+      const status = contact.status || '';
+
+      // Escape and quote CSV values
+      const escapeCSV = (value: string) => {
+        const raw = value.toString();
+        const escaped = raw.replace(/"/g, '""');
+        return `"${escaped}"`;
+      };
+
+      return [
+        escapeCSV(contactName),
+        escapeCSV(linkedIn),
+        escapeCSV(email),
+        escapeCSV(company),
+        escapeCSV(role),
+        escapeCSV(location),
+        escapeCSV(status)
+      ].join(',');
+    });
+
+    // Combine header and rows
+    const csv = [headerRow, ...rows].join('\n');
+
+    // Create download
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `contacts_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   const normalizeFromServer = (serverContact: any): Contact => ({
@@ -365,6 +426,29 @@ const SpreadsheetContactDirectory: React.FC = () => {
     }
   };
 
+  const deleteContact = async (contactId: string) => {
+    if (window.confirm('Are you sure you want to delete this contact? This action cannot be undone.')) {
+      try {
+        if (currentUser && contactId && !contactId.startsWith('local_')) {
+          // Delete from Firebase
+          await firebaseApi.deleteContact(currentUser.uid, contactId);
+        }
+        
+        // Remove from local state
+        const updatedContacts = contacts.filter(contact => contact.id !== contactId);
+        setContacts(updatedContacts);
+        
+        // Update localStorage if not logged in or if it's a local contact
+        if (!currentUser || contactId.startsWith('local_')) {
+          await saveContacts(updatedContacts);
+        }
+      } catch (err) {
+        console.error('Error deleting contact:', err);
+        setError('Failed to delete contact');
+      }
+    }
+  };
+
   useEffect(() => {
     if (!migrationLoading) {
       loadContacts();
@@ -373,41 +457,44 @@ const SpreadsheetContactDirectory: React.FC = () => {
 
   if (migrationLoading || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-900">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
-        <span className="ml-2 text-gray-300">Loading contacts...</span>
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2 text-foreground">Loading contacts...</span>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <div className="border-b border-gray-700 px-6 py-4 bg-gray-900 sticky top-0 z-20 shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate('/home')}
-              className="flex items-center gap-2 text-gray-300 hover:text-white hover:bg-gray-800"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Home
-            </Button>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadContacts}
-              disabled={isLoading}
-              className="flex items-center gap-2 bg-gray-800 border-gray-600 text-gray-300 hover:bg-gray-700"
-            >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
-            {contacts.length > 0 && (
+    <div className="space-y-4 flex flex-col w-full py-4 px-6">
+        {/* Export CSV Button */}
+        {contacts.length > 0 && (
+          <div className="flex justify-between items-center bg-card backdrop-blur-sm rounded-lg shadow-sm border border-border p-4 w-full">
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                {contacts.length} contact{contacts.length !== 1 ? 's' : ''} saved
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Export your results to CSV for further analysis
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleExportCsv} 
+                className="gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Download className="h-4 w-4" />
+                Export CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={loadContacts}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -417,27 +504,25 @@ const SpreadsheetContactDirectory: React.FC = () => {
                 <Trash2 className="h-4 w-4" />
                 Clear All
               </Button>
-            )}
+            </div>
           </div>
-        </div>
-        <div className="text-center mb-4">
-          <h1 className="text-3xl font-bold text-white">Contact Library</h1>
-        </div>
-      </div>
+        )}
 
-      {/* Search */}
-      <div className="px-6 py-4">
-        <div className="relative w-80">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            type="text"
-            placeholder="Search contacts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500 focus:ring-blue-500"
-          />
-        </div>
-      </div>
+        {/* Search */}
+        {contacts.length > 0 && (
+          <div className="w-full">
+            <div className="relative w-80">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                type="text"
+                placeholder="Search contacts..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 bg-muted border-border text-foreground placeholder-muted-foreground focus:border-primary focus:ring-primary"
+              />
+            </div>
+          </div>
+        )}
 
       {error && (
         <div className="bg-red-900/20 border border-red-600 text-red-400 px-6 py-3 mx-6 mt-4 rounded">
@@ -446,65 +531,59 @@ const SpreadsheetContactDirectory: React.FC = () => {
       )}
 
       {contacts.length === 0 ? (
-        <div className="text-center py-24">
-          <p className="text-gray-300 text-lg mb-2">No contacts saved yet.</p>
-          <p className="text-gray-500 mb-6">
-            Run a search from the Home page to automatically save contacts to your library.
+        <div className="bg-card backdrop-blur-sm rounded-xl shadow-sm border border-border p-12 text-center w-full">
+          <p className="text-foreground mb-2">No contacts to display yet</p>
+          <p className="text-sm text-muted-foreground">
+            Switch to the "Contact Search" tab to find professionals
           </p>
-          <Button
-            onClick={() => navigate('/')}
-            className="bg-gradient-to-r from-blue-500 to purple-500 hover:from-blue-600 hover:to-purple-600"
-          >
-            Go to Search
-          </Button>
         </div>
       ) : (
-        <div className="flex flex-col h-full">
-          <div className="flex-1 overflow-hidden">
-            <div className="h-full overflow-auto">
-              <table className="w-full border-collapse bg-gray-900">
-                <thead>
-                  <tr className="bg-gray-800 border-b-2 border-gray-700 sticky top-0 z-10">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-200 min-w-[200px]">
+        <div className="w-full">
+          <div className="bg-card backdrop-blur-sm rounded-xl shadow-sm border border-border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border">
+                <thead className="bg-muted sticky top-0 z-10">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Contact
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-200 min-w-[250px]">
+                    <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       LinkedIn
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-200 min-w-[200px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Email
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-200 min-w-[180px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Company
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-200 min-w-[150px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Role
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-200 min-w-[180px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Location
                     </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-200 min-w-[150px]">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-200 w-[80px]">
+                    <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                       Actions
+                    </th>
+                    <th className="px-6 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Delete
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-background divide-y divide-border">
                   {filteredContacts.map((contact, index) => {
                     const statusOption = STATUS_OPTIONS.find(opt => opt.value === contact.status);
-                    const isEvenRow = index % 2 === 0;
 
                     return (
                       <tr
                         key={contact.id}
-                        className={`border-b border-gray-700 hover:bg-gray-800 ${
-                          isEvenRow ? 'bg-gray-900' : 'bg-gray-850'
-                        }`}
+                        className="hover:bg-accent transition-colors"
                       >
-                        <td className="border-r border-gray-700 px-4 py-3">
-                          <div className="flex flex-col">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
                             {editingCell?.row === index && editingCell?.col === 'name' ? (
                               <div className="space-y-1">
                                 <Input
@@ -512,7 +591,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                                   onChange={(e) => handleCellEdit(contact.id!, 'firstName', e.target.value)}
                                   onBlur={handleCellBlur}
                                   placeholder="First name"
-                                  className="text-sm h-6 bg-gray-800 border-gray-600 text-white"
+                                  className="text-sm h-6 bg-muted border-border text-foreground"
                                   autoFocus
                                 />
                                 <Input
@@ -520,21 +599,21 @@ const SpreadsheetContactDirectory: React.FC = () => {
                                   onChange={(e) => handleCellEdit(contact.id!, 'lastName', e.target.value)}
                                   onBlur={handleCellBlur}
                                   placeholder="Last name"
-                                  className="text-sm h-6 bg-gray-800 border-gray-600 text-white"
+                                  className="text-sm h-6 bg-muted border-border text-foreground"
                                 />
                               </div>
                             ) : (
                               <div
                                 onClick={() => handleCellClick(index, 'name')}
-                                className="cursor-text hover:bg-gray-800 rounded px-2 py-1"
+                                className="cursor-text hover:bg-accent rounded px-2 py-1 transition-colors"
                               >
-                                <div className="font-medium text-white">{getDisplayName(contact)}</div>
+                                <div className="text-sm font-medium text-foreground">{getDisplayName(contact)}</div>
                               </div>
                             )}
                           </div>
                         </td>
 
-                        <td className="border-r border-gray-700 px-4 py-3">
+                        <td className="px-4 py-4 whitespace-nowrap text-center">
                           {contact.linkedinUrl ? (
                             <a
                               href={
@@ -544,95 +623,95 @@ const SpreadsheetContactDirectory: React.FC = () => {
                               }
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300 hover:underline text-sm flex items-center gap-1 truncate"
+                              className="inline-flex items-center justify-center p-2 text-muted-foreground hover:text-blue-400 hover:bg-blue-500/10 rounded-lg transition-colors"
+                              title="View on LinkedIn"
                             >
-                              <ExternalLink className="h-3 w-3" />
-                              {contact.linkedinUrl.replace(/^https?:\/\//, '')}
+                              <Linkedin className="h-5 w-5" />
                             </a>
                           ) : (
-                            <span className="text-gray-500 text-sm">-</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
 
-                        <td className="border-r border-gray-700 px-4 py-3">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {contact.email ? (
-                            <span className="text-sm text-gray-300">{contact.email}</span>
+                            <span className="text-sm text-foreground">{contact.email}</span>
                           ) : (
-                            <span className="text-gray-500 text-sm">-</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
                         </td>
 
-                        <td className="border-r border-gray-700 px-4 py-3">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {editingCell?.row === index && editingCell?.col === 'company' ? (
                             <Input
                               value={contact.company}
                               onChange={(e) => handleCellEdit(contact.id!, 'company', e.target.value)}
                               onBlur={handleCellBlur}
-                              className="text-sm h-6 bg-gray-800 border-gray-600 text-white"
+                              className="text-sm h-8 bg-muted border-border text-foreground"
                               autoFocus
                             />
                           ) : (
                             <div
                               onClick={() => handleCellClick(index, 'company')}
-                              className="cursor-text hover:bg-gray-800 rounded px-2 py-1 text-sm text-gray-300"
+                              className="cursor-text hover:bg-accent rounded px-2 py-1 text-sm text-foreground transition-colors"
                             >
-                              {contact.company || <span className="text-gray-500">-</span>}
+                              {contact.company || <span className="text-gray-600">—</span>}
                             </div>
                           )}
                         </td>
 
-                        <td className="border-r border-gray-700 px-4 py-3">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {editingCell?.row === index && editingCell?.col === 'jobTitle' ? (
                             <Input
                               value={contact.jobTitle}
                               onChange={(e) => handleCellEdit(contact.id!, 'jobTitle', e.target.value)}
                               onBlur={handleCellBlur}
-                              className="text-sm h-6 bg-gray-800 border-gray-600 text-white"
+                              className="text-sm h-8 bg-muted border-border text-foreground"
                               autoFocus
                             />
                           ) : (
                             <div
                               onClick={() => handleCellClick(index, 'jobTitle')}
-                              className="cursor-text hover:bg-gray-800 rounded px-2 py-1 text-sm text-gray-300"
+                              className="cursor-text hover:bg-accent rounded px-2 py-1 text-sm text-foreground transition-colors"
                             >
-                              {contact.jobTitle || <span className="text-gray-500">-</span>}
+                              {contact.jobTitle || <span className="text-gray-600">—</span>}
                             </div>
                           )}
                         </td>
 
-                        <td className="border-r border-gray-700 px-4 py-3">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           {editingCell?.row === index && editingCell?.col === 'location' ? (
                             <Input
                               value={contact.location}
                               onChange={(e) => handleCellEdit(contact.id!, 'location', e.target.value)}
                               onBlur={handleCellBlur}
-                              className="text-sm h-6 bg-gray-800 border-gray-600 text-white"
+                              className="text-sm h-8 bg-muted border-border text-foreground"
                               autoFocus
                             />
                           ) : (
                             <div
                               onClick={() => handleCellClick(index, 'location')}
-                              className="cursor-text hover:bg-gray-800 rounded px-2 py-1 text-sm text-gray-300"
+                              className="cursor-text hover:bg-accent rounded px-2 py-1 text-sm text-foreground transition-colors"
                             >
-                              {contact.location || <span className="text-gray-500">-</span>}
+                              {contact.location || <span className="text-gray-600">—</span>}
                             </div>
                           )}
                         </td>
 
                         {/* Status + Bell */}
-                        <td className="border-r border-gray-700 px-4 py-3">
+                        <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center gap-2">
                             <select
                               value={contact.status}
                               onChange={(e) => handleCellEdit(contact.id!, 'status', e.target.value)}
-                              className="flex-1 text-xs bg-gray-800 border-gray-600 text-white focus:ring-1 focus:ring-blue-500 cursor-pointer rounded px-2 py-1"
+                              className="flex-1 text-xs bg-muted border-border text-foreground focus:ring-1 focus:ring-primary cursor-pointer rounded px-2 py-1.5"
                               style={{ color: statusOption?.color }}
                             >
                               {STATUS_OPTIONS.map(option => (
                                 <option
                                   key={option.value}
                                   value={option.value}
-                                  style={{ color: option.color, backgroundColor: '#1f2937' }}
+                                  style={{ color: option.color }}
                                 >
                                   {option.label}
                                 </option>
@@ -655,26 +734,35 @@ const SpreadsheetContactDirectory: React.FC = () => {
                           </div>
                         </td>
 
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-6 py-4 whitespace-nowrap text-right">
                           {contact.email ? (
-                            <Button
-                              size="sm"
-                              variant="ghost"
+                            <button
                               onClick={() => handleEmailClick(contact)}
-                              className="p-2 h-8 w-8 hover:bg-gray-800 text-gray-400 hover:text-white"
+                              className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-300 bg-blue-500/20 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 hover:text-blue-200 transition-colors"
                               title={`Email ${getDisplayName(contact)}${
                                 contact.emailSubject ? ' (Generated email available)' : ''
                               }`}
                             >
                               <Mail
-                                className={`h-4 w-4 ${
-                                  contact.emailSubject ? 'text-green-400' : 'text-blue-400'
+                                className={`h-4 w-4 mr-1.5 ${
+                                  contact.emailSubject ? 'text-green-300' : ''
                                 }`}
                               />
-                            </Button>
+                              Email
+                            </button>
                           ) : (
-                            <span className="text-gray-600">-</span>
+                            <span className="text-muted-foreground">—</span>
                           )}
+                        </td>
+
+                        <td className="px-6 py-4 whitespace-nowrap text-center">
+                          <button
+                            onClick={() => deleteContact(contact.id!)}
+                            className="inline-flex items-center justify-center p-2 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title={`Delete ${getDisplayName(contact)}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </td>
                       </tr>
                     );
@@ -686,11 +774,11 @@ const SpreadsheetContactDirectory: React.FC = () => {
 
           {filteredContacts.length === 0 && contacts.length > 0 && (
             <div className="text-center py-12">
-              <p className="text-gray-400">No contacts match your search.</p>
+              <p className="text-muted-foreground">No contacts match your search.</p>
               <Button
                 variant="ghost"
                 onClick={() => setSearchQuery('')}
-                className="mt-2 text-gray-300 hover:text-white hover:bg-gray-800"
+                className="mt-2"
               >
                 Clear search
               </Button>
@@ -700,31 +788,33 @@ const SpreadsheetContactDirectory: React.FC = () => {
       )}
 
       {/* Summary Footer */}
-      <div className="border-t border-gray-700 bg-gray-800 px-6 py-3 sticky bottom-0">
-        <div className="flex justify-between items-center text-sm text-gray-300">
-          <div>
-            Total contacts: {filteredContacts?.length || 0}
-            {searchQuery && ` (filtered from ${contacts.length})`}
-          </div>
-          <div className="text-xs text-gray-500">
-            {(filteredContacts || contacts).filter(c => c.emailSubject).length} contacts have generated emails
+      {contacts.length > 0 && (
+        <div className="w-full border-t border-border bg-muted px-6 py-3">
+          <div className="flex justify-between items-center text-sm text-foreground">
+            <div>
+              Total contacts: {filteredContacts?.length || 0}
+              {searchQuery && ` (filtered from ${contacts.length})`}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {(filteredContacts || contacts).filter(c => c.emailSubject).length} contacts have generated emails
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Mail App Selection Dialog */}
       {mailAppDialogOpen && selectedContactForEmail && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 border border-gray-700">
-            <h3 className="text-xl font-semibold text-white mb-4">Choose Email App</h3>
-            <p className="text-gray-300 mb-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card rounded-lg p-6 max-w-md w-full mx-4 border border-border">
+            <h3 className="text-xl font-semibold text-foreground mb-4">Choose Email App</h3>
+            <p className="text-foreground mb-6">
               Send email to {getDisplayName(selectedContactForEmail)}
             </p>
 
             <div className="flex gap-3">
               <Button
                 onClick={() => handleMailAppSelect('apple')}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-6"
+                className="flex-1 bg-muted hover:bg-accent text-foreground py-6"
               >
                 <div className="flex flex-col items-center gap-2">
                   <Mail className="h-6 w-6" />
@@ -749,7 +839,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                 setSelectedContactForEmail(null);
               }}
               variant="ghost"
-              className="w-full mt-4 text-gray-400 hover:text-white"
+              className="w-full mt-4"
             >
               Cancel
             </Button>

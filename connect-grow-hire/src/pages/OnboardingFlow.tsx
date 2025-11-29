@@ -55,6 +55,7 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
       console.log('🎯 Starting onboarding completion...');
       
       // 1. Transform data to match backend expectations
+      // Include the resume File object directly (not just metadata)
       const finalData = {
         profile: {
           fullName: `${onboardingData.profile.firstName} ${onboardingData.profile.lastName}`,
@@ -62,6 +63,7 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
           lastName: onboardingData.profile.lastName,
           email: onboardingData.profile.email,
           phone: onboardingData.profile.phone,
+          resume: onboardingData.profile.resume, // File object
           resumeData: onboardingData.profile.resumeData,
           resumeName: onboardingData.profile.resumeName,
         },

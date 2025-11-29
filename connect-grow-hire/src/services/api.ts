@@ -124,6 +124,78 @@ export interface RegenerateReplyResponse {
   message?: string;
 }
 
+// ================================
+// Firm Search Types
+// ================================
+export interface FirmLocation {
+  city?: string;
+  state?: string;
+  country?: string;
+  display: string;
+}
+
+export interface Firm {
+  id: string;
+  name: string;
+  website?: string;
+  linkedinUrl?: string;
+  location?: FirmLocation;
+  industry?: string;
+  employeeCount?: number;
+  sizeBucket?: 'small' | 'mid' | 'large';
+  founded?: number;
+}
+
+export interface ParsedFilters {
+  industry: string;
+  location: string;
+  locationNormalized?: {
+    locality?: string;
+    region?: string;
+    metro?: string;
+    country?: string;
+  };
+  size: string;
+  keywords: string[];
+}
+
+export interface FirmSearchResult {
+  success: boolean;
+  firms: Firm[];
+  total: number;
+  parsedFilters?: ParsedFilters;
+  searchId?: string;
+  batchSize?: number;
+  creditsCharged?: number;
+  remainingCredits?: number;
+  creditsNeeded?: number;
+  currentCredits?: number;
+  insufficientCredits?: boolean;
+  error?: string;
+  limitReached?: boolean;
+}
+
+export interface FirmSearchHistoryItem {
+  id: string;
+  query: string;
+  parsedFilters?: ParsedFilters;
+  resultsCount: number;
+  createdAt: string;
+}
+
+// Alias for convenience
+export type SearchHistoryItem = FirmSearchHistoryItem;
+
+export interface IndustryOption {
+  value: string;
+  label: string;
+}
+
+export interface SizeOption {
+  value: string;
+  label: string;
+}
+
 // Union type for search results
 export type SearchResult = SearchResponse | ErrorResponse;
 
@@ -332,6 +404,10 @@ class ApiService {
     formData.append('saveToDirectory', 'false'); // Always false since we handle saving on frontend
     formData.append('collegeAlumni', request.collegeAlumni || ''); // ✅ Include collegeAlumni
 
+    if (request.batchSize !== undefined && request.batchSize !== null) {
+      formData.append('batchSize', request.batchSize.toString()); // ✅ Include batch size
+    }
+
     if (request.userProfile) {
       formData.append('userProfile', JSON.stringify(request.userProfile));
     }
@@ -348,6 +424,7 @@ class ApiService {
     console.log(`  userProfile: ${JSON.stringify(request.userProfile)}`);
     console.log(`  careerInterests: ${JSON.stringify(request.careerInterests)}`);
     console.log(`  collegeAlumni: "${request.collegeAlumni || ''}"`);
+    console.log(`  batchSize: ${request.batchSize}`);
 
     return this.makeRequest<SearchResult>('/pro-run', {
       method: 'POST',
@@ -658,7 +735,127 @@ async regenerateOutboxReply(
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
   }
+
+  // ================================
+  // Firm Search Endpoints
+  // ================================
+
+  /** Search for firms using natural language query */
+  async searchFirms(query: string, batchSize?: number): Promise<FirmSearchResult> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<FirmSearchResult>('/firm-search/search', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, batchSize }),
+    });
+  }
+
+  /** Search for firms using structured inputs (dropdowns) */
+  async searchFirmsStructured(params: {
+    industry: string;
+    location: string;
+    size?: string;
+    keywords?: string[];
+    batchSize?: number;
+  }): Promise<FirmSearchResult> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<FirmSearchResult>('/firm-search/search/structured', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(params),
+    });
+  }
+
+  /** Get batch size options for firm search based on user's tier */
+  async getFirmBatchOptions(): Promise<{
+    success: boolean;
+    tier: 'free' | 'pro';
+    options: number[];
+    default: number;
+    min: number;
+    max: number;
+    creditsPerFirm: number;
+    currentCredits: number;
+    maxCredits: number;
+  }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest('/firm-search/batch-options', {
+      method: 'GET',
+      headers,
+    });
+  }
+
+  /** Get user's firm search history */
+  async getFirmSearchHistory(limit: number = 10): Promise<FirmSearchHistoryItem[]> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.makeRequest<{ success: boolean; searches: FirmSearchHistoryItem[] }>(
+      `/firm-search/history?limit=${limit}`,
+      { method: 'GET', headers }
+    );
+    return response.searches || [];
+  }
+
+  /** Get a specific search from history (with full results) */
+  async getFirmSearchById(searchId: string): Promise<{
+    id: string;
+    query: string;
+    parsedFilters?: ParsedFilters;
+    results: Firm[];
+    resultsCount: number;
+    createdAt: string;
+  }> {
+    const headers = await this.getAuthHeaders();
+    const response = await this.makeRequest<{ success: boolean; search: any }>(
+      `/firm-search/history/${searchId}`,
+      { method: 'GET', headers }
+    );
+    return response.search;
+  }
+
+  /** Delete a search from history */
+  async deleteFirmSearch(searchId: string): Promise<void> {
+    const headers = await this.getAuthHeaders();
+    await this.makeRequest(`/firm-search/history/${searchId}`, {
+      method: 'DELETE',
+      headers,
+    });
+  }
+
+  /** Get available industry options for dropdowns */
+  async getIndustryOptions(): Promise<IndustryOption[]> {
+    const response = await this.makeRequest<{ success: boolean; industries: IndustryOption[] }>(
+      '/firm-search/options/industries'
+    );
+    return response.industries || [];
+  }
+
+  /** Get available size options for dropdowns */
+  async getSizeOptions(): Promise<SizeOption[]> {
+    const response = await this.makeRequest<{ success: boolean; sizes: SizeOption[] }>(
+      '/firm-search/options/sizes'
+    );
+    return response.sizes || [];
+  }
 }
 
 export const apiService = new ApiService();
 export default apiService;
+
+// ================================
+// Standalone Function Exports for Firm Search
+// ================================
+
+export const searchFirms = (query: string, batchSize?: number) => apiService.searchFirms(query, batchSize);
+export const searchFirmsStructured = (params: {
+  industry: string;
+  location: string;
+  size?: string;
+  keywords?: string[];
+  batchSize?: number;
+}) => apiService.searchFirmsStructured(params);
+export const getFirmSearchHistory = (limit?: number) => apiService.getFirmSearchHistory(limit);
+export const getFirmSearchById = (searchId: string) => apiService.getFirmSearchById(searchId);
+export const deleteFirmSearch = (searchId: string) => apiService.deleteFirmSearch(searchId);
+export const getIndustryOptions = () => apiService.getIndustryOptions();
+export const getSizeOptions = () => apiService.getSizeOptions();
+export const getFirmBatchOptions = () => apiService.getFirmBatchOptions();

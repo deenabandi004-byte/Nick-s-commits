@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { FirebaseAuthProvider, useFirebaseAuth } from "./contexts/FirebaseAuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import UscBeta from "@/pages/UscBeta";
 
 // Pages
@@ -26,7 +27,11 @@ import Pricing from "./pages/Pricing";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import PaymentSuccess from "./pages/PaymentSuccess";
-import Outbox from "./pages/Outbox";   // 👈 add this at the top with other pages
+import Outbox from "./pages/Outbox";
+import FirmSearch from "./pages/FirmSearch";
+import ContactSearch from "./pages/ContactSearch";
+import CoffeeChatPrepPage from "./pages/CoffeeChatPrepPage";
+import InterviewPrepPage from "./pages/InterviewPrepPage";
 // New Lovable Onboarding Flow
 import { OnboardingFlow } from "./pages/OnboardingFlow";
 
@@ -99,13 +104,19 @@ const AppRoutes: React.FC = () => {
 
       {/* Protected App Pages */}
       <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/firm-search" element={<ProtectedRoute><FirmSearch /></ProtectedRoute>} />
+      <Route path="/contact-search" element={<ProtectedRoute><ContactSearch /></ProtectedRoute>} />
+      <Route path="/coffee-chat-prep" element={<ProtectedRoute><CoffeeChatPrepPage /></ProtectedRoute>} />
+      <Route path="/interview-prep" element={<ProtectedRoute><InterviewPrepPage /></ProtectedRoute>} />
+      <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+      <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
+      <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
+      
+      {/* Legacy routes - kept for backward compatibility */}
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/contact-directory" element={<ProtectedRoute><ContactDirectory /></ProtectedRoute>} />
       <Route path="/coffee-chat-library" element={<ProtectedRoute><CoffeeChatLibrary /></ProtectedRoute>} />
       <Route path="/outbox" element={ <ProtectedRoute><Outbox /></ProtectedRoute> }/>
-      <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
-      <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
-      <Route path="/payment-success" element={<ProtectedRoute><PaymentSuccess /></ProtectedRoute>} />
       
 
 
@@ -133,15 +144,17 @@ const AppRoutes: React.FC = () => {
 const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <FirebaseAuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </FirebaseAuthProvider>
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <FirebaseAuthProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </FirebaseAuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

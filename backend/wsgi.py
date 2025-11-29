@@ -2,20 +2,21 @@ import os
 import logging
 from flask import Flask, send_from_directory, abort, request, redirect
 
-# --- Import your API blueprints (use package-relative imports) ---
-from .app.routes.health import health_bp
-from .app.routes.gmail_oauth import gmail_oauth_bp
-from .app.routes.emails import emails_bp
-from .app.routes.contacts import contacts_bp
-from .app.routes.directory import directory_bp
-from .app.routes.runs import runs_bp
-from .app.routes.enrichment import enrichment_bp
-from .app.routes.resume import resume_bp
-from .app.routes.coffee_chat_prep import coffee_chat_bp
-from .app.routes.billing import billing_bp
-from .app.routes.users import users_bp
-from .app.routes.outbox import outbox_bp
-from .app.extensions import init_app_extensions
+# --- Import your API blueprints (use absolute imports) ---
+from app.routes.health import health_bp
+from app.routes.gmail_oauth import gmail_oauth_bp
+from app.routes.emails import emails_bp
+from app.routes.contacts import contacts_bp
+from app.routes.directory import directory_bp
+from app.routes.runs import runs_bp
+from app.routes.enrichment import enrichment_bp
+from app.routes.resume import resume_bp
+from app.routes.coffee_chat_prep import coffee_chat_bp
+from app.routes.billing import billing_bp
+from app.routes.users import users_bp
+from app.routes.outbox import outbox_bp
+from app.routes.firm_search import firm_search_bp
+from app.extensions import init_app_extensions
 
 def create_app() -> Flask:
     # Project layout assumptions:
@@ -34,7 +35,7 @@ def create_app() -> Flask:
     print("✅ App extensions initialized")
     
     # Check if db was initialized
-    from .app.extensions import db
+    from app.extensions import db
     print(f"🔍 After init_app_extensions, db is: {db}")
     print(f"🔍 db type: {type(db)}")
     
@@ -56,6 +57,7 @@ def create_app() -> Flask:
     app.register_blueprint(billing_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(outbox_bp)
+    app.register_blueprint(firm_search_bp)
 
     # --- Debug route to check frontend build ---
     @app.route('/api/debug/frontend')
