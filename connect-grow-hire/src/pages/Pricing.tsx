@@ -189,23 +189,23 @@ const Pricing = () => {
   const isProUser = subscriptionStatus?.tier === 'pro' && subscriptionStatus?.status === 'active';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-white text-foreground">
       <div className="container mx-auto px-6 py-6 max-w-6xl">
         <Button
           variant="ghost"
           onClick={() => navigate("/home")}
-          className="mb-8 text-gray-400 hover:text-white hover:bg-slate-800"
+          className="mb-8 text-foreground hover:bg-accent"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Home
         </Button>
 
         {isProUser && (
-          <div className="mb-8 p-4 bg-blue-600/20 border border-blue-500/50 rounded-lg flex items-center justify-between">
+          <div className="mb-8 p-4 bg-blue-100 border border-blue-300 rounded-lg flex items-center justify-between">
             <div>
-              <p className="font-semibold text-blue-400">Pro Subscription Active</p>
+              <p className="font-semibold text-blue-600">Pro Subscription Active</p>
               {subscriptionStatus?.cancelAtPeriodEnd && (
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-gray-600">
                   Cancels on {new Date(subscriptionStatus.currentPeriodEnd! * 1000).toLocaleDateString()}
                 </p>
               )}
@@ -213,7 +213,7 @@ const Pricing = () => {
             <Button
               onClick={handleManageSubscription}
               disabled={isLoading}
-              className="bg-slate-700 hover:bg-slate-600"
+              className="bg-gray-700 hover:bg-gray-600 text-white"
             >
               <Settings className="mr-2 h-4 w-4" />
               Manage Subscription
@@ -223,15 +223,15 @@ const Pricing = () => {
 
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="flex items-center gap-2 bg-blue-600/20 px-3 py-1 rounded-full">
-              <CreditCard className="h-4 w-4 text-blue-400" />
-              <span className="text-sm font-medium text-blue-400 uppercase tracking-wide">Our Pricing</span>
+            <div className="flex items-center gap-2 bg-blue-100 px-3 py-1 rounded-full">
+              <CreditCard className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-600 uppercase tracking-wide">Our Pricing</span>
             </div>
           </div>
-          <h1 className="text-5xl lg:text-6xl font-bold mb-6">
-            Choose <span className="text-[hsl(var(--accent-solid))]">your plan</span> today
+          <h1 className="text-5xl lg:text-6xl font-bold mb-6 text-foreground">
+            Choose <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">your plan</span> today
           </h1>
-          <p className="text-gray-400 text-lg mb-8">
+          <p className="text-gray-600 text-lg mb-8">
             15 credits per contact. When you run out of credits, no more contacts.
           </p>
         </div>
@@ -239,33 +239,33 @@ const Pricing = () => {
         <div className="flex justify-center">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-6xl w-full">
             {/* Free Plan */}
-            <div className="bg-slate-900/50 border border-slate-700 rounded-2xl p-10 backdrop-blur-sm transform transition-all hover:scale-[1.02]">
+            <div className="bg-gradient-to-br from-purple-500 to-pink-500 border border-transparent rounded-2xl p-10 backdrop-blur-sm transform transition-all hover:scale-[1.02]">
               <div className="text-center mb-8">
                 <h3 className="text-3xl font-bold mb-3 text-white">Free</h3>
-                <p className="text-gray-400">Try out platform risk free</p>
+                <p className="text-white/90">Try out platform risk free</p>
               </div>
 
               <div className="space-y-4 mb-8">
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">150 credits (10 emails) </span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">150 credits (10 emails) </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Estimated time saved: 250 minutes</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Estimated time saved: 250 minutes</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Try out platform risk free</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Try out platform risk free</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Limited Features</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Limited Features</span>
                 </div>
               </div>
 
               <Button 
-                className="w-full py-4 px-6 rounded-lg font-semibold text-white bg-slate-700 hover:bg-slate-600 transition-colors"
+                className="w-full py-4 px-6 rounded-lg font-semibold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-colors border border-white/30"
                 onClick={() => handleUpgrade('free')}
                 disabled={isProUser}
               >
@@ -274,53 +274,57 @@ const Pricing = () => {
             </div>
 
             {/* Pro Plan */}
-            <div className="relative bg-[hsl(var(--bg-secondary))] border-2 border-[hsl(var(--accent-solid))] rounded-xl p-10 transform transition-all hover:scale-[1.02] hover:shadow-lg">
+            <div className="relative bg-gradient-to-br from-purple-500 to-pink-500 border-2 border-transparent rounded-xl p-10 transform transition-all hover:scale-[1.02] hover:shadow-lg">
               <div className="absolute top-4 right-4">
-                <span className="bg-[hsl(var(--accent-solid))] text-white text-xs px-2 py-1 rounded-full font-medium">
+                <span className="bg-white text-purple-600 text-xs px-2 py-1 rounded-full font-medium">
                   {isProUser ? 'ACTIVE' : 'RECOMMENDED'}
                 </span>
               </div>
               
               <div className="text-center mb-8">
-                <h3 className="text-3xl font-bold mb-3 text-blue-400">Pro</h3>
+                <h3 className="text-3xl font-bold mb-3 text-white">Pro</h3>
                 <div className="mb-2">
-                  <span className="text-gray-500 text-xl line-through mr-2">$34.99</span>
+                  <span className="text-white/70 text-xl line-through mr-2">$34.99</span>
                   <span className="text-3xl font-bold text-white">$8.99</span>
-                  <span className="text-gray-400 text-lg ml-1">/month</span>
+                  <span className="text-white/90 text-lg ml-1">/month</span>
                 </div>
-                <p className="text-gray-300">1800 credits</p>
+                <p className="text-white/90">1800 credits</p>
               </div>
 
               <div className="space-y-4 mb-8">
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">1800 credits (120 emails) </span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">1800 credits (120 emails) </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Estimated time saved: 2500 minutes</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Estimated time saved: 2500 minutes</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Everything in free plus:</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Everything in free plus:</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Directory permanently saves</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Directory permanently saves</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Priority Support</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Priority Support</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Check className="h-5 w-5 text-blue-400 flex-shrink-0" />
-                  <span className="text-gray-300">Advanced features</span>
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Coffee Chat Prep</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Check className="h-5 w-5 text-white flex-shrink-0" />
+                  <span className="text-white">Interview Prep</span>
                 </div>
               </div>
 
               <Button 
                 size="lg"
-                className="w-full py-6 px-6 rounded-xl text-lg font-semibold"
+                className="w-full py-6 px-6 rounded-xl text-lg font-semibold text-white bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/30"
                 onClick={isProUser ? handleManageSubscription : () => handleUpgrade('pro')}
                 disabled={isLoading}
               >

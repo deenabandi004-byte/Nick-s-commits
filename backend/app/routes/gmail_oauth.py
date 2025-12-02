@@ -75,14 +75,17 @@ def google_oauth_start():
         "response_type": "code",
         "scope": scope_string,
         "access_type": "offline",
-        "include_granted_scopes": "true",
-        "prompt": "select_account consent",  # Added select_account to allow choosing any account
+        "include_granted_scopes": "false",  # Changed to false to force fresh consent
+        "prompt": "consent",  # Force consent screen
         "state": state,
         # Removed login_hint to allow any email domain
         # Removed hd (hosted domain) parameter to allow any email domain
-        # Added prompt=select_account to show account picker
-        # Note: In Testing mode, users must be added to Test users list in OAuth consent screen
-        # Google Cloud Console > APIs & Services > OAuth consent screen > Test users
+        # Using prompt=consent to force consent screen
+        # Note: The detailed scope consent page may not appear if:
+        # 1. App is in "Testing" mode (Google skips detailed consent for test users)
+        # 2. Scopes are already granted (user must revoke access first at myaccount.google.com/permissions)
+        # 3. App needs to be "Published" to see full detailed consent flow
+        # Google Cloud Console > APIs & Services > OAuth consent screen
     }
     
     auth_url = f"{AUTH_BASE}?{urlencode(params)}"

@@ -9,6 +9,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, Search, Building2, History, Loader2, AlertCircle, Sparkles, Download, Sheet } from 'lucide-react';
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import { searchFirms, getFirmSearchHistory, getFirmSearchById, type Firm, type FirmSearchResult, type SearchHistoryItem } from '../services/api';
@@ -20,6 +21,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import ScoutChatbot from '@/components/ScoutChatbot';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 
 // Example prompts to show users
@@ -30,6 +32,55 @@ const EXAMPLE_PROMPTS = [
   "Large private equity firms in Chicago",
   "Software companies in Austin with 50-200 employees"
 ];
+
+// Background Blobs Component
+function BackgroundBlobs() {
+  return (
+    <>
+      <motion.div
+        className="absolute -top-32 left-10 w-80 h-80 rounded-full bg-purple-500/20 blur-3xl pointer-events-none"
+        animate={{ 
+          y: [0, 20, 0], 
+          scale: [1, 1.05, 1],
+          x: [0, 10, 0]
+        }}
+        transition={{ 
+          duration: 12, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+        style={{ zIndex: 0 }}
+      />
+      <motion.div
+        className="absolute -bottom-40 right-0 w-96 h-96 rounded-full bg-pink-500/20 blur-3xl pointer-events-none"
+        animate={{ 
+          y: [0, -20, 0], 
+          scale: [1, 1.04, 1],
+          x: [0, -10, 0]
+        }}
+        transition={{ 
+          duration: 14, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+        style={{ zIndex: 0 }}
+      />
+      <motion.div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-purple-500/10 blur-3xl pointer-events-none"
+        animate={{ 
+          scale: [1, 1.1, 1],
+          opacity: [0.1, 0.15, 0.1]
+        }}
+        transition={{ 
+          duration: 16, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+        style={{ zIndex: 0 }}
+      />
+    </>
+  );
+}
 
 // Batch Size Segmented Control Component
 function BatchSizeSegmentedControl({
@@ -44,25 +95,45 @@ function BatchSizeSegmentedControl({
   disabled?: boolean;
 }) {
   return (
-    <div className="inline-flex items-center gap-2 rounded-full bg-muted p-1 border border-border">
+    <div className="inline-flex items-center gap-2 rounded-full bg-muted p-1 border border-border relative">
+      {/* Animated background indicator */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={value}
+          className="absolute bg-primary rounded-full"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.8 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          style={{
+            left: `${options.indexOf(value) * (100 / options.length)}%`,
+            width: `${100 / options.length}%`,
+            height: 'calc(100% - 2px)',
+            top: '1px',
+          }}
+        />
+      </AnimatePresence>
+      
       {options.map((option) => {
         const isActive = option === value;
         return (
-          <button
+          <motion.button
             key={option}
             type="button"
             onClick={() => onChange(option)}
             disabled={disabled}
+            whileHover={!disabled ? { scale: 1.05 } : {}}
+            whileTap={!disabled ? { scale: 0.95 } : {}}
             className={[
-              "px-3 py-1.5 text-xs font-medium rounded-full transition",
+              "relative px-3 py-1.5 text-xs font-medium rounded-full transition z-10",
               isActive
-                ? "bg-primary text-primary-foreground shadow"
-                : "text-muted-foreground hover:text-foreground hover:bg-accent",
+                ? "text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground",
               disabled && "opacity-50 cursor-not-allowed",
             ].join(" ")}
           >
             {option}
-          </button>
+          </motion.button>
         );
       })}
     </div>
@@ -81,6 +152,7 @@ export default function FirmSearch() {
   const [parsedFilters, setParsedFilters] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [buttonGlow, setButtonGlow] = useState(false);
   
   // History state
   const [showHistory, setShowHistory] = useState(false);
@@ -360,37 +432,76 @@ export default function FirmSearch() {
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex justify-center mb-8">
-                  <TabsList className="grid w-full grid-cols-2 max-w-lg bg-muted border border-border p-1 rounded-xl h-14">
-                  <TabsTrigger 
-                    value="search" 
-                    className="gap-2 h-12 text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground transition-all"
-                  >
-                    <Search className="h-5 w-5" />
-                    Firm Search
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="sheet" 
-                    className="gap-2 h-12 text-base font-medium data-[state=active]:bg-gradient-to-r data-[state=active]:from-pink-500 data-[state=active]:to-purple-500 data-[state=active]:text-white data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground transition-all"
-                  >
-                    <Sheet className="h-5 w-5" />
-                    Firm Sheet ({results.length})
-                  </TabsTrigger>
+                  <TabsList className="relative grid w-full grid-cols-2 max-w-lg bg-muted border border-border p-1 rounded-xl h-14 overflow-hidden">
+                    {/* Animated sliding background */}
+                    <motion.div
+                      className="absolute bg-gradient-to-r from-pink-500 to-purple-500 rounded-lg h-12"
+                      initial={false}
+                      animate={{ 
+                        left: activeTab === 'search' ? '4px' : '50%',
+                        width: 'calc(50% - 4px)'
+                      }}
+                      transition={{ 
+                        type: "spring", 
+                        stiffness: 400, 
+                        damping: 30 
+                      }}
+                      style={{ top: '4px' }}
+                    />
+                    
+                    <TabsTrigger 
+                      value="search" 
+                      className="relative z-10 gap-2 h-12 text-base font-medium data-[state=active]:bg-transparent data-[state=active]:text-white [data-theme=light]:data-[state=active]:text-black data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground transition-all"
+                    >
+                      <motion.div
+                        whileHover={{ y: activeTab === 'search' ? 0 : -1 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Search className="h-5 w-5" />
+                        Firm Search
+                      </motion.div>
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="sheet" 
+                      className="relative z-10 gap-2 h-12 text-base font-medium data-[state=active]:bg-transparent data-[state=active]:text-white [data-theme=light]:data-[state=active]:text-black data-[state=inactive]:text-muted-foreground data-[state=inactive]:hover:text-foreground transition-all"
+                    >
+                      <motion.div
+                        whileHover={{ y: activeTab === 'sheet' ? 0 : -1 }}
+                        className="flex items-center gap-2"
+                      >
+                        <Sheet className="h-5 w-5" />
+                        Firm Sheet ({results.length})
+                      </motion.div>
+                    </TabsTrigger>
                   </TabsList>
                 </div>
                 
                 {/* TAB 1: Firm Search */}
                 <TabsContent value="search">
-                  <div className="mx-auto max-w-5xl px-6 py-12 space-y-10">
+                  <div className="mx-auto max-w-5xl px-6 py-12 space-y-10 relative">
+                    {/* Animated Background Blobs */}
+                    <BackgroundBlobs />
+                    
                     {/* Left-aligned Header */}
-                    <div className="space-y-2">
+                    <motion.div 
+                      className="space-y-2 relative z-10"
+                      initial={{ opacity: 0, y: -20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5 }}
+                    >
                       <h1 className="text-3xl font-semibold text-foreground">Firm Search</h1>
                       <p className="text-sm text-muted-foreground">
                         Discover companies that match your career interests.
                       </p>
-                    </div>
+                    </motion.div>
 
                     {/* Main Card */}
-                    <div className="rounded-2xl bg-card border border-border p-8 space-y-6 shadow-lg">
+                    <motion.div 
+                      className="rounded-2xl bg-card border border-border p-8 space-y-6 shadow-lg relative z-10"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: 0.1 }}
+                    >
                       {/* Description Input Section */}
                       <div className="space-y-4">
                         <div className="flex items-center justify-between">
@@ -455,14 +566,36 @@ export default function FirmSearch() {
                             options={batchOptions}
                             disabled={isSearching || loadingBatchOptions}
                           />
-                          <div className="text-right text-xs text-muted-foreground">
-                            <div className="font-medium text-foreground">
-                              {batchSize * creditsPerFirm} credits
-                            </div>
-                            <div className="text-[11px] text-muted-foreground">
-                              {creditsPerFirm} credits per firm
-                            </div>
-                          </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <motion.div 
+                                  className="text-right text-xs text-muted-foreground cursor-help"
+                                  key={batchSize * creditsPerFirm}
+                                  initial={{ scale: 1 }}
+                                  animate={{ scale: [1, 1.05, 1] }}
+                                  transition={{ duration: 0.3 }}
+                                >
+                                  <div className="font-medium text-foreground">
+                                    {batchSize * creditsPerFirm} credits
+                                  </div>
+                                  <div className="text-[11px] text-muted-foreground">
+                                    {creditsPerFirm} credits per firm
+                                  </div>
+                                </motion.div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p className="text-xs">
+                                  Each firm = {creditsPerFirm} credits
+                                  {user && user.credits !== undefined && (
+                                    <span className="block mt-1">
+                                      You can search {Math.floor(user.credits / creditsPerFirm)} more firm{Math.floor(user.credits / creditsPerFirm) !== 1 ? 's' : ''}
+                                    </span>
+                                  )}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
                       </div>
 
@@ -477,45 +610,87 @@ export default function FirmSearch() {
                       )}
 
                       {/* Search Button */}
-                      <Button
-                        onClick={() => handleSearch()}
-                        disabled={isSearching || !query.trim()}
-                        className="mt-2 h-12 w-full rounded-xl text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                      <motion.div
+                        className="relative"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.97 }}
                       >
-                        {isSearching ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Searching...
-                          </>
-                        ) : (
-                          'Search Firms'
-                        )}
-                      </Button>
-                    </div>
+                        <AnimatePresence>
+                          {buttonGlow && (
+                            <motion.div
+                              className="absolute inset-0 rounded-xl bg-primary/50 blur-xl -z-10"
+                              initial={{ opacity: 0, scale: 0.8 }}
+                              animate={{ opacity: [0, 0.6, 0], scale: [0.8, 1.3, 1.5] }}
+                              exit={{ opacity: 0 }}
+                              transition={{ duration: 0.6 }}
+                              onAnimationComplete={() => setButtonGlow(false)}
+                            />
+                          )}
+                        </AnimatePresence>
+                        <Button
+                          onClick={() => {
+                            setButtonGlow(true);
+                            handleSearch();
+                          }}
+                          disabled={isSearching || !query.trim()}
+                          className="relative mt-2 h-12 w-full rounded-xl text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isSearching ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Searching...
+                            </>
+                          ) : (
+                            'Search Firms'
+                          )}
+                        </Button>
+                      </motion.div>
+                    </motion.div>
 
                     {/* Examples Section */}
-                    {!hasSearched && (
-                      <section className="space-y-3">
-                        <h3 className="text-sm font-medium text-foreground/70">
-                          Examples you can try
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          Click an example to fill in the search description.
-                        </p>
-                        <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
-                          {EXAMPLE_PROMPTS.map((example, index) => (
-                            <button
-                              key={index}
-                              type="button"
-                              onClick={() => handleExampleClick(example)}
-                              className="whitespace-nowrap rounded-full border border-border bg-muted px-3 py-1.5 text-xs text-foreground/70 hover:bg-accent hover:text-foreground transition"
-                            >
-                              {example}
-                            </button>
-                          ))}
-                        </div>
-                      </section>
-                    )}
+                    <AnimatePresence>
+                      {!hasSearched && (
+                        <motion.section 
+                          className="space-y-3 relative z-10"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.4, delay: 0.2 }}
+                        >
+                          <h3 className="text-sm font-medium text-foreground/70">
+                            Examples you can try
+                          </h3>
+                          <p className="text-xs text-muted-foreground">
+                            Click an example to fill in the search description.
+                          </p>
+                          <div className="flex flex-wrap gap-2 overflow-x-auto pb-1">
+                            {EXAMPLE_PROMPTS.map((example, index) => (
+                              <motion.button
+                                key={index}
+                                type="button"
+                                onClick={() => handleExampleClick(example)}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ 
+                                  duration: 0.3, 
+                                  delay: 0.3 + (index * 0.1),
+                                  ease: "easeOut"
+                                }}
+                                whileHover={{ 
+                                  y: -2, 
+                                  scale: 1.02,
+                                  transition: { duration: 0.2 }
+                                }}
+                                whileTap={{ scale: 0.98 }}
+                                className="whitespace-nowrap rounded-full border border-border bg-muted px-3 py-1.5 text-xs text-foreground/70 hover:bg-accent hover:text-foreground transition-colors"
+                              >
+                                {example}
+                              </motion.button>
+                            ))}
+                          </div>
+                        </motion.section>
+                      )}
+                    </AnimatePresence>
                     
                     {/* Error Message */}
                     {error && (
@@ -545,21 +720,37 @@ export default function FirmSearch() {
                     )}
                     
                     {/* Loading State */}
-                    {isSearching && (
-                      <div className="bg-zinc-900/30 backdrop-blur-sm rounded-xl shadow-sm border border-gray-900 p-12 text-center">
-                        <Loader2 className="h-10 w-10 text-blue-400 animate-spin mx-auto mb-4" />
-                        <p className="text-gray-300">Searching for matching firms...</p>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {isSearching && (
+                        <motion.div 
+                          className="bg-card backdrop-blur-sm rounded-xl shadow-sm border border-border p-12 text-center relative z-10"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -20 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
+                          <p className="text-foreground">Searching for matching firms...</p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                     
                     {/* Success Message */}
-                    {hasSearched && !isSearching && results.length > 0 && (
-                      <div className="bg-green-900/30 border border-green-500/50 rounded-lg p-4">
-                        <p className="text-green-200">
-                          <span className="font-medium">✓ Found {results.length} firms!</span> Switch to the "Firm Sheet" tab to view results and export to CSV.
-                        </p>
-                      </div>
-                    )}
+                    <AnimatePresence>
+                      {hasSearched && !isSearching && results.length > 0 && (
+                        <motion.div 
+                          className="bg-green-500/10 border border-green-500/30 rounded-lg p-4 relative z-10"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <p className="text-green-400">
+                            <span className="font-medium">✓ Found {results.length} firms!</span> Switch to the "Firm Sheet" tab to view results and export to CSV.
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </TabsContent>
                 
@@ -588,27 +779,52 @@ export default function FirmSearch() {
                     )}
                     
                     {/* Loading State */}
-                    {loadingSavedFirms ? (
-                      <div className="bg-card backdrop-blur-sm rounded-xl shadow-sm border border-border p-12 text-center">
-                        <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
-                        <p className="text-foreground">Loading your saved firms...</p>
-                      </div>
-                    ) : results.length > 0 ? (
-                      /* Results Table */
-                      <FirmSearchResults 
-                        firms={results} 
-                        onViewContacts={handleViewContacts}
-                      />
-                    ) : (
-                      /* Empty State */
-                      <div className="bg-card backdrop-blur-sm rounded-xl shadow-sm border border-border p-12 text-center">
-                        <Sheet className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-foreground mb-2">No firms to display yet</p>
-                        <p className="text-sm text-muted-foreground">
-                          Switch to the "Firm Search" tab to find companies
-                        </p>
-                      </div>
-                    )}
+                    <AnimatePresence mode="wait">
+                      {loadingSavedFirms ? (
+                        <motion.div 
+                          key="loading"
+                          className="bg-card backdrop-blur-sm rounded-xl shadow-sm border border-border p-12 text-center"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Loader2 className="h-10 w-10 text-primary animate-spin mx-auto mb-4" />
+                          <p className="text-foreground">Loading your saved firms...</p>
+                        </motion.div>
+                      ) : results.length > 0 ? (
+                        /* Results Table */
+                        <motion.div
+                          key="results"
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.4 }}
+                          className="w-full"
+                        >
+                          <FirmSearchResults 
+                            firms={results} 
+                            onViewContacts={handleViewContacts}
+                          />
+                        </motion.div>
+                      ) : (
+                        /* Empty State */
+                        <motion.div 
+                          key="empty"
+                          className="bg-card backdrop-blur-sm rounded-xl shadow-sm border border-border p-12 text-center"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                        >
+                          <Sheet className="h-10 w-10 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-foreground mb-2">No firms to display yet</p>
+                          <p className="text-sm text-muted-foreground">
+                            Switch to the "Firm Search" tab to find companies
+                          </p>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </TabsContent>
               </Tabs>

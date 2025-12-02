@@ -1,6 +1,8 @@
 """
 Company Search Service - PDL Company Search + OpenAI NLP Parsing
 Handles firm discovery based on natural language prompts
+
+BULLETPROOF VERSION - Multiple fallback levels to always return results
 """
 import requests
 import json
@@ -75,6 +77,28 @@ SIZE_MAPPING = {
     "mid": {"min": 51, "max": 500},
     "large": {"min": 501, "max": None},
     "none": None  # No filter
+}
+
+# Country code mapping
+COUNTRY_CODE_MAP = {
+    "united states": "us",
+    "usa": "us",
+    "u.s.": "us",
+    "u.s.a.": "us",
+    "united kingdom": "gb",
+    "uk": "gb",
+    "u.k.": "gb",
+    "canada": "ca",
+    "germany": "de",
+    "france": "fr",
+    "australia": "au",
+    "singapore": "sg",
+    "hong kong": "hk",
+    "japan": "jp",
+    "china": "cn",
+    "india": "in",
+    "brazil": "br",
+    "mexico": "mx"
 }
 
 
@@ -349,181 +373,129 @@ def normalize_location(location_input: str) -> Dict[str, Optional[str]]:
 
 
 # =============================================================================
-# PDL COMPANY SEARCH - Query People Data Labs Company API
+# PDL COMPANY SEARCH - BULLETPROOF QUERY BUILDER
 # =============================================================================
 
-def build_pdl_company_query(
-    industry: str,
-    location: Dict[str, Optional[str]],
-    size: str,
-    keywords: List[str]
-) -> Dict[str, Any]:
-    """
-    Build a PDL Company Search API query from parsed parameters.
-    
-    PDL Company Search uses Elasticsearch query syntax.
-    Docs: https://docs.peopledatalabs.com/docs/company-search-api
-    """
-    
-    # Start building the query
-    must_clauses = []
-    should_clauses = []
-    
-    # Industry filter
-    industry_config = INDUSTRY_MAPPING.get(industry, {})
-    if industry_config:
-        industry_terms = industry_config.get("industries", [])
-        sub_industries = industry_config.get("sub_industries", [])
-        tags = industry_config.get("tags", [])
-        
-        # Build industry OR clause
-        industry_conditions = []
-        
-        if industry_terms:
-            industry_conditions.append({
-                "terms": {"industry": industry_terms}
-            })
-        
-        if tags:
-            # Tags can match against company tags or summary
-            for tag in tags:
-                industry_conditions.append({
-                    "match": {"tags": tag}
-                })
-        
-        if industry_conditions:
-            must_clauses.append({
-                "bool": {
-                    "should": industry_conditions
-                }
-            })
-    
-    # Location filter
-    location_conditions = []
-    
-    if location.get("locality"):
-        location_conditions.append({
-            "match": {"location.locality": location["locality"]}
-        })
-    
-    if location.get("region"):
-        location_conditions.append({
-            "match": {"location.region": location["region"]}
-        })
-    
-    if location.get("metro"):
-        location_conditions.append({
-            "match": {"location.metro": location["metro"]}
-        })
-    
-    if location.get("country"):
-        location_conditions.append({
-            "match": {"location.country": location["country"]}
-        })
-    
-    if location_conditions:
-        must_clauses.append({
-            "bool": {
-                "should": location_conditions
-            }
-        })
-    
-    # Size filter
-    size_config = SIZE_MAPPING.get(size)
-    if size_config:
-        size_range = {}
-        if size_config.get("min") is not None:
-            size_range["gte"] = size_config["min"]
-        if size_config.get("max") is not None:
-            size_range["lte"] = size_config["max"]
-        
-        if size_range:
-            must_clauses.append({
-                "range": {"employee_count": size_range}
-            })
-    
-    # Keywords filter (boost relevance, don't require)
-    if keywords:
-        for keyword in keywords:
-            should_clauses.append({
-                "multi_match": {
-                    "query": keyword,
-                    "fields": ["tags", "summary", "industry", "name"],
-                    "type": "best_fields",
-                    "boost": 2
-                }
-            })
-    
-    # Build final query
-    query = {
-        "bool": {
-            "must": must_clauses
-        }
-    }
-    
-    if should_clauses:
-        query["bool"]["should"] = should_clauses
-    
-    return query
+def escape_sql_string(s: str) -> str:
+    """Escape single quotes for SQL strings."""
+    if not s:
+        return s
+    return s.replace("'", "''")
 
 
-def convert_es_to_sql(
-    query: Dict[str, Any],
+def get_country_code(country: str) -> str:
+    """Convert country name to ISO code."""
+    if not country:
+        return ""
+    country_lower = country.lower().strip()
+    return COUNTRY_CODE_MAP.get(country_lower, country_lower)
+
+
+def build_pdl_sql_query(
     industry: str,
     location: Dict[str, Optional[str]],
-    size: str,
-    keywords: List[str]
+    size: str = "none",
+    keywords: List[str] = None,
+    strictness: int = 3
 ) -> str:
     """
-    Convert Elasticsearch query to SQL format for PDL Company Search API.
+    Build a PDL Company Search SQL query with configurable strictness.
     
-    PDL Company Search uses SQL queries like:
-    SELECT * FROM company WHERE industry='tech' AND location.country='United States'
+    STRICTNESS LEVELS:
+    - 3 (strict): All filters applied (industry + location + size + keywords)
+    - 2 (medium): Industry + location + size only
+    - 1 (loose): Industry + location only
+    - 0 (minimal): Location only (country)
+    
+    PDL SQL RULES:
+    - Use LIKE (not ILIKE) for text matching - PDL is case-insensitive by default
+    - Use subfields: location.locality, location.region, location.country, location.metro
+    - Tags: use tags LIKE '%value%' (not ANY())
+    - Size: use employee_count ranges, not size buckets for better matching
     """
+    if keywords is None:
+        keywords = []
+    
     conditions = []
     
-    # Industry condition
-    industry_config = INDUSTRY_MAPPING.get(industry, {})
-    if industry_config:
-        industry_terms = industry_config.get("industries", [])
-        if industry_terms:
-            # Use first industry term as primary filter
-            conditions.append(f"industry='{industry_terms[0]}'")
+    # LEVEL 0+: Location filter (always include at minimum country)
+    location_conditions = []
     
-    # Location conditions - Use simplest possible SQL syntax
-    # PDL SQL might have very specific requirements, so use exact match or simple text search
-    if location.get("locality"):
-        loc_safe = location['locality'].replace("'", "''")
-        # Try exact match first, then text search as fallback
-        conditions.append(f"(location='{loc_safe}' OR location LIKE '%{loc_safe}%')")
-    elif location.get("region"):
-        region_safe = location['region'].replace("'", "''")
-        conditions.append(f"(location='{region_safe}' OR location LIKE '%{region_safe}%')")
-    elif location.get("country"):
-        country_safe = location['country'].replace("'", "''")
-        conditions.append(f"(location='{country_safe}' OR location LIKE '%{country_safe}%')")
+    if strictness >= 1:
+        # Include locality and region for stricter searches
+        if location.get("locality"):
+            loc_safe = escape_sql_string(location['locality'])
+            location_conditions.append(f"location.locality LIKE '%{loc_safe}%'")
+        
+        if location.get("region"):
+            region_safe = escape_sql_string(location['region'])
+            location_conditions.append(f"location.region LIKE '%{region_safe}%'")
+        
+        if location.get("metro"):
+            metro_safe = escape_sql_string(location['metro'])
+            location_conditions.append(f"location.metro LIKE '%{metro_safe}%'")
     
-    # Size condition
-    size_config = SIZE_MAPPING.get(size)
-    if size_config:
-        if size_config.get("min") is not None and size_config.get("max") is not None:
-            conditions.append(f"employee_count>={size_config['min']} AND employee_count<={size_config['max']}")
-        elif size_config.get("min") is not None:
-            conditions.append(f"employee_count>={size_config['min']}")
+    # Always include country if available
+    if location.get("country"):
+        country_code = get_country_code(location['country'])
+        country_safe = escape_sql_string(country_code)
+        location_conditions.append(f"location.country='{country_safe}'")
     
-    # Keywords (use for relevance boost in SQL)
-    if keywords:
-        # Add keywords as OR conditions on name/tags/summary
+    if location_conditions:
+        if len(location_conditions) == 1:
+            conditions.append(location_conditions[0])
+        else:
+            # Use OR for location flexibility
+            conditions.append(f"({' OR '.join(location_conditions)})")
+    
+    # LEVEL 1+: Industry filter
+    if strictness >= 1:
+        industry_config = INDUSTRY_MAPPING.get(industry, {})
+        if industry_config:
+            industry_terms = industry_config.get("industries", [])
+            if industry_terms:
+                # Include multiple industry terms with OR
+                industry_clauses = []
+                for term in industry_terms[:3]:  # Top 3 industry terms
+                    term_safe = escape_sql_string(term)
+                    industry_clauses.append(f"industry LIKE '%{term_safe}%'")
+                
+                if industry_clauses:
+                    conditions.append(f"({' OR '.join(industry_clauses)})")
+    
+    # LEVEL 2+: Size filter (use employee_count for better reliability)
+    if strictness >= 2 and size != "none":
+        size_config = SIZE_MAPPING.get(size)
+        if size_config:
+            min_emp = size_config.get("min", 1)
+            max_emp = size_config.get("max")
+            
+            if max_emp:
+                conditions.append(f"(employee_count >= {min_emp} AND employee_count <= {max_emp})")
+            else:
+                conditions.append(f"employee_count >= {min_emp}")
+    
+    # LEVEL 3: Keywords filter (optional boost)
+    if strictness >= 3 and keywords:
         keyword_conditions = []
-        for kw in keywords[:3]:  # Limit to first 3 keywords
-            kw_safe = kw.replace("'", "''")  # Escape single quotes
-            # Use simple LIKE for text matching
-            keyword_conditions.append(f"(name LIKE '%{kw_safe}%' OR tags LIKE '%{kw_safe}%' OR summary LIKE '%{kw_safe}%')")
+        for kw in keywords[:2]:  # Limit to first 2 keywords for safety
+            kw_safe = escape_sql_string(kw)
+            # Search in name, summary, and tags
+            keyword_conditions.append(
+                f"(name LIKE '%{kw_safe}%' OR summary LIKE '%{kw_safe}%' OR tags LIKE '%{kw_safe}%')"
+            )
+        
         if keyword_conditions:
+            # Keywords are optional boosters - use OR between them
             conditions.append(f"({' OR '.join(keyword_conditions)})")
     
     # Build final SQL query
-    where_clause = " AND ".join(conditions) if conditions else "1=1"
+    if conditions:
+        where_clause = " AND ".join(conditions)
+    else:
+        # Fallback: at least search by country if nothing else
+        where_clause = "location.country='us'"
+    
     sql = f"SELECT * FROM company WHERE {where_clause}"
     
     return sql
@@ -539,59 +511,51 @@ def search_companies_with_pdl(
     """
     Search for companies using PDL Company Search API.
     
+    BULLETPROOF APPROACH:
+    1. Try strictest query first (all filters)
+    2. If <3 results, progressively loosen filters
+    3. Always return something if possible
+    
     Returns:
         {
             "success": bool,
             "firms": list[Firm],
             "total": int,
-            "error": str or None
+            "error": str or None,
+            "queryLevel": int (strictness level that succeeded)
         }
     """
     if keywords is None:
         keywords = []
     
-    try:
-        # Build the query
-        query = build_pdl_company_query(industry, location, size, keywords)
-        
-        print(f"PDL Company Search Query (ES format): {json.dumps(query, indent=2)}")
-        
-        # Try Elasticsearch query format first (PDL Company Search may accept ES queries)
-        # If that fails, we'll fall back to SQL
-        payload_es = {
-            "query": query,
-            "size": limit,
-            "dataset": "all_companies",
-            "pretty": True
-        }
-        
-        print(f"PDL API Payload (ES format): {json.dumps(payload_es, indent=2)}")
-        
-        # Make API request to PDL Company Search API - try ES format first
-        response = requests.post(
-            f"{PDL_BASE_URL}/company/search",
-            headers={
-                "Content-Type": "application/json",
-                "X-Api-Key": PEOPLE_DATA_LABS_API_KEY
-            },
-            json=payload_es,
-            timeout=30
-        )
-        
-        # If ES format fails, try SQL format as fallback
-        if response.status_code == 400:
-            print("ES format failed, trying SQL format...")
-            sql_query = convert_es_to_sql(query, industry, location, size, keywords)
-            print(f"PDL SQL Query: {sql_query}")
+    # Try queries from strict to loose
+    strictness_levels = [3, 2, 1, 0]
+    min_results_needed = 3
+    
+    last_error = None
+    best_result = None
+    best_count = 0
+    successful_level = None
+    
+    for strictness in strictness_levels:
+        try:
+            sql_query = build_pdl_sql_query(
+                industry=industry,
+                location=location,
+                size=size,
+                keywords=keywords,
+                strictness=strictness
+            )
             
-            payload_sql = {
+            level_names = {3: "strict", 2: "medium", 1: "loose", 0: "minimal"}
+            print(f"🔍 Trying {level_names[strictness]} query (level {strictness}): {sql_query}")
+            
+            payload = {
                 "sql": sql_query,
                 "size": limit,
-                "dataset": "all_companies",
+                "dataset": "all",  # Use 'all' instead of 'all_companies'
                 "pretty": True
             }
-            
-            print(f"PDL API Payload (SQL format): {json.dumps(payload_sql, indent=2)}")
             
             response = requests.post(
                 f"{PDL_BASE_URL}/company/search",
@@ -599,126 +563,212 @@ def search_companies_with_pdl(
                     "Content-Type": "application/json",
                     "X-Api-Key": PEOPLE_DATA_LABS_API_KEY
                 },
-                json=payload_sql,
+                json=payload,
                 timeout=30
             )
-        
-        print(f"PDL API Response Status: {response.status_code}")
-        
-        if response.status_code == 200:
-            data = response.json()
             
-            if data.get("status") == 200:
-                raw_companies = data.get("data", [])
-                total = data.get("total", len(raw_companies))
+            print(f"📡 PDL Response Status: {response.status_code}")
+            
+            if response.status_code == 200:
+                data = response.json()
                 
-                # Transform to our Firm format
-                firms = []
-                seen_domains = set()  # De-duplicate by domain
-                
-                for company in raw_companies:
-                    domain = company.get("website") or company.get("linkedin_url", "")
+                if data.get("status") == 200:
+                    raw_companies = data.get("data", [])
+                    total = data.get("total", len(raw_companies))
                     
-                    # Skip duplicates
-                    if domain and domain in seen_domains:
-                        continue
-                    if domain:
-                        seen_domains.add(domain)
+                    # DEBUG: Log first raw company to see exact field structure
+                    if raw_companies:
+                        print(f"📋 DEBUG - First raw company from PDL:")
+                        first = raw_companies[0]
+                        print(f"   name: {first.get('name')}")
+                        print(f"   display_name: {first.get('display_name')}")
+                        print(f"   website: {first.get('website')}")
+                        print(f"   employee_count: {first.get('employee_count')}")
+                        print(f"   size: {first.get('size')}")
+                        print(f"   industry: {first.get('industry')}")
+                        print(f"   location: {first.get('location')}")
                     
-                    firm = transform_pdl_company_to_firm(company)
-                    if firm:
-                        firms.append(firm)
+                    # Transform to our Firm format
+                    firms = []
+                    seen_domains = set()
+                    
+                    for company in raw_companies:
+                        domain = company.get("website") or company.get("linkedin_url", "")
+                        
+                        if domain and domain in seen_domains:
+                            continue
+                        if domain:
+                            seen_domains.add(domain)
+                        
+                        firm = transform_pdl_company_to_firm(company)
+                        if firm:
+                            firms.append(firm)
+                    
+                    firms_count = len(firms)
+                    print(f"✅ Level {strictness} returned {firms_count} unique firms")
+                    
+                    # Track best result so far
+                    if firms_count > best_count:
+                        best_count = firms_count
+                        best_result = {
+                            "success": True,
+                            "firms": firms[:limit],
+                            "total": total,
+                            "error": None,
+                            "queryLevel": strictness
+                        }
+                        successful_level = strictness
+                    
+                    # If we have enough results, return immediately
+                    if firms_count >= min_results_needed:
+                        return best_result
+                    
+                    # Otherwise, continue to try looser queries
+                    
+            elif response.status_code == 400:
+                error_data = response.json()
+                error_msg = error_data.get("error", {}).get("message", "Invalid query")
+                print(f"⚠️ Level {strictness} failed: {error_msg}")
+                last_error = error_msg
+                # Continue to try looser query
                 
-                print(f"PDL returned {len(firms)} unique firms")
+            elif response.status_code == 404:
+                # No results at this strictness, try looser
+                print(f"📭 Level {strictness}: No results found")
+                continue
                 
-                return {
-                    "success": True,
-                    "firms": firms[:limit],
-                    "total": total,
-                    "error": None
-                }
-            else:
-                error_msg = data.get("error", {}).get("message", "Unknown PDL error")
-                print(f"PDL API error: {error_msg}")
+            elif response.status_code == 401:
                 return {
                     "success": False,
                     "firms": [],
                     "total": 0,
-                    "error": f"Search failed: {error_msg}"
+                    "error": "API authentication failed. Please contact support.",
+                    "queryLevel": None
                 }
-        
-        elif response.status_code == 400:
-            error_data = response.json()
-            error_msg = error_data.get("error", {}).get("message", "Invalid search parameters")
-            print(f"PDL 400 error: {error_msg}")
-            return {
-                "success": False,
-                "firms": [],
-                "total": 0,
-                "error": f"Invalid search: {error_msg}"
-            }
-        
-        elif response.status_code == 401:
-            print("PDL API: Invalid API key")
-            return {
-                "success": False,
-                "firms": [],
-                "total": 0,
-                "error": "API authentication failed. Please contact support."
-            }
-        
-        elif response.status_code == 402:
-            print("PDL API: Payment required (out of credits)")
-            return {
-                "success": False,
-                "firms": [],
-                "total": 0,
-                "error": "Search credits exhausted. Please try again later."
-            }
-        
-        elif response.status_code == 404:
-            print("PDL API: No results found")
-            return {
-                "success": True,
-                "firms": [],
-                "total": 0,
-                "error": None
-            }
-        
+                
+            elif response.status_code == 402:
+                return {
+                    "success": False,
+                    "firms": [],
+                    "total": 0,
+                    "error": "Search credits exhausted. Please try again later.",
+                    "queryLevel": None
+                }
+            
+            else:
+                print(f"⚠️ Unexpected status {response.status_code}: {response.text[:200]}")
+                last_error = f"Unexpected error (status {response.status_code})"
+                
+        except requests.exceptions.Timeout:
+            print(f"⏰ Level {strictness}: Request timed out")
+            last_error = "Search timed out"
+            continue
+            
+        except Exception as e:
+            print(f"❌ Level {strictness} error: {e}")
+            last_error = str(e)
+            continue
+    
+    # Return best result we found, even if < min_results_needed
+    if best_result and best_count > 0:
+        print(f"🎯 Returning best result: {best_count} firms from level {successful_level}")
+        return best_result
+    
+    # Nothing worked
+    return {
+        "success": False,
+        "firms": [],
+        "total": 0,
+        "error": f"No companies found matching your criteria. Last error: {last_error or 'Unknown'}",
+        "queryLevel": None
+    }
+
+
+def parse_size_string(size_str: str) -> Optional[int]:
+    """
+    Parse PDL size string like "51-200" into an estimated employee count.
+    Returns the midpoint of the range.
+    
+    PDL size buckets: '1-10', '11-50', '51-200', '201-500', '501-1000', 
+                      '1001-5000', '5001-10000', '10001+'
+    """
+    if not size_str:
+        return None
+    
+    size_str = size_str.strip()
+    
+    # Handle "10001+" case
+    if size_str.endswith('+'):
+        try:
+            return int(size_str.rstrip('+'))
+        except ValueError:
+            return None
+    
+    # Handle range like "51-200"
+    if '-' in size_str:
+        try:
+            parts = size_str.split('-')
+            low = int(parts[0])
+            high = int(parts[1])
+            return (low + high) // 2  # Return midpoint
+        except (ValueError, IndexError):
+            return None
+    
+    # Handle single number
+    try:
+        return int(size_str)
+    except ValueError:
+        return None
+
+
+def get_size_bucket_from_string(size_str: str) -> Optional[str]:
+    """
+    Convert PDL size string to our size bucket.
+    
+    PDL buckets -> Our buckets:
+    '1-10', '11-50' -> "small" (1-50)
+    '51-200', '201-500' -> "mid" (51-500)
+    '501-1000', '1001-5000', '5001-10000', '10001+' -> "large" (500+)
+    """
+    if not size_str:
+        return None
+    
+    size_str = size_str.strip().lower()
+    
+    small_sizes = ['1-10', '11-50']
+    mid_sizes = ['51-200', '201-500']
+    large_sizes = ['501-1000', '1001-5000', '5001-10000', '10001+']
+    
+    if size_str in small_sizes:
+        return "small"
+    elif size_str in mid_sizes:
+        return "mid"
+    elif size_str in large_sizes:
+        return "large"
+    
+    # Try to parse and categorize
+    count = parse_size_string(size_str)
+    if count:
+        if count <= 50:
+            return "small"
+        elif count <= 500:
+            return "mid"
         else:
-            print(f"PDL API unexpected status: {response.status_code}")
-            print(f"Response: {response.text[:500]}")
-            return {
-                "success": False,
-                "firms": [],
-                "total": 0,
-                "error": f"Unexpected error (status {response.status_code})"
-            }
+            return "large"
     
-    except requests.exceptions.Timeout:
-        print("PDL API timeout")
-        return {
-            "success": False,
-            "firms": [],
-            "total": 0,
-            "error": "Search timed out. Please try again."
-        }
-    
-    except Exception as e:
-        print(f"PDL Company Search error: {e}")
-        import traceback
-        traceback.print_exc()
-        return {
-            "success": False,
-            "firms": [],
-            "total": 0,
-            "error": f"Search failed: {str(e)}"
-        }
+    return None
 
 
 def transform_pdl_company_to_firm(company: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     Transform a PDL company record into our Firm format.
+    
+    PDL returns:
+    - employee_count: Integer (calculated by PDL, may be null/premium)
+    - size: String like "51-200" (self-reported from LinkedIn)
+    - website: Just domain like "example.com" (no https://)
+    - display_name: Properly cased name
+    - name: Lowercase name
     
     Output format:
     {
@@ -735,6 +785,7 @@ def transform_pdl_company_to_firm(company: Dict[str, Any]) -> Optional[Dict[str,
         "industry": str or None,
         "employeeCount": int or None,
         "sizeBucket": "small" | "mid" | "large" | None,
+        "sizeRange": str or None,  # Original PDL size string
         "founded": int or None (year)
     }
     """
@@ -756,32 +807,55 @@ def transform_pdl_company_to_firm(company: Dict[str, Any]) -> Optional[Dict[str,
         location_parts = [p for p in [city, state, country] if p]
         display_location = ", ".join(location_parts) if location_parts else "Unknown"
         
-        # Get employee count and determine size bucket
+        # Get employee count - try employee_count first, then parse size string
         employee_count = company.get("employee_count")
+        size_string = company.get("size")  # e.g., "51-200"
         size_bucket = None
         
-        if employee_count:
+        if employee_count and isinstance(employee_count, int) and employee_count > 0:
+            # Use the actual employee_count if available
             if employee_count <= 50:
                 size_bucket = "small"
             elif employee_count <= 500:
                 size_bucket = "mid"
             else:
                 size_bucket = "large"
+        elif size_string:
+            # Fall back to parsing size string
+            employee_count = parse_size_string(size_string)
+            size_bucket = get_size_bucket_from_string(size_string)
         
         # Get industry - might be string or list
         industry = company.get("industry")
         if isinstance(industry, list):
             industry = industry[0] if industry else None
         
-        # Get website - clean it up
-        website = company.get("website")
-        if website and not website.startswith("http"):
-            website = f"https://{website}"
+        # Get company name - prefer display_name (proper casing) over name (lowercase)
+        company_name = company.get("display_name") or company.get("name") or "Unknown Company"
+        # Capitalize if it's all lowercase
+        if company_name and company_name == company_name.lower():
+            company_name = company_name.title()
         
-        # Get LinkedIn URL
+        # Get website - PDL returns just domain, add https://
+        # Also handle empty strings and whitespace
+        website = company.get("website")
+        if website:
+            website = str(website).strip()
+            if website and website.lower() not in ['null', 'none', '']:
+                if not website.startswith("http"):
+                    website = f"https://{website}"
+            else:
+                website = None
+        
+        # Get LinkedIn URL - PDL returns without protocol
         linkedin_url = company.get("linkedin_url")
-        if linkedin_url and not linkedin_url.startswith("http"):
-            linkedin_url = f"https://{linkedin_url}"
+        if linkedin_url:
+            linkedin_url = str(linkedin_url).strip()
+            if linkedin_url and linkedin_url.lower() not in ['null', 'none', '']:
+                if not linkedin_url.startswith("http"):
+                    linkedin_url = f"https://{linkedin_url}"
+            else:
+                linkedin_url = None
         
         # Generate stable ID from domain or name
         identifier = company.get("website") or company.get("name", "unknown")
@@ -789,7 +863,7 @@ def transform_pdl_company_to_firm(company: Dict[str, Any]) -> Optional[Dict[str,
         
         return {
             "id": firm_id,
-            "name": company.get("name", "Unknown Company"),
+            "name": company_name,
             "website": website,
             "linkedinUrl": linkedin_url,
             "location": {
@@ -801,11 +875,14 @@ def transform_pdl_company_to_firm(company: Dict[str, Any]) -> Optional[Dict[str,
             "industry": industry,
             "employeeCount": employee_count,
             "sizeBucket": size_bucket,
+            "sizeRange": size_string,  # Include original PDL size string
             "founded": company.get("founded")
         }
     
     except Exception as e:
         print(f"Error transforming company: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -826,7 +903,8 @@ def search_firms(prompt: str, limit: int = 20) -> Dict[str, Any]:
             "total": int,
             "parsedFilters": dict,  # What we extracted from the prompt
             "error": str or None,
-            "fallbackApplied": bool  # True if search was broadened
+            "fallbackApplied": bool,  # True if search was broadened
+            "queryLevel": int  # Strictness level that succeeded
         }
     """
     # Step 1: Parse the natural language prompt
@@ -839,7 +917,8 @@ def search_firms(prompt: str, limit: int = 20) -> Dict[str, Any]:
             "total": 0,
             "parsedFilters": parse_result.get("parsed"),
             "error": parse_result["error"],
-            "fallbackApplied": False
+            "fallbackApplied": False,
+            "queryLevel": None
         }
     
     parsed = parse_result["parsed"]
@@ -847,7 +926,7 @@ def search_firms(prompt: str, limit: int = 20) -> Dict[str, Any]:
     # Step 2: Normalize location
     location = normalize_location(parsed.get("location", ""))
     
-    # Step 3: Search PDL with original filters
+    # Step 3: Search PDL (bulletproof search handles fallbacks internally)
     search_result = search_companies_with_pdl(
         industry=parsed["industry"],
         location=location,
@@ -856,25 +935,8 @@ def search_firms(prompt: str, limit: int = 20) -> Dict[str, Any]:
         limit=limit
     )
     
-    # Step 4: If we got fewer than 3 results, try broadening the search
-    fallback_applied = False
-    if search_result["success"] and len(search_result.get("firms", [])) < 3:
-        print(f"⚠️ Only {len(search_result.get('firms', []))} firms found. Trying fallback (removing size filter)...")
-        
-        # Retry without size filter (most restrictive filter)
-        fallback_result = search_companies_with_pdl(
-            industry=parsed["industry"],
-            location=location,
-            size="none",  # Remove size constraint
-            keywords=parsed.get("keywords", []),
-            limit=limit
-        )
-        
-        # If fallback found more results, use it
-        if fallback_result["success"] and len(fallback_result.get("firms", [])) > len(search_result.get("firms", [])):
-            print(f"✅ Fallback found {len(fallback_result.get('firms', []))} firms (removed size filter)")
-            search_result = fallback_result
-            fallback_applied = True
+    # Determine if fallback was applied
+    fallback_applied = search_result.get("queryLevel", 3) < 3
     
     # Add parsed filters to result
     search_result["parsedFilters"] = {
@@ -944,7 +1006,7 @@ def search_firms_structured(
     # Normalize location
     location_normalized = normalize_location(location)
     
-    # Search PDL with original filters
+    # Search PDL (bulletproof search handles fallbacks internally)
     search_result = search_companies_with_pdl(
         industry=industry_lower,
         location=location_normalized,
@@ -953,25 +1015,8 @@ def search_firms_structured(
         limit=limit
     )
     
-    # If we got fewer than 3 results, try broadening the search
-    fallback_applied = False
-    if search_result["success"] and len(search_result.get("firms", [])) < 3 and size != "none":
-        print(f"⚠️ Only {len(search_result.get('firms', []))} firms found. Trying fallback (removing size filter)...")
-        
-        # Retry without size filter
-        fallback_result = search_companies_with_pdl(
-            industry=industry_lower,
-            location=location_normalized,
-            size="none",
-            keywords=keywords,
-            limit=limit
-        )
-        
-        # If fallback found more results, use it
-        if fallback_result["success"] and len(fallback_result.get("firms", [])) > len(search_result.get("firms", [])):
-            print(f"✅ Fallback found {len(fallback_result.get('firms', []))} firms (removed size filter)")
-            search_result = fallback_result
-            fallback_applied = True
+    # Determine if fallback was applied
+    fallback_applied = search_result.get("queryLevel", 3) < 3
     
     # Add parsed filters to result
     search_result["parsedFilters"] = {

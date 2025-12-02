@@ -31,8 +31,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         return savedTheme;
       }
     }
-    // Default to dark
-    return 'dark';
+    // Default to light
+    return 'light';
   });
 
   useEffect(() => {
@@ -55,14 +55,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     if (typeof window === 'undefined') return;
     
     const root = document.documentElement;
-    // Ensure dark mode is applied by default if no theme is set
+    // Ensure light mode is applied by default if no theme is set
     const savedTheme = localStorage.getItem('theme') as Theme;
-    if (!savedTheme || savedTheme === 'dark') {
-      root.classList.add('dark');
-      root.setAttribute('data-theme', 'dark');
-    } else {
+    if (!savedTheme || savedTheme === 'light') {
       root.classList.remove('dark');
       root.setAttribute('data-theme', 'light');
+    } else {
+      root.classList.add('dark');
+      root.setAttribute('data-theme', 'dark');
     }
   }, []);
 

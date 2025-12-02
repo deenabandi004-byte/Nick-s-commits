@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import OfferloopLogo from "../assets/Offerloop-topleft.jpeg";
+import LightModeLogo from "../assets/Light_Mode_Logo.png";
 import OfferloopIcon from "../assets/icon.png";
 import LightningIcon from "../assets/Lightning.png";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
@@ -114,7 +115,11 @@ export function AppSidebar() {
           <div className="p-3 border-b">
             {state !== "collapsed" ? (
               <div className="flex items-center justify-center gap-2">
-                <img src={OfferloopLogo} alt="Offerloop" className="h-8" />
+                <img 
+                  src={theme === 'light' ? LightModeLogo : OfferloopLogo} 
+                  alt="Offerloop" 
+                  className="h-[42px]" 
+                />
               </div>
             ) : (
               <div className="flex items-center justify-center p-1">
