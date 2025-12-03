@@ -11,6 +11,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Upload, Search, Users as UsersIcon, FileText } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { BackToHomeButton } from '@/components/BackToHomeButton';
@@ -45,6 +46,55 @@ const TIER_CONFIGS = {
     usesResume: true,
   },
 };
+
+// Background Blobs Component
+function BackgroundBlobs() {
+  return (
+    <>
+      <motion.div
+        className="absolute -top-32 left-10 w-80 h-80 rounded-full bg-purple-500/20 blur-3xl pointer-events-none"
+        animate={{ 
+          y: [0, 20, 0], 
+          scale: [1, 1.05, 1],
+          x: [0, 10, 0]
+        }}
+        transition={{ 
+          duration: 12, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+        style={{ zIndex: 0 }}
+      />
+      <motion.div
+        className="absolute -bottom-40 right-0 w-96 h-96 rounded-full bg-pink-500/20 blur-3xl pointer-events-none"
+        animate={{ 
+          y: [0, -20, 0], 
+          scale: [1, 1.04, 1],
+          x: [0, -10, 0]
+        }}
+        transition={{ 
+          duration: 14, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+        style={{ zIndex: 0 }}
+      />
+      <motion.div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-purple-500/10 blur-3xl pointer-events-none"
+        animate={{ 
+          scale: [1, 1.1, 1],
+          opacity: [0.3, 0.5, 0.3]
+        }}
+        transition={{ 
+          duration: 16, 
+          repeat: Infinity, 
+          ease: "easeInOut" 
+        }}
+        style={{ zIndex: 0 }}
+      />
+    </>
+  );
+}
 
 // Batch Size Segmented Control Component
 function BatchSizeSegmentedControl({
@@ -496,9 +546,12 @@ export default function ContactSearch() {
                 
                 {/* TAB 1: Contact Search (Professional Search Form) */}
                 <TabsContent value="search">
-                  <div className="mx-auto max-w-5xl px-6 py-12 space-y-10">
+                  <div className="mx-auto max-w-5xl px-6 py-12 space-y-10 relative">
+                    {/* Animated Background Blobs */}
+                    <BackgroundBlobs />
+                    
                     {/* Left-aligned Header */}
-                    <div className="space-y-2">
+                    <div className="space-y-2 relative z-10">
                       <h1 className="text-3xl font-semibold text-foreground">Contact Search</h1>
                       <p className="text-sm text-muted-foreground">
                         Find professionals and connect with them.

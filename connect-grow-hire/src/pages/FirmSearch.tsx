@@ -361,8 +361,7 @@ export default function FirmSearch() {
       'LinkedIn',
       'Location',
       'Industry',
-      'Employees',
-      'Founded'
+      'Employees'
     ] as const;
 
     const headerRow = headers.join(',');
@@ -389,8 +388,7 @@ export default function FirmSearch() {
         escapeCsv(firm.linkedinUrl),
         escapeCsv(location),
         escapeCsv(firm.industry),
-        escapeCsv(firm.employeeCount?.toString()),
-        escapeCsv(firm.founded?.toString())
+        escapeCsv(firm.employeeCount?.toString())
       ].join(',');
     });
 

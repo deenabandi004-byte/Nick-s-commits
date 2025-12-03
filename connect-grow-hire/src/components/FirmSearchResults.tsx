@@ -10,8 +10,7 @@
  * D. Location (City, State, Country)
  * E. Industry
  * F. Employees (count or size bucket)
- * G. Founded (year)
- * H. Actions (View Contacts button)
+ * G. Actions (View Contacts button)
  */
 
 import { useState, useEffect } from 'react';
@@ -19,7 +18,6 @@ import {
   Globe, 
   Linkedin, 
   Users, 
-  Calendar, 
   MapPin, 
   Building2, 
   ChevronUp,
@@ -35,7 +33,7 @@ interface FirmSearchResultsProps {
   onViewContacts: (firm: Firm) => void;
 }
 
-type SortField = 'name' | 'location' | 'industry' | 'employeeCount' | 'founded';
+type SortField = 'name' | 'location' | 'industry' | 'employeeCount';
 type SortDirection = 'asc' | 'desc';
 
 export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchResultsProps) {
@@ -62,8 +60,7 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
         firm.location?.city?.toLowerCase().includes(searchLower) ||
         firm.location?.state?.toLowerCase().includes(searchLower) ||
         firm.location?.country?.toLowerCase().includes(searchLower) ||
-        firm.website?.toLowerCase().includes(searchLower) ||
-        firm.founded?.toString().includes(searchQuery)
+        firm.website?.toLowerCase().includes(searchLower)
       );
     });
     
@@ -91,10 +88,6 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
       case 'employeeCount':
         aVal = a.employeeCount || 0;
         bVal = b.employeeCount || 0;
-        break;
-      case 'founded':
-        aVal = a.founded || 0;
-        bVal = b.founded || 0;
         break;
       default:
         return 0;
@@ -198,7 +191,7 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
               {/* Company Name */}
               <th 
                 scope="col" 
-                className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent transition-colors"
+                className="px-3 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-accent transition-colors w-[9.375%]"
                 onClick={() => handleSort('name')}
               >
                 Company Name
@@ -245,18 +238,8 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
                 <SortIndicator field="employeeCount" />
               </th>
               
-              {/* Founded */}
-              <th 
-                scope="col" 
-                className="px-4 py-3 text-center text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-700/50 transition-colors"
-                onClick={() => handleSort('founded')}
-              >
-                Founded
-                <SortIndicator field="founded" />
-              </th>
-              
               {/* Actions */}
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <th scope="col" className="px-2 py-3 text-center text-xs font-medium text-muted-foreground uppercase tracking-wider w-[5%]">
                 Actions
               </th>
             </tr>
@@ -269,13 +252,13 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
                 className="hover:bg-accent transition-colors"
               >
                 {/* Company Name */}
-                <td className="px-6 py-4 whitespace-nowrap">
+                <td className="px-3 py-4 w-[9.375%]">
                   <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
-                      <Building2 className="h-5 w-5 text-blue-400" />
+                    <div className="flex-shrink-0 h-8 w-8 bg-blue-500/20 rounded-lg flex items-center justify-center border border-blue-500/30">
+                      <Building2 className="h-4 w-4 text-blue-400" />
                     </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-foreground">
+                    <div className="ml-2 min-w-0 flex-1">
+                      <div className="text-sm font-medium text-foreground truncate" title={firm.name}>
                         {firm.name}
                       </div>
                     </div>
@@ -339,22 +322,14 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
                   </div>
                 </td>
                 
-                {/* Founded */}
-                <td className="px-4 py-4 whitespace-nowrap text-center">
-                  <div className="flex items-center justify-center text-sm text-foreground">
-                    <Calendar className="h-4 w-4 text-muted-foreground mr-1.5" />
-                    <span>{firm.founded || '—'}</span>
-                  </div>
-                </td>
-                
                 {/* Actions */}
-                <td className="px-6 py-4 whitespace-nowrap text-right">
+                <td className="px-2 py-4 whitespace-nowrap text-center w-[5%]">
                   <button
                     onClick={() => onViewContacts(firm)}
-                    className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-300 bg-blue-500/20 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 hover:text-blue-200 transition-colors"
+                    className="inline-flex items-center justify-center p-2 text-blue-300 bg-blue-500/20 border border-blue-500/30 rounded-lg hover:bg-blue-500/30 hover:text-blue-200 transition-colors"
+                    title="View Contacts"
                   >
-                    <UserSearch className="h-4 w-4 mr-1.5" />
-                    View Contacts
+                    <UserSearch className="h-4 w-4" />
                   </button>
                 </td>
               </tr>

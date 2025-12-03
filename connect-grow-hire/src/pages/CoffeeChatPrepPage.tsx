@@ -7,9 +7,9 @@
  * IMPORTANT: Preserves ALL existing Coffee Chat functionality from Home.tsx
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Coffee, Library, Loader2, Download, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Coffee, Library, Loader2, Download, Clock, CheckCircle, XCircle, Lock, Zap } from 'lucide-react';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { BackToHomeButton } from '@/components/BackToHomeButton';
@@ -31,8 +31,19 @@ const COFFEE_CHAT_CREDITS = 30;
 
 export default function CoffeeChatPrepPage() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { user: firebaseUser, checkCredits } = useFirebaseAuth();
   const { toast } = useToast();
+  
+  // Check if user is on free tier
+  const isFreeTier = useMemo(() => {
+    if (!firebaseUser) return true; // Default to free if no user
+    if (firebaseUser.tier === 'pro') return false;
+    // Also check maxCredits to determine tier
+    const maxCredits = Number(firebaseUser.maxCredits ?? 0);
+    if (maxCredits >= 1800) return false; // Pro tier
+    return true; // Free tier
+  }, [firebaseUser]);
   
   // Tab state - check URL params for initial tab
   const [activeTab, setActiveTab] = useState(() => {
@@ -276,12 +287,48 @@ export default function CoffeeChatPrepPage() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full bg-background relative">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col relative">
+          {/* Pro Members Only Overlay for Free Tier */}
+          {isFreeTier && (
+            <div 
+              className="absolute inset-0 backdrop-blur-sm z-[100] flex items-start justify-center pointer-events-auto pt-32"
+              style={{
+                background: 'linear-gradient(135deg, rgba(75, 85, 99, 0.75), rgba(100, 100, 100, 0.75), rgba(55, 65, 81, 0.75), rgba(80, 80, 80, 0.75))'
+              }}
+            >
+              <div className="text-center space-y-6">
+                <div className="w-16 h-16 mx-auto bg-gray-800/80 rounded-full flex items-center justify-center border-2 border-gray-700/80 backdrop-blur-sm">
+                  <Lock className="w-8 h-8 text-white" />
+                </div>
+                <p className="text-white text-7xl font-semibold drop-shadow-lg">Unlock with <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">Pro</span></p>
+                <button
+                  onClick={() => navigate("/pricing")}
+                  className="bg-gradient-to-r from-[hsl(var(--accent-from))] to-[hsl(var(--accent-to))] rounded-xl py-3 px-4 text-white hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 active:scale-[0.98]"
+                >
+                  <div className="flex items-center justify-center gap-2">
+                    <Zap className="w-5 h-5 text-white" />
+                    <span className="font-semibold">Upgrade Plan</span>
+                  </div>
+                </button>
+                <p className="text-white text-base max-w-2xl mx-auto mt-8 leading-relaxed drop-shadow-md">
+                  <span className="font-bold">Coffee Chat Prep gives you everything you need to walk into any conversation with confidence.</span> With one click, you get the most relevant insights about the firm and the person you're meeting, all organized into a clean, ready-to-use brief. Instead of spending 30 minutes preparing, you receive a polished prep sheet in seconds so you can focus on making a great impression.
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {/* Blur and disable content behind overlay */}
+          {isFreeTier && (
+            <div className="absolute inset-0 pointer-events-none z-40">
+              <div className="w-full h-full opacity-50 pointer-events-none" style={{ filter: 'blur(2px)' }} />
+            </div>
+          )}
+          
           {/* Header with Back Button and Sidebar Toggle */}
-          <div className="bg-background border-b border-border">
+          <div className={`bg-background border-b border-border ${isFreeTier ? 'pointer-events-none opacity-50' : ''}`}>
             <div className="flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
@@ -294,7 +341,7 @@ export default function CoffeeChatPrepPage() {
           </div>
           
           {/* Main Content Area */}
-          <div className="flex-1">
+          <div className={`flex-1 ${isFreeTier ? 'pointer-events-none opacity-50' : ''}`}>
             <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
               {/* Tabs */}
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

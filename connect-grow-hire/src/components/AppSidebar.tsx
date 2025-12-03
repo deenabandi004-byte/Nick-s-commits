@@ -12,14 +12,13 @@ import {
   Coffee,
   Building2,
   Briefcase,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import OfferloopLogo from "../assets/Offerloop-topleft.jpeg";
 import LightModeLogo from "../assets/Light_Mode_Logo.png";
 import OfferloopIcon from "../assets/icon.png";
 import LightningIcon from "../assets/Lightning.png";
+import CrownIcon from "../assets/Crown_icon.png";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -66,7 +65,7 @@ export function AppSidebar() {
   const currentPath = location.pathname;
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const { user } = useFirebaseAuth();
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   const isActive = (path: string) => currentPath === path;
   const isSettingsActive = settingsItems.some((item) => isActive(item.url));
@@ -144,7 +143,14 @@ export function AppSidebar() {
                         }
                       >
                         <item.icon className="h-6 w-6" />
-                        {state !== "collapsed" && <span className="text-lg">{item.title}</span>}
+                        {state !== "collapsed" && (
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="text-lg">{item.title}</span>
+                            {(item.title === "Coffee Chat Prep" || item.title === "Interview Prep") && (
+                              <img src={CrownIcon} alt="Pro" className="h-4 w-4" />
+                            )}
+                          </div>
+                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -204,14 +210,14 @@ export function AppSidebar() {
             {state !== "collapsed" ? (
               <>
                 {/* Credits Display */}
-                <div className="text-lg font-medium mb-2 text-foreground">
+                <div className="text-lg font-bold mb-2 text-foreground">
                   {user?.credits ?? 0}/{user?.maxCredits ?? 120} credits
                 </div>
 
-                {/* Progress Bar - Solid purple */}
+                {/* Progress Bar - Pink purple gradient */}
                 <div className="mb-4 w-full h-2 bg-[hsl(var(--border-light))] rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-[hsl(var(--accent-solid))] transition-all duration-300"
+                    className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300"
                     style={{ width: `${((user?.credits ?? 0) / (user?.maxCredits ?? 120)) * 100}%` }}
                   />
                 </div>
@@ -254,47 +260,6 @@ export function AppSidebar() {
                 </Tooltip>
               </div>
             )}
-
-            {/* Theme Toggle */}
-            <div className="mb-4">
-              {state !== "collapsed" ? (
-                <button
-                  onClick={toggleTheme}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:bg-accent transition-colors"
-                  title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                  {theme === 'dark' ? (
-                    <>
-                      <Sun className="h-4 w-4" />
-                      <span className="text-sm">Light Mode</span>
-                    </>
-                  ) : (
-                    <>
-                      <Moon className="h-4 w-4" />
-                      <span className="text-sm">Dark Mode</span>
-                    </>
-                  )}
-                </button>
-              ) : (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={toggleTheme}
-                      className="w-full flex items-center justify-center p-2 rounded-lg border border-border hover:bg-accent transition-colors"
-                    >
-                      {theme === 'dark' ? (
-                        <Sun className="h-4 w-4" />
-                      ) : (
-                        <Moon className="h-4 w-4" />
-                      )}
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </div>
 
             {/* User Profile */}
             <div className="flex items-center justify-center gap-3">
