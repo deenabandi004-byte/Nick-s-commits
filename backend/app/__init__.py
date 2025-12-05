@@ -11,9 +11,11 @@ def create_app():
     from .routes.health import bp as health_bp
     from .routes.spa import bp as spa_bp
     from .routes.outbox import outbox_bp
+    from .routes.timeline import timeline_bp
     
     app.register_blueprint(health_bp)
     app.register_blueprint(outbox_bp)
+    app.register_blueprint(timeline_bp)
     app.register_blueprint(spa_bp)  # Register SPA last (catch-all)
 
     @app.after_request

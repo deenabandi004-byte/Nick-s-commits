@@ -46,8 +46,8 @@ export default function DashboardPage() {
           </div>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-6">
-        <div className="max-w-[1280px] mx-auto">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="max-w-6xl mx-auto w-full p-4 lg:p-6">
           {/* Tabs */}
           <div className="flex justify-center mb-8">
             <div className="relative grid w-full grid-cols-3 max-w-lg bg-card border border-border p-1 rounded-xl h-14 overflow-hidden">

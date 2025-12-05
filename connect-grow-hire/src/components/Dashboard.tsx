@@ -1,5 +1,6 @@
 import React, { useState, useEffect, cloneElement, isValidElement } from 'react';
 import { Users, Building2, Coffee, Mail, Clock, TrendingUp, Target, ArrowRight, Plus, Briefcase, Flame } from 'lucide-react';
+import { PersonalizedRecruitingTimeline } from './PersonalizedRecruitingTimeline';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion } from 'framer-motion';
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
@@ -130,7 +131,7 @@ function KPICard({ icon, label, value, subtitle, progress, showProgress }: {
   const offset = circumference - (progressValue / 100) * circumference;
 
   return (
-    <div className="bg-card border border-border rounded-xl p-8 hover:border-border-subtle transition-colors h-[180px] flex flex-col overflow-visible">
+    <div className="bg-card border border-border rounded-xl p-4 lg:p-6 hover:border-border-subtle transition-colors h-[180px] flex flex-col overflow-visible">
       <div className="flex items-start justify-between mb-2">
         <div className={`rounded-lg bg-purple-soft flex items-center justify-center ${isValidElement(icon) && icon.type === 'div' ? 'px-3 py-2' : 'w-10 h-10'}`}>
           {isValidElement(icon) && icon.type === 'div' ? (
@@ -256,7 +257,7 @@ function ActivityFeed() {
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl p-8 h-full flex flex-col">
+    <div className="bg-card border border-border rounded-xl p-4 lg:p-6 h-full flex flex-col">
       <div className="flex items-center gap-2 mb-6">
         <Clock size={18} className="text-purple" />
         <h3>Recent Activity</h3>
@@ -300,8 +301,8 @@ function RecruitingTimeline() {
   const youAreHerePosition = ((currentMonthIndex + progressWithinMonth) / totalMonths) * 100;
 
   return (
-    <div className="w-full bg-card border border-border rounded-xl overflow-hidden">
-      <div className="px-8 py-8">
+    <div className="w-full max-w-full bg-card border border-border rounded-xl overflow-hidden">
+      <div className="px-4 sm:px-6 lg:px-8 py-8">
         <div className="relative" style={{ height: '220px' }}>
           <div className="absolute top-[70px] left-0 right-0 h-[2px]">
             <div 
@@ -415,8 +416,8 @@ function USMap() {
     L 4.5 28 Z`;
 
   return (
-    <div className="bg-card border border-border rounded-xl p-8">
-      <div className="relative bg-background rounded-lg p-10 border border-border-subtle">
+    <div className="bg-card border border-border rounded-xl p-6 lg:p-8">
+      <div className="relative bg-background rounded-lg p-6 lg:p-10 border border-border-subtle">
         <svg 
           viewBox="0 0 100 65" 
           className="w-full h-auto" 
@@ -677,7 +678,8 @@ export function Dashboard() {
   }, [user?.uid]);
   
   return (
-    <div className="space-y-16">
+    <div className="w-full max-w-full overflow-x-hidden">
+      <div className="space-y-12 lg:space-y-16">
       {/* SVG Gradient Definitions */}
       <svg className="absolute w-0 h-0">
         <defs>
@@ -688,7 +690,7 @@ export function Dashboard() {
         </defs>
       </svg>
       {/* Header Section */}
-      <div className="pt-6 text-center">
+      <div className="pt-6 text-center w-full">
         <h2>{firstName}'s Recruiting Snapshot</h2>
         <p className="text-text-secondary mt-1">Track your progress and stay on top of your recruiting pipeline</p>
       </div>
@@ -696,7 +698,7 @@ export function Dashboard() {
       {/* Weekly Summary & Streak Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Weekly Summary Card */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-xl p-6">
+        <div className="lg:col-span-2 bg-card border border-border rounded-xl p-4 lg:p-6">
           <div className="flex items-center gap-2 mb-4">
             <TrendingUp size={18} className="text-purple" />
             <h3 className="text-lg font-semibold">This Week</h3>
@@ -726,7 +728,7 @@ export function Dashboard() {
         </div>
 
         {/* Streak Card */}
-        <div className="bg-card border border-border rounded-xl p-6">
+        <div className="bg-card border border-border rounded-xl p-4 lg:p-6">
           <div className="flex items-center gap-2 mb-4">
             <Flame size={18} className="text-orange-500" />
             <h3 className="text-lg font-semibold">Streak</h3>
@@ -764,7 +766,7 @@ export function Dashboard() {
               }[progress.goal.type];
               
               return (
-                <div key={progress.goal.id} className="bg-card border border-border rounded-xl p-6">
+                <div key={progress.goal.id} className="bg-card border border-border rounded-xl p-4 lg:p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Target size={16} className="text-purple" />
                     <h4 className="font-medium">{goalLabel}</h4>
@@ -792,7 +794,7 @@ export function Dashboard() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
         <KPICard 
           icon={
             <div className="flex items-center gap-1">
@@ -818,13 +820,13 @@ export function Dashboard() {
           <p className="text-text-secondary text-sm mt-1">Your recent activity and performance trends</p>
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           <div className="lg:col-span-4">
             <ActivityFeed />
           </div>
 
           <div className="lg:col-span-8 space-y-8">
-            <div className="bg-card border border-border rounded-xl p-8">
+            <div className="bg-card border border-border rounded-xl p-6 lg:p-8">
               <div className="flex items-center gap-2 mb-6">
                 <TrendingUp size={18} className="text-purple" />
                 <h3>Outreach vs Replies</h3>
@@ -849,7 +851,7 @@ export function Dashboard() {
             </div>
 
             {/* AI Recommendations */}
-            <div className="bg-card border border-border rounded-xl p-8">
+            <div className="bg-card border border-border rounded-xl p-6 lg:p-8">
               <div className="mb-6">
                 <h3 className="text-lg mb-1">AI Recommendations</h3>
                 <p className="text-text-secondary text-sm">Personalized insights to accelerate your search</p>
@@ -882,14 +884,14 @@ export function Dashboard() {
       </div>
 
       {/* Recruiting Timeline Section */}
-      <div className="py-16">
+      <div className="pt-6 lg:pt-12">
         <div className="mb-6">
           <h3 className="text-lg">Recruiting Timeline</h3>
           <p className="text-text-secondary text-sm mt-1">Track your progress through recruiting season</p>
         </div>
-        <RecruitingTimeline />
+        <PersonalizedRecruitingTimeline />
       </div>
-
+      </div>
     </div>
   );
 }

@@ -259,7 +259,7 @@ export default function FirmSearch() {
     // Progress simulation with encouraging messages
     const progressMessages = [
       { progress: 10, message: 'Looking around...' },
-      { progress: 25, message: 'Finding the right firms...' },
+      { progress: 25, message: 'Finding the right companies...' },
       { progress: 40, message: 'Searching company databases...' },
       { progress: 60, message: 'Almost there...' },
       { progress: 80, message: 'Finalizing results...' },

@@ -392,6 +392,69 @@ export const firebaseApi = {
       return null;
     }
   },
+
+  // ----------------
+  // TIMELINE MANAGEMENT
+  // ----------------
+  async saveTimeline(uid: string, timelineData: {
+    phases: Array<{
+      name: string;
+      startMonth: string;
+      endMonth: string;
+      goals: string[];
+      description: string;
+    }>;
+    startDate: string;
+    targetDeadline: string;
+    lastPrompt?: string;
+    updatedAt?: string;
+  }): Promise<void> {
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, {
+      timeline: {
+        ...timelineData,
+        updatedAt: new Date().toISOString(),
+      },
+    });
+  },
+
+  async getTimeline(uid: string): Promise<{
+    phases: Array<{
+      name: string;
+      startMonth: string;
+      endMonth: string;
+      goals: string[];
+      description: string;
+    }>;
+    startDate: string;
+    targetDeadline: string;
+    lastPrompt?: string;
+    updatedAt?: string;
+  } | null> {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        console.log('❌ User document does not exist');
+        return null;
+      }
+      const data = userSnap.data();
+      const timeline = data.timeline;
+      if (!timeline || !timeline.phases || timeline.phases.length === 0) {
+        console.log('❌ No timeline data found in user document');
+        return null;
+      }
+      console.log('✅ Found timeline in Firestore:', timeline);
+      // Ensure lastPrompt is included if it exists
+      return {
+        ...timeline,
+        lastPrompt: timeline.lastPrompt || '',
+      };
+    } catch (error) {
+      console.error('❌ Error getting timeline:', error);
+      return null;
+    }
+  },
 };
 
 export default firebaseApi;

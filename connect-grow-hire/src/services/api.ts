@@ -836,6 +836,65 @@ async regenerateOutboxReply(
     );
     return response.sizes || [];
   }
+
+  /** Generate personalized recruiting timeline from a prompt */
+  async generateTimeline(
+    prompt: string, 
+    isUpdate: boolean = false,
+    existingTimeline?: {
+      phases: Array<{
+        name: string;
+        startMonth: string;
+        endMonth: string;
+        goals: string[];
+        description: string;
+      }>;
+      startDate: string;
+      targetDeadline: string;
+    }
+  ): Promise<{
+    timeline: { phases: Array<{
+      name: string;
+      startMonth: string;
+      endMonth: string;
+      goals: string[];
+      description: string;
+    }> };
+    startDate: string;
+    targetDeadline: string;
+  }> {
+    const headers = await this.getAuthHeaders();
+    const requestBody: any = { prompt };
+    
+    // If updating, include existing timeline data
+    if (isUpdate && existingTimeline) {
+      requestBody.isUpdate = true;
+      requestBody.existingTimeline = existingTimeline;
+    }
+    
+    const response = await this.makeRequest<{ 
+      success?: boolean; 
+      timeline: any;
+      startDate: string;
+      targetDeadline: string;
+    }>(
+      '/timeline/generate',
+      {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      }
+    );
+    console.log('📡 API Response:', response);
+    return {
+      timeline: response.timeline || { phases: [] },
+      startDate: response.startDate,
+      targetDeadline: response.targetDeadline,
+    };
+  }
 }
 
 export const apiService = new ApiService();

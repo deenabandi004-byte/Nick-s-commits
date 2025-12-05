@@ -16,6 +16,7 @@ from app.routes.billing import billing_bp
 from app.routes.users import users_bp
 from app.routes.outbox import outbox_bp
 from app.routes.firm_search import firm_search_bp
+from app.routes.timeline import timeline_bp
 from app.extensions import init_app_extensions
 
 def create_app() -> Flask:
@@ -58,6 +59,7 @@ def create_app() -> Flask:
     app.register_blueprint(users_bp)
     app.register_blueprint(outbox_bp)
     app.register_blueprint(firm_search_bp)
+    app.register_blueprint(timeline_bp)
 
     # --- Debug route to check frontend build ---
     @app.route('/api/debug/frontend')
