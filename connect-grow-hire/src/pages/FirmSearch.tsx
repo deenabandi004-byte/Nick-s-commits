@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp, Search, Building2, History, Loader2, AlertCircle, Sparkles, Download, Sheet } from 'lucide-react';
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import { searchFirms, getFirmSearchHistory, getFirmSearchById, type Firm, type FirmSearchResult, type SearchHistoryItem } from '../services/api';
+import { logActivity, generateFirmSearchSummary } from '../utils/activityLogger';
 import FirmSearchResults from '../components/FirmSearchResults';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -148,6 +149,8 @@ export default function FirmSearch() {
   // Search state
   const [query, setQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [searchProgress, setSearchProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [results, setResults] = useState<Firm[]>([]);
   const [parsedFilters, setParsedFilters] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
@@ -250,9 +253,43 @@ export default function FirmSearch() {
     setIsSearching(true);
     setError(null);
     setHasSearched(true);
+    setSearchProgress(0);
+    setLoadingMessage('Starting your search...');
+
+    // Progress simulation with encouraging messages
+    const progressMessages = [
+      { progress: 10, message: 'Looking around...' },
+      { progress: 25, message: 'Finding the right firms...' },
+      { progress: 40, message: 'Searching company databases...' },
+      { progress: 60, message: 'Almost there...' },
+      { progress: 80, message: 'Finalizing results...' },
+      { progress: 95, message: 'Just a moment more...' },
+    ];
+
+    let currentMessageIndex = 0;
+    let progressInterval: NodeJS.Timeout | null = null;
+    
+    progressInterval = setInterval(() => {
+      if (currentMessageIndex < progressMessages.length) {
+        const { progress, message } = progressMessages[currentMessageIndex];
+        setSearchProgress(progress);
+        setLoadingMessage(message);
+        currentMessageIndex++;
+      } else {
+        setSearchProgress(prev => {
+          if (prev < 95) return prev + 5;
+          return prev;
+        });
+      }
+    }, 800);
     
     try {
       const result: FirmSearchResult = await searchFirms(q, batchSize);
+      
+      // Complete progress
+      if (progressInterval) clearInterval(progressInterval);
+      setSearchProgress(100);
+      setLoadingMessage('Done!');
       
       if (result.success) {
         setParsedFilters(result.parsedFilters);
@@ -271,6 +308,21 @@ export default function FirmSearch() {
           });
           
           setResults(prev => [...newFirms, ...prev]);
+          
+          // Log activity for firm search
+          if (user?.uid && result.firms.length > 0) {
+            try {
+              const searchParams = result.parsedFilters || {};
+              const summary = await generateFirmSearchSummary(searchParams, result.firms.length);
+              await logActivity(user.uid, 'firmSearch', summary, {
+                query: q,
+                parsedFilters: result.parsedFilters,
+                numberOfFirms: result.firms.length,
+              });
+            } catch (error) {
+              console.error('Failed to log firm search activity:', error);
+            }
+          }
           
           // Show success toast with credit info
           toast({
@@ -299,6 +351,9 @@ export default function FirmSearch() {
         setError(result.error || 'Search failed. Please try again.');
       }
     } catch (err: any) {
+      if (progressInterval) clearInterval(progressInterval);
+      setSearchProgress(0);
+      setLoadingMessage('');
       console.error('Search error:', err);
       setError(err.message || 'An unexpected error occurred. Please try again.');
       toast({
@@ -308,6 +363,10 @@ export default function FirmSearch() {
       });
     } finally {
       setIsSearching(false);
+      setTimeout(() => {
+        setSearchProgress(0);
+        setLoadingMessage('');
+      }, 500);
     }
   };
   
@@ -607,6 +666,23 @@ export default function FirmSearch() {
                         </div>
                       )}
 
+                      {/* Progress Bar */}
+                      {isSearching && (
+                        <div className="space-y-2">
+                          <div className="w-full bg-background rounded-full h-2 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300 ease-out"
+                              style={{ width: `${searchProgress}%` }}
+                            />
+                          </div>
+                          {loadingMessage && (
+                            <p className="text-xs text-center text-muted-foreground animate-pulse">
+                              {loadingMessage}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Search Button */}
                       <motion.div
                         className="relative"
@@ -636,7 +712,7 @@ export default function FirmSearch() {
                           {isSearching ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Searching...
+                              {loadingMessage || 'Searching...'}
                             </>
                           ) : (
                             'Search Firms'

@@ -25,6 +25,7 @@ from app.services.credits import (
     FREE_FIRM_BATCH_DEFAULT,
     PRO_FIRM_BATCH_DEFAULT
 )
+from app.services.openai_client import get_openai_client
 
 
 firm_search_bp = Blueprint('firm_search', __name__, url_prefix='/api/firm-search')
@@ -561,3 +562,125 @@ def get_sizes():
         'success': True,
         'sizes': get_size_options()
     })
+
+
+@firm_search_bp.route('/generate-summary', methods=['POST'])
+@require_firebase_auth
+def generate_firm_search_summary():
+    """
+    Generate a summary for firm search activity using OpenAI.
+    
+    Request body:
+    {
+        "searchParams": {
+            "industry": "...",
+            "location": "...",
+            "size": "...",
+            "keywords": [...]
+        },
+        "numberOfFirms": 8
+    }
+    
+    Response:
+    {
+        "success": true,
+        "summary": "Viewed 8 investment banks in New York focused on technology deals."
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                'success': False,
+                'error': 'Request body is required'
+            }), 400
+        
+        search_params = data.get('searchParams', {})
+        number_of_firms = data.get('numberOfFirms', 0)
+        
+        if number_of_firms <= 0:
+            return jsonify({
+                'success': False,
+                'error': 'numberOfFirms must be greater than 0'
+            }), 400
+        
+        client = get_openai_client()
+        if not client:
+            # Fallback to simple summary
+            parts = []
+            if search_params.get('industry'):
+                parts.append(search_params['industry'])
+            if search_params.get('location'):
+                parts.append(f"in {search_params['location']}")
+            summary = f"Viewed {number_of_firms} {' '.join(parts) if parts else 'firms'}"
+            return jsonify({
+                'success': True,
+                'summary': summary
+            })
+        
+        # System message
+        system_message = """You are a UI copywriter for a recruiting dashboard.
+
+Your job is to write a SINGLE short sentence summarizing a firm search
+for a 'Recent Activity' sidebar.
+
+REQUIREMENTS:
+- Output ONLY the sentence. No quotes, labels, or extra text.
+- One sentence, max ~18–20 words.
+- Mention:
+  • number_of_firms_returned
+  • industry or keywords if available
+  • location if available
+- Optional extras if present: company size (e.g., 'mid-market', 'large'), focus keywords (e.g., 'tech', 'growth equity').
+- Prefer formats like:
+  • 'Viewed 8 investment banks in New York focused on technology deals.'
+  • 'Viewed 12 mid-market private equity firms in Chicago.'
+- If a field is missing, simply omit it; never write 'unknown' or 'N/A'.
+- Use past tense ('Viewed', 'Searched for').
+- Tone: concise, neutral, professional."""
+        
+        # User message
+        user_message = f"""Summarize this firm search in one short UI-friendly sentence.
+
+Search inputs (JSON):
+{json.dumps(search_params, indent=2)}
+
+Number of firms returned: {number_of_firms}
+
+Remember:
+- Output only the sentence, nothing else."""
+        
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            max_tokens=50,
+            temperature=0.3
+        )
+        
+        summary = response.choices[0].message.content.strip()
+        # Remove quotes if present
+        summary = summary.replace('"', '').replace("'", '').strip()
+        
+        return jsonify({
+            'success': True,
+            'summary': summary
+        })
+    
+    except Exception as e:
+        print(f"Error generating firm search summary: {e}")
+        import traceback
+        traceback.print_exc()
+        # Fallback to simple summary
+        parts = []
+        if search_params.get('industry'):
+            parts.append(search_params['industry'])
+        if search_params.get('location'):
+            parts.append(f"in {search_params['location']}")
+        summary = f"Viewed {number_of_firms} {' '.join(parts) if parts else 'firms'}"
+        return jsonify({
+            'success': True,
+            'summary': summary
+        })

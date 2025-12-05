@@ -27,7 +27,7 @@ export default function Home() {
             <div className="flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-4">
                 <SidebarTrigger />
-                <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
+                <h1 className="text-xl font-semibold text-foreground">Home</h1>
               </div>
               <div className="flex items-center">
                 <ThemeToggle />

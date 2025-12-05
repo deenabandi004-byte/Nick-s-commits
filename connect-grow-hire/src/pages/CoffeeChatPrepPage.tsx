@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiService } from '@/services/api';
 import type { CoffeeChatPrepStatus } from '@/services/api';
 import { flushSync } from 'react-dom';
+import { logActivity, generateCoffeeChatPrepSummary } from '../utils/activityLogger';
 
 const COFFEE_CHAT_CREDITS = 30;
 
@@ -55,6 +56,8 @@ export default function CoffeeChatPrepPage() {
   const [linkedinUrl, setLinkedinUrl] = useState('');
   const [coffeeChatLoading, setCoffeeChatLoading] = useState(false);
   const [coffeeChatProgress, setCoffeeChatProgress] = useState<string>('');
+  const [coffeeChatProgressPercent, setCoffeeChatProgressPercent] = useState(0);
+  const [coffeeChatLoadingMessage, setCoffeeChatLoadingMessage] = useState('');
   const [coffeeChatPrepId, setCoffeeChatPrepId] = useState<string | null>(null);
   const [coffeeChatResult, setCoffeeChatResult] = useState<CoffeeChatPrepStatus | null>(null);
   const [coffeeChatStatus, setCoffeeChatStatus] = useState<'idle' | 'processing' | 'completed' | 'failed'>('idle');
@@ -111,6 +114,35 @@ export default function CoffeeChatPrepPage() {
     setCoffeeChatProgress('Starting Coffee Chat Prep...');
     setCoffeeChatResult(null);
     setShowCompletionUI(false);
+    setCoffeeChatProgressPercent(0);
+    setCoffeeChatLoadingMessage('Starting your prep...');
+
+    // Progress simulation with encouraging messages
+    const progressMessages = [
+      { progress: 10, message: 'Looking around...' },
+      { progress: 25, message: 'Gathering information...' },
+      { progress: 40, message: 'Analyzing profile...' },
+      { progress: 60, message: 'Almost there...' },
+      { progress: 80, message: 'Finalizing prep...' },
+      { progress: 95, message: 'Just a moment more...' },
+    ];
+
+    let currentMessageIndex = 0;
+    let progressInterval: NodeJS.Timeout | null = null;
+    
+    progressInterval = setInterval(() => {
+      if (currentMessageIndex < progressMessages.length) {
+        const { progress, message } = progressMessages[currentMessageIndex];
+        setCoffeeChatProgressPercent(progress);
+        setCoffeeChatLoadingMessage(message);
+        currentMessageIndex++;
+      } else {
+        setCoffeeChatProgressPercent(prev => {
+          if (prev < 95) return prev + 5;
+          return prev;
+        });
+      }
+    }, 1000);
 
     try {
       // Start the generation
@@ -146,7 +178,30 @@ export default function CoffeeChatPrepPage() {
             // Check if completed (pdfUrl is definitive)
             if (statusResult.pdfUrl) {
               clearInterval(intervalId);
+              if (progressInterval) clearInterval(progressInterval);
+              setCoffeeChatProgressPercent(100);
+              setCoffeeChatLoadingMessage('Done!');
               console.log('✅ Completed! pdfUrl:', statusResult.pdfUrl);
+              
+              // Log activity for coffee chat prep
+              if (firebaseUser?.uid && statusResult.contactData) {
+                try {
+                  const contactName = statusResult.contactData.firstName && statusResult.contactData.lastName
+                    ? `${statusResult.contactData.firstName} ${statusResult.contactData.lastName}`
+                    : undefined;
+                  const summary = generateCoffeeChatPrepSummary({
+                    contactName,
+                    company: statusResult.contactData.company,
+                  });
+                  await logActivity(firebaseUser.uid, 'coffeePrep', summary, {
+                    prepId: (statusResult as any).id || prepId,
+                    contactName,
+                    company: statusResult.contactData.company,
+                  });
+                } catch (error) {
+                  console.error('Failed to log coffee chat prep activity:', error);
+                }
+              }
               
               // Update ALL states synchronously
               flushSync(() => {
@@ -198,6 +253,9 @@ export default function CoffeeChatPrepPage() {
       await pollPromise;
       
     } catch (error: any) {
+      if (progressInterval) clearInterval(progressInterval);
+      setCoffeeChatProgressPercent(0);
+      setCoffeeChatLoadingMessage('');
       console.error('Coffee chat prep failed:', error);
       setCoffeeChatStatus('failed');
       setCoffeeChatProgress('Generation failed');
@@ -209,6 +267,10 @@ export default function CoffeeChatPrepPage() {
     } finally {
       // ALWAYS set loading to false in finally block
       setCoffeeChatLoading(false);
+      setTimeout(() => {
+        setCoffeeChatProgressPercent(0);
+        setCoffeeChatLoadingMessage('');
+      }, 500);
       console.log('✅ Loading set to false in finally block');
     }
   };
@@ -407,6 +469,23 @@ export default function CoffeeChatPrepPage() {
                           </div>
 
                           <div className="flex flex-col gap-3" key={`buttons-${renderKey}`}>
+                            {/* Progress Bar */}
+                            {coffeeChatLoading && (
+                              <div className="space-y-2">
+                                <div className="w-full bg-background rounded-full h-2 overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300 ease-out"
+                                    style={{ width: `${coffeeChatProgressPercent}%` }}
+                                  />
+                                </div>
+                                {coffeeChatLoadingMessage && (
+                                  <p className="text-xs text-center text-muted-foreground animate-pulse">
+                                    {coffeeChatLoadingMessage}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
                             <Button
                               onClick={handleCoffeeChatSubmit}
                               disabled={coffeeChatLoading || !linkedinUrl.trim()}
@@ -416,7 +495,7 @@ export default function CoffeeChatPrepPage() {
                               {coffeeChatLoading ? (
                                 <>
                                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                  Generating...
+                                  {coffeeChatLoadingMessage || 'Generating...'}
                                 </>
                               ) : (
                                 <>

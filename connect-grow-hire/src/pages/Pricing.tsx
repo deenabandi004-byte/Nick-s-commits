@@ -189,7 +189,7 @@ const Pricing = () => {
   const isProUser = subscriptionStatus?.tier === 'pro' && subscriptionStatus?.status === 'active';
 
   return (
-    <div className="min-h-screen bg-white text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-6 py-6 max-w-6xl">
         <Button
           variant="ghost"
@@ -201,11 +201,11 @@ const Pricing = () => {
         </Button>
 
         {isProUser && (
-          <div className="mb-8 p-4 bg-blue-100 border border-blue-300 rounded-lg flex items-center justify-between">
+          <div className="mb-8 p-4 bg-card border border-border rounded-lg flex items-center justify-between">
             <div>
-              <p className="font-semibold text-blue-600">Pro Subscription Active</p>
+              <p className="font-semibold text-foreground">Pro Subscription Active</p>
               {subscriptionStatus?.cancelAtPeriodEnd && (
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   Cancels on {new Date(subscriptionStatus.currentPeriodEnd! * 1000).toLocaleDateString()}
                 </p>
               )}
@@ -213,7 +213,7 @@ const Pricing = () => {
             <Button
               onClick={handleManageSubscription}
               disabled={isLoading}
-              className="bg-gray-700 hover:bg-gray-600 text-white"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground"
             >
               <Settings className="mr-2 h-4 w-4" />
               Manage Subscription
@@ -223,15 +223,15 @@ const Pricing = () => {
 
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-2 mb-6">
-            <div className="flex items-center gap-2 bg-blue-100 px-3 py-1 rounded-full">
-              <CreditCard className="h-4 w-4 text-blue-600" />
-              <span className="text-sm font-medium text-blue-600 uppercase tracking-wide">Our Pricing</span>
+            <div className="flex items-center gap-2 bg-card border border-border px-3 py-1 rounded-full">
+              <CreditCard className="h-4 w-4 text-foreground" />
+              <span className="text-sm font-medium text-foreground uppercase tracking-wide">Our Pricing</span>
             </div>
           </div>
           <h1 className="text-5xl lg:text-6xl font-bold mb-6 text-foreground">
             Choose <span className="bg-gradient-to-r from-pink-500 to-purple-500 bg-clip-text text-transparent">your plan</span> today
           </h1>
-          <p className="text-gray-600 text-lg mb-8">
+          <p className="text-muted-foreground text-lg mb-8">
             15 credits per contact. When you run out of credits, no more contacts.
           </p>
         </div>

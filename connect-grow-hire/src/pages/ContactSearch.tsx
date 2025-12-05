@@ -10,7 +10,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Upload, Search, Users as UsersIcon, FileText } from 'lucide-react';
+import { Upload, Search, Users as UsersIcon, FileText, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AppSidebar } from '@/components/AppSidebar';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
@@ -23,6 +23,7 @@ import { AutocompleteInput } from '@/components/AutocompleteInput';
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { firebaseApi } from '../services/firebaseApi';
+import { logActivity, generateContactSearchSummary } from '../utils/activityLogger';
 import SpreadsheetContactDirectory from '@/components/ContactDirectory';
 import { auth } from '../lib/firebase';
 import { uploadResume } from '@/lib/resumeUtils';
@@ -170,6 +171,8 @@ export default function ContactSearch() {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [batchSize, setBatchSize] = useState<number>(1);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchProgress, setSearchProgress] = useState(0);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [lastResults, setLastResults] = useState<any[]>([]);
   const [lastSearchStats, setLastSearchStats] = useState<any>(null);
   
@@ -362,6 +365,35 @@ export default function ContactSearch() {
     }
 
     setIsSearching(true);
+    setSearchProgress(0);
+    setLoadingMessage('Starting your search...');
+
+    // Progress simulation with encouraging messages
+    const progressMessages = [
+      { progress: 10, message: 'Looking around...' },
+      { progress: 25, message: 'Finding the right contacts...' },
+      { progress: 40, message: 'Searching professional networks...' },
+      { progress: 60, message: 'Almost there...' },
+      { progress: 80, message: 'Finalizing results...' },
+      { progress: 95, message: 'Just a moment more...' },
+    ];
+
+    let currentMessageIndex = 0;
+    let progressInterval: NodeJS.Timeout | null = null;
+    
+    progressInterval = setInterval(() => {
+      if (currentMessageIndex < progressMessages.length) {
+        const { progress, message } = progressMessages[currentMessageIndex];
+        setSearchProgress(progress);
+        setLoadingMessage(message);
+        currentMessageIndex++;
+      } else {
+        setSearchProgress(prev => {
+          if (prev < 95) return prev + 5;
+          return prev;
+        });
+      }
+    }, 800);
 
     try {
       const API_BASE_URL = window.location.hostname === 'localhost' 
@@ -408,6 +440,33 @@ export default function ContactSearch() {
           
           // Auto-save to Firebase
           await autoSaveToDirectory(result.contacts, location.trim());
+          
+          // Log activity for contact search
+          if (currentUser?.uid) {
+            try {
+              console.log('📝 ContactSearch: Logging activity for free tier search');
+              const summary = generateContactSearchSummary({
+                jobTitle: jobTitle.trim(),
+                company: company.trim(),
+                location: location.trim(),
+                college: (collegeAlumni || '').trim(),
+                contactCount: result.contacts.length,
+              });
+              console.log('📝 ContactSearch: Generated summary:', summary);
+              await logActivity(currentUser.uid, 'contactSearch', summary, {
+                jobTitle: jobTitle.trim(),
+                company: company.trim(),
+                location: location.trim(),
+                college: (collegeAlumni || '').trim(),
+                contactCount: result.contacts.length,
+              });
+              console.log('✅ ContactSearch: Activity logged successfully');
+            } catch (error) {
+              console.error('❌ ContactSearch: Failed to log contact search activity:', error);
+            }
+          } else {
+            console.warn('⚠️ ContactSearch: No user UID available, skipping activity log');
+          }
           
           // Refresh user data to get updated credits
           await refreshUser();
@@ -470,12 +529,44 @@ export default function ContactSearch() {
 
         result = await response.json();
 
+        // Complete progress
+        if (progressInterval) clearInterval(progressInterval);
+        setSearchProgress(100);
+        setLoadingMessage('Done!');
+
         if (result && result.contacts && result.contacts.length > 0) {
           setLastResults(result.contacts);
           setLastSearchStats(result);
           
           // Auto-save to Firebase
           await autoSaveToDirectory(result.contacts, location.trim());
+          
+          // Log activity for contact search (pro tier)
+          if (currentUser?.uid) {
+            try {
+              console.log('📝 ContactSearch: Logging activity for pro tier search');
+              const summary = generateContactSearchSummary({
+                jobTitle: jobTitle.trim(),
+                company: company.trim(),
+                location: location.trim(),
+                college: (collegeAlumni || '').trim(),
+                contactCount: result.contacts.length,
+              });
+              console.log('📝 ContactSearch: Generated summary:', summary);
+              await logActivity(currentUser.uid, 'contactSearch', summary, {
+                jobTitle: jobTitle.trim(),
+                company: company.trim(),
+                location: location.trim(),
+                college: (collegeAlumni || '').trim(),
+                contactCount: result.contacts.length,
+              });
+              console.log('✅ ContactSearch: Activity logged successfully');
+            } catch (error) {
+              console.error('❌ ContactSearch: Failed to log contact search activity:', error);
+            }
+          } else {
+            console.warn('⚠️ ContactSearch: No user UID available, skipping activity log');
+          }
           
           // Refresh user data to get updated credits
           await refreshUser();
@@ -666,7 +757,7 @@ export default function ContactSearch() {
 
                       {/* Resume Upload for Pro Tier */}
                       {userTier === "pro" && (
-                        <div className="space-y-4 pt-4 border-t border-white/5">
+                        <div className="space-y-6 pt-4 border-t border-slate-200 dark:border-white/5">
                           <div className="space-y-2">
                             <label className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                               Resume <span className="text-red-500">*</span> (Required for Pro tier AI similarity matching)
@@ -675,40 +766,27 @@ export default function ContactSearch() {
                           
                           {/* Show saved resume if exists */}
                           {savedResumeUrl && !uploadedFile && (
-                            <div className="mb-3 p-4 bg-green-900/20 border border-green-500/30 rounded-lg">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <FileText className="h-5 w-5 text-green-400" />
-                                  <div>
-                                    <p className="text-sm font-medium text-green-300">
-                                      Using saved resume: {savedResumeFileName}
-                                    </p>
-                                    <p className="text-xs text-gray-400">
-                                      From your Account Settings
-                                    </p>
-                                  </div>
-                                </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    if (savedResumeUrl) window.open(savedResumeUrl, '_blank');
-                                  }}
-                                  className="text-green-400 hover:text-green-300 hover:bg-green-500/10"
-                                >
-                                  View
-                                </Button>
+                            <div className="rounded-2xl bg-white border border-slate-200 text-slate-900 shadow-sm px-4 py-3 flex items-center justify-between gap-3 text-sm dark:bg-gray-900/70 dark:border-gray-700 dark:text-gray-200 dark:shadow-none">
+                              <div className="flex items-center gap-3">
+                                <FileText className="h-4 w-4 text-slate-400 dark:text-gray-400" />
+                                <span className="font-medium text-slate-900 dark:text-gray-200">Using saved resume: {savedResumeFileName}</span>
                               </div>
+                              <button
+                                onClick={() => {
+                                  if (savedResumeUrl) window.open(savedResumeUrl, '_blank');
+                                }}
+                                className="text-sm text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300"
+                              >
+                                View
+                              </button>
                             </div>
                           )}
                           
                           {/* Upload area */}
-                          <div className={`border-2 border-dashed rounded-lg p-4 text-center transition-colors bg-gray-800/30 ${
+                          <div className={`rounded-2xl border border-slate-200 bg-slate-50 px-6 py-8 flex flex-col items-center justify-center text-sm text-slate-500 hover:border-slate-300 transition dark:border-gray-700/80 dark:bg-black/40 dark:text-gray-400 dark:hover:border-gray-500 ${
                             uploadedFile 
-                              ? 'border-green-500/50 bg-green-500/5' 
-                              : savedResumeUrl 
-                                ? 'border-gray-700 hover:border-purple-400' 
-                                : 'border-gray-600 hover:border-purple-400'
+                              ? 'border-green-500/50 bg-green-500/5 dark:border-green-500/50 dark:bg-green-500/5' 
+                              : ''
                           }`}>
                             <input
                               type="file"
@@ -720,25 +798,40 @@ export default function ContactSearch() {
                             />
                             <label
                               htmlFor="resume-upload"
-                              className={`cursor-pointer ${
+                              className={`cursor-pointer flex flex-col items-center justify-center ${
                                 isSearching ? "opacity-50 cursor-not-allowed" : ""
                               }`}
                             >
-                              <Upload className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                              <p className="text-sm text-gray-300 mb-1">
+                              <Upload className="h-5 w-5 mb-2 text-slate-400 dark:text-gray-400" />
+                              <p className="text-sm text-slate-500 dark:text-gray-400 mb-1">
                                 {uploadedFile
                                   ? `✓ ${uploadedFile.name}`
-                                  : savedResumeUrl
-                                    ? "Upload a different resume (optional)"
-                                    : "Upload resume for AI similarity matching (Required for Pro)"}
+                                  : "Drag a PDF here or click to upload"}
                               </p>
-                              <p className="text-xs text-gray-400">PDF only, max 10MB</p>
+                              <p className="text-xs text-slate-500 dark:text-gray-500">PDF only, max 10MB</p>
                             </label>
                           </div>
                           
                           {savedResumeUrl && !uploadedFile && (
-                            <p className="mt-2 text-xs text-gray-400 text-center">
-                              💡 Your saved resume will be used automatically. Upload a new one to override.
+                            <p className="text-xs text-slate-500 dark:text-gray-500 mt-3">
+                              Your saved resume will be used automatically. Upload a new one to override.
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Progress Bar */}
+                      {isSearching && (
+                        <div className="mt-2 space-y-2">
+                          <div className="w-full bg-background rounded-full h-2 overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-pink-500 to-purple-500 transition-all duration-300 ease-out"
+                              style={{ width: `${searchProgress}%` }}
+                            />
+                          </div>
+                          {loadingMessage && (
+                            <p className="text-xs text-center text-muted-foreground animate-pulse">
+                              {loadingMessage}
                             </p>
                           )}
                         </div>
@@ -754,36 +847,49 @@ export default function ContactSearch() {
                           (userTier === "pro" && !hasResume) ||
                           (effectiveUser.credits ?? 0) < 15
                         }
-                        className="mt-2 h-12 w-full rounded-xl text-sm font-semibold bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="mt-6 py-3 w-full rounded-2xl text-sm font-medium bg-primary hover:bg-primary/90 text-primary-foreground transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isSearching ? "Searching..." : "Find Contacts"}
+                        {isSearching ? (loadingMessage || "Searching...") : "Find Contacts"}
                       </Button>
 
                       {/* Success Message */}
                       {hasResults && lastSearchStats && (
-                        <div className="mt-4 p-4 bg-green-900/20 border-2 border-green-500/50 rounded-lg">
-                          <div className="text-base font-semibold text-green-300 mb-2">
-                            ✓ Search Completed Successfully!
+                        <div className="mt-8 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-5 py-4 space-y-3 dark:border-emerald-500/40 dark:bg-emerald-500/10">
+                          <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                            <Check className="h-4 w-4" />
+                            <span>Search completed</span>
                           </div>
-                          <div className="grid grid-cols-2 gap-4 mt-3">
-                            <div className="bg-zinc-900/30 rounded p-2">
-                              <div className="text-2xl font-bold text-white">{lastResults.length}</div>
-                              <div className="text-xs text-gray-400">Contacts Found</div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex flex-col gap-1 text-slate-900 dark:border-white/5 dark:bg-black/20 dark:text-gray-100">
+                              <div className="text-lg font-semibold text-slate-900 dark:text-white">{lastResults.length}</div>
+                              <div className="text-xs text-slate-500 dark:text-gray-400">Contacts found</div>
                             </div>
-                            <div className="bg-zinc-900/30 rounded p-2">
-                              <div className="text-2xl font-bold text-white">{lastResults.length}</div>
-                              <div className="text-xs text-gray-400">Email Drafts</div>
+                            <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 flex flex-col gap-1 text-slate-900 dark:border-white/5 dark:bg-black/20 dark:text-gray-100">
+                              <div className="text-lg font-semibold text-slate-900 dark:text-white">{lastResults.length}</div>
+                              <div className="text-xs text-slate-500 dark:text-gray-400">Email drafts</div>
                             </div>
                           </div>
-                          <div className="text-sm text-blue-300 mt-3">
-                            ✓ All contacts saved to Contact Sheet
+                          <div className="flex items-center justify-between">
+                            <p className="text-xs text-slate-500 dark:text-gray-400">
+                              View Emails in Your{' '}
+                              <a 
+                                href="https://mail.google.com" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-indigo-500 hover:text-indigo-600 dark:text-indigo-400 dark:hover:text-indigo-300 underline"
+                              >
+                                Gmail
+                              </a>{' '}
+                              Drafts
+                            </p>
+                            <button 
+                              onClick={() => setActiveTab('sheet')}
+                              className="flex items-center gap-1 justify-end text-xs font-medium text-indigo-500 hover:text-indigo-600 dark:text-sm dark:font-bold dark:text-indigo-400 dark:hover:text-indigo-300"
+                            >
+                              View in Contact Sheet
+                              <span>→</span>
+                            </button>
                           </div>
-                          <button 
-                            onClick={() => setActiveTab('sheet')}
-                            className="mt-3 text-sm text-blue-400 hover:text-blue-300 underline"
-                          >
-                            View in Contact Sheet →
-                          </button>
                         </div>
                       )}
                     </div>
@@ -810,4 +916,5 @@ export default function ContactSearch() {
     </SidebarProvider>
   );
 }
+
 

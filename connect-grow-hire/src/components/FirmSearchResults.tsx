@@ -149,8 +149,8 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
               {searchQuery && ` (filtered from ${firms.length})`}
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Click "View Contacts" to find professionals at any firm
+          <p className="text-sm text-muted-foreground flex items-center gap-1">
+            Click <UserSearch className="h-4 w-4 inline" /> to find professionals at any firm
           </p>
         </div>
       </div>
@@ -342,8 +342,8 @@ export default function FirmSearchResults({ firms, onViewContacts }: FirmSearchR
       {/* Footer */}
       {filteredFirms.length > 0 && (
         <div className="px-6 py-4 border-t border-border bg-muted">
-          <p className="text-sm text-muted-foreground text-center">
-            Click on column headers to sort • Click "View Contacts" to find professionals at any firm
+          <p className="text-sm text-muted-foreground text-center flex items-center justify-center gap-1">
+            Click on column headers to sort • Click <UserSearch className="h-4 w-4 inline" /> to find professionals at any firm
           </p>
         </div>
       )}

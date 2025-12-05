@@ -213,6 +213,185 @@ export const firebaseApi = {
     const d = snapshot.docs[0];
     return { id: d.id, ...d.data() } as Contact;
   },
+
+  // ================================
+  // ACTIVITY LOGGING
+  // ================================
+  async logActivity(
+    uid: string,
+    type: 'firmSearch' | 'contactSearch' | 'coffeePrep' | 'interviewPrep',
+    summary: string,
+    metadata?: any
+  ): Promise<void> {
+    try {
+      console.log('📝 Logging activity:', { uid, type, summary, metadata });
+      const activitiesRef = collection(db, 'users', uid, 'activity');
+      const activityDoc = doc(activitiesRef);
+      await setDoc(activityDoc, {
+        type,
+        summary,
+        timestamp: Timestamp.now(),
+        metadata: metadata || {},
+      });
+      console.log('✅ Activity logged successfully');
+    } catch (error) {
+      console.error('❌ Failed to log activity:', error);
+      throw error; // Re-throw so caller knows it failed
+    }
+  },
+
+  async getActivities(uid: string, limitCount: number = 10): Promise<Array<{
+    id: string;
+    type: string;
+    summary: string;
+    timestamp: any;
+    metadata?: any;
+  }>> {
+    try {
+      const activitiesRef = collection(db, 'users', uid, 'activity');
+      
+      // Try with orderBy first, fallback to getting all and sorting client-side if index doesn't exist
+      let snapshot;
+      try {
+        const q = query(activitiesRef, orderBy('timestamp', 'desc'), limit(limitCount));
+        snapshot = await getDocs(q);
+      } catch (error: any) {
+        // If orderBy fails (likely missing index), get all and sort client-side
+        console.warn('Firestore index may be missing, fetching all activities and sorting client-side:', error);
+        const allSnapshot = await getDocs(activitiesRef);
+        const allActivities = allSnapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as Array<{
+          id: string;
+          type: string;
+          summary: string;
+          timestamp: any;
+          metadata?: any;
+        }>;
+        
+        // Sort by timestamp desc and limit
+        return allActivities
+          .filter(a => a.timestamp)
+          .sort((a, b) => {
+            const aTime = a.timestamp?.toMillis?.() || 0;
+            const bTime = b.timestamp?.toMillis?.() || 0;
+            return bTime - aTime;
+          })
+          .slice(0, limitCount);
+      }
+      
+      return snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as Array<{
+        id: string;
+        type: string;
+        summary: string;
+        timestamp: any;
+        metadata?: any;
+      }>;
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      return [];
+    }
+  },
+
+  // ================================
+  // GOALS MANAGEMENT
+  // ================================
+  async getGoals(uid: string): Promise<Array<{
+    id: string;
+    type: string;
+    target: number;
+    period: string;
+    startDate: any;
+    endDate: any;
+  }>> {
+    try {
+      const goalsRef = collection(db, 'users', uid, 'goals');
+      const snapshot = await getDocs(goalsRef);
+      
+      return snapshot.docs.map((d) => ({
+        id: d.id,
+        ...d.data(),
+      })) as Array<{
+        id: string;
+        type: string;
+        target: number;
+        period: string;
+        startDate: any;
+        endDate: any;
+      }>;
+    } catch (error) {
+      console.error('Error fetching goals:', error);
+      return [];
+    }
+  },
+
+  async createGoal(
+    uid: string,
+    goal: {
+      type: 'contacts' | 'firms' | 'coffeeChats' | 'outreach';
+      target: number;
+      period: 'month' | 'week' | 'year';
+      startDate: Timestamp;
+      endDate: Timestamp;
+    }
+  ): Promise<string> {
+    try {
+      const goalsRef = collection(db, 'users', uid, 'goals');
+      const goalDoc = doc(goalsRef);
+      await setDoc(goalDoc, goal);
+      return goalDoc.id;
+    } catch (error) {
+      console.error('Error creating goal:', error);
+      throw error;
+    }
+  },
+
+  async updateUserStreak(uid: string, streakData: {
+    currentStreak: number;
+    longestStreak: number;
+    lastActivityDate: string;
+  }): Promise<void> {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await updateDoc(userRef, {
+        currentStreak: streakData.currentStreak,
+        longestStreak: streakData.longestStreak,
+        lastActivityDate: streakData.lastActivityDate,
+      });
+    } catch (error) {
+      console.error('Error updating user streak:', error);
+      // Don't throw - streak update shouldn't break activity logging
+    }
+  },
+
+  async getUserStreak(uid: string): Promise<{
+    currentStreak: number;
+    longestStreak: number;
+    lastActivityDate: string | null;
+  } | null> {
+    try {
+      const userRef = doc(db, 'users', uid);
+      const userDoc = await getDoc(userRef);
+      
+      if (!userDoc.exists()) {
+        return null;
+      }
+      
+      const data = userDoc.data();
+      return {
+        currentStreak: data.currentStreak || 0,
+        longestStreak: data.longestStreak || 0,
+        lastActivityDate: data.lastActivityDate || null,
+      };
+    } catch (error) {
+      console.error('Error fetching user streak:', error);
+      return null;
+    }
+  },
 };
 
 export default firebaseApi;

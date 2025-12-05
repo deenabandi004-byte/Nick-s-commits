@@ -11,7 +11,7 @@ import UscBeta from "@/pages/UscBeta";
 
 // Pages
 import Index from "./pages/Index";
-import Home from "./pages/Home";
+import DashboardPage from "./pages/DashboardPage"; // NEW: Use DashboardPage instead of Home
 import SignIn from "./pages/SignIn";
 import AuthCallback from "./pages/AuthCallback";
 import AboutUs from "./pages/AboutUs";
@@ -103,7 +103,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/onboarding/*" element={<Navigate to="/onboarding" replace />} />
 
       {/* Protected App Pages */}
-      <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/home" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
       <Route path="/firm-search" element={<ProtectedRoute><FirmSearch /></ProtectedRoute>} />
       <Route path="/contact-search" element={<ProtectedRoute><ContactSearch /></ProtectedRoute>} />
       <Route path="/coffee-chat-prep" element={<ProtectedRoute><CoffeeChatPrepPage /></ProtectedRoute>} />
@@ -116,8 +116,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/contact-directory" element={<ProtectedRoute><ContactDirectory /></ProtectedRoute>} />
       <Route path="/coffee-chat-library" element={<ProtectedRoute><CoffeeChatLibrary /></ProtectedRoute>} />
-      <Route path="/outbox" element={ <ProtectedRoute><Outbox /></ProtectedRoute> }/>
-      
+      <Route path="/outbox" element={<ProtectedRoute><Outbox /></ProtectedRoute>} />
 
 
       {/* Public informational pages */}
