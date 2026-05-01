@@ -1,4 +1,7 @@
 import { ArrowLeft, Upload, Trash2, LogOut, CreditCard, FileText, User, GraduationCap, Briefcase, Rocket, Settings, AlertTriangle, Lock, Eye, RefreshCw, X, CheckCircle, Mail, Target, Star } from "lucide-react";
+import { AlumniConsent } from "@/components/AlumniConsent";
+import { getAlumniGraphConsent } from "@/services/api";
+import type { AlumniGraphConsent as AlumniGraphConsentValue } from "@/types/user";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -218,6 +221,31 @@ export default function AccountSettings() {
   
   // Active section for sidebar
   const [activeSection, setActiveSection] = useState('personal');
+
+  // Phase 6 alumni-graph consent state. Loaded once on mount; the modal
+  // refreshes it after a decision via onDecided.
+  const [alumniConsentValue, setAlumniConsentValue] =
+    useState<AlumniGraphConsentValue | null>(null);
+  const [alumniConsentLoaded, setAlumniConsentLoaded] = useState(false);
+  const [alumniConsentOpen, setAlumniConsentOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const state = await getAlumniGraphConsent();
+        if (!cancelled) {
+          setAlumniConsentValue(state.value);
+          setAlumniConsentLoaded(true);
+        }
+      } catch {
+        if (!cancelled) setAlumniConsentLoaded(true);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   
   // State for form data populated from onboarding
   const [personalInfo, setPersonalInfo] = useState({
@@ -2295,6 +2323,56 @@ export default function AccountSettings() {
                         </div>
                       )}
                     </div>
+                  </SettingsSection>
+
+                  {/* Phase 6 — Alumni Graph consent */}
+                  <SettingsSection
+                    id="alumni-graph"
+                    icon={GraduationCap}
+                    title="Alumni Graph"
+                    description="Choose whether other students from your school can see your name and current role on Offerloop."
+                  >
+                    <div
+                      className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                      style={{
+                        padding: '20px',
+                        borderRadius: '12px',
+                        background: '#FAFBFF',
+                        border: '1px solid rgba(59, 130, 246, 0.06)',
+                      }}
+                    >
+                      <div>
+                        <p className="text-sm font-medium">
+                          Status:{' '}
+                          {!alumniConsentLoaded
+                            ? 'Loading…'
+                            : alumniConsentValue === 'opt_in'
+                              ? 'Opted in'
+                              : alumniConsentValue === 'opt_out'
+                                ? 'Opted out'
+                                : 'Not decided yet'}
+                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          You can change this at any time. Your email and other
+                          private profile fields are never shared.
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant={alumniConsentValue === 'opt_in' ? 'outline' : 'default'}
+                        onClick={() => setAlumniConsentOpen(true)}
+                      >
+                        {alumniConsentValue === 'opt_in' ? 'Manage' : 'Review options'}
+                      </Button>
+                    </div>
+                    <AlumniConsent
+                      open={alumniConsentOpen}
+                      onOpenChange={setAlumniConsentOpen}
+                      currentValue={alumniConsentValue}
+                      surface="account_settings"
+                      schoolDisplay={personalInfo.university || null}
+                      onDecided={(next) => setAlumniConsentValue(next)}
+                    />
                   </SettingsSection>
 
                   {/* Gmail Integration Section */}

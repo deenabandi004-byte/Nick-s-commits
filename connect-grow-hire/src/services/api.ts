@@ -2267,6 +2267,52 @@ export function isTemplateRebuildResult(result: OptimizationResult): result is T
   return result.mode === 'template_rebuild';
 }
 
+// =============================================================================
+// Phase 6 — Alumni graph + consent
+// =============================================================================
+// Backend routes registered in wsgi.py via alumni_bp + alumni_consent_bp.
+// All return 200 with a typed payload; the frontend can mount even when
+// ALUMNI_GRAPH_ENABLED is off (the route returns count: null).
+
+export type AlumniGraphConsentValue = 'opt_in' | 'opt_out' | 'pending';
+
+export interface AlumniGraphConsentState {
+  value: AlumniGraphConsentValue | null;
+  decidedAt: string | null;
+}
+
+export const getAlumniGraphConsent = async (): Promise<AlumniGraphConsentState> => {
+  const { auth } = await import('../lib/firebase');
+  const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const response = await fetch(`${API_BASE_URL}/users/consent/alumni-graph`, {
+    method: 'GET',
+    headers,
+  });
+  if (!response.ok) return { value: null, decidedAt: null };
+  return response.json();
+};
+
+export const setAlumniGraphConsent = async (
+  value: 'opt_in' | 'opt_out',
+  source: 'count_badge' | 'account_settings' | 'first_run' = 'account_settings',
+): Promise<AlumniGraphConsentState & { indexed?: { written: number; skipped: number } | null }> => {
+  const { auth } = await import('../lib/firebase');
+  const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const response = await fetch(`${API_BASE_URL}/users/consent/alumni-graph`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ value, source }),
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to update consent: HTTP ${response.status}`);
+  }
+  return response.json();
+};
+
 export const enrichLinkedInOnboarding = async (linkedinUrl: string) => {
   const { auth } = await import('../lib/firebase');
   const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;

@@ -135,3 +135,12 @@ export const LENGTH_PREFERENCES = [
 export const EVENTS_LOGGING_ENABLED =
   (import.meta.env.VITE_EVENTS_LOGGING_ENABLED ?? 'false').toLowerCase() === 'true';
 
+// =============================================================================
+// Phase 6 — Alumni graph + consent feature flag
+// =============================================================================
+// AlumniConsent modal + AccountSettings consent surface read this. Backend has
+// a matching gate (ALUMNI_GRAPH_ENABLED) so consent writes still work even
+// when the read-side sourcing is dark. Default OFF.
+export const ALUMNI_GRAPH_ENABLED =
+  (import.meta.env.VITE_ALUMNI_GRAPH_ENABLED ?? 'false').toLowerCase() === 'true';
+
