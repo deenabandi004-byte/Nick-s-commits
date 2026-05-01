@@ -323,6 +323,23 @@ def alumni_count():
         return jsonify({'error': 'school and company are required'}), 400
 
     data = get_alumni_count(school, company, office)
+
+    # Phase 6: when ALUMNI_GRAPH_ENABLED is on and the cache is missing or
+    # stale, source synchronously through the provider chain. Flag off keeps
+    # the Phase 1 read-only behavior unchanged.
+    try:
+        from app.services.alumni_sourcing_service import (
+            is_enabled as alumni_graph_enabled,
+            source_alumni_for_pair,
+        )
+        if alumni_graph_enabled() and (data is None or getattr(data, 'is_stale', False)):
+            sourced = source_alumni_for_pair(school, company, office)
+            if sourced is not None:
+                data = sourced
+    except Exception:
+        # Sourcing must never break the read path; fall through to the cache.
+        pass
+
     if not data:
         return jsonify({
             'count': None,
