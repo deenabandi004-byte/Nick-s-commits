@@ -60,6 +60,11 @@ class EventType(str, Enum):
     PROFILE_FIELD_EDITED = 'profile_field_edited'
     PROFILE_CONFIRMED = 'profile_confirmed'
 
+    # === Alumni surface (frontend, P6) ===
+    ALUMNI_CONSENT_DECISION = 'alumni_consent_decision'
+    ALUMNI_CARD_VIEWED = 'alumni_card_viewed'
+    ALUMNI_CARD_CLICKED = 'alumni_card_clicked'
+
     # === Backend-originated only ===
     EMAIL_SENT_VIA_GMAIL = 'email_sent_via_gmail'
     REPLY_RECEIVED = 'reply_received'
@@ -70,6 +75,7 @@ class EventType(str, Enum):
     MEETING_BOOKED = 'meeting_booked'
     BOUNCE_RECEIVED = 'bounce_received'
     REPLY_ATTRIBUTION_UNCERTAIN = 'reply_attribution_uncertain'
+    ALUMNI_GRAPH_CONSENT_CHANGED = 'alumni_graph_consent_changed'
 
 
 # Subset of event types that the backend is allowed to write itself.
@@ -83,6 +89,7 @@ BACKEND_EVENT_TYPES = frozenset([
     EventType.MEETING_BOOKED,
     EventType.BOUNCE_RECEIVED,
     EventType.REPLY_ATTRIBUTION_UNCERTAIN,
+    EventType.ALUMNI_GRAPH_CONSENT_CHANGED,
 ])
 
 # Frontend-originated event types accepted via /api/events/batch.
@@ -105,6 +112,9 @@ FRONTEND_EVENT_TYPES = frozenset([
     EventType.DASHBOARD_RECOMMENDATION_CLICKED,
     EventType.PROFILE_FIELD_EDITED,
     EventType.PROFILE_CONFIRMED,
+    EventType.ALUMNI_CONSENT_DECISION,
+    EventType.ALUMNI_CARD_VIEWED,
+    EventType.ALUMNI_CARD_CLICKED,
 ])
 
 

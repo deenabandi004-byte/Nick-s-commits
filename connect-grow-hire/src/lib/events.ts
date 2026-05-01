@@ -35,7 +35,11 @@ export type EventType =
   | 'dashboard_recommendation_clicked'
   // Profile
   | 'profile_field_edited'
-  | 'profile_confirmed';
+  | 'profile_confirmed'
+  // Alumni surface (P6)
+  | 'alumni_consent_decision'
+  | 'alumni_card_viewed'
+  | 'alumni_card_clicked';
 
 // =============================================================================
 // Per-payload schemas
@@ -111,6 +115,17 @@ export const DashboardPayloadSchema = z.object({
   surface: z.string().optional(),
 });
 
+export const AlumniConsentDecisionPayloadSchema = z.object({
+  value: z.enum(['opt_in', 'opt_out']),
+  surface: z.enum(['count_badge', 'account_settings', 'first_run']).optional(),
+});
+
+export const AlumniCardPayloadSchema = z.object({
+  schoolId: z.string().min(1),
+  companyId: z.string().min(1),
+  count: z.number().int().nonnegative().optional(),
+});
+
 const GenericPayloadSchema = z.record(z.string(), z.unknown());
 
 // =============================================================================
@@ -129,6 +144,8 @@ export type PayloadFor<T extends EventType> =
   T extends 'profile_field_edited' ? z.infer<typeof ProfileFieldEditedPayloadSchema> :
   T extends 'profile_confirmed' ? z.infer<typeof ProfileConfirmedPayloadSchema> :
   T extends 'dashboard_cta_clicked' | 'dashboard_cta_dismissed' | 'dashboard_recommendation_viewed' | 'dashboard_recommendation_clicked' ? z.infer<typeof DashboardPayloadSchema> :
+  T extends 'alumni_consent_decision' ? z.infer<typeof AlumniConsentDecisionPayloadSchema> :
+  T extends 'alumni_card_viewed' | 'alumni_card_clicked' ? z.infer<typeof AlumniCardPayloadSchema> :
   Record<string, unknown>;
 
 const PAYLOAD_SCHEMAS: Record<EventType, z.ZodTypeAny> = {
@@ -150,6 +167,9 @@ const PAYLOAD_SCHEMAS: Record<EventType, z.ZodTypeAny> = {
   dashboard_cta_dismissed: DashboardPayloadSchema,
   dashboard_recommendation_viewed: DashboardPayloadSchema,
   dashboard_recommendation_clicked: DashboardPayloadSchema,
+  alumni_consent_decision: AlumniConsentDecisionPayloadSchema,
+  alumni_card_viewed: AlumniCardPayloadSchema,
+  alumni_card_clicked: AlumniCardPayloadSchema,
 };
 
 export interface BaseEvent<T extends EventType = EventType> {
