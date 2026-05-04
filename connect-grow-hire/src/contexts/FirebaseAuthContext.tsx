@@ -45,6 +45,13 @@ interface User {
   emailsMonthKey?: string;
   needsOnboarding?: boolean;
 
+  // Phase 1 personalization gate (used by ProfileConfirmModal):
+  //   - schemaVersion === 1   user has the v1 schema fields
+  //   - backfillProcessed     phase1_backfill.py has populated them
+  //   - profileConfirmedAt    user has confirmed via the modal
+  schemaVersion?: number;
+  backfillProcessed?: boolean;
+  profileConfirmedAt?: string | null;
 }
 
 type SignInOptions = {
@@ -153,7 +160,9 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
           emailsMonthKey: d.emailsMonthKey || getMonthKey(),
           emailsUsedThisMonth: d.emailsUsedThisMonth ?? 0,
           needsOnboarding: d.needsOnboarding ?? false,
-          
+          schemaVersion: d.schemaVersion,
+          backfillProcessed: d.backfillProcessed,
+          profileConfirmedAt: d.profileConfirmedAt ?? null,
         };
         setUser(userData);
         // Identify user after data is loaded

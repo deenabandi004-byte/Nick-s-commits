@@ -1,5 +1,5 @@
 // src/App.tsx
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useEffect, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,6 +15,9 @@ import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { ScoutSidePanel } from "./components/ScoutSidePanel";
 import { LoadingContainer } from "./components/ui/LoadingBar";
 import { useEventLogger } from "./hooks/useEventLogger";
+import { ProfileConfirmModal } from "./components/ProfileConfirmModal";
+import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { db } from "./lib/firebase";
 
 // Keep critical pages non-lazy for faster initial load
 import Index from "./pages/Index";
@@ -356,6 +359,65 @@ const EventLoggerHost: React.FC = () => {
   return null;
 };
 
+/**
+ * Phase 1 personalization gate. Pops the ProfileConfirmModal once after
+ * `phase1_backfill.py` has populated the user's structured fields, so the
+ * student confirms / edits values that future emails will use. Gated on
+ * exactly the three audit-specified fields:
+ *   user.schemaVersion === 1
+ *   user.backfillProcessed === true
+ *   !user.profileConfirmedAt
+ *
+ * `dismissed` is a session-local flag so a Skip during this session
+ * doesn't re-pop on every navigation; the persistent dismissal-count
+ * lives on the modal/server side per its own design (15).
+ */
+const ProfileConfirmModalHost: React.FC = () => {
+  const { user, updateUser } = useFirebaseAuth();
+  const [dismissed, setDismissed] = useState(false);
+
+  if (!user) return null;
+  if (dismissed) return null;
+  const shouldShow =
+    user.schemaVersion === 1 &&
+    user.backfillProcessed === true &&
+    !user.profileConfirmedAt;
+  if (!shouldShow) return null;
+
+  const handleConfirmed = async () => {
+    try {
+      const nowIso = new Date().toISOString();
+      await updateDoc(doc(db, "users", user.uid), {
+        profileConfirmedAt: serverTimestamp(),
+      });
+      // Sync local context so the gate flips and the modal unmounts.
+      await updateUser({ profileConfirmedAt: nowIso });
+    } catch (err) {
+      console.warn("[ProfileConfirmModalHost] failed to persist profileConfirmedAt:", err);
+      setDismissed(true);
+    }
+  };
+
+  const handleSkip = () => {
+    // Modal owns the dismissal-count write. Locally hide for this session
+    // so the user isn't pestered on every route change.
+    setDismissed(true);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) setDismissed(true);
+  };
+
+  return (
+    <ProfileConfirmModal
+      open
+      onOpenChange={handleOpenChange}
+      onConfirmed={handleConfirmed}
+      onSkip={handleSkip}
+    />
+  );
+};
+
 const KeyboardShortcutHandler: React.FC = () => {
   const { openPanel, isPanelOpen, togglePanel } = useScout();
 
@@ -402,6 +464,7 @@ const App: React.FC = () => {
                   <TourProvider>
                     <EventLoggerHost />
                     <KeyboardShortcutHandler />
+                    <ProfileConfirmModalHost />
                     <AppRoutes />
                     <ScoutSidePanel />
                   </TourProvider>
