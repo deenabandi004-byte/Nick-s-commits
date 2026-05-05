@@ -18,11 +18,13 @@ import re
 from app.config import GMAIL_SCOPES
 from ..extensions import require_firebase_auth
 from app.services.reply_generation import batch_generate_emails
+from app.services.company_contexts_service import list_company_contexts
 from app.services.gmail_client import get_gmail_service_for_user
 from app.services.interview_prep.resume_parser import extract_text_from_pdf_bytes
 from app.utils.url_validator import validate_fetch_url, UnsafeURLError
 from app.utils.seniority import classify_seniority
 from app.utils.warmth_scoring import score_contacts_for_email
+from app.utils.company import company_to_slug
 from ..extensions import get_db
 from email_templates import get_template_instructions
 
@@ -52,13 +54,28 @@ def _write_outbound_draft(
     contact_id: str,
     contact_email: str,
     generation_metadata: dict,
+    contact: dict | None = None,
 ) -> None:
     """Synchronously write an outboundDrafts/{trackingId} doc BEFORE the
     Gmail draft is created. If the draft creation throws, we update the
     doc with status='failed' so we can surface the gap later. The doc is
-    the source of truth for sent/reply attribution (§3.4)."""
+    the source of truth for sent/reply attribution (3.4).
+
+    `companyIdNormalized` is the canonical slug for the contact's company,
+    indexed by the unanswered-threshold scan in
+    `company_contexts_service._count_unanswered_outbound_at_company`. None
+    when the contact dict is missing or has no Company field.
+    """
     if not _attribution_enabled():
         return
+    company_id_normalized: str | None = None
+    if contact:
+        try:
+            company_id_normalized = company_to_slug(
+                contact.get('Company') or contact.get('company')
+            )
+        except Exception:
+            company_id_normalized = None
     try:
         ref = (
             db.collection('users')
@@ -70,6 +87,7 @@ def _write_outbound_draft(
             'trackingId': tracking_id,
             'contactId': contact_id or None,
             'contactEmail': (contact_email or '').strip().lower(),
+            'companyIdNormalized': company_id_normalized,
             'status': 'drafted',
             'sentMessageId': None,
             'createdAt': datetime.now(timezone.utc).isoformat(),
@@ -301,8 +319,22 @@ def generate_and_draft():
         # 1) Generate emails with fit context and user's template/signoff
         auth_display_name = (getattr(request, "firebase_user", None) or {}).get("name") or ""
         warmth_data = score_contacts_for_email(user_data, contacts_to_generate)
+
+        # Phase 3: pull saved companyContexts for the user; the generator
+        # weaves the user's "why this company" reason into the email when
+        # one of the contacts' companies matches a stored context. Best
+        # effort  generation must not fail because of context plumbing.
+        company_contexts_map = {}
+        try:
+            for ctx in list_company_contexts(uid):
+                cid = ctx.get('companyId') or ctx.get('_id')
+                if cid:
+                    company_contexts_map[cid] = ctx
+        except Exception as _ctx_err:
+            print(f"[Emails] companyContexts fetch skipped: {_ctx_err}")
+
         print(f"[EmailGen] Calling batch_generate_emails: resume_text={'present (' + str(len(resume_text)) + ' chars)' if resume_text else 'None/empty'}, "
-              f"contacts={len(contacts_to_generate)}")
+              f"contacts={len(contacts_to_generate)}, companyContexts={len(company_contexts_map)}")
         generated_results = batch_generate_emails(
             contacts_to_generate,
             resume_text,
@@ -318,6 +350,7 @@ def generate_and_draft():
             personal_note=personal_note,
             dream_companies=dream_companies,
             warmth_data=warmth_data,
+            company_contexts=company_contexts_map,
         )
         print(f"🧪 batch_generate_emails returned: type={type(generated_results)}, "
           f"len={len(generated_results) if hasattr(generated_results, '__len__') else 'n/a'}, "
@@ -538,6 +571,7 @@ def generate_and_draft():
                 "templateUsed": (r.get("personalization") or {}).get("commonality_type") or "general",
                 "subject": r["subject"],
             },
+            contact=c,
         )
 
         # --- Build MIME message ---

@@ -1,6 +1,8 @@
 """
 User management routes
 """
+import os
+import re
 from datetime import datetime, timezone
 from flask import Blueprint, jsonify, request
 from app.extensions import require_firebase_auth, get_db
@@ -16,6 +18,13 @@ from app.models.users import (
     normalize_school,
 )
 from app.services.alumni_service import get_alumni_count
+from app.services.company_contexts_service import (
+    REASON_MAX_CHARS,
+    list_company_contexts,
+    should_show_prompt,
+    write_company_context,
+)
+from app.utils.company import company_to_slug, get_aliases_for_slug
 from firebase_admin import firestore
 import json
 
@@ -415,4 +424,196 @@ def profile_confirm():
     _clear_user_profile_cache(uid)
 
     return jsonify({'success': True, 'fieldsWritten': list(provenance_updates.keys())}), 200
+
+
+# =============================================================================
+# Phase 3 — Company Contexts (floating-prompt back-end)
+# =============================================================================
+# - GET  /api/company-contexts/should-show — staleness check for the floating
+#         prompt; the FloatingPrompt component calls this on render to decide
+#         whether to show itself for a given (user, company).
+# - POST /api/company-contexts — write the user's answer with source='explicit'.
+# - GET  /api/company-contexts — list all contexts for the current user
+#         (used by the AccountSettings "your reasons" surface).
+#
+# Both routes are gated by FLOATING_PROMPT_ENABLED so we can deploy the API
+# surface separately from flipping the UX live. Default OFF (per §8).
+
+REASON_MIN_CHARS = 10  # noise floor — anything shorter is a "test" / "asdf"
+# Strings the user can type instead of a real answer — match exactly to
+# avoid catching legitimate short answers like "Family connections."
+_NOISE_LITERALS = {
+    'asdf', 'asdfasdf', 'qwerty', 'test', 'testing', 'tbd', 'idk',
+    'i dont know', "i don't know", 'no idea', 'na', 'n/a', 'none',
+    'placeholder', 'tk', 'todo',
+}
+
+
+def _floating_prompt_enabled() -> bool:
+    return os.getenv('FLOATING_PROMPT_ENABLED', 'false').lower() == 'true'
+
+
+def _validate_reason_or_400(reason):
+    """Pure validator — returns (cleaned, error_dict_or_None).
+
+    Returning a dict (not a Flask response) keeps this function unit-testable
+    without an app context. The route wraps the dict in `jsonify` itself.
+    """
+    if not isinstance(reason, str):
+        return None, {'error': 'reason must be a string', 'status': 400}
+    cleaned = reason.strip()
+    if len(cleaned) < REASON_MIN_CHARS:
+        return None, {
+            'error': f'reason must be at least {REASON_MIN_CHARS} characters',
+            'code': 'reason_too_short',
+            'status': 400,
+        }
+    if len(cleaned) > REASON_MAX_CHARS:
+        cleaned = cleaned[:REASON_MAX_CHARS]
+    # Noise filter — strip and lower to catch "  ASDF  " but keep things
+    # like "Family connections." intact (length > min already filters).
+    lowered = re.sub(r'\s+', ' ', cleaned.lower()).strip()
+    if lowered in _NOISE_LITERALS:
+        return None, {
+            'error': 'reason looks like a placeholder; please write a real one',
+            'code': 'reason_noise',
+            'status': 400,
+        }
+    # Repetition heuristic — "asdfasdfasdf" / "aaaaaaaaaa" patterns.
+    compact = lowered.replace(' ', '')
+    if len(set(compact)) <= 2:
+        return None, {
+            'error': 'reason looks like keyboard mashing; please write a real one',
+            'code': 'reason_noise',
+            'status': 400,
+        }
+    # Catch short-substring tile repetition like "asdfasdfasdf".
+    for unit_len in range(2, 5):
+        if len(compact) >= unit_len * 3:
+            unit = compact[:unit_len]
+            if compact == unit * (len(compact) // unit_len) + compact[len(compact) - (len(compact) % unit_len):]:
+                if compact == unit * (len(compact) // unit_len) and len(compact) % unit_len == 0:
+                    return None, {
+                        'error': 'reason looks like keyboard mashing; please write a real one',
+                        'code': 'reason_noise',
+                        'status': 400,
+                    }
+    return cleaned, None
+
+
+# NOTE: The two company-contexts routes live on a dedicated blueprint
+# (`company_contexts_bp`) registered at `/api/company-contexts` rather than
+# under the `/api/users` prefix. That keeps the API shape spec-aligned
+# (§5 P3) and avoids fragile `..` traversal in the URL path.
+company_contexts_bp = Blueprint('company_contexts', __name__, url_prefix='/api/company-contexts')
+
+
+@company_contexts_bp.route('/should-show', methods=['GET'])
+@require_firebase_auth
+def company_contexts_should_show():
+    """Return whether the floating prompt should fire for (user, company).
+
+    Query params:
+        company        — display name. Required.
+        companyId      — already-normalized slug; overrides `company` if both.
+
+    Returns:
+        200 with the dict from `should_show_prompt` (show, reason, priorAnswer).
+        When the feature flag is off, always returns show=false.
+    """
+    if not _floating_prompt_enabled():
+        return jsonify({
+            'show': False,
+            'reason': 'flag_disabled',
+            'priorAnswer': None,
+        }), 200
+
+    uid = request.firebase_user['uid']
+    company_raw = (request.args.get('company') or '').strip()
+    company_id_param = (request.args.get('companyId') or '').strip()
+    company_id = company_id_param or company_to_slug(company_raw)
+    if not company_id:
+        return jsonify({'error': 'company or companyId is required'}), 400
+
+    decision = should_show_prompt(uid, company_id)
+    # Don't leak the full prior context doc to the client — only the answer
+    # text and source are needed to render the stale re-ask UI.
+    prior_ctx = decision.get('priorContext') or {}
+    return jsonify({
+        'show': bool(decision.get('show')),
+        'reason': decision.get('reason'),
+        'priorAnswer': decision.get('priorAnswer'),
+        'priorSource': prior_ctx.get('source'),
+        'companyId': company_id,
+    }), 200
+
+
+@company_contexts_bp.route('', methods=['GET', 'POST'])
+@require_firebase_auth
+def company_contexts():
+    """List or write company contexts for the current user."""
+    uid = request.firebase_user['uid']
+
+    if request.method == 'GET':
+        if not _floating_prompt_enabled():
+            return jsonify({'contexts': []}), 200
+        contexts = list_company_contexts(uid)
+        # Trim verbose fields the UI doesn't need.
+        trimmed = [
+            {
+                'companyId': c.get('companyId'),
+                'companyName': c.get('companyName'),
+                'reason': c.get('reason'),
+                'source': c.get('source'),
+                'answeredAt': c.get('answeredAt'),
+                'lastUsedAt': c.get('lastUsedAt'),
+            }
+            for c in contexts
+        ]
+        return jsonify({'contexts': trimmed}), 200
+
+    if not _floating_prompt_enabled():
+        return jsonify({'error': 'feature flag disabled', 'code': 'flag_disabled'}), 403
+
+    body = request.get_json(silent=True) or {}
+    company_name = (body.get('company') or body.get('companyName') or '').strip()
+    reason_raw = body.get('reason') or ''
+    company_id_param = (body.get('companyId') or '').strip()
+    related_role_types = body.get('relatedRoleTypes') or []
+
+    if not company_name and not company_id_param:
+        return jsonify({'error': 'company is required'}), 400
+
+    cleaned_reason, err = _validate_reason_or_400(reason_raw)
+    if err is not None:
+        status = err.pop('status', 400)
+        return jsonify(err), status
+
+    company_id = company_id_param or company_to_slug(company_name)
+    if not company_id:
+        return jsonify({'error': f'could not normalize company {company_name!r}'}), 400
+
+    # Surface known aliases on first write so future lookups for any of
+    # those names hit this same doc.
+    aliases = get_aliases_for_slug(company_id)
+    if company_name and company_name.lower() not in {a.lower() for a in aliases}:
+        aliases = sorted(set(aliases + [company_name]))
+
+    persisted = write_company_context(
+        uid=uid,
+        company_name=company_name or company_id,
+        reason=cleaned_reason,
+        source='explicit',
+        company_aliases=aliases,
+        related_role_types=related_role_types if isinstance(related_role_types, list) else [],
+        answered=True,
+        company_id_normalized=company_id,
+    )
+    return jsonify({
+        'success': True,
+        'companyId': company_id,
+        'reason': persisted.get('reason'),
+        'answeredAt': persisted.get('answeredAt'),
+    }), 200
+
 

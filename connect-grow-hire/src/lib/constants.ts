@@ -136,6 +136,18 @@ export const EVENTS_LOGGING_ENABLED =
   (import.meta.env.VITE_EVENTS_LOGGING_ENABLED ?? 'false').toLowerCase() === 'true';
 
 // =============================================================================
+// Phase 3 — Floating prompt + cold-start intent feature flags
+// =============================================================================
+// FloatingPrompt and ColdStartIntent both check these at render. The backend
+// has matching gates (FLOATING_PROMPT_ENABLED / COLD_START_INTENT_ENABLED) so
+// the API surface can be deployed dark. All default OFF.
+export const FLOATING_PROMPT_ENABLED =
+  (import.meta.env.VITE_FLOATING_PROMPT_ENABLED ?? 'false').toLowerCase() === 'true';
+
+export const COLD_START_INTENT_ENABLED =
+  (import.meta.env.VITE_COLD_START_INTENT_ENABLED ?? 'false').toLowerCase() === 'true';
+
+// =============================================================================
 // Phase 6 — Alumni graph + consent feature flag
 // =============================================================================
 // AlumniConsent modal + AccountSettings consent surface read this. Backend has
@@ -144,3 +156,68 @@ export const EVENTS_LOGGING_ENABLED =
 export const ALUMNI_GRAPH_ENABLED =
   (import.meta.env.VITE_ALUMNI_GRAPH_ENABLED ?? 'false').toLowerCase() === 'true';
 
+
+// =============================================================================
+// Phase 3 — Industry-seeded suggestion chips for the FloatingPrompt
+// =============================================================================
+// Per 15 #2: 3 chips per industry the user has flagged in `targetIndustries`.
+// The user can pick a chip to seed their answer (still editable) or write
+// their own. Keep these short  the chip is a starter, not the full reason.
+export const FLOATING_PROMPT_CHIPS: Record<string, readonly string[]> = {
+  investment_banking: [
+    'Strong M&A track record in the sectors I want to cover.',
+    'Reputation for analyst training and exit opportunities.',
+    'Recent deal flow lined up with industries I follow.',
+  ],
+  consulting: [
+    'Case work in the practice area I want to break into.',
+    'Reputation for early client exposure as an analyst.',
+    'Office culture I have heard about from alumni.',
+  ],
+  private_equity: [
+    'Sector focus matches the deals I followed in school.',
+    'Lean deal teams that give junior PEs more ownership.',
+    'Exit track record into operating roles.',
+  ],
+  venture_capital: [
+    'Stage focus aligns with founders I want to back.',
+    'Portfolio companies I have followed for years.',
+    'Investment thesis I genuinely agree with.',
+  ],
+  hedge_fund: [
+    'Strategy fits the markets I have been studying.',
+    'Risk culture and research depth I want to learn from.',
+    'Reputation for developing analysts long-term.',
+  ],
+  tech_swe: [
+    'Eng culture and product velocity I admire.',
+    'Tech stack matches what I want to go deep on.',
+    'Specific team or product I want to ship on.',
+  ],
+  tech_pm: [
+    'Product surface area I have been a user of for years.',
+    'PM culture is rigorous about user research and metrics.',
+    'Roadmap alignment with problems I want to solve.',
+  ],
+  tech_ds: [
+    'Data scale and infra depth I want to work with.',
+    'Research-into-product loop is fast here.',
+    'Problem domain matches my coursework or projects.',
+  ],
+  big_4_accounting: [
+    'Audit / advisory experience I want for grad school.',
+    'Industry specialization I am building towards.',
+    'CPA pipeline and rotation flexibility.',
+  ],
+  startups: [
+    'Stage and pace of work I want exposure to.',
+    'Founders I have been following or worked with.',
+    'Mission and customer base I genuinely care about.',
+  ],
+} as const;
+
+export const DEFAULT_FLOATING_PROMPT_CHIPS = [
+  'Strong reputation in the area I want to break into.',
+  'Alumni and culture I have heard great things about.',
+  'Specific work or team I want to learn from.',
+] as const;

@@ -19,7 +19,7 @@ from .app.routes.resume import resume_bp
 from .app.routes.coffee_chat_prep import coffee_chat_bp
 from .app.routes.interview_prep import interview_prep_bp
 from .app.routes.billing import billing_bp
-from .app.routes.users import users_bp
+from .app.routes.users import users_bp, company_contexts_bp
 from .app.routes.outbox import outbox_bp
 from .app.routes.scout import scout_bp
 from .app.routes.firm_search import firm_search_bp
@@ -179,6 +179,7 @@ def create_app() -> Flask:
     app.register_blueprint(interview_prep_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(users_bp)
+    app.register_blueprint(company_contexts_bp)
     app.register_blueprint(outbox_bp)
     app.register_blueprint(scout_bp)
     app.register_blueprint(firm_search_bp)

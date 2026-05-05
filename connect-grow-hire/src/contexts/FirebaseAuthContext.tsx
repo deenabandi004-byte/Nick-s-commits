@@ -46,12 +46,17 @@ interface User {
   needsOnboarding?: boolean;
 
   // Phase 1 personalization gate (used by ProfileConfirmModal):
-  //   - schemaVersion === 1   user has the v1 schema fields
-  //   - backfillProcessed     phase1_backfill.py has populated them
-  //   - profileConfirmedAt    user has confirmed via the modal
+  //   - schemaVersion === 1   → user has the v1 schema fields
+  //   - backfillProcessed     → phase1_backfill.py has populated them
+  //   - profileConfirmedAt    → user has confirmed via the modal
   schemaVersion?: number;
   backfillProcessed?: boolean;
   profileConfirmedAt?: string | null;
+
+  // Phase 3 cold-start intent gate (used by ColdStartIntent on the
+  // composer surface). Truthy = the 5-question flow has been completed
+  // (or skipped permanently); the gate hides the component thereafter.
+  coldStartIntent?: { completedAt?: string | null } | null;
 }
 
 type SignInOptions = {
@@ -163,6 +168,7 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
           schemaVersion: d.schemaVersion,
           backfillProcessed: d.backfillProcessed,
           profileConfirmedAt: d.profileConfirmedAt ?? null,
+          coldStartIntent: (d as any).coldStartIntent ?? null,
         };
         setUser(userData);
         // Identify user after data is loaded

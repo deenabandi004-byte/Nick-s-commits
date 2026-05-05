@@ -174,47 +174,15 @@ def normalize_school(school: Optional[str]) -> Optional[str]:
 def normalize_company(company: Optional[str]) -> Optional[str]:
     """Lowercase slug for company joins. 'Goldman Sachs' / 'GS' / 'Goldman' → 'goldman-sachs'.
 
-    The full normalization map (with aliases) lives in
-    backend/app/utils/company.py once Phase 3 lands. For Phase 1 this is a
-    minimal slugifier with the highest-traffic aliases hard-coded.
+    Phase 3: delegates to `app.utils.company.company_to_slug` which carries
+    the full alias map (top ~100 firms students target) plus suffix
+    stripping. Kept as a re-export so older callsites importing from
+    `app.models.users` keep working unchanged.
     """
-    if not company:
-        return None
-    s = company.strip().lower()
-    aliases = {
-        'gs': 'goldman-sachs',
-        'goldman': 'goldman-sachs',
-        'goldman sachs': 'goldman-sachs',
-        'jpm': 'jpmorgan',
-        'jpmorgan': 'jpmorgan',
-        'jp morgan': 'jpmorgan',
-        'jpmorgan chase': 'jpmorgan',
-        'morgan stanley': 'morgan-stanley',
-        'ms': 'morgan-stanley',
-        'mck': 'mckinsey',
-        'mckinsey': 'mckinsey',
-        'mckinsey & company': 'mckinsey',
-        'bcg': 'bcg',
-        'boston consulting group': 'bcg',
-        'bain': 'bain',
-        'bain & company': 'bain',
-        'bain capital': 'bain-capital',
-        'meta': 'meta',
-        'facebook': 'meta',
-        'fb': 'meta',
-        'google': 'google',
-        'alphabet': 'google',
-        'amazon': 'amazon',
-        'aws': 'amazon',
-        'microsoft': 'microsoft',
-        'msft': 'microsoft',
-        'apple': 'apple',
-    }
-    if s in aliases:
-        return aliases[s]
-    import re as _re
-    slug = _re.sub(r'[^a-z0-9]+', '-', s).strip('-')
-    return slug or None
+    # Local import — `app.utils.company` may import from this module
+    # transitively in tests; keep the dependency one-way.
+    from app.utils.company import company_to_slug
+    return company_to_slug(company)
 
 
 # ============================================================================

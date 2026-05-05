@@ -5,6 +5,7 @@ import base64
 import hmac
 import json
 import logging
+import os
 import re
 import threading
 from datetime import datetime
@@ -162,9 +163,13 @@ def _process_gmail_notification(email_address, history_id):
             # REPLY_ATTRIBUTION_ENABLED). Runs before existing per-contact
             # logic so the outboundDrafts doc is up to date even if the
             # subsequent thread/email matching also picks up the message.
+            # Caller-side gate avoids the lazy import + dispatch hop when
+            # the flag is off; the dispatchee functions also self-gate as
+            # a backstop.
             try:
-                from app.routes.gmail_pubsub import attribute_message
-                attribute_message(uid, msg_resp)
+                if os.getenv('REPLY_ATTRIBUTION_ENABLED', 'false').lower() == 'true':
+                    from app.routes.gmail_pubsub import attribute_message
+                    attribute_message(uid, msg_resp)
             except Exception as attr_exc:
                 logger.warning("[gmail_webhook] attribution failed msg=%s: %s", msg_id, attr_exc)
 

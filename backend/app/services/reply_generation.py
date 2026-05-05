@@ -308,18 +308,58 @@ def _build_personalization_label(commonality_type, commonality_details, selected
     return "Role match"
 
 
-def batch_generate_emails(contacts, resume_text, user_profile, career_interests, fit_context=None, pre_parsed_user_info=None, template_instructions="", email_template_purpose=None, resume_filename=None, subject_line=None, signoff_config=None, auth_display_name=None, personal_note="", dream_companies=None, warmth_data=None):
+def batch_generate_emails(contacts, resume_text, user_profile, career_interests, fit_context=None, pre_parsed_user_info=None, template_instructions="", email_template_purpose=None, resume_filename=None, subject_line=None, signoff_config=None, auth_display_name=None, personal_note="", dream_companies=None, warmth_data=None, company_contexts=None):
     """
     Generate all emails using the new compelling prompt template.
 
     Args:
         ...
         auth_display_name: Optional display name from Firebase Auth; used as last resort before "Student".
+        company_contexts: Phase 3 — dict of {companyIdNormalized: contextDoc} the
+            user has answered the floating prompt for. The contextDoc carries
+            `reason`, `source`, `companyAliases`, etc. We weave the reason
+            into the personal-note context so the existing prompt template
+            naturally picks it up — no template rewrite (Phase 7 territory).
+            Default None / empty = no contexts available; generation falls
+            back to the pre-Phase-3 path.
     """
     try:
-        logger.info("[EMAIL-GEN] batch_generate_emails called for %d contacts (auth_display_name=%r)", len(contacts), auth_display_name)
+        logger.info("[EMAIL-GEN] batch_generate_emails called for %d contacts (auth_display_name=%r, company_contexts=%d)",
+                    len(contacts), auth_display_name, len(company_contexts) if company_contexts else 0)
         if not contacts:
             return {}
+
+        # Phase 3 minimal hookup: when a contact's company has a stored
+        # context, prepend the user's reason into `personal_note` so the
+        # downstream prompt template — which already reads `personal_note`
+        # — surfaces it without a rewrite. This is intentionally minimal;
+        # Phase 7 (`email_generator.generate_email`) reads `companyContext`
+        # as a first-class input.
+        if company_contexts:
+            try:
+                from app.utils.company import company_to_slug
+                # Find the most relevant context for the batch — usually
+                # all contacts are at the same company, so pick the first.
+                first_company = None
+                for c in contacts or []:
+                    company = c.get('Company') or c.get('company')
+                    if company:
+                        first_company = company
+                        break
+                if first_company:
+                    slug = company_to_slug(first_company)
+                    ctx = company_contexts.get(slug) if slug else None
+                    if ctx and ctx.get('reason'):
+                        reason_line = f"My reason for reaching out at {ctx.get('companyName') or first_company}: {ctx['reason']}"
+                        personal_note = (
+                            f"{reason_line}\n\n{personal_note}".strip()
+                            if personal_note else reason_line
+                        )
+                        logger.info("[EMAIL-GEN] Applied companyContext for %s (source=%s, len=%d)",
+                                    slug, ctx.get('source'), len(ctx.get('reason', '')))
+            except Exception as _ctx_err:
+                # Never fail email generation because of context plumbing.
+                logger.warning("[EMAIL-GEN] companyContext application skipped: %s", _ctx_err)
 
         client = get_openai_client()
         if not client and not get_anthropic_client():

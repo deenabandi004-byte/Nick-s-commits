@@ -13,6 +13,7 @@ from flask import Blueprint, request, jsonify
 
 from app.extensions import require_firebase_auth, get_db
 from app.services.reply_generation import batch_generate_emails, PURPOSES_INCLUDE_RESUME, email_body_mentions_resume
+from app.services.company_contexts_service import list_company_contexts
 from app.services.gmail_client import _load_user_gmail_creds, download_resume_from_url, clear_user_gmail_integration
 from app.services.interview_prep.resume_parser import extract_text_from_pdf_bytes
 from app.routes.gmail_oauth import build_gmail_oauth_url_for_user
@@ -367,6 +368,19 @@ def prompt_search():
         # Compute warmth scores for email personalization
         warmth_data = score_contacts_for_email(user_profile, contacts)
 
+        # Phase 3: pull the user's saved company-contexts so the generator
+        # can weave the user's "why this company" reason into the email.
+        # Best-effort — never fail email generation because of a context
+        # read miss.
+        company_contexts_map = {}
+        try:
+            for ctx in list_company_contexts(user_id):
+                cid = ctx.get('companyId') or ctx.get('_id')
+                if cid:
+                    company_contexts_map[cid] = ctx
+        except Exception as _ctx_err:
+            print(f"[Runs] companyContexts fetch skipped: {_ctx_err}")
+
         # Generate emails with resume text
         try:
             email_results = batch_generate_emails(
@@ -382,6 +396,7 @@ def prompt_search():
                 signoff_config=signoff_config,
                 auth_display_name=auth_display_name,
                 warmth_data=warmth_data,
+                company_contexts=company_contexts_map,
             )
         except Exception as e:
             print(f"[Runs] Email generation failed (prompt-search): {e}")

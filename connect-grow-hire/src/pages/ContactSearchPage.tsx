@@ -16,17 +16,79 @@ import { apiService, BACKEND_URL, isErrorResponse, type EmailTemplate, getEmailT
 import { firebaseApi } from "../services/firebaseApi";
 import type { Contact as ContactApi } from '../services/firebaseApi';
 import { toast } from "@/hooks/use-toast";
-import { TIER_CONFIGS } from "@/lib/constants";
+import { TIER_CONFIGS, COLD_START_INTENT_ENABLED } from "@/lib/constants";
 import { logActivity, generateContactSearchSummary } from "@/utils/activityLogger";
 import { EliteGateModal } from "@/components/EliteGateModal";
 import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { db, storage, auth } from '@/lib/firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { trackFeatureActionCompleted, trackError } from "../lib/analytics";
 import { ACCEPTED_RESUME_TYPES, isValidResumeFile } from "@/utils/resumeFileTypes";
 import { StickyCTA } from "@/components/StickyCTA";
 import ContactImport from "@/components/ContactImport";
+import { FloatingPrompt } from "@/components/FloatingPrompt";
+import { ColdStartIntent } from "@/components/ColdStartIntent";
+
+// =============================================================================
+// Phase 3 — naive company-name detector for the FloatingPrompt
+// =============================================================================
+// We don't need full NER here; the search prompt is short and most students
+// type the firm name verbatim. We look for a configured short-list of high-
+// signal firms in the prompt text. Misses fall through and the prompt simply
+// doesn't render — the email gen path still pulls saved contexts at request
+// time (server-side), so we never block on a frontend miss.
+const COMPANY_DETECTORS: Array<{ pattern: RegExp; name: string }> = [
+  { pattern: /\b(goldman( sachs)?|gs)\b/i, name: 'Goldman Sachs' },
+  { pattern: /\b(jp\s*morgan|jpm(?:organ)?(?:\s*chase)?)\b/i, name: 'JPMorgan' },
+  { pattern: /\b(morgan stanley|ms)\b/i, name: 'Morgan Stanley' },
+  { pattern: /\b(bofa|bank of america|merrill( lynch)?)\b/i, name: 'Bank of America' },
+  { pattern: /\b(citi(group|bank)?)\b/i, name: 'Citigroup' },
+  { pattern: /\bbarclays\b/i, name: 'Barclays' },
+  { pattern: /\b(credit suisse|cs)\b/i, name: 'Credit Suisse' },
+  { pattern: /\bubs\b/i, name: 'UBS' },
+  { pattern: /\bevercore\b/i, name: 'Evercore' },
+  { pattern: /\blazard\b/i, name: 'Lazard' },
+  { pattern: /\b(centerview)\b/i, name: 'Centerview Partners' },
+  { pattern: /\b(moelis)\b/i, name: 'Moelis' },
+  { pattern: /\b(pjt|pjt partners)\b/i, name: 'PJT Partners' },
+  { pattern: /\bjefferies\b/i, name: 'Jefferies' },
+  { pattern: /\bhoulihan( lokey)?\b/i, name: 'Houlihan Lokey' },
+  { pattern: /\b(mck|mckinsey)\b/i, name: 'McKinsey' },
+  { pattern: /\bbcg\b|\bboston consulting( group)?\b/i, name: 'BCG' },
+  { pattern: /\bbain\b(?!\s*capital)/i, name: 'Bain & Company' },
+  { pattern: /\boliver wyman\b/i, name: 'Oliver Wyman' },
+  { pattern: /\bdeloitte\b/i, name: 'Deloitte' },
+  { pattern: /\bpwc\b|\bpricewaterhousecoopers\b/i, name: 'PwC' },
+  { pattern: /\b(ey|ernst.{0,4}young)\b/i, name: 'EY' },
+  { pattern: /\bkpmg\b/i, name: 'KPMG' },
+  { pattern: /\b(google|alphabet)\b/i, name: 'Google' },
+  { pattern: /\b(meta|facebook)\b/i, name: 'Meta' },
+  { pattern: /\bamazon\b|\baws\b/i, name: 'Amazon' },
+  { pattern: /\bapple\b/i, name: 'Apple' },
+  { pattern: /\bmicrosoft\b|\bmsft\b/i, name: 'Microsoft' },
+  { pattern: /\bnetflix\b/i, name: 'Netflix' },
+  { pattern: /\bnvidia\b/i, name: 'Nvidia' },
+  { pattern: /\bstripe\b/i, name: 'Stripe' },
+  { pattern: /\bpalantir\b/i, name: 'Palantir' },
+  { pattern: /\bopenai\b/i, name: 'OpenAI' },
+  { pattern: /\banthropic\b/i, name: 'Anthropic' },
+  { pattern: /\b(blackstone)\b/i, name: 'Blackstone' },
+  { pattern: /\bkkr\b/i, name: 'KKR' },
+  { pattern: /\bcarlyle\b/i, name: 'Carlyle Group' },
+  { pattern: /\bapollo\b(?!\s*\.io)/i, name: 'Apollo Global Management' },
+  { pattern: /\b(citadel)\b/i, name: 'Citadel' },
+  { pattern: /\b(two sigma|2 sigma)\b/i, name: 'Two Sigma' },
+  { pattern: /\bjane street\b/i, name: 'Jane Street' },
+];
+
+function detectCompanyInPrompt(prompt: string): string | null {
+  if (!prompt) return null;
+  for (const { pattern, name } of COMPANY_DETECTORS) {
+    if (pattern.test(prompt)) return name;
+  }
+  return null;
+}
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
@@ -193,6 +255,13 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [savedResumeUrl, setSavedResumeUrl] = useState<string | null>(null);
   const [savedResumeFileName, setSavedResumeFileName] = useState<string | null>(null);
+  // Phase 3 cold-start gate: thin-resume detection. Pulled from Firestore
+  // alongside resumeUrl so the ColdStartIntent host can evaluate the gate
+  // without an extra read at composer-render time.
+  const [savedResumeText, setSavedResumeText] = useState<string>("");
+  // Session-local skip for ColdStartIntent so a Skip click doesn't re-block
+  // the result rendering on subsequent searches in the same session.
+  const [coldStartSessionSkipped, setColdStartSessionSkipped] = useState(false);
   const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [currentFitContext, setCurrentFitContext] = useState<any>(null); // Track fit context for UI display
 
@@ -207,6 +276,33 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     total_contacts: number;
   } | null>(null);
   const hasResults = lastResults.length > 0;
+
+  // Phase 3 — composer-time personalization gates (audit-relocated from
+  // the search-prompt area). FloatingPrompt fires on the most-frequent
+  // company across lastResults so a multi-firm batch still gets one
+  // prompt rather than zero. ColdStartIntent fires once-per-account when
+  // the user's resume is thin (<500 chars) and they haven't completed it.
+  const mostFrequentCompany = useMemo(() => {
+    if (!lastResults.length) return "";
+    const counts = new Map<string, number>();
+    for (const c of lastResults) {
+      const name = ((c.Company || c.company || "") as string).trim();
+      if (!name) continue;
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+    let top = "";
+    let topN = 0;
+    counts.forEach((n, name) => {
+      if (n > topN) { top = name; topN = n; }
+    });
+    return top;
+  }, [lastResults]);
+
+  const showColdStartIntent =
+    COLD_START_INTENT_ENABLED &&
+    (savedResumeText?.length ?? 0) < 500 &&
+    !user?.coldStartIntent &&
+    !coldStartSessionSkipped;
 
   // Auto-scroll to success state after search completes
   useEffect(() => {
@@ -576,6 +672,11 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         const resumeFileName = data.resumeFileName || null;
         setSavedResumeUrl(resumeUrl);
         setSavedResumeFileName(resumeFileName);
+        // Capture resumeText (or stringified resumeParsed as a fallback) so
+        // the cold-start thin-resume heuristic has something to measure.
+        const resumeText = (data.resumeText as string | undefined)
+          ?? (data.resumeParsed ? JSON.stringify(data.resumeParsed) : "");
+        setSavedResumeText(resumeText || "");
         // If we have a saved resume, we can optionally load it as uploadedFile for search
         // But we'll keep uploadedFile separate for the current search session
       }
@@ -1471,6 +1572,12 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           </div>
         )}
 
+        {/* Phase 3 — FloatingPrompt was previously mounted here and triggered
+            on `detectCompanyInPrompt(searchPrompt)`, i.e. at search time.
+            Per the audit it was relocated below to fire on a real result
+            contact's company AFTER drafts have been generated. See the
+            results section block ("Composer-time personalization gates"). */}
+
         {/* CTA button */}
         <button
           ref={originalButtonRef}
@@ -1599,8 +1706,48 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               </div>
             )}
 
-            {/* Contact cards */}
-            {lastResults.length <= 8 && lastResults.map((c: any, i: number) => {
+            {/* Composer-time personalization gates (audit-relocated from
+                the search form). ColdStartIntent first — when shown, it
+                blocks the contact-card render until the user submits or
+                skips. FloatingPrompt second, gated on the most-frequent
+                company across lastResults; rendered alongside the cards
+                so the user can answer "why this company?" while reviewing
+                the freshly-generated drafts. */}
+            {showColdStartIntent ? (
+              <div className="mb-3">
+                <ColdStartIntent
+                  onComplete={async () => {
+                    try {
+                      if (user?.uid) {
+                        await updateDoc(doc(db, 'users', user.uid), {
+                          coldStartIntent: { completedAt: serverTimestamp() },
+                        });
+                      }
+                    } catch (err) {
+                      console.warn('[ColdStartIntent] persist failed:', err);
+                    }
+                    setColdStartSessionSkipped(true);
+                  }}
+                  onSkipped={() => setColdStartSessionSkipped(true)}
+                />
+              </div>
+            ) : null}
+
+            {!showColdStartIntent && mostFrequentCompany ? (
+              <div className="mb-3">
+                <FloatingPrompt
+                  companyName={mostFrequentCompany}
+                  targetIndustries={
+                    ((user as any)?.targetIndustries as string[] | undefined) ||
+                    ((user as any)?.professionalInfo?.careerInterests as string[] | undefined) ||
+                    []
+                  }
+                />
+              </div>
+            ) : null}
+
+            {/* Contact cards — hidden while ColdStartIntent is active */}
+            {!showColdStartIntent && lastResults.length <= 8 && lastResults.map((c: any, i: number) => {
               const name = [c.FirstName || c.firstName, c.LastName || c.lastName].filter(Boolean).join(' ') || 'Unknown';
               const title = c.JobTitle || c.jobTitle || c.Title || '';
               const company = c.Company || c.company || '';
