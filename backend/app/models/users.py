@@ -89,6 +89,13 @@ class UserDocument(BaseModel):
     alumni_graph_consent: Optional[AlumniGraphConsent] = Field(default=None, alias='alumniGraphConsent')
     alumni_graph_consent_at: Optional[str] = Field(default=None, alias='alumniGraphConsentAt')
 
+    # === Notification stats (P8 — written by cta_service) ==========
+    # `dismissedCount` is a rolling tally inside the cooldown window;
+    # cta_service resets it when `quietedUntil` elapses. `quietedUntil`
+    # is the absolute ISO8601 timestamp until which the dashboard renders
+    # the "Notifications quieted" message instead of new cards.
+    notification_stats: Optional[Dict[str, Any]] = Field(default=None, alias='notificationStats')
+
     # === Backfill provenance (set by phase1_backfill.py) ===========
     backfill_provenance: Optional[Dict[str, Any]] = Field(default=None, alias='_backfillProvenance')
     profile_confirmed_at: Optional[str] = Field(default=None, alias='profileConfirmedAt')

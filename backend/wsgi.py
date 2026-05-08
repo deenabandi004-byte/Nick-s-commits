@@ -47,6 +47,7 @@ from .app.routes.events import events_bp
 from .app.routes.gmail_pubsub import gmail_pubsub_bp
 from .app.routes.recommendations import recommendations_bp
 from .app.routes.alumni import alumni_bp, alumni_consent_bp
+from .app.routes.cta import cta_bp
 from .app.extensions import init_app_extensions
 
 def create_app() -> Flask:
@@ -211,6 +212,8 @@ def create_app() -> Flask:
     # Phase 6 personalization data layer (alumni graph + consent)
     app.register_blueprint(alumni_bp)
     app.register_blueprint(alumni_consent_bp)
+    # Phase 8 personalization data layer (dashboard CTA cards)
+    app.register_blueprint(cta_bp)
 
     # --- Debug route to check frontend build (dev only) ---
     @app.route('/api/debug/frontend')

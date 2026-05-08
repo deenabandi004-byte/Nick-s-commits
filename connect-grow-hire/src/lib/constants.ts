@@ -166,6 +166,14 @@ export const RECOMMENDATIONS_ENABLED =
 export const ALUMNI_GRAPH_ENABLED =
   (import.meta.env.VITE_ALUMNI_GRAPH_ENABLED ?? 'false').toLowerCase() === 'true';
 
+// =============================================================================
+// Phase 8  Dashboard CTA cards feature flag
+// =============================================================================
+// useCTAs hook reads this. Backend has a matching gate (CTA_CARDS_ENABLED) so
+// the GET endpoint returns an empty deck even if the frontend is on without
+// the backend. Default OFF.
+export const CTA_CARDS_ENABLED =
+  (import.meta.env.VITE_CTA_CARDS_ENABLED ?? 'false').toLowerCase() === 'true';
 
 // =============================================================================
 // Phase 3 — Industry-seeded suggestion chips for the FloatingPrompt

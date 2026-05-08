@@ -74,9 +74,26 @@ export interface UserDocument {
   alumniGraphConsent: AlumniGraphConsent | null;
   alumniGraphConsentAt?: string;
 
+  // === Notification stats (P8 — written by cta_service) ===
+  notificationStats?: NotificationStats;
+
   // === Backfill provenance (set by phase1_backfill.py) ===
   _backfillProvenance?: BackfillProvenance;
   profileConfirmedAt?: string;
+}
+
+/**
+ * P8 notification fatigue tracker, written by cta_service.
+ *
+ * - `dismissedCount` is the rolling tally inside the current cooldown
+ *   window. cta_service resets it when `quietedUntil` elapses.
+ * - `quietedUntil` is the absolute ISO8601 timestamp until which the
+ *   dashboard renders "Notifications quieted" instead of new cards.
+ */
+export interface NotificationStats {
+  dismissedCount: number;
+  lastDismissedAt: string | null;
+  quietedUntil: string | null;
 }
 
 /** Read-side projection of an alumniCounts/* document. */

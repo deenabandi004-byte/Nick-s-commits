@@ -10,6 +10,7 @@ import { type Firm, apiService, type OutboxThread, type OutboxStats } from '@/se
 import { useNavigate, useLocation } from 'react-router-dom';
 import { calculateWeeklySummary, type WeeklySummary } from '@/utils/dashboardStats';
 import { EmptyRecommendations } from '@/components/EmptyRecommendations';
+import { CTAList } from '@/components/CTACard';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -600,6 +601,16 @@ export function Dashboard() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* ================================================================== */}
+      {/* DASHBOARD CTA CARDS (Phase 8)                                       */}
+      {/* No-op when VITE_CTA_CARDS_ENABLED is false. Sits ABOVE the          */}
+      {/* recommendation surface so behavioral nudges (got a reply, alumni    */}
+      {/* hired) win attention before the steady-state browse list.           */}
+      {/* ================================================================== */}
+      <div className="animate-fadeInUp" style={{ animationDelay: '120ms' }}>
+        <CTAList />
       </div>
 
       {/* ================================================================== */}
