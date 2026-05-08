@@ -45,6 +45,7 @@ from .app.routes.jobs import jobs_bp
 from .app.routes.extension_logs import extension_logs_bp
 from .app.routes.events import events_bp
 from .app.routes.gmail_pubsub import gmail_pubsub_bp
+from .app.routes.recommendations import recommendations_bp
 from .app.routes.alumni import alumni_bp, alumni_consent_bp
 from .app.extensions import init_app_extensions
 
@@ -205,6 +206,8 @@ def create_app() -> Flask:
     # Phase 2 personalization data layer
     app.register_blueprint(events_bp)
     app.register_blueprint(gmail_pubsub_bp)
+    # Phase 5 personalization data layer (recommendation engine)
+    app.register_blueprint(recommendations_bp)
     # Phase 6 personalization data layer (alumni graph + consent)
     app.register_blueprint(alumni_bp)
     app.register_blueprint(alumni_consent_bp)

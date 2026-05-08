@@ -9,6 +9,7 @@ import { firebaseApi } from '@/services/firebaseApi';
 import { type Firm, apiService, type OutboxThread, type OutboxStats } from '@/services/api';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { calculateWeeklySummary, type WeeklySummary } from '@/utils/dashboardStats';
+import { EmptyRecommendations } from '@/components/EmptyRecommendations';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -599,6 +600,14 @@ export function Dashboard() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* ================================================================== */}
+      {/* PERSONALIZED RECOMMENDATIONS (Phase 5)                              */}
+      {/* No-op when VITE_RECOMMENDATIONS_ENABLED is false.                   */}
+      {/* ================================================================== */}
+      <div className="animate-fadeInUp" style={{ animationDelay: '150ms', marginBottom: '32px' }}>
+        <EmptyRecommendations limit={6} />
       </div>
 
       {/* ================================================================== */}

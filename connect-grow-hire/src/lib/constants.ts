@@ -148,6 +148,16 @@ export const COLD_START_INTENT_ENABLED =
   (import.meta.env.VITE_COLD_START_INTENT_ENABLED ?? 'false').toLowerCase() === 'true';
 
 // =============================================================================
+// Phase 5 — Recommendation engine feature flag
+// =============================================================================
+// EmptyRecommendations reads this at runtime. Set via Vite env var so the
+// rollout flips without a rebuild. Backend has a matching gate
+// (RECOMMENDATIONS_ENABLED) so the API surface stays dark until both flip.
+// Default OFF.
+export const RECOMMENDATIONS_ENABLED =
+  (import.meta.env.VITE_RECOMMENDATIONS_ENABLED ?? 'false').toLowerCase() === 'true';
+
+// =============================================================================
 // Phase 6 — Alumni graph + consent feature flag
 // =============================================================================
 // AlumniConsent modal + AccountSettings consent surface read this. Backend has
@@ -221,3 +231,4 @@ export const DEFAULT_FLOATING_PROMPT_CHIPS = [
   'Alumni and culture I have heard great things about.',
   'Specific work or team I want to learn from.',
 ] as const;
+
