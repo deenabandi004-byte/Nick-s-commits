@@ -68,12 +68,26 @@ export const EmailEditedPayloadSchema = z.object({
   timeSpentSeconds: z.number().nonnegative(),
 });
 
+/**
+ * Phase 7: `generatorVersion` is the A/B bucket the draft was produced
+ * by. The admin edit-rate dashboard groups email_drafted vs email_edited
+ * counts on this field. Optional for backwards compatibility with events
+ * written before the dispatcher landed.
+ *
+ * - 'old':              reply_generation.batch_generate_emails
+ * - 'new':              email_generator.generate_email
+ * - 'new_unavailable':  user was bucketed into the new path but the new
+ *                       generator raised, so we fell back to old
+ */
+export const GeneratorVersionSchema = z.enum(['old', 'new', 'new_unavailable']);
+
 export const EmailDraftedPayloadSchema = z.object({
   contactId: z.string().min(1),
   trackingId: z.string().min(1).optional(),
   templateUsed: z.string().optional(),
   subjectChars: z.number().int().nonnegative().optional(),
   bodyChars: z.number().int().nonnegative().optional(),
+  generatorVersion: GeneratorVersionSchema.optional(),
 });
 
 export const EmailSentClickedPayloadSchema = z.object({

@@ -17,7 +17,7 @@ import re
 
 from app.config import GMAIL_SCOPES
 from ..extensions import require_firebase_auth
-from app.services.reply_generation import batch_generate_emails
+from app.services.email_generator_dispatch import dispatch_email_generation
 from app.services.company_contexts_service import list_company_contexts
 from app.services.gmail_client import get_gmail_service_for_user
 from app.services.interview_prep.resume_parser import extract_text_from_pdf_bytes
@@ -59,7 +59,7 @@ def _write_outbound_draft(
     """Synchronously write an outboundDrafts/{trackingId} doc BEFORE the
     Gmail draft is created. If the draft creation throws, we update the
     doc with status='failed' so we can surface the gap later. The doc is
-    the source of truth for sent/reply attribution (3.4).
+    the source of truth for sent/reply attribution (§3.4).
 
     `companyIdNormalized` is the canonical slug for the contact's company,
     indexed by the unanswered-threshold scan in
@@ -308,6 +308,11 @@ def generate_and_draft():
 
     # Only generate emails for contacts that don't have them
     results = {}
+    # Phase 7: per-original-index map of generator version, populated by
+    # the dispatcher below. Drafts whose body came from existing storage
+    # (not generated this turn) are deliberately absent so the
+    # email_drafted event log only counts drafts produced this turn.
+    original_idx_to_generator_version = {}
     if contacts_needing_emails:
         # Log if fit context is being used
         if fit_context:
@@ -333,13 +338,19 @@ def generate_and_draft():
         except Exception as _ctx_err:
             print(f"[Emails] companyContexts fetch skipped: {_ctx_err}")
 
-        print(f"[EmailGen] Calling batch_generate_emails: resume_text={'present (' + str(len(resume_text)) + ' chars)' if resume_text else 'None/empty'}, "
+        print(f"[EmailGen] Calling dispatch_email_generation: resume_text={'present (' + str(len(resume_text)) + ' chars)' if resume_text else 'None/empty'}, "
               f"contacts={len(contacts_to_generate)}, companyContexts={len(company_contexts_map)}")
-        generated_results = batch_generate_emails(
-            contacts_to_generate,
-            resume_text,
-            user_profile,
-            career_interest,
+        # Phase 7: route through the dispatcher so USE_NEW_GENERATOR can
+        # A/B between the new email_generator and the legacy
+        # reply_generation.batch_generate_emails. The dispatcher is the
+        # only thing that touches reply_generation directly now; the old
+        # path stays alive as the kill-switch fallback per section 8.
+        dispatch_result = dispatch_email_generation(
+            uid,
+            contacts=contacts_to_generate,
+            resume_text=resume_text,
+            user_profile=user_profile,
+            career_interests=career_interest,
             fit_context=fit_context,
             pre_parsed_user_info=resume_parsed,
             template_instructions=template_instructions,
@@ -352,17 +363,28 @@ def generate_and_draft():
             warmth_data=warmth_data,
             company_contexts=company_contexts_map,
         )
-        print(f"🧪 batch_generate_emails returned: type={type(generated_results)}, "
-          f"len={len(generated_results) if hasattr(generated_results, '__len__') else 'n/a'}, "
-          f"keys={list(generated_results.keys())[:5] if isinstance(generated_results, dict) else 'list'}")
-        
-        # Map results back to original indices
+        generated_results = dispatch_result.results
+        print(f"🧪 dispatch_email_generation returned: version={dispatch_result.generator_version}, "
+              f"reason={dispatch_result.assignment_reason}, "
+              f"type={type(generated_results)}, "
+              f"len={len(generated_results) if hasattr(generated_results, '__len__') else 'n/a'}, "
+              f"keys={list(generated_results.keys())[:5] if isinstance(generated_results, dict) else 'list'}")
+
+        # Map dispatch index -> original contact index so the per-draft
+        # event log can stamp each draft with the version that produced
+        # it. Contacts that already had an email stored on the row are
+        # skipped here and are NOT tagged with a generator version (the
+        # dashboard only counts drafts produced this turn).
         for idx, (original_idx, _) in enumerate(contacts_needing_emails):
             result_key = idx
             if isinstance(generated_results, dict):
                 result = generated_results.get(result_key) or generated_results.get(str(result_key))
                 if result:
                     results[original_idx] = result
+                    original_idx_to_generator_version[original_idx] = (
+                        dispatch_result.per_contact_versions.get(idx)
+                        or dispatch_result.generator_version
+                    )
     else:
         print(f"📧 All {len(contacts)} contacts already have emails, skipping generation")
 
@@ -650,6 +672,34 @@ def generate_and_draft():
                 )
             except Exception as ev_exc:
                 _emails_logger.debug("draft_created event log failed: %s", ev_exc)
+
+            # Phase 7 backend event: email_drafted with generatorVersion.
+            # The admin edit-rate dashboard buckets email_drafted vs
+            # email_edited counts on this field. Only logged when the
+            # draft was generated this turn (i.e., not when the body
+            # came from existing storage), so the dashboard does not
+            # over-count cached drafts as fresh A/B samples.
+            generator_version_for_draft = original_idx_to_generator_version.get(i)
+            if generator_version_for_draft:
+                try:
+                    from app.services.events_service import log_event as _log_event_drafted
+                    from app.models.events import EventType as _EventType_drafted
+                    _log_event_drafted(
+                        uid=uid,
+                        event_type=_EventType_drafted.EMAIL_DRAFTED,
+                        payload={
+                            "trackingId": tracking_id,
+                            "contactId": contact_id_for_tracking,
+                            "templateUsed": (r.get("personalization") or {}).get("commonality_type") or "general",
+                            "subjectChars": len(r.get("subject") or ""),
+                            "bodyChars": len(r.get("body") or ""),
+                            "generatorVersion": generator_version_for_draft,
+                        },
+                        idempotency_key=f"email_drafted:{tracking_id}",
+                        source="backend",
+                    )
+                except Exception as ev_exc:
+                    _emails_logger.debug("email_drafted event log failed: %s", ev_exc)
             
             # Extract message ID and threadId from draft (Gmail creates a thread when draft is created)
             message_id = draft.get("message", {}).get("id")

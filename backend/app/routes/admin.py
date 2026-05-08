@@ -250,101 +250,42 @@ def _is_admin(uid: str) -> bool:
 @admin_bp.get("/edit-rate-dashboard")
 @require_firebase_auth
 def edit_rate_dashboard():
-    """A/B compare email_edited rate by USE_NEW_GENERATOR assignment.
+    """A/B compare email_edited rate by generator version.
 
-    Streams users/{*}/events/{*} and buckets each draft / edit by the
-    user's USE_NEW_GENERATOR assignment. Cheap enough at 300 users; if it
-    grows, move to a precomputed rollup written by the cron.
+    Delegates to `services.edit_rate_metrics.compute_edit_rate` so the
+    metric pipeline can be exercised in unit tests without spinning the
+    route. Bucketing prefers the per-event `generatorVersion` payload
+    field (Phase 7 dispatch) and falls back to the user's current
+    USE_NEW_GENERATOR assignment for events written before the
+    dispatcher landed.
 
     Query params:
         days (default 14)  only count events in the last N days.
 
-    Response:
+    Response (strict superset of the pre-Phase-7 shape):
         {
-          "old_generator": {
-            "drafts": int, "edits": int, "edit_rate": float,
-            "users": int
-          },
-          "new_generator": {...same shape...},
-          "rollout_pct": int,
-          "window_days": int
+          "old_generator":     {drafts, edits, edit_rate, users},
+          "new_generator":     {drafts, edits, edit_rate, users},
+          "new_unavailable":   {drafts, edits, edit_rate, users},
+          "rollout_pct":       int,
+          "window_days":       int,
+          "sample_size":       {old_generator, new_generator, new_unavailable},
         }
     """
     requester = request.firebase_user.get('uid')
     if not _is_admin(requester):
         return jsonify({'error': 'admin only'}), 403
 
-    from datetime import datetime, timedelta, timezone
-
-    from app.services.derived_profile_service import _coerce_dt
-    from app.services.feature_flags import (
-        USE_NEW_GENERATOR,
-        get_assignment,
-        _get_flags,
-    )
+    from app.services.edit_rate_metrics import compute_edit_rate
 
     try:
         days = int(request.args.get('days', '14'))
     except ValueError:
         days = 14
-    days = max(1, min(90, days))
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
 
     db = get_db()
-    buckets = {
-        'old_generator': {'drafts': 0, 'edits': 0, 'users': set()},
-        'new_generator': {'drafts': 0, 'edits': 0, 'users': set()},
-    }
-
-    for u in db.collection('users').stream():
-        uid = u.id
-        assignment = get_assignment(USE_NEW_GENERATOR, uid)
-        bucket_key = 'new_generator' if assignment.get('enabled') else 'old_generator'
-
-        try:
-            evs = (
-                db.collection('users')
-                .document(uid)
-                .collection('events')
-                .stream()
-            )
-        except Exception:
-            continue
-
-        saw_event = False
-        for snap in evs:
-            data = snap.to_dict() or {}
-            ts = _coerce_dt(data.get('timestamp') or data.get('createdAt'))
-            if ts is None or ts < cutoff:
-                continue
-            ev_type = data.get('type')
-            if ev_type == 'email_drafted':
-                buckets[bucket_key]['drafts'] += 1
-                saw_event = True
-            elif ev_type == 'email_edited':
-                buckets[bucket_key]['edits'] += 1
-                saw_event = True
-        if saw_event:
-            buckets[bucket_key]['users'].add(uid)
-
-    flags = _get_flags()
-    rollout_pct = int((flags.get(USE_NEW_GENERATOR) or {}).get('rollout_pct', 0) or 0)
-
-    def _summary(b):
-        d, e = b['drafts'], b['edits']
-        return {
-            'drafts': d,
-            'edits': e,
-            'edit_rate': round((e / d) if d else 0.0, 4),
-            'users': len(b['users']),
-        }
-
-    return jsonify({
-        'old_generator': _summary(buckets['old_generator']),
-        'new_generator': _summary(buckets['new_generator']),
-        'rollout_pct': rollout_pct,
-        'window_days': days,
-    }), 200
+    payload = compute_edit_rate(db, window_days=days)
+    return jsonify(payload), 200
 
 
 @admin_bp.get("/feature-flags")
@@ -370,22 +311,16 @@ def post_feature_flag():
         return jsonify({'error': 'admin only'}), 403
 
     body = request.get_json(silent=True) or {}
-    flag = (body.get('flag') or '').strip()
-    if not flag:
+    flag = body.get('flag')
+    if not isinstance(flag, str) or not flag:
         return jsonify({'error': 'flag is required'}), 400
 
     from app.services.feature_flags import set_flag
 
-    kwargs = {}
-    if 'enabled' in body:
-        kwargs['enabled'] = bool(body['enabled'])
-    if 'rollout_pct' in body:
-        try:
-            kwargs['rollout_pct'] = int(body['rollout_pct'])
-        except (TypeError, ValueError):
-            return jsonify({'error': 'rollout_pct must be an int'}), 400
-    if 'overrides' in body and isinstance(body['overrides'], dict):
-        kwargs['overrides'] = body['overrides']
-
-    cfg = set_flag(flag, **kwargs)
-    return jsonify({'flag': flag, 'config': cfg}), 200
+    cfg = set_flag(
+        flag,
+        enabled=body.get('enabled') if 'enabled' in body else None,
+        rollout_pct=body.get('rollout_pct') if 'rollout_pct' in body else None,
+        overrides=body.get('overrides') if 'overrides' in body else None,
+    )
+    return jsonify({'success': True, 'flag': flag, 'config': cfg}), 200
