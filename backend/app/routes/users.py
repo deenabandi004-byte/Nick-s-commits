@@ -24,6 +24,10 @@ from app.services.company_contexts_service import (
     should_show_prompt,
     write_company_context,
 )
+from app.services.derived_profile_service import (
+    get_derived_profile,
+    write_user_voice_model,
+)
 from app.utils.company import company_to_slug, get_aliases_for_slug
 from firebase_admin import firestore
 import json
@@ -617,3 +621,70 @@ def company_contexts():
     }), 200
 
 
+# =============================================================================
+# Phase 4 — VoiceModel (Stretch D — editable user-facing surface)
+# =============================================================================
+# - GET  /api/users/voice-model — current voiceModel for the live preview UI.
+# - POST /api/users/voice-model — write user-tuned values; flips
+#         voiceModelManuallyEdited so synthesis stops overwriting them.
+#
+# Gated by DERIVED_PROFILE_ENABLED env flag — if synthesis is off, edits
+# are still allowed (the user can pre-set their voice before any synth
+# runs) but the values stay isolated to the manually-edited path.
+
+VOICE_OPENER_ALLOWED = {'direct', 'warm', 'contextual', 'question', 'none'}
+VOICE_CLOSER_ALLOWED = {'direct', 'warm', 'grateful', 'none'}
+
+
+@users_bp.route('/voice-model', methods=['GET', 'POST'])
+@require_firebase_auth
+def voice_model():
+    """Read or update the current user's voiceModel."""
+    uid = request.firebase_user['uid']
+
+    if request.method == 'GET':
+        profile = get_derived_profile(uid) or {}
+        return jsonify({
+            'voiceModel': profile.get('voiceModel'),
+            'manuallyEdited': bool(profile.get('voiceModelManuallyEdited')),
+            'lastSynthesizedAt': profile.get('lastSynthesizedAt'),
+        }), 200
+
+    body = request.get_json(silent=True) or {}
+
+    try:
+        avg_length_words = int(body.get('avg_length_words', body.get('avgLengthWords', 110)))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'avg_length_words must be int'}), 400
+
+    try:
+        formality_score = float(body.get('formality_score', body.get('formalityScore', 0.5)))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'formality_score must be a float'}), 400
+
+    opener_style = body.get('opener_style') or body.get('openerStyle') or 'warm'
+    closer_style = body.get('closer_style') or body.get('closerStyle') or 'warm'
+
+    if opener_style not in VOICE_OPENER_ALLOWED:
+        return jsonify({'error': f'opener_style must be one of {sorted(VOICE_OPENER_ALLOWED)}'}), 400
+    if closer_style not in VOICE_CLOSER_ALLOWED:
+        return jsonify({'error': f'closer_style must be one of {sorted(VOICE_CLOSER_ALLOWED)}'}), 400
+
+    signature_pattern = body.get('signature_pattern') or body.get('signaturePattern') \
+        or 'Best,\n{name}\n{school_short} | Class of {year}'
+    if not isinstance(signature_pattern, str) or len(signature_pattern) > 600:
+        return jsonify({'error': 'signature_pattern must be a string <= 600 chars'}), 400
+
+    persisted = write_user_voice_model(
+        uid,
+        avg_length_words=avg_length_words,
+        formality_score=formality_score,
+        opener_style=opener_style,
+        closer_style=closer_style,
+        signature_pattern=signature_pattern,
+    )
+    return jsonify({
+        'success': True,
+        'voiceModel': persisted.get('voiceModel'),
+        'manuallyEdited': True,
+    }), 200

@@ -215,3 +215,177 @@ def report_client_error():
         pass
 
     return jsonify({"ok": True}), 200
+
+
+# =============================================================================
+# Phase 4 — Edit-rate dashboard + feature flag management
+# =============================================================================
+# - GET  /api/admin/edit-rate-dashboard — read email_drafted vs email_edited
+#         events, group by USE_NEW_GENERATOR assignment, compute the A/B
+#         comparison without a vendor (per 10.5).
+# - GET  /api/admin/feature-flags — read the feature_flags/global doc.
+# - POST /api/admin/feature-flags — partial update (enabled / rollout_pct
+#         / overrides) for a single flag.
+#
+# Auth: bound to the existing @require_firebase_auth + a manual ADMIN_UIDS
+# allowlist via the ADMIN_UIDS env var (comma-separated). Read-only by
+# default; writes only allowed for allow-listed UIDs.
+
+ADMIN_UIDS = {
+    uid.strip()
+    for uid in (os.getenv('ADMIN_UIDS') or '').split(',')
+    if uid.strip()
+}
+
+
+def _is_admin(uid: str) -> bool:
+    if not uid:
+        return False
+    if not ADMIN_UIDS:
+        # Empty allowlist = lock down everyone (safe default).
+        return False
+    return uid in ADMIN_UIDS
+
+
+@admin_bp.get("/edit-rate-dashboard")
+@require_firebase_auth
+def edit_rate_dashboard():
+    """A/B compare email_edited rate by USE_NEW_GENERATOR assignment.
+
+    Streams users/{*}/events/{*} and buckets each draft / edit by the
+    user's USE_NEW_GENERATOR assignment. Cheap enough at 300 users; if it
+    grows, move to a precomputed rollup written by the cron.
+
+    Query params:
+        days (default 14)  only count events in the last N days.
+
+    Response:
+        {
+          "old_generator": {
+            "drafts": int, "edits": int, "edit_rate": float,
+            "users": int
+          },
+          "new_generator": {...same shape...},
+          "rollout_pct": int,
+          "window_days": int
+        }
+    """
+    requester = request.firebase_user.get('uid')
+    if not _is_admin(requester):
+        return jsonify({'error': 'admin only'}), 403
+
+    from datetime import datetime, timedelta, timezone
+
+    from app.services.derived_profile_service import _coerce_dt
+    from app.services.feature_flags import (
+        USE_NEW_GENERATOR,
+        get_assignment,
+        _get_flags,
+    )
+
+    try:
+        days = int(request.args.get('days', '14'))
+    except ValueError:
+        days = 14
+    days = max(1, min(90, days))
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+
+    db = get_db()
+    buckets = {
+        'old_generator': {'drafts': 0, 'edits': 0, 'users': set()},
+        'new_generator': {'drafts': 0, 'edits': 0, 'users': set()},
+    }
+
+    for u in db.collection('users').stream():
+        uid = u.id
+        assignment = get_assignment(USE_NEW_GENERATOR, uid)
+        bucket_key = 'new_generator' if assignment.get('enabled') else 'old_generator'
+
+        try:
+            evs = (
+                db.collection('users')
+                .document(uid)
+                .collection('events')
+                .stream()
+            )
+        except Exception:
+            continue
+
+        saw_event = False
+        for snap in evs:
+            data = snap.to_dict() or {}
+            ts = _coerce_dt(data.get('timestamp') or data.get('createdAt'))
+            if ts is None or ts < cutoff:
+                continue
+            ev_type = data.get('type')
+            if ev_type == 'email_drafted':
+                buckets[bucket_key]['drafts'] += 1
+                saw_event = True
+            elif ev_type == 'email_edited':
+                buckets[bucket_key]['edits'] += 1
+                saw_event = True
+        if saw_event:
+            buckets[bucket_key]['users'].add(uid)
+
+    flags = _get_flags()
+    rollout_pct = int((flags.get(USE_NEW_GENERATOR) or {}).get('rollout_pct', 0) or 0)
+
+    def _summary(b):
+        d, e = b['drafts'], b['edits']
+        return {
+            'drafts': d,
+            'edits': e,
+            'edit_rate': round((e / d) if d else 0.0, 4),
+            'users': len(b['users']),
+        }
+
+    return jsonify({
+        'old_generator': _summary(buckets['old_generator']),
+        'new_generator': _summary(buckets['new_generator']),
+        'rollout_pct': rollout_pct,
+        'window_days': days,
+    }), 200
+
+
+@admin_bp.get("/feature-flags")
+@require_firebase_auth
+def get_feature_flags():
+    """Return the entire feature_flags/global doc. Read-only."""
+    if not _is_admin(request.firebase_user.get('uid')):
+        return jsonify({'error': 'admin only'}), 403
+    from app.services.feature_flags import _get_flags, invalidate_cache
+    invalidate_cache()
+    return jsonify({'flags': _get_flags()}), 200
+
+
+@admin_bp.post("/feature-flags")
+@require_firebase_auth
+def post_feature_flag():
+    """Partial update of a single flag.
+
+    Body: { "flag": str, "enabled"?: bool, "rollout_pct"?: int,
+            "overrides"?: { "<uid>": bool } }
+    """
+    if not _is_admin(request.firebase_user.get('uid')):
+        return jsonify({'error': 'admin only'}), 403
+
+    body = request.get_json(silent=True) or {}
+    flag = (body.get('flag') or '').strip()
+    if not flag:
+        return jsonify({'error': 'flag is required'}), 400
+
+    from app.services.feature_flags import set_flag
+
+    kwargs = {}
+    if 'enabled' in body:
+        kwargs['enabled'] = bool(body['enabled'])
+    if 'rollout_pct' in body:
+        try:
+            kwargs['rollout_pct'] = int(body['rollout_pct'])
+        except (TypeError, ValueError):
+            return jsonify({'error': 'rollout_pct must be an int'}), 400
+    if 'overrides' in body and isinstance(body['overrides'], dict):
+        kwargs['overrides'] = body['overrides']
+
+    cfg = set_flag(flag, **kwargs)
+    return jsonify({'flag': flag, 'config': cfg}), 200

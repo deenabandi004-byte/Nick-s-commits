@@ -1,4 +1,5 @@
-import { ArrowLeft, Upload, Trash2, LogOut, CreditCard, FileText, User, GraduationCap, Briefcase, Rocket, Settings, AlertTriangle, Lock, Eye, RefreshCw, X, CheckCircle, Mail, Target, Star } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, LogOut, CreditCard, FileText, User, GraduationCap, Briefcase, Rocket, Settings, AlertTriangle, Lock, Eye, RefreshCw, X, CheckCircle, Mail, Target, Star, Sparkles } from "lucide-react";
+import { VoiceModelControls } from "@/components/VoiceModelControls";
 import { AlumniConsent } from "@/components/AlumniConsent";
 import { getAlumniGraphConsent } from "@/services/api";
 import type { AlumniGraphConsent as AlumniGraphConsentValue } from "@/types/user";
@@ -105,6 +106,7 @@ const sections = [
   { id: 'professional', label: 'Professional Profile', icon: Briefcase },
   { id: 'career', label: 'Career Interests', icon: Rocket },
   { id: 'goals', label: 'Career Goals', icon: Target },
+  { id: 'voice', label: 'Email Voice', icon: Sparkles },
   { id: 'gmail', label: 'Gmail Integration', icon: Mail },
   { id: 'account', label: 'Account Management', icon: Settings },
   { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
@@ -2323,6 +2325,16 @@ export default function AccountSettings() {
                         </div>
                       )}
                     </div>
+                  </SettingsSection>
+
+                  {/* Phase 4 Stretch D — Email Voice (live preview) */}
+                  <SettingsSection
+                    id="voice"
+                    icon={Sparkles}
+                    title="Email Voice"
+                    description="Tune how your outreach sounds. Slide and watch the sample email update."
+                  >
+                    <VoiceModelControls />
                   </SettingsSection>
 
                   {/* Phase 6 — Alumni Graph consent */}
