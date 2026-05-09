@@ -370,7 +370,7 @@ def prompt_search():
 
         # Phase 3: pull the user's saved company-contexts so the generator
         # can weave the user's "why this company" reason into the email.
-        # Best-effort — never fail email generation because of a context
+        # Best-effort -- never fail email generation because of a context
         # read miss.
         company_contexts_map = {}
         try:

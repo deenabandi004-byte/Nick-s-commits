@@ -31,12 +31,12 @@ import { FloatingPrompt } from "@/components/FloatingPrompt";
 import { ColdStartIntent } from "@/components/ColdStartIntent";
 
 // =============================================================================
-// Phase 3 — naive company-name detector for the FloatingPrompt
+// Phase 3 -- naive company-name detector for the FloatingPrompt
 // =============================================================================
 // We don't need full NER here; the search prompt is short and most students
 // type the firm name verbatim. We look for a configured short-list of high-
 // signal firms in the prompt text. Misses fall through and the prompt simply
-// doesn't render — the email gen path still pulls saved contexts at request
+// doesn't render -- the email gen path still pulls saved contexts at request
 // time (server-side), so we never block on a frontend miss.
 const COMPANY_DETECTORS: Array<{ pattern: RegExp; name: string }> = [
   { pattern: /\b(goldman( sachs)?|gs)\b/i, name: 'Goldman Sachs' },
@@ -277,7 +277,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   } | null>(null);
   const hasResults = lastResults.length > 0;
 
-  // Phase 3 — composer-time personalization gates (audit-relocated from
+  // Phase 3 -- composer-time personalization gates (audit-relocated from
   // the search-prompt area). FloatingPrompt fires on the most-frequent
   // company across lastResults so a multi-firm batch still gets one
   // prompt rather than zero. ColdStartIntent fires once-per-account when
@@ -1572,7 +1572,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           </div>
         )}
 
-        {/* Phase 3 — FloatingPrompt was previously mounted here and triggered
+        {/* Phase 3 -- FloatingPrompt was previously mounted here and triggered
             on `detectCompanyInPrompt(searchPrompt)`, i.e. at search time.
             Per the audit it was relocated below to fire on a real result
             contact's company AFTER drafts have been generated. See the
@@ -1707,7 +1707,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             )}
 
             {/* Composer-time personalization gates (audit-relocated from
-                the search form). ColdStartIntent first — when shown, it
+                the search form). ColdStartIntent first -- when shown, it
                 blocks the contact-card render until the user submits or
                 skips. FloatingPrompt second, gated on the most-frequent
                 company across lastResults; rendered alongside the cards
@@ -1746,7 +1746,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               </div>
             ) : null}
 
-            {/* Contact cards — hidden while ColdStartIntent is active */}
+            {/* Contact cards -- hidden while ColdStartIntent is active */}
             {!showColdStartIntent && lastResults.length <= 8 && lastResults.map((c: any, i: number) => {
               const name = [c.FirstName || c.firstName, c.LastName || c.lastName].filter(Boolean).join(' ') || 'Unknown';
               const title = c.JobTitle || c.jobTitle || c.Title || '';

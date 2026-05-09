@@ -1,5 +1,5 @@
 /**
- * VoiceModelControls — Phase 4 Stretch D (per §15 #9 design decision).
+ * VoiceModelControls -- Phase 4 Stretch D (per §15 #9 design decision).
  *
  * 3 plain-English controls:
  *   - Tone slider (formality_score 0-1)
@@ -17,7 +17,7 @@
  * `voiceModelManuallyEdited: true`, so the next synthesis run leaves
  * the user's choices alone.
  *
- * Behind the same DERIVED_PROFILE_ENABLED flag as the cron — caller
+ * Behind the same DERIVED_PROFILE_ENABLED flag as the cron -- caller
  * wraps the render with the flag check.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -59,14 +59,14 @@ const DEFAULT_VOICE: VoiceModel = {
 };
 
 const OPENER_OPTIONS: { value: OpenerStyle; label: string; example: string }[] = [
-  { value: 'warm', label: 'Warm', example: 'Hi Sarah — hope your week is off to a strong start.' },
-  { value: 'direct', label: 'Direct', example: 'Sarah — I\'m a USC senior reaching out about your team.' },
+  { value: 'warm', label: 'Warm', example: 'Hi Sarah -- hope your week is off to a strong start.' },
+  { value: 'direct', label: 'Direct', example: 'Sarah -- I\'m a USC senior reaching out about your team.' },
   {
     value: 'contextual',
     label: 'Contextual',
-    example: 'Hi Sarah — I read about your team\'s recent deal in the WSJ and wanted to reach out.',
+    example: 'Hi Sarah -- I read about your team\'s recent deal in the WSJ and wanted to reach out.',
   },
-  { value: 'question', label: 'Question-led', example: 'Hi Sarah — quick question about your path into TMT M&A?' },
+  { value: 'question', label: 'Question-led', example: 'Hi Sarah -- quick question about your path into TMT M&A?' },
   { value: 'none', label: 'No pre-amble', example: 'Sarah, I\'d love a 15-min chat.' },
 ];
 
@@ -110,13 +110,13 @@ function renderPreview(voice: VoiceModel, vars: PreviewVars): string {
       : `I'm a ${vars.senderSchoolShort} student exploring ${vars.recipientCompany} and would love 15 minutes to learn about your path.`;
   } else if (isLong) {
     body = formal
-      ? `I am a ${vars.senderSchoolShort} student in the Class of ${vars.senderGradYear}, exploring careers in your industry. Your trajectory at ${vars.recipientCompany} stood out — particularly the recent work I have read about in the press.\n\nIf your schedule permits, I would value fifteen minutes of your time to learn what makes your team distinctive and how you have approached the early stages of your career.`
-      : `I'm a ${vars.senderSchoolShort} student (Class of ${vars.senderGradYear}) digging into your industry and your path at ${vars.recipientCompany} caught my eye — especially the recent work I've been reading about.\n\nWould you have 15 minutes to chat? I'd love to hear what makes your team different and how you thought about the early career moves that got you there.`;
+      ? `I am a ${vars.senderSchoolShort} student in the Class of ${vars.senderGradYear}, exploring careers in your industry. Your trajectory at ${vars.recipientCompany} stood out -- particularly the recent work I have read about in the press.\n\nIf your schedule permits, I would value fifteen minutes of your time to learn what makes your team distinctive and how you have approached the early stages of your career.`
+      : `I'm a ${vars.senderSchoolShort} student (Class of ${vars.senderGradYear}) digging into your industry and your path at ${vars.recipientCompany} caught my eye -- especially the recent work I've been reading about.\n\nWould you have 15 minutes to chat? I'd love to hear what makes your team different and how you thought about the early career moves that got you there.`;
   } else {
     body = formal
       ? `I am a ${vars.senderSchoolShort} student looking to learn more about ${vars.recipientCompany}. Your work caught my attention and I would value fifteen minutes of your time to hear about your path.`
       : casual
-      ? `I'm a ${vars.senderSchoolShort} student trying to learn more about ${vars.recipientCompany}. Your path caught my eye — could I grab 15 minutes to chat?`
+      ? `I'm a ${vars.senderSchoolShort} student trying to learn more about ${vars.recipientCompany}. Your path caught my eye -- could I grab 15 minutes to chat?`
       : `I'm a ${vars.senderSchoolShort} student looking to learn more about ${vars.recipientCompany}. Your path caught my eye and I'd love 15 minutes to ask about how you got there.`;
   }
 
@@ -126,7 +126,7 @@ function renderPreview(voice: VoiceModel, vars: PreviewVars): string {
       closer = 'Open this week or next?';
       break;
     case 'grateful':
-      closer = 'Thank you so much for considering — I really appreciate your time.';
+      closer = 'Thank you so much for considering -- I really appreciate your time.';
       break;
     case 'warm':
       closer = 'Either way, appreciate the time you take to read this.';
@@ -221,7 +221,7 @@ export function VoiceModelControls({ previewVars, className }: VoiceModelControl
     setError(null);
     const ok = await postVoice(voice);
     if (!ok) {
-      setError('Could not save — try again in a second.');
+      setError('Could not save -- try again in a second.');
     } else {
       setSavedAt(Date.now());
       setManuallyEdited(true);
@@ -411,7 +411,7 @@ export function VoiceModelControls({ previewVars, className }: VoiceModelControl
               {preview}
             </div>
             <p className="mt-2 text-[10px] text-muted-foreground">
-              Preview only — your real emails use this voice plus the recipient&apos;s details.
+              Preview only -- your real emails use this voice plus the recipient&apos;s details.
             </p>
           </div>
         </div>

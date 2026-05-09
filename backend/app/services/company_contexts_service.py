@@ -1,5 +1,5 @@
 """
-Company contexts service — Phase 1 + Phase 3 of the Personalization Data Layer.
+Company contexts service -- Phase 1 + Phase 3 of the Personalization Data Layer.
 
 A "company context" is the user's reason for caring about a particular
 company ("My grandfather was a partner at GS, that's why I care about
@@ -29,7 +29,7 @@ CompanyContextSource = Literal['explicit', 'inferred_from_resume', 'inferred_fro
 
 REASON_MAX_CHARS = 1000
 
-# §10.3 staleness rules — exposed so tests can monkeypatch.
+# §10.3 staleness rules -- exposed so tests can monkeypatch.
 STALENESS_WINDOW = timedelta(days=180)        # 6 months
 UNANSWERED_REPLIES_THRESHOLD = 5              # 5 unanswered emails → re-ask
 
@@ -184,7 +184,7 @@ def touch_company_context(uid: str, company_id_normalized: str) -> None:
 
 
 # ============================================================================
-# Phase 3 — should_show_prompt staleness logic
+# Phase 3 -- should_show_prompt staleness logic
 # ============================================================================
 
 
@@ -213,7 +213,7 @@ def _count_unanswered_outbound_at_company(
 ) -> int:
     """Count outboundDrafts at this company that have not yet received a reply.
 
-    Used by the staleness check — 5 unanswered outbound emails to a company
+    Used by the staleness check -- 5 unanswered outbound emails to a company
     is a strong "your reason isn't compelling" signal, per §10.3, and
     triggers a re-ask of the floating prompt.
 
@@ -243,7 +243,7 @@ def _count_unanswered_outbound_at_company(
             .collection('outboundDrafts')
             .stream()
         )
-    except Exception:  # pragma: no cover — Firestore failure
+    except Exception:  # pragma: no cover -- Firestore failure
         return 0
 
     count = 0
@@ -306,7 +306,7 @@ def should_show_prompt(
     now = now or datetime.now(timezone.utc)
     existing = get_company_context_by_id(uid, company_id_normalized)
 
-    # Rule 1 — no context.
+    # Rule 1 -- no context.
     if not existing:
         return {
             'show': True,
@@ -319,7 +319,7 @@ def should_show_prompt(
     answered_at = _parse_iso(existing.get('answeredAt'))
     prior_answer = existing.get('reason') if existing.get('reason') else None
 
-    # Rule 2 — inferred-from-resume only and never explicitly answered.
+    # Rule 2 -- inferred-from-resume only and never explicitly answered.
     if source == 'inferred_from_resume' and not answered_at:
         return {
             'show': True,
@@ -328,13 +328,13 @@ def should_show_prompt(
             'priorAnswer': prior_answer,
         }
 
-    # Rule 3 — staleness window. The reference timestamp is whichever is
+    # Rule 3 -- staleness window. The reference timestamp is whichever is
     # most recent of `answeredAt` and `lastUsedAt` so re-asks happen when
     # the context has gone unused for the staleness window, not when the
     # context was created.
     last_active = answered_at or _parse_iso(existing.get('lastUsedAt'))
     if last_active is None:
-        # Doc exists but no usable timestamp — treat as stale defensively.
+        # Doc exists but no usable timestamp -- treat as stale defensively.
         return {
             'show': True,
             'reason': 'stale',
@@ -349,7 +349,7 @@ def should_show_prompt(
             'priorAnswer': prior_answer,
         }
 
-    # Rule 4 — unanswered emails at this company since the context was
+    # Rule 4 -- unanswered emails at this company since the context was
     # answered. We count from `answeredAt` so old ignored emails don't
     # accumulate forever and triple-fire the prompt.
     unanswered = _count_unanswered_outbound_at_company(

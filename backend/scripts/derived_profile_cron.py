@@ -1,5 +1,5 @@
 """
-DerivedProfile synthesis cron — Phase 4 of the Personalization Data Layer.
+DerivedProfile synthesis cron -- Phase 4 of the Personalization Data Layer.
 
 Two trigger modes (per §6.1 of the eng review):
 
@@ -20,10 +20,10 @@ user's bad data doesn't abort the whole sweep.
 This script can run in two ways:
   A. As a Render scheduled job (recommended): cron entry calls
      `python -m backend.scripts.derived_profile_cron --mode nightly`.
-  B. As a daemon thread inside wsgi.py — wakes every 30 minutes and runs
+  B. As a daemon thread inside wsgi.py -- wakes every 30 minutes and runs
      `--mode event-triggered`. Add it to wsgi.py:265-style daemon list.
 
-Behind `DERIVED_PROFILE_ENABLED` env flag — defaults OFF.
+Behind `DERIVED_PROFILE_ENABLED` env flag -- defaults OFF.
 """
 from __future__ import annotations
 
@@ -49,7 +49,7 @@ EVENT_TRIGGER_THRESHOLD = int(os.getenv('DERIVED_PROFILE_TRIGGER_N', '10'))
 # Skip users whose lastSynthesizedAt is fresher than this (nightly mode only).
 NIGHTLY_FRESHNESS_HOURS = int(os.getenv('DERIVED_PROFILE_NIGHTLY_HOURS', '24'))
 
-# Hard cap on users processed per run — guard against runaway batches.
+# Hard cap on users processed per run -- guard against runaway batches.
 MAX_USERS_PER_RUN = int(os.getenv('DERIVED_PROFILE_MAX_USERS', '500'))
 
 
@@ -58,7 +58,7 @@ def _capture_exception(exc: Exception, *, uid: str, mode: str) -> None:
     try:
         import sentry_sdk
         sentry_sdk.capture_exception(exc)
-    except Exception:  # pragma: no cover — sentry not installed or not init'd
+    except Exception:  # pragma: no cover -- sentry not installed or not init'd
         pass
     logger.exception('derived_profile_cron: synth failed uid=%s mode=%s exc=%s',
                      uid, mode, exc)
@@ -81,7 +81,7 @@ def _count_events_since(db, uid: str, since: Optional[datetime]) -> int:
                 ts = data.get('timestamp') or data.get('createdAt')
                 if ts is None:
                     continue
-                # Lazy parse — only if we care to filter.
+                # Lazy parse -- only if we care to filter.
                 from app.services.derived_profile_service import _coerce_dt as parse
                 ts_dt = parse(ts)
                 if ts_dt is None or ts_dt < since:
@@ -166,7 +166,7 @@ def run_nightly(*, dry_run: bool = False) -> dict:
             profile = derived_profile_service.get_derived_profile(uid)
             last = _last_synth_at(profile)
             if last is not None and last >= freshness:
-                # Already synthesized within the window — could have been
+                # Already synthesized within the window -- could have been
                 # an event-triggered run earlier today. Skip.
                 skipped_fresh += 1
                 continue

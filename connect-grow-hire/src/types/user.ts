@@ -74,7 +74,7 @@ export interface UserDocument {
   alumniGraphConsent: AlumniGraphConsent | null;
   alumniGraphConsentAt?: string;
 
-  // === Notification stats (P8 — written by cta_service) ===
+  // === Notification stats (P8 -- written by cta_service) ===
   notificationStats?: NotificationStats;
 
   // === Backfill provenance (set by phase1_backfill.py) ===

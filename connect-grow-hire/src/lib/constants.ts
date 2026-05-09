@@ -136,7 +136,7 @@ export const EVENTS_LOGGING_ENABLED =
   (import.meta.env.VITE_EVENTS_LOGGING_ENABLED ?? 'false').toLowerCase() === 'true';
 
 // =============================================================================
-// Phase 3 — Floating prompt + cold-start intent feature flags
+// Phase 3 -- Floating prompt + cold-start intent feature flags
 // =============================================================================
 // FloatingPrompt and ColdStartIntent both check these at render. The backend
 // has matching gates (FLOATING_PROMPT_ENABLED / COLD_START_INTENT_ENABLED) so
@@ -148,7 +148,7 @@ export const COLD_START_INTENT_ENABLED =
   (import.meta.env.VITE_COLD_START_INTENT_ENABLED ?? 'false').toLowerCase() === 'true';
 
 // =============================================================================
-// Phase 5 — Recommendation engine feature flag
+// Phase 5 -- Recommendation engine feature flag
 // =============================================================================
 // EmptyRecommendations reads this at runtime. Set via Vite env var so the
 // rollout flips without a rebuild. Backend has a matching gate
@@ -176,7 +176,7 @@ export const CTA_CARDS_ENABLED =
   (import.meta.env.VITE_CTA_CARDS_ENABLED ?? 'false').toLowerCase() === 'true';
 
 // =============================================================================
-// Phase 3 — Industry-seeded suggestion chips for the FloatingPrompt
+// Phase 3 -- Industry-seeded suggestion chips for the FloatingPrompt
 // =============================================================================
 // Per 15 #2: 3 chips per industry the user has flagged in `targetIndustries`.
 // The user can pick a chip to seed their answer (still editable) or write

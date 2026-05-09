@@ -315,11 +315,11 @@ def batch_generate_emails(contacts, resume_text, user_profile, career_interests,
     Args:
         ...
         auth_display_name: Optional display name from Firebase Auth; used as last resort before "Student".
-        company_contexts: Phase 3 — dict of {companyIdNormalized: contextDoc} the
+        company_contexts: Phase 3 -- dict of {companyIdNormalized: contextDoc} the
             user has answered the floating prompt for. The contextDoc carries
             `reason`, `source`, `companyAliases`, etc. We weave the reason
             into the personal-note context so the existing prompt template
-            naturally picks it up — no template rewrite (Phase 7 territory).
+            naturally picks it up -- no template rewrite (Phase 7 territory).
             Default None / empty = no contexts available; generation falls
             back to the pre-Phase-3 path.
     """
@@ -331,14 +331,14 @@ def batch_generate_emails(contacts, resume_text, user_profile, career_interests,
 
         # Phase 3 minimal hookup: when a contact's company has a stored
         # context, prepend the user's reason into `personal_note` so the
-        # downstream prompt template — which already reads `personal_note`
-        # — surfaces it without a rewrite. This is intentionally minimal;
+        # downstream prompt template -- which already reads `personal_note`
+        # -- surfaces it without a rewrite. This is intentionally minimal;
         # Phase 7 (`email_generator.generate_email`) reads `companyContext`
         # as a first-class input.
         if company_contexts:
             try:
                 from app.utils.company import company_to_slug
-                # Find the most relevant context for the batch — usually
+                # Find the most relevant context for the batch -- usually
                 # all contacts are at the same company, so pick the first.
                 first_company = None
                 for c in contacts or []:

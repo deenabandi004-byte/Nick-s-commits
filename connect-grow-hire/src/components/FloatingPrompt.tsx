@@ -1,7 +1,7 @@
 /**
- * FloatingPrompt — Phase 3 of the Personalization Data Layer.
+ * FloatingPrompt -- Phase 3 of the Personalization Data Layer.
  *
- * Inline (NOT modal — modals break flow per §15 #2) component that asks
+ * Inline (NOT modal -- modals break flow per §15 #2) component that asks
  * the user "why this company?" before an outreach email is generated.
  * The answer becomes a `companyContext` document that downstream gens
  * weave into the email body.
@@ -14,7 +14,7 @@
  *
  * Behavior rules (per spec):
  *   - Skipping does NOT block the email send. Caller renders this and
- *     proceeds independently — the prompt is a side-channel.
+ *     proceeds independently -- the prompt is a side-channel.
  *   - Stale re-ask UI MUST acknowledge the prior answer
  *     ("Last time you said: '{reason}'. Anything different now?") so the
  *     user knows the system remembers them.
@@ -24,9 +24,9 @@
  *     component just signals `onAnswered`).
  *
  * Events fired:
- *   - prompt_shown    — once on first render after the API says show=true
- *   - prompt_answered — when the user submits a valid reason
- *   - prompt_dismissed — Skip / Remind-me-later (with `promptType` stable)
+ *   - prompt_shown    -- once on first render after the API says show=true
+ *   - prompt_answered -- when the user submits a valid reason
+ *   - prompt_dismissed -- Skip / Remind-me-later (with `promptType` stable)
  *
  * The component is a no-op when FLOATING_PROMPT_ENABLED is false. Render
  * it unconditionally; the flag short-circuits internally so callers don't
@@ -73,7 +73,7 @@ export interface FloatingPromptProps {
   companyName: string;
   /** Already-normalized slug; if omitted, backend re-normalizes from name. */
   companyId?: string;
-  /** User's target industries — used to seed suggestion chips. */
+  /** User's target industries -- used to seed suggestion chips. */
   targetIndustries?: TargetIndustryValue[] | string[];
   /** Called once the user submits an answer, after the POST resolves. */
   onAnswered?: (reason: string) => void;
@@ -103,7 +103,7 @@ function setRemindLaterUntil(companyId: string, untilMs: number): void {
     parsed[companyId] = untilMs;
     window.localStorage.setItem(REMIND_LATER_KEY, JSON.stringify(parsed));
   } catch {
-    // localStorage full / disabled — drop silently.
+    // localStorage full / disabled -- drop silently.
   }
 }
 
@@ -298,7 +298,7 @@ export function FloatingPrompt({
                 Why <span className="text-primary">{companyName}</span>?
               </p>
               <p className="mt-0.5 text-xs text-muted-foreground">
-                One sentence is plenty — we&apos;ll weave it into the email.
+                One sentence is plenty -- we&apos;ll weave it into the email.
               </p>
             </div>
             <button

@@ -431,20 +431,20 @@ def profile_confirm():
 
 
 # =============================================================================
-# Phase 3 — Company Contexts (floating-prompt back-end)
+# Phase 3 -- Company Contexts (floating-prompt back-end)
 # =============================================================================
-# - GET  /api/company-contexts/should-show — staleness check for the floating
+# - GET  /api/company-contexts/should-show -- staleness check for the floating
 #         prompt; the FloatingPrompt component calls this on render to decide
 #         whether to show itself for a given (user, company).
-# - POST /api/company-contexts — write the user's answer with source='explicit'.
-# - GET  /api/company-contexts — list all contexts for the current user
+# - POST /api/company-contexts -- write the user's answer with source='explicit'.
+# - GET  /api/company-contexts -- list all contexts for the current user
 #         (used by the AccountSettings "your reasons" surface).
 #
 # Both routes are gated by FLOATING_PROMPT_ENABLED so we can deploy the API
 # surface separately from flipping the UX live. Default OFF (per §8).
 
-REASON_MIN_CHARS = 10  # noise floor — anything shorter is a "test" / "asdf"
-# Strings the user can type instead of a real answer — match exactly to
+REASON_MIN_CHARS = 10  # noise floor -- anything shorter is a "test" / "asdf"
+# Strings the user can type instead of a real answer -- match exactly to
 # avoid catching legitimate short answers like "Family connections."
 _NOISE_LITERALS = {
     'asdf', 'asdfasdf', 'qwerty', 'test', 'testing', 'tbd', 'idk',
@@ -458,7 +458,7 @@ def _floating_prompt_enabled() -> bool:
 
 
 def _validate_reason_or_400(reason):
-    """Pure validator — returns (cleaned, error_dict_or_None).
+    """Pure validator -- returns (cleaned, error_dict_or_None).
 
     Returning a dict (not a Flask response) keeps this function unit-testable
     without an app context. The route wraps the dict in `jsonify` itself.
@@ -474,7 +474,7 @@ def _validate_reason_or_400(reason):
         }
     if len(cleaned) > REASON_MAX_CHARS:
         cleaned = cleaned[:REASON_MAX_CHARS]
-    # Noise filter — strip and lower to catch "  ASDF  " but keep things
+    # Noise filter -- strip and lower to catch "  ASDF  " but keep things
     # like "Family connections." intact (length > min already filters).
     lowered = re.sub(r'\s+', ' ', cleaned.lower()).strip()
     if lowered in _NOISE_LITERALS:
@@ -483,7 +483,7 @@ def _validate_reason_or_400(reason):
             'code': 'reason_noise',
             'status': 400,
         }
-    # Repetition heuristic — "asdfasdfasdf" / "aaaaaaaaaa" patterns.
+    # Repetition heuristic -- "asdfasdfasdf" / "aaaaaaaaaa" patterns.
     compact = lowered.replace(' ', '')
     if len(set(compact)) <= 2:
         return None, {
@@ -518,8 +518,8 @@ def company_contexts_should_show():
     """Return whether the floating prompt should fire for (user, company).
 
     Query params:
-        company        — display name. Required.
-        companyId      — already-normalized slug; overrides `company` if both.
+        company        -- display name. Required.
+        companyId      -- already-normalized slug; overrides `company` if both.
 
     Returns:
         200 with the dict from `should_show_prompt` (show, reason, priorAnswer).
@@ -540,7 +540,7 @@ def company_contexts_should_show():
         return jsonify({'error': 'company or companyId is required'}), 400
 
     decision = should_show_prompt(uid, company_id)
-    # Don't leak the full prior context doc to the client — only the answer
+    # Don't leak the full prior context doc to the client -- only the answer
     # text and source are needed to render the stale re-ask UI.
     prior_ctx = decision.get('priorContext') or {}
     return jsonify({
@@ -622,13 +622,13 @@ def company_contexts():
 
 
 # =============================================================================
-# Phase 4 — VoiceModel (Stretch D — editable user-facing surface)
+# Phase 4 -- VoiceModel (Stretch D -- editable user-facing surface)
 # =============================================================================
-# - GET  /api/users/voice-model — current voiceModel for the live preview UI.
-# - POST /api/users/voice-model — write user-tuned values; flips
+# - GET  /api/users/voice-model -- current voiceModel for the live preview UI.
+# - POST /api/users/voice-model -- write user-tuned values; flips
 #         voiceModelManuallyEdited so synthesis stops overwriting them.
 #
-# Gated by DERIVED_PROFILE_ENABLED env flag — if synthesis is off, edits
+# Gated by DERIVED_PROFILE_ENABLED env flag -- if synthesis is off, edits
 # are still allowed (the user can pre-set their voice before any synth
 # runs) but the values stay isolated to the manually-edited path.
 

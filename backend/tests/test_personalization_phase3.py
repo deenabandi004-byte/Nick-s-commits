@@ -1,5 +1,5 @@
 """
-Phase 3 personalization data layer — unit tests.
+Phase 3 personalization data layer -- unit tests.
 
 Covers the §7 (P3 row) cases that don't need real Firestore:
   - Company normalization edge cases (Goldman / GS / 'Goldman, LLC' all
@@ -50,7 +50,7 @@ def test_company_to_slug_alias_hits():
     assert company_to_slug('BCG') == 'bcg'
     assert company_to_slug('Bain') == 'bain-and-company'
     assert company_to_slug('Bain & Company') == 'bain-and-company'
-    # Bain Capital is NOT Bain & Co — must be a different slug.
+    # Bain Capital is NOT Bain & Co -- must be a different slug.
     assert company_to_slug('Bain Capital') == 'bain-capital'
 
     # Tech
@@ -90,7 +90,7 @@ def test_company_to_slug_handles_empty():
 
 
 def test_models_users_normalize_company_uses_alias_map():
-    """models.users.normalize_company is now a thin shim — verify it picks
+    """models.users.normalize_company is now a thin shim -- verify it picks
     up the alias map from utils.company."""
     from app.models.users import normalize_company
     assert normalize_company('Centerview Partners') == 'centerview-partners'
@@ -127,7 +127,7 @@ def test_should_show_prompt_no_context_returns_show_no_context():
     from app.services import company_contexts_service as svc
 
     with patch.object(svc, 'get_db', return_value=_patch_db_doc(None)):
-        # No outboundDrafts either — second collection chain just returns empty.
+        # No outboundDrafts either -- second collection chain just returns empty.
         with patch.object(svc, '_count_unanswered_outbound_at_company', return_value=0):
             decision = svc.should_show_prompt('uid1', 'goldman-sachs')
     assert decision['show'] is True
@@ -284,7 +284,7 @@ def test_should_show_prompt_unanswered_threshold(monkeypatch):
 
     # Write 5 real outboundDrafts via the production writer. The contact
     # dict carries Company='Goldman Sachs', which company_to_slug maps to
-    # the canonical 'goldman-sachs' slug — same key the staleness check
+    # the canonical 'goldman-sachs' slug -- same key the staleness check
     # filters on.
     for i in range(5):
         emails_route._write_outbound_draft(
@@ -303,7 +303,7 @@ def test_should_show_prompt_unanswered_threshold(monkeypatch):
     assert all(d['companyIdNormalized'] == 'goldman-sachs' for d in written.values())
     assert all(d['replyReceivedAt'] is None for d in written.values())
 
-    # Existing context is fresh + explicit + answered recently — without
+    # Existing context is fresh + explicit + answered recently -- without
     # the unanswered backlog the rule would return 'fresh'. The 5
     # backlogged drafts must flip the decision to 'unanswered_threshold'.
     now = datetime(2026, 4, 29, tzinfo=timezone.utc)

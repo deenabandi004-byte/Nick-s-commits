@@ -1,5 +1,5 @@
 """
-Company normalization utility — Phase 3 of the Personalization Data Layer.
+Company normalization utility -- Phase 3 of the Personalization Data Layer.
 
 Goal: every variant a student types ("Goldman", "Goldman Sachs", "GS",
 "goldman-sachs", "goldman sachs llc") collapses to one canonical slug
@@ -7,13 +7,13 @@ Goal: every variant a student types ("Goldman", "Goldman Sachs", "GS",
 joins all work off the same key.
 
 The alias map covers the top ~100 companies students at our target schools
-target — investment banking, consulting, tech, PE/VC, big-4. The fallback
+target -- investment banking, consulting, tech, PE/VC, big-4. The fallback
 for anything not in the map is a deterministic alnum-hyphen slug, which is
 good enough for joins as long as both sides slug consistently.
 
 `normalize_company` in `models/users.py` was the Phase 1 minimum (one-off
 slugifier with the highest-traffic aliases). This module REPLACES that
-behavior — `models.users.normalize_company` is now a thin shim that calls
+behavior -- `models.users.normalize_company` is now a thin shim that calls
 into `company_to_slug` here.
 
 Stripping rules applied before alias lookup:
@@ -43,7 +43,7 @@ from typing import Dict, Optional
 #   - Top PE / HF / VC firms
 #   - Major commercial / corporate banks
 #
-# This is NOT exhaustive — net-new firms get added as users complain. The
+# This is NOT exhaustive -- net-new firms get added as users complain. The
 # fallback slug is always usable; aliases just make the company-context
 # join more forgiving when users type sloppy names.
 
@@ -377,7 +377,7 @@ _ALIAS_MAP: Dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 # Common corporate suffixes that should NOT affect normalization. Order
-# matters — longer first so we don't half-strip.
+# matters -- longer first so we don't half-strip.
 _SUFFIX_PATTERNS = [
     r',?\s*incorporated$',
     r',?\s*inc\.?$',
@@ -450,7 +450,7 @@ def company_to_slug(name: Optional[str]) -> Optional[str]:
     if slug in _ALIAS_MAP:
         return _ALIAS_MAP[slug]
 
-    # 4. Fallback — deterministic slug. Good enough for joins.
+    # 4. Fallback -- deterministic slug. Good enough for joins.
     return slug or None
 
 
@@ -458,7 +458,7 @@ def get_aliases_for_slug(slug: str) -> list:
     """Return all known display-name aliases that map to a given slug.
 
     Used by company_contexts_service to populate `companyAliases` when
-    writing a context — so the next time the user types any of those names
+    writing a context -- so the next time the user types any of those names
     we hit the same context doc.
     """
     if not slug:
@@ -469,5 +469,5 @@ def get_aliases_for_slug(slug: str) -> list:
 
 # Back-compat: the old `models.users.normalize_company` used this exact name.
 # Re-export so callers can migrate gradually without breaking imports.
-def normalize_company(name: Optional[str]) -> Optional[str]:  # pragma: no cover — thin alias
+def normalize_company(name: Optional[str]) -> Optional[str]:  # pragma: no cover -- thin alias
     return company_to_slug(name)

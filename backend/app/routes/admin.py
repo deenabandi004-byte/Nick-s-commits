@@ -218,13 +218,13 @@ def report_client_error():
 
 
 # =============================================================================
-# Phase 4 — Edit-rate dashboard + feature flag management
+# Phase 4: Edit-rate dashboard + feature flag management
 # =============================================================================
-# - GET  /api/admin/edit-rate-dashboard — read email_drafted vs email_edited
+# - GET  /api/admin/edit-rate-dashboard: read email_drafted vs email_edited
 #         events, group by USE_NEW_GENERATOR assignment, compute the A/B
 #         comparison without a vendor (per 10.5).
-# - GET  /api/admin/feature-flags — read the feature_flags/global doc.
-# - POST /api/admin/feature-flags — partial update (enabled / rollout_pct
+# - GET  /api/admin/feature-flags: read the feature_flags/global doc.
+# - POST /api/admin/feature-flags: partial update (enabled / rollout_pct
 #         / overrides) for a single flag.
 #
 # Auth: bound to the existing @require_firebase_auth + a manual ADMIN_UIDS

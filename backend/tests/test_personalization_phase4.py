@@ -1,5 +1,5 @@
 """
-Phase 4 personalization data layer — unit tests.
+Phase 4 personalization data layer -- unit tests.
 
 Covers the §7 (P4 row) cases that don't need real Firestore / OpenAI:
   - feature_flags: deterministic uid bucketing, override map, kill switch.
@@ -81,7 +81,7 @@ def test_feature_flag_full_rollout_includes_everyone():
 
 
 # ============================================================================
-# derived_profile_service — synthesize behavior
+# derived_profile_service -- synthesize behavior
 # ============================================================================
 
 
@@ -95,7 +95,7 @@ def _patch_user_get(user_data: dict | None):
 
 
 def _build_db_with_no_profile_no_events():
-    """Firestore mock — derivedProfile/v1 missing, events collection empty."""
+    """Firestore mock -- derivedProfile/v1 missing, events collection empty."""
     profile_snap = MagicMock()
     profile_snap.exists = False
     profile_snap.to_dict.return_value = {}
@@ -189,7 +189,7 @@ def test_compute_behavior_stats_deterministic():
 def test_compute_behavior_stats_dedupes_sends_by_tracking_id():
     """Both email_sent_clicked AND email_sent_via_gmail can fire for the
     same draft (frontend optimistic + Pub/Sub confirmed). They share a
-    trackingId, so the rollup must count them as ONE send, not two —
+    trackingId, so the rollup must count them as ONE send, not two --
     otherwise replyRate30d gets halved.
     """
     from app.services.derived_profile_service import _compute_behavior_stats
@@ -246,7 +246,7 @@ def test_voice_model_validate_rejects_invalid_opener():
 
 
 # ============================================================================
-# Cron — feature flag gating
+# Cron -- feature flag gating
 # ============================================================================
 
 
@@ -276,7 +276,7 @@ def test_cron_nightly_skips_when_flag_off():
 
 def test_persist_profile_preserves_manually_edited_voice():
     """When voice_manually_edited=True is passed, the persisted doc reflects
-    that — the cron uses this to decide whether to overwrite voice fields
+    that -- the cron uses this to decide whether to overwrite voice fields
     on the next synth run."""
     from app.services import derived_profile_service as svc
 

@@ -1,5 +1,5 @@
 """
-Derived profile service — Phase 1 placeholder + Phase 4 real synthesis.
+Derived profile service -- Phase 1 placeholder + Phase 4 real synthesis.
 
 A `DerivedProfile` is the rolled-up understanding of a user's voice,
 interests, and behavior, synthesized from raw events. Phase 4 replaces
@@ -56,7 +56,7 @@ def _now_dt() -> datetime:
 
 
 def is_enabled() -> bool:
-    """Feature gate — `DERIVED_PROFILE_ENABLED` env var defaults OFF."""
+    """Feature gate -- `DERIVED_PROFILE_ENABLED` env var defaults OFF."""
     return os.getenv('DERIVED_PROFILE_ENABLED', 'false').lower() == 'true'
 
 
@@ -114,7 +114,7 @@ def write_placeholder_derived_profile(uid: str) -> Dict[str, Any]:
 
 
 # ============================================================================
-# Phase 4 — real synthesis pipeline
+# Phase 4 -- real synthesis pipeline
 # ============================================================================
 
 def _load_recent_events(uid: str, since: datetime, limit: int) -> List[Dict[str, Any]]:
@@ -191,7 +191,7 @@ def _scrub_payload(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _compute_behavior_stats(events: List[Dict[str, Any]]) -> Dict[str, Any]:
-    """Cheap, deterministic rollups — done in Python, not the LLM."""
+    """Cheap, deterministic rollups -- done in Python, not the LLM."""
     drafts = [e for e in events if e['type'] == 'email_drafted']
     edits = [e for e in events if e['type'] == 'email_edited']
     # De-duplicate sends by trackingId so a single draft that fires both
@@ -388,7 +388,7 @@ def synthesize(uid: str, *, force: bool = False) -> Dict[str, Any]:
 
     Raises:
         ValueError on missing uid. Other failures (LLM, Firestore) are
-        caught and result in a placeholder write — callers detect via the
+        caught and result in a placeholder write -- callers detect via the
         `placeholder: True` field.
     """
     if not uid:
@@ -400,7 +400,7 @@ def synthesize(uid: str, *, force: bool = False) -> Dict[str, Any]:
             return existing
         return write_placeholder_derived_profile(uid)
 
-    # Respect the user-edited flag — don't overwrite a manually tuned voice
+    # Respect the user-edited flag -- don't overwrite a manually tuned voice
     # model with synthesized values.
     existing = get_derived_profile(uid) or {}
     manually_edited_voice = bool(existing.get('voiceModelManuallyEdited'))
@@ -410,7 +410,7 @@ def synthesize(uid: str, *, force: bool = False) -> Dict[str, Any]:
     behavior = _compute_behavior_stats(events)
 
     if len(events) < MIN_EVENTS_FOR_SYNTHESIS:
-        # Not enough signal — still update behaviorStats so reply rates
+        # Not enough signal -- still update behaviorStats so reply rates
         # surface in the dashboard, but leave voice / interest as-is.
         return _persist_profile(
             uid,
@@ -436,7 +436,7 @@ def synthesize(uid: str, *, force: bool = False) -> Dict[str, Any]:
         )
     cleaned = _validate_synthesis_output(raw)
 
-    # Stretch D — preserve user-edited voiceModel.
+    # Stretch D -- preserve user-edited voiceModel.
     voice_model = (
         existing.get('voiceModel')
         if manually_edited_voice and existing.get('voiceModel')
@@ -494,7 +494,7 @@ def write_user_voice_model(
     closer_style: str,
     signature_pattern: str,
 ) -> Dict[str, Any]:
-    """Stretch D — user-editable voiceModel writer.
+    """Stretch D -- user-editable voiceModel writer.
 
     Sets `voiceModelManuallyEdited: True` so subsequent synthesis runs leave
     the voice fields alone (per §15 #9 design decision).

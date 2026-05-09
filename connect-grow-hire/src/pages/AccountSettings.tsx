@@ -2327,7 +2327,7 @@ export default function AccountSettings() {
                     </div>
                   </SettingsSection>
 
-                  {/* Phase 4 Stretch D — Email Voice (live preview) */}
+                  {/* Phase 4 Stretch D -- Email Voice (live preview) */}
                   <SettingsSection
                     id="voice"
                     icon={Sparkles}

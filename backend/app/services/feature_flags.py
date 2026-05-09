@@ -1,5 +1,5 @@
 """
-Feature flags — Phase 4 of the Personalization Data Layer.
+Feature flags -- Phase 4 of the Personalization Data Layer.
 
 Single Firestore doc (`feature_flags/global`) holds the experiment config:
 
@@ -29,7 +29,7 @@ Lookup is `is_enabled_for_user(flag, uid)`:
 
 The Firestore doc is read with a 60s in-memory TTL cache. Flag flips
 propagate within a minute. We deliberately do NOT subscribe to live
-Firestore listeners — the operational cost (one connection per worker,
+Firestore listeners -- the operational cost (one connection per worker,
 forever) outweighs the 60s lag.
 
 §10.5 of the eng review: "build the minimum yourself, don't adopt a vendor."
@@ -56,7 +56,7 @@ _cache: Dict[str, Any] = {'expires_at': 0.0, 'flags': {}}
 
 
 # ---------------------------------------------------------------------------
-# Known flags (well-known constants — referenced from synthesis + email gen)
+# Known flags (well-known constants -- referenced from synthesis + email gen)
 # ---------------------------------------------------------------------------
 
 USE_NEW_GENERATOR = 'USE_NEW_GENERATOR'                  # Phase 7 ramp
@@ -72,7 +72,7 @@ def _read_flags_from_firestore() -> Dict[str, Any]:
             data = snap.to_dict() or {}
             return data
         return {}
-    except Exception as exc:  # pragma: no cover — Firestore unreachable
+    except Exception as exc:  # pragma: no cover -- Firestore unreachable
         logger.warning('feature_flags: read failed: %s', exc)
         return {}
 
@@ -89,7 +89,7 @@ def _get_flags() -> Dict[str, Any]:
 
 
 def _bucket(flag: str, uid: str) -> int:
-    """Deterministic [0, 100) bucket — same (flag, uid) always lands together."""
+    """Deterministic [0, 100) bucket -- same (flag, uid) always lands together."""
     raw = f'{flag}:{uid}'.encode('utf-8')
     digest = hashlib.sha256(raw).hexdigest()[:8]
     return int(digest, 16) % 100
@@ -141,7 +141,7 @@ def is_enabled_for_user(flag: str, uid: Optional[str]) -> bool:
 
 
 def get_assignment(flag: str, uid: Optional[str]) -> Dict[str, Any]:
-    """Return a richer assignment dict — useful for the edit-rate dashboard.
+    """Return a richer assignment dict -- useful for the edit-rate dashboard.
 
     {
       'flag': str,
@@ -192,7 +192,7 @@ def set_flag(
     rollout_pct: Optional[int] = None,
     overrides: Optional[Dict[str, bool]] = None,
 ) -> Dict[str, Any]:
-    """Admin helper — partial update of a flag config.
+    """Admin helper -- partial update of a flag config.
 
     Only the kwargs you pass get written. Returns the persisted config.
     Caller is responsible for any auth / audit logging.

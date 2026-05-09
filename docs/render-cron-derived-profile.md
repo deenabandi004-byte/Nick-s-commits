@@ -31,14 +31,14 @@ Mirror the env-var set used by the existing two Render crons (Render
 dashboard → existing job → "Environment"). The synthesis script
 specifically reads:
 
-- `DERIVED_PROFILE_ENABLED` — kill switch. Defaults `false`; the script
+- `DERIVED_PROFILE_ENABLED` -- kill switch. Defaults `false`; the script
   short-circuits and exits cleanly when not `true`. Leave `false` until
   the gate ramp is owner-approved.
-- `DERIVED_PROFILE_TRIGGER_N` — event-trigger threshold (default `10`).
+- `DERIVED_PROFILE_TRIGGER_N` -- event-trigger threshold (default `10`).
   Not used by `--mode nightly` but harmless to set.
-- `DERIVED_PROFILE_NIGHTLY_HOURS` — staleness window for the nightly
+- `DERIVED_PROFILE_NIGHTLY_HOURS` -- staleness window for the nightly
   sweep (default `24`).
-- `DERIVED_PROFILE_MAX_USERS` — per-run cap (default `500`).
+- `DERIVED_PROFILE_MAX_USERS` -- per-run cap (default `500`).
 
 Plus everything the rest of the backend needs to talk to Firestore +
 OpenAI (`GOOGLE_APPLICATION_CREDENTIALS` / service-account env, project
@@ -51,7 +51,7 @@ existing nightly-cleanup cron in the dashboard rather than re-listing.
 2. **Environment:** Python; **Region:** match the existing crons.
 3. **Build command:** same as the existing crons (typically
    `pip install -r backend/requirements.txt`). The script does not need
-   the frontend build, so the full `render-build.sh` is overkill — use
+   the frontend build, so the full `render-build.sh` is overkill -- use
    the slimmer pip-install command the existing crons use.
 4. **Schedule:** `0 3 * * *`.
 5. **Command:** `python -m backend.scripts.derived_profile_cron --mode nightly`.
@@ -64,7 +64,7 @@ existing nightly-cleanup cron in the dashboard rather than re-listing.
 
 - The script prints a JSON summary on stdout (`run_nightly` returns a dict
   that `main()` json-dumps). When the flag is off, the JSON contains
-  `{"skipped": true, "reason": "DERIVED_PROFILE_ENABLED=false"}` —
+  `{"skipped": true, "reason": "DERIVED_PROFILE_ENABLED=false"}` --
   expected during the gated rollout.
 - When you flip the flag, expect `{"users_scanned": N, "synthesized": M,
   "errors": [...]}` shape. Per-user errors are caught individually so one

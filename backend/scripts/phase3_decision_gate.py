@@ -9,7 +9,7 @@ computes two metrics:
 
   2. email_edit_rate (current vs pre-Phase-3 baseline)
      Counted per (user, contact) pair. Trend is computed by splitting the
-     event window at the FloatingPrompt rollout date — events before that
+     event window at the FloatingPrompt rollout date -- events before that
      are "baseline," events after are "phase 3."
 
 Gate logic:
@@ -64,7 +64,7 @@ def _parse_iso(value: Any) -> Optional[datetime]:
 
 def _iter_all_events(db, since: Optional[datetime]) -> Iterable[Dict[str, Any]]:
     """Stream every users/*/events/* doc. For 300 users × ~30/wk events
-    we're well under 100k docs — a streaming scan is fine."""
+    we're well under 100k docs -- a streaming scan is fine."""
     users = db.collection('users').stream()
     for u in users:
         events = (
@@ -87,7 +87,7 @@ def compute_gate(
     rollout_date: Optional[datetime] = None,
     since: Optional[datetime] = None,
 ) -> Dict[str, Any]:
-    """Pure compute. Returns the report dict — caller decides exit code."""
+    """Pure compute. Returns the report dict -- caller decides exit code."""
     db = get_db()
 
     prompt_shown = 0

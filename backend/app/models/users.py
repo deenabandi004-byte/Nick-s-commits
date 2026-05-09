@@ -89,7 +89,7 @@ class UserDocument(BaseModel):
     alumni_graph_consent: Optional[AlumniGraphConsent] = Field(default=None, alias='alumniGraphConsent')
     alumni_graph_consent_at: Optional[str] = Field(default=None, alias='alumniGraphConsentAt')
 
-    # === Notification stats (P8 — written by cta_service) ==========
+    # === Notification stats (P8 -- written by cta_service) ==========
     # `dismissedCount` is a rolling tally inside the cooldown window;
     # cta_service resets it when `quietedUntil` elapses. `quietedUntil`
     # is the absolute ISO8601 timestamp until which the dashboard renders
@@ -186,7 +186,7 @@ def normalize_company(company: Optional[str]) -> Optional[str]:
     stripping. Kept as a re-export so older callsites importing from
     `app.models.users` keep working unchanged.
     """
-    # Local import — `app.utils.company` may import from this module
+    # Local import -- `app.utils.company` may import from this module
     # transitively in tests; keep the dependency one-way.
     from app.utils.company import company_to_slug
     return company_to_slug(company)

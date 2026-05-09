@@ -1,13 +1,13 @@
 /**
- * ColdStartIntent — Phase 3 of the Personalization Data Layer.
+ * ColdStartIntent -- Phase 3 of the Personalization Data Layer.
  *
  * 5-question gate for thin-resume users (no resumeText OR profileConfirmedAt
  * is null). Per §15 #3:
- *   - Don't gate the FIRST email — gate the first AI-personalized email.
+ *   - Don't gate the FIRST email -- gate the first AI-personalized email.
  *   - Don't call this anything in user-facing copy. The page just has
  *     questions on it. No "cold start," no "intent flow."
  *   - Question 4 (the wedge) is the unlock. Partial completion at Q4 still
- *     pays off — Q4 alone produces a meaningfully better email than no
+ *     pays off -- Q4 alone produces a meaningfully better email than no
  *     answers at all.
  *   - localStorage-backed partials so a closed tab doesn't waste effort.
  *   - 7-day "resume" banner brings the user back to where they left off.
@@ -16,13 +16,13 @@
  *   1. What career path are you most focused on right now?
  *   2. Which 1–3 companies are at the top of your list?
  *   3. What's one role / team you'd love to land?
- *   4. What's your wedge — the thing that makes you different from
+ *   4. What's your wedge -- the thing that makes you different from
  *      classmates targeting the same path?  ← the unlock
  *   5. What's a recent thing (project, class, internship, side bet) you'd
  *      want to talk about with someone in this field?
  *
  * Writes go to:
- *   - users/{uid} — `targetIndustries`, `targetCompanies`, `targetRoleTypes`,
+ *   - users/{uid} -- `targetIndustries`, `targetCompanies`, `targetRoleTypes`,
  *     `interestTags`, `professionalInfo.wedge`, `professionalInfo.recentWork`
  *     via the existing `/api/users/profile-confirm` endpoint where possible,
  *     and a small `/api/users/cold-start` shim for the wedge / recent fields
@@ -63,7 +63,7 @@ type Answers = {
   industry: string;       // single value from TARGET_INDUSTRIES
   companies: string;      // free-text, comma-separated
   roleType: string;       // single value from TARGET_ROLE_TYPES
-  wedge: string;          // the unlock — what makes you different
+  wedge: string;          // the unlock -- what makes you different
   recentWork: string;     // recent project / class / internship to discuss
 };
 
@@ -191,7 +191,7 @@ export function ColdStartIntent({
 
   const stepValid = useMemo(() => {
     if (step === 3) {
-      // Q4 (wedge) — require a real answer (15+ chars) since this is the unlock.
+      // Q4 (wedge) -- require a real answer (15+ chars) since this is the unlock.
       return answers.wedge.trim().length >= 15;
     }
     return (currentValue || '').toString().trim().length > 0;
@@ -224,7 +224,7 @@ export function ColdStartIntent({
       fields_edited.push('targetRoleTypes');
     }
     // wedge + recentWork ride along on `interestTags` until a dedicated
-    // writer ships — they survive synthesis as user-supplied signal.
+    // writer ships -- they survive synthesis as user-supplied signal.
     const tagBag: string[] = [];
     if (answers.wedge.trim()) {
       tagBag.push(`wedge:${answers.wedge.trim().slice(0, 240)}`);
@@ -242,7 +242,7 @@ export function ColdStartIntent({
     }
     const ok = await postProfileFields(payload);
     if (!ok) {
-      setError('Could not save — try again in a second.');
+      setError('Could not save -- try again in a second.');
       setSubmitting(false);
       return;
     }
@@ -283,7 +283,7 @@ export function ColdStartIntent({
     },
     {
       title: 'Which companies are at the top of your list?',
-      hint: 'Up to three, separated by commas. Names are fine — we\'ll match them to firms.',
+      hint: 'Up to three, separated by commas. Names are fine -- we\'ll match them to firms.',
       render: () => (
         <Input
           placeholder="e.g. Goldman Sachs, Evercore, Centerview"
@@ -316,7 +316,7 @@ export function ColdStartIntent({
     },
     {
       title: 'What\'s your wedge?',
-      hint: 'The thing that makes you different from your classmates aiming for the same path. One sentence — be specific.',
+      hint: 'The thing that makes you different from your classmates aiming for the same path. One sentence -- be specific.',
       render: () => (
         <Textarea
           placeholder="e.g. I built a working trading bot that learned options pricing from scratch."
@@ -342,7 +342,7 @@ export function ColdStartIntent({
 
   const q = questions[step];
 
-  // After Q4 (the unlock), surface a "Done — write me a great email" affordance
+  // After Q4 (the unlock), surface a "Done -- write me a great email" affordance
   // even if Q5 is unanswered.
   const showUnlockBanner = step >= Q4_WEDGE_INDEX && answers.wedge.trim().length >= 15;
   if (showUnlockBanner && !reachedUnlock) {
@@ -418,7 +418,7 @@ export function ColdStartIntent({
               onClick={() => submit(false)}
               disabled={submitting}
             >
-              {submitting ? 'Saving…' : 'Done — write me an email'}
+              {submitting ? 'Saving…' : 'Done -- write me an email'}
             </Button>
           ) : null}
 
