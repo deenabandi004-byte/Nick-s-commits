@@ -456,6 +456,17 @@ def _run_scan(db):
             users_scanned += 1
             continue
 
+        # Per-uid ops override (same pattern as USE_NEW_GENERATOR).
+        # `feature_flags/global.NUDGES_ENABLED.overrides[uid] = false`
+        # disables nudges for a specific user without flipping the env var.
+        # Unlike the other three flags, NUDGES_ENABLED is an operational kill
+        # switch (default true) and the wsgi daemon doesn't start when env is
+        # false, so override=true cannot re-enable a user when env is off.
+        from app.services.feature_flags import get_user_override
+        if get_user_override("NUDGES_ENABLED", uid) is False:
+            users_scanned += 1
+            continue
+
         # Read user-configured preferences with defaults
         followup_days = user_data.get("nudgeFollowUpDays", DEFAULT_FOLLOWUP_DAYS)
         max_per_day = user_data.get("nudgeMaxPerDay", MAX_NUDGES_PER_USER_PER_DAY)

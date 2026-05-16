@@ -531,8 +531,18 @@ def _cache_is_fresh(uid: str, cache: Dict[str, Any], *, now: Optional[datetime] 
 # ============================================================================
 
 
-def is_enabled() -> bool:
-    """Feature flag, default OFF. Routes also gate on this."""
+def is_enabled(uid: Optional[str] = None) -> bool:
+    """Feature flag, default OFF. Routes also gate on this.
+
+    When `uid` is provided, a per-uid Firestore override at
+    `feature_flags/global.RECOMMENDATIONS_ENABLED.overrides[uid]` takes
+    precedence over the env var (same pattern as USE_NEW_GENERATOR).
+    """
+    if uid:
+        from app.services.feature_flags import get_user_override
+        override = get_user_override('RECOMMENDATIONS_ENABLED', uid)
+        if override is not None:
+            return override
     return os.getenv('RECOMMENDATIONS_ENABLED', 'false').lower() == 'true'
 
 

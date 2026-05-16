@@ -55,8 +55,18 @@ def _now_dt() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def is_enabled() -> bool:
-    """Feature gate -- `DERIVED_PROFILE_ENABLED` env var defaults OFF."""
+def is_enabled(uid: Optional[str] = None) -> bool:
+    """Feature gate -- `DERIVED_PROFILE_ENABLED` env var defaults OFF.
+
+    When `uid` is provided, a per-uid Firestore override at
+    `feature_flags/global.DERIVED_PROFILE_ENABLED.overrides[uid]` takes
+    precedence over the env var (same pattern as USE_NEW_GENERATOR).
+    """
+    if uid:
+        from app.services.feature_flags import get_user_override
+        override = get_user_override('DERIVED_PROFILE_ENABLED', uid)
+        if override is not None:
+            return override
     return os.getenv('DERIVED_PROFILE_ENABLED', 'false').lower() == 'true'
 
 

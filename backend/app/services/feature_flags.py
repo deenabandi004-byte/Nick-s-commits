@@ -178,6 +178,25 @@ def get_assignment(flag: str, uid: Optional[str]) -> Dict[str, Any]:
             'bucket': bucket, 'rollout_pct': pct}
 
 
+def get_user_override(flag: str, uid: Optional[str]) -> Optional[bool]:
+    """Return the per-uid override for `flag`, or None when none is set.
+
+    Lets env-flag-gated features (DERIVED_PROFILE_ENABLED, EVENTS_LOGGING_ENABLED,
+    RECOMMENDATIONS_ENABLED, NUDGES_ENABLED) honor ops-controlled per-uid
+    overrides without flipping the global env var. Same Firestore shape as
+    USE_NEW_GENERATOR: `feature_flags/global.{flag}.overrides[uid]`.
+    """
+    if not flag or not uid:
+        return None
+    cfg = _get_flags().get(flag)
+    if not isinstance(cfg, dict):
+        return None
+    overrides = cfg.get('overrides') or {}
+    if not isinstance(overrides, dict) or uid not in overrides:
+        return None
+    return bool(overrides[uid])
+
+
 def invalidate_cache() -> None:
     """Drop the in-memory cache. Tests + admin endpoints call this so a
     flag flip is visible immediately."""

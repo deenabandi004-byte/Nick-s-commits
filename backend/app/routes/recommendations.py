@@ -42,13 +42,13 @@ def _parse_limit() -> int:
 @recommendations_bp.route('/contacts', methods=['GET'])
 @require_firebase_auth
 def recommendations_contacts():
-    if not is_enabled():
+    uid = request.firebase_user['uid']
+    if not is_enabled(uid):
         return jsonify({
             'enabled': False,
             'contacts': [],
         }), 200
 
-    uid = request.firebase_user['uid']
     limit = _parse_limit()
     ranked = rank_contacts(uid, limit=limit)
     return jsonify({
@@ -60,13 +60,13 @@ def recommendations_contacts():
 @recommendations_bp.route('/jobs', methods=['GET'])
 @require_firebase_auth
 def recommendations_jobs():
-    if not is_enabled():
+    uid = request.firebase_user['uid']
+    if not is_enabled(uid):
         return jsonify({
             'enabled': False,
             'jobs': [],
         }), 200
 
-    uid = request.firebase_user['uid']
     limit = _parse_limit()
     ranked = rank_jobs(uid, limit=limit)
     return jsonify({

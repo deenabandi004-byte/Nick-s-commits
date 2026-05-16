@@ -101,10 +101,12 @@ def _last_synth_at(profile: Optional[dict]) -> Optional[datetime]:
 
 
 def run_event_triggered(*, dry_run: bool = False) -> dict:
-    """Run synth for every user whose new-event count >= threshold."""
-    if not derived_profile_service.is_enabled():
-        return {'skipped': True, 'reason': 'DERIVED_PROFILE_ENABLED=false'}
+    """Run synth for every user whose new-event count >= threshold.
 
+    The DERIVED_PROFILE_ENABLED gate is checked per-uid so a per-uid override
+    of `true` can force-enable synthesis for specific users (e.g. founders)
+    while the env var is still globally false during rollout.
+    """
     db = get_db()
     processed = 0
     triggered = 0
@@ -115,6 +117,9 @@ def run_event_triggered(*, dry_run: bool = False) -> dict:
         if processed >= MAX_USERS_PER_RUN:
             break
         processed += 1
+
+        if not derived_profile_service.is_enabled(uid):
+            continue
 
         try:
             profile = derived_profile_service.get_derived_profile(uid)
@@ -145,10 +150,12 @@ def run_event_triggered(*, dry_run: bool = False) -> dict:
 
 
 def run_nightly(*, dry_run: bool = False) -> dict:
-    """Run synth for every user whose last synth is older than the freshness window."""
-    if not derived_profile_service.is_enabled():
-        return {'skipped': True, 'reason': 'DERIVED_PROFILE_ENABLED=false'}
+    """Run synth for every user whose last synth is older than the freshness window.
 
+    The DERIVED_PROFILE_ENABLED gate is checked per-uid so a per-uid override
+    of `true` can force-enable synthesis for specific users while the env var
+    is still globally false.
+    """
     db = get_db()
     processed = 0
     triggered = 0
@@ -161,6 +168,9 @@ def run_nightly(*, dry_run: bool = False) -> dict:
         if processed >= MAX_USERS_PER_RUN:
             break
         processed += 1
+
+        if not derived_profile_service.is_enabled(uid):
+            continue
 
         try:
             profile = derived_profile_service.get_derived_profile(uid)

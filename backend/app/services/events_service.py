@@ -42,8 +42,18 @@ EVENT_TTL = timedelta(days=90)
 COLLECTION_NAME = 'events'
 
 
-def is_enabled() -> bool:
-    """Feature gate. Defaults to OFF during rollout (§8 of eng review)."""
+def is_enabled(uid: Optional[str] = None) -> bool:
+    """Feature gate. Defaults to OFF during rollout (§8 of eng review).
+
+    When `uid` is provided, a per-uid Firestore override at
+    `feature_flags/global.EVENTS_LOGGING_ENABLED.overrides[uid]` takes
+    precedence over the env var (same pattern as USE_NEW_GENERATOR).
+    """
+    if uid:
+        from app.services.feature_flags import get_user_override
+        override = get_user_override('EVENTS_LOGGING_ENABLED', uid)
+        if override is not None:
+            return override
     return os.getenv('EVENTS_LOGGING_ENABLED', 'false').lower() == 'true'
 
 
@@ -85,11 +95,11 @@ def log_event(
         The event ID if the write succeeded, or None if the feature flag is
         off / the doc already existed (idempotency hit).
     """
-    if not is_enabled():
-        logger.debug('events_service disabled via EVENTS_LOGGING_ENABLED=false')
-        return None
     if not uid:
         logger.warning('log_event called without uid; dropping')
+        return None
+    if not is_enabled(uid):
+        logger.debug('events_service disabled via EVENTS_LOGGING_ENABLED=false')
         return None
 
     try:

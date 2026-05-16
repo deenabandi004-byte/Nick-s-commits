@@ -250,23 +250,36 @@ def test_voice_model_validate_rejects_invalid_opener():
 # ============================================================================
 
 
-def test_cron_event_triggered_skips_when_flag_off():
+def test_cron_event_triggered_skips_users_when_flag_off():
+    """With per-uid override (spec §8 step 2) the cron no longer short-circuits
+    globally — it iterates users and skips each one whose `is_enabled(uid)` is
+    False, so a per-uid override of True can still synthesize when env is off.
+    """
     from backend.scripts import derived_profile_cron as cron
     from app.services import derived_profile_service as svc
 
-    with patch.object(svc, 'is_enabled', return_value=False):
+    synth = MagicMock()
+    with patch.object(svc, 'is_enabled', return_value=False), \
+         patch.object(svc, 'synthesize', synth), \
+         patch.object(cron, 'get_db', return_value=MagicMock()), \
+         patch.object(cron, '_iter_active_user_ids', return_value=iter(['uid-1', 'uid-2'])):
         result = cron.run_event_triggered(dry_run=True)
-    assert result.get('skipped') is True
-    assert 'DERIVED_PROFILE_ENABLED' in (result.get('reason') or '')
+    assert result.get('triggered') == 0
+    synth.assert_not_called()
 
 
-def test_cron_nightly_skips_when_flag_off():
+def test_cron_nightly_skips_users_when_flag_off():
     from backend.scripts import derived_profile_cron as cron
     from app.services import derived_profile_service as svc
 
-    with patch.object(svc, 'is_enabled', return_value=False):
+    synth = MagicMock()
+    with patch.object(svc, 'is_enabled', return_value=False), \
+         patch.object(svc, 'synthesize', synth), \
+         patch.object(cron, 'get_db', return_value=MagicMock()), \
+         patch.object(cron, '_iter_active_user_ids', return_value=iter(['uid-1', 'uid-2'])):
         result = cron.run_nightly(dry_run=True)
-    assert result.get('skipped') is True
+    assert result.get('triggered') == 0
+    synth.assert_not_called()
 
 
 # ============================================================================

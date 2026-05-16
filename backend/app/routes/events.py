@@ -49,7 +49,7 @@ def post_batch():
             'error': f'batch size exceeds limit of {MAX_BATCH_SIZE}',
         }), 413
 
-    if not is_enabled():
+    if not is_enabled(uid):
         # Quietly accept and discard so the frontend doesn't fail loudly
         # when the rollout flag is off. Behaves like /dev/null.
         return jsonify({'accepted': 0, 'rejected': 0, 'disabled': True}), 200
