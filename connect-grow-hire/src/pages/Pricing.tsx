@@ -527,18 +527,6 @@ const Pricing = () => {
               ? `Welcome, student — your .edu unlocks ~50% off and a 30-day free trial.`
               : `Built for college students. Use a .edu email to unlock ~50% off and a 30-day trial.`}
           </p>
-          <p
-            style={{
-              fontFamily: "'DM Sans', system-ui, sans-serif",
-              fontSize: '13px',
-              color: '#94A3B8',
-              textAlign: 'center',
-              marginBottom: '24px',
-            }}
-          >
-            300+ students · 22% upgrade to paid · No credit card for trial
-          </p>
-
           {/* Toggles — billing cadence + student-price visual */}
           <div className="flex flex-col items-center gap-4">
 
@@ -594,24 +582,14 @@ const Pricing = () => {
                 }`}
               >
                 Annual
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded tracking-wider ${
                   billingCadence === 'annual' ? 'bg-emerald-400 text-emerald-950' : 'bg-emerald-100 text-emerald-700'
                 }`}>
-                  SAVE 17%
+                  2 MONTHS FREE
                 </span>
               </button>
             </div>
 
-            {!showStudentPrice && (
-              <p className="text-xs text-gray-500 max-w-md">
-                Showing public list price. <button onClick={() => setShowStudentPrice(true)} className="text-blue-600 font-semibold hover:underline">Flip toggle</button> if you have a .edu — students lock in ~50% off + a 30-day trial for life.
-              </p>
-            )}
-            {billingCadence === 'annual' && !ANNUAL_ENABLED && (
-              <p className="text-xs text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-                Annual checkout launches once Stripe annual SKUs are set up — pricing shown for reference.
-              </p>
-            )}
           </div>
         </div>
 
@@ -642,14 +620,15 @@ const Pricing = () => {
             <div className="flex-1 space-y-4">
               <FeatureItem>500 credits / month (~33 contacts)</FeatureItem>
               <FeatureItem>Up to 5 contacts per search</FeatureItem>
-              <FeatureItem>AI email drafting (unlimited within credits)</FeatureItem>
+              <FeatureItem>AI email drafting</FeatureItem>
+              <FeatureItem>Custom email templates</FeatureItem>
               <FeatureItem>Gmail integration + outreach tracking</FeatureItem>
-              <FeatureItem>1 Coffee Chat Prep / month</FeatureItem>
-              <FeatureItem>Resume Builder (credit-limited)</FeatureItem>
-              <FeatureItem>Cover Letter Generator (credit-limited)</FeatureItem>
+              <FeatureItem>Coffee Chat Prep</FeatureItem>
+              <FeatureItem>Smart filters</FeatureItem>
               <DisabledFeatureItem>Find Hiring Managers</DisabledFeatureItem>
               <DisabledFeatureItem>Bulk drafting + Export</DisabledFeatureItem>
-              <DisabledFeatureItem>Smart filters + Firm search</DisabledFeatureItem>
+              <DisabledFeatureItem>Firm search</DisabledFeatureItem>
+              <DisabledFeatureItem>The Agent</DisabledFeatureItem>
             </div>
             
             {/* CTA Button */}
@@ -726,14 +705,13 @@ const Pricing = () => {
                 <FeatureItem highlight>3,000 credits / month (~200 contacts)</FeatureItem>
                 <FeatureItem>Up to 15 contacts per search</FeatureItem>
                 <FeatureItem><span className="font-semibold">Everything in Free, plus:</span></FeatureItem>
-                <FeatureItem>The Agent — autonomous outreach (1 at a time)</FeatureItem>
-                <FeatureItem>Unlimited Coffee Chat Prep</FeatureItem>
+                <FeatureItem>Single agent use</FeatureItem>
                 <FeatureItem>Find Hiring Managers</FeatureItem>
-                <FeatureItem>Firm Search + Resume tools</FeatureItem>
-                <FeatureItem>Smart filters + Bulk drafting + Export</FeatureItem>
+                <FeatureItem>Firm Search</FeatureItem>
+                <FeatureItem>Bulk drafting + Export (CSV & Gmail)</FeatureItem>
                 <FeatureItem>Unlimited directory saving</FeatureItem>
                 <DisabledFeatureItem>Run multiple agents at once (Elite)</DisabledFeatureItem>
-                <DisabledFeatureItem>Priority queue + founder kickoff call</DisabledFeatureItem>
+                <DisabledFeatureItem>Priority queue + support</DisabledFeatureItem>
                 <FeatureItem highlight>Save ~210 hours/mo on research</FeatureItem>
               </div>
               
@@ -830,13 +808,11 @@ const Pricing = () => {
                 <FeatureItem highlight>12,000 credits / month (~800 contacts)</FeatureItem>
                 <FeatureItem>Up to 30 contacts per search</FeatureItem>
                 <FeatureItem><span className="font-semibold">Everything in Pro, plus:</span></FeatureItem>
-                <FeatureItem>Multi-agent parallel outreach</FeatureItem>
                 <FeatureItem>Priority queue for contact generation</FeatureItem>
                 <FeatureItem>Personalized templates tailored to your resume</FeatureItem>
                 <FeatureItem>Weekly personalized firm insights</FeatureItem>
                 <FeatureItem>Early access to new AI tools</FeatureItem>
                 <FeatureItem>Priority support</FeatureItem>
-                <FeatureItem>30-min founder kickoff call</FeatureItem>
                 <FeatureItem highlight>Save ~1,120 hours/mo at max usage</FeatureItem>
               </div>
             
@@ -905,19 +881,15 @@ const Pricing = () => {
                 <ComparisonRow feature="Monthly Credits" free="500" pro="3,000" elite="12,000" />
                 <ComparisonRow feature="Contacts per Search" free="5" pro="15" elite="30" />
                 <ComparisonRow feature="Concurrent Agents" free="—" pro="1" elite="Up to 5" />
-                <ComparisonRow feature="Coffee Chat Prep" free="1/month" pro="Unlimited" elite="Unlimited" />
                 <ComparisonRow feature="Find Companies" free="Credit-limited" pro={true} elite={true} />
                 <ComparisonRow feature="Find Hiring Managers" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Email Outreach Tracking" free={true} pro={true} elite={true} />
                 <ComparisonRow feature="Gmail Integration" free={true} pro={true} elite={true} />
-                <ComparisonRow feature="Resume Builder" free="Credit-limited" pro={true} elite={true} />
-                <ComparisonRow feature="Cover Letter Generator" free="Credit-limited" pro={true} elite={true} />
+                <ComparisonRow feature="Custom Email Templates" free={true} pro={true} elite={true} />
                 <ComparisonRow feature="Export to CSV" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Bulk Drafting" free={false} pro={true} elite={true} />
-                <ComparisonRow feature="Smart Filters" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Firm Search" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Priority Queue + Support" free={false} pro={false} elite={true} />
-                <ComparisonRow feature="Founder Kickoff Call" free={false} pro={false} elite={true} />
                 <ComparisonRow feature="Time Saved / Month" free="~28 hrs" pro="~210 hrs" elite="~1,120 hrs" />
               </tbody>
             </table>

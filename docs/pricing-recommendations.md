@@ -30,23 +30,25 @@ Anchor with a public list price ($29 / $69). Show `.edu`-verified students the r
 | Contacts per search | **5** | **15** | **30** |
 | Searches per day | 3 | unlimited | unlimited |
 | **Concurrent Agents** | **0** | **1** | **Up to 5** ← *headline Elite differentiator* |
-| Coffee chat preps | 1 / month | **Unlimited** | **Unlimited** |
+| Coffee chat preps | credit-gated (all tiers) | credit-gated | credit-gated |
+| Custom email templates | included | included | included |
+| Smart filters | included | included | included |
 | Alumni searches | within credit budget | within credit budget | within credit budget |
 | Email drafting | unlimited within credits | unlimited within credits | unlimited within credits |
 | Network tracker | view + manual add | full (Gmail sync) | full (Gmail sync) |
 | Scout AI | within credit budget | within credit budget | priority queue |
+| Find Hiring Managers | locked | included | included |
 | Firm search | locked | included | included |
-| Resume tools | locked | included | included |
-| Smart filters | locked | included | included |
 | Bulk drafting | locked | included | included |
 | Export | locked | included | included |
 | Priority queue + support | — | — | included |
-| Founder kickoff call | — | — | included |
 | Weekly insights | — | — | included |
 | Early access | — | — | included |
 | **Time saved / month** | **~28 hrs** | **~210 hrs** | **~1,120 hrs** |
 
-**The Pro → Elite differentiator is multi-agent concurrency.** Pro gives you The Agent (1 at a time). Elite lets you run up to 5 simultaneously — for the student who wants to outreach across multiple companies in parallel during peak recruiting. Coffee chat is unlimited on both Pro and Elite; it's no longer a differentiator.
+**The Pro → Elite differentiator is multi-agent concurrency.** Pro gives you single agent use. Elite lets you run up to 5 simultaneously — for the student who wants to outreach across multiple companies in parallel during peak recruiting. Coffee chat, smart filters, and custom email templates are available on every tier (credit-gated where applicable); they're not differentiators.
+
+**Features removed from the pricing surface:** Resume Builder, Cover Letter Generator, and the founder kickoff call. The resume/cover-letter routes may exist in the backend but are no longer surfaced as paid-tier value props. The founder kickoff call is dropped — not a sustainable bonus to deliver.
 
 **Interview prep is dropped for the public surface** — backend route stays wired but is not surfaced in the pricing UI. Re-introduce later if/when the feature ships back.
 

@@ -184,7 +184,7 @@ TIER_CONFIGS = {
         'time_saved_minutes': 1680,  # 20 typical contacts/mo × 84 min/contact research
         'description': 'Try it out for free',
         'alumni_searches': 'unlimited',
-        'coffee_chat_preps': 1,
+        'coffee_chat_preps': 'unlimited',  # credit-gated only, no per-feature cap
         'interview_preps': 2,
         'firm_search': False,
         'smart_filters': False,
