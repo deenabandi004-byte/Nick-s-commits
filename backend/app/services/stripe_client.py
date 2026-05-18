@@ -361,6 +361,94 @@ def handle_invoice_paid(invoice):
         traceback.print_exc()
 
 
+def _apply_monthly_reset(user_ref, user_data: dict, tier: str) -> bool:
+    """Apply a monthly credit/usage reset to a single user.
+
+    Idempotent at month granularity — checks lastCreditReset and skips
+    if it's already in the current calendar month.
+
+    Returns True if a reset was applied, False if skipped.
+    """
+    tier_config = TIER_CONFIGS.get(tier)
+    if not tier_config:
+        return False
+
+    current_month_key = datetime.now().strftime('%Y-%m')
+    last_reset = user_data.get('lastCreditReset') or ''
+    last_reset_month = last_reset[:7] if isinstance(last_reset, str) else ''
+
+    if last_reset_month == current_month_key:
+        return False  # already reset this month
+
+    user_ref.update({
+        'credits': tier_config['credits'],
+        'maxCredits': tier_config['credits'],
+        'alumniSearchesUsed': 0,
+        'coffeeChatPrepsUsed': 0,
+        'interviewPrepsUsed': 0,
+        'lastCreditReset': datetime.now().isoformat(),
+        'lastUsageReset': datetime.now().isoformat(),
+        'updatedAt': datetime.now().isoformat(),
+    })
+    return True
+
+
+def reset_credits_for_active_subscribers() -> dict:
+    """Monthly credit refill safety net for active Pro/Elite subscribers.
+
+    Stripe's `invoice.payment_succeeded` webhook fires once per billing cycle.
+    For annual subscribers that's once a year — so without this cron, an annual
+    Pro user would get 3,000 credits and be expected to stretch them across 12
+    months. This loop catches that case and also acts as a safety net for any
+    monthly subscriber whose webhook was dropped or delayed.
+
+    Idempotent: refuses to reset a user more than once in the same calendar
+    month, so running this hourly is safe (and cheap — most users skip
+    immediately on the month-key check).
+
+    Returns a summary dict for the daemon to log: {reset, skipped, failed}.
+    """
+    db = get_db()
+    if not db:
+        return {'error': 'no_db', 'reset': 0, 'skipped': 0, 'failed': 0}
+
+    reset_count = 0
+    skip_count = 0
+    fail_count = 0
+
+    users_ref = db.collection('users')
+    # Filter by tier server-side; subscription status filtered in Python so
+    # we don't need a Firestore composite index.
+    try:
+        query = users_ref.where('subscriptionTier', 'in', ['pro', 'elite'])
+        candidates = list(query.stream())
+    except Exception as e:
+        print(f"❌ Credit-refill cron query failed: {e}")
+        return {'error': str(e), 'reset': 0, 'skipped': 0, 'failed': 0}
+
+    for doc in candidates:
+        try:
+            user_data = doc.to_dict() or {}
+            status = user_data.get('subscriptionStatus')
+            if status not in ('active', 'trialing'):
+                skip_count += 1
+                continue
+
+            tier = user_data.get('subscriptionTier') or user_data.get('tier') or 'pro'
+            user_ref = users_ref.document(doc.id)
+
+            if _apply_monthly_reset(user_ref, user_data, tier):
+                reset_count += 1
+                print(f"✅ Cron monthly reset: user={doc.id} tier={tier}")
+            else:
+                skip_count += 1
+        except Exception as e:
+            fail_count += 1
+            print(f"❌ Cron reset failed for user {doc.id}: {e}")
+
+    return {'reset': reset_count, 'skipped': skip_count, 'failed': fail_count}
+
+
 def handle_subscription_updated(subscription):
     """Handle subscription updates (e.g., tier changes, plan upgrades/downgrades)"""
     try:

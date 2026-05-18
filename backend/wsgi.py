@@ -414,6 +414,35 @@ def create_app() -> Flask:
     t.start()
     _watch_logger.info("Gmail watch renewal thread registered (first run in 6 days)")
 
+    # ---- Monthly credit refill cron (every 1 hour) ----------------------
+    #
+    # Safety net for monthly credit/usage resets. Stripe's invoice.payment_succeeded
+    # webhook fires once per billing cycle — annual subscribers would only get
+    # refilled once a year without this. Also covers monthly subs whose webhook
+    # was dropped or delayed.
+    #
+    # Idempotent at month granularity: each user is reset at most once per
+    # calendar month, gated by their lastCreditReset field.
+    _credit_logger = logging.getLogger("credit_refill")
+
+    def _credit_refill_loop():
+        _credit_logger.info("Monthly credit refill thread started (interval=1 hour)")
+        ONE_HOUR = 3600
+        while True:
+            try:
+                time.sleep(ONE_HOUR)
+                with app.app_context():
+                    from .app.services.stripe_client import reset_credits_for_active_subscribers
+                    result = reset_credits_for_active_subscribers()
+                    if result.get('reset', 0) > 0 or result.get('failed', 0) > 0:
+                        _credit_logger.info("Credit refill cycle: %s", result)
+            except Exception as e:
+                _credit_logger.error("Credit refill loop error: %s", e)
+
+    ct = threading.Thread(target=_credit_refill_loop, daemon=True)
+    ct.start()
+    _credit_logger.info("Monthly credit refill thread registered (first run in 1 hour)")
+
     # ---- Daemon healthcheck watchdog (every 1 hour) ----------------------
     #
     # Reads health docs from Firestore for each daemon scanner (nudge, queue,
