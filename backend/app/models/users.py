@@ -6,6 +6,17 @@ from datetime import datetime
 from app.models.enums import UserTier
 
 
+def _is_edu_email(email: Optional[str]) -> bool:
+    if not email:
+        return False
+    lower = email.lower().strip()
+    if lower.endswith('.edu'):
+        return True
+    # Catch international academic domains like .edu.au, .ac.uk-style fallback handled separately
+    import re
+    return bool(re.search(r'\.edu\.[a-z]{2,3}$', lower))
+
+
 def create_user_data(
     uid: str,
     email: str,
@@ -16,7 +27,7 @@ def create_user_data(
 ) -> Dict[str, Any]:
     """
     Create a new user data structure for Firestore
-    
+
     Args:
         uid: Firebase user ID
         email: User email address
@@ -24,15 +35,17 @@ def create_user_data(
         name: User display name
         credits: Initial credits (defaults based on tier)
         max_credits: Maximum credits (defaults based on tier)
-    
+
     Returns:
         Dictionary with user data structure
     """
     from app.config import TIER_CONFIGS
-    
+
     tier_config = TIER_CONFIGS.get(tier, TIER_CONFIGS['free'])
-    default_credits = tier_config.get('credits', 300)
-    
+    default_credits = tier_config.get('credits', 500)
+
+    is_student = _is_edu_email(email)
+
     user_data = {
         'uid': uid,
         'email': email,
@@ -48,11 +61,14 @@ def create_user_data(
         'alumniSearchesUsed': 0,
         'coffeeChatPrepsUsed': 0,
         'interviewPrepsUsed': 0,
+        # Student verification — locks in lifetime student price
+        'isStudent': is_student,
+        'verifiedEduEmail': email if is_student else None,
     }
-    
+
     if name:
         user_data['name'] = name
-    
+
     return user_data
 
 

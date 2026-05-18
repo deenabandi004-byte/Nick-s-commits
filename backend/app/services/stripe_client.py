@@ -59,7 +59,23 @@ def create_checkout_session():
         
         # Intended tier from price ID so webhook can use it as fallback if price ID mapping fails
         intended_tier = get_tier_from_price_id(price_id) if price_id else 'pro'
-        # Prepare session parameters (1-month free trial for Pro and Elite)
+
+        # .edu users get a 30-day trial (full recruiting-cycle); everyone else gets 14 days (SaaS standard).
+        # is_student is set at signup in create_user_data; reading it here gates the trial length
+        # and locks in lifetime student pricing via metadata on the subscription.
+        is_student = False
+        verified_edu_email = None
+        try:
+            user_doc = get_db().collection('users').document(user_id).get()
+            if user_doc.exists:
+                user_record = user_doc.to_dict() or {}
+                is_student = bool(user_record.get('isStudent'))
+                verified_edu_email = user_record.get('verifiedEduEmail')
+        except Exception as lookup_err:
+            print(f"[Stripe] Could not read isStudent for {user_id}: {lookup_err}. Defaulting to non-student trial.")
+
+        trial_days = 30 if is_student else 14
+
         session_params = {
             'payment_method_types': ['card'],
             'mode': 'subscription',
@@ -70,9 +86,16 @@ def create_checkout_session():
             'metadata': {
                 'user_id': user_id,
                 'tier': intended_tier,
+                'isStudent': 'true' if is_student else 'false',
             },
             'subscription_data': {
-                'trial_period_days': 30,
+                'trial_period_days': trial_days,
+                'metadata': {
+                    'user_id': user_id,
+                    'isStudent': 'true' if is_student else 'false',
+                    'studentLockIn': 'true' if is_student else 'false',
+                    'verifiedEduEmail': verified_edu_email or '',
+                },
             },
         }
         

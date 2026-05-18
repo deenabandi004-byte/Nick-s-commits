@@ -20,10 +20,18 @@ import posthog from "../lib/posthog";
 
 const getMonthKey = () => new Date().toISOString().slice(0, 7);
 const initialCreditsByTier = (tier: "free" | "pro" | "elite") => {
-  if (tier === "free") return 300;
-  if (tier === "pro") return 1500;
-  if (tier === "elite") return 3000;
-  return 300; // default to free
+  if (tier === "free") return 500;
+  if (tier === "pro") return 3000;
+  if (tier === "elite") return 12000;
+  return 500; // default to free
+};
+
+// .edu detection runs at signup. Once verified, persists on the user doc
+// forever — used by Stripe (lifetime student price lock) and trial length.
+const isEduEmail = (email: string | null | undefined): boolean => {
+  if (!email) return false;
+  const lower = email.toLowerCase().trim();
+  return lower.endsWith(".edu") || /\.edu\.[a-z]{2,3}$/.test(lower);
 };
 
 interface User {
@@ -32,7 +40,7 @@ interface User {
   name: string;
   picture?: string;
   accessToken?: string;
-  tier: "free" | "pro";
+  tier: "free" | "pro" | "elite";
   credits: number;
   maxCredits: number;
   subscriptionId?: string;
@@ -45,7 +53,8 @@ interface User {
   emailsMonthKey?: string;
   needsOnboarding?: boolean;
   careerTrack?: string;
-
+  isStudent?: boolean;
+  verifiedEduEmail?: string;
 }
 
 type SignInOptions = {
@@ -155,22 +164,28 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
           emailsUsedThisMonth: d.emailsUsedThisMonth ?? 0,
           needsOnboarding: d.needsOnboarding ?? false,
           careerTrack: d.careerTrack || (d as any).goals?.careerTrack || (d as any).professionalInfo?.careerTrack,
+          isStudent: d.isStudent ?? false,
+          verifiedEduEmail: d.verifiedEduEmail,
         };
         setUser(userData);
         // Identify user after data is loaded
         identifyUser(userData, d);
       } else {
+        const email = firebaseUser.email || "";
+        const studentVerified = isEduEmail(email);
         const newUser: User = {
           uid: firebaseUser.uid,
-          email: firebaseUser.email || "",
+          email,
           name: firebaseUser.displayName || "",
           picture: firebaseUser.photoURL || undefined,
           tier: "free",
-          credits: 300,
-          maxCredits: 300,
+          credits: initialCreditsByTier("free"),
+          maxCredits: initialCreditsByTier("free"),
           emailsMonthKey: getMonthKey(),
           emailsUsedThisMonth: 0,
           needsOnboarding: true,
+          isStudent: studentVerified,
+          verifiedEduEmail: studentVerified ? email : undefined,
         };
         await setDoc(userDocRef, { ...newUser, createdAt: new Date().toISOString() });
         setUser(newUser);
@@ -203,17 +218,21 @@ const signIn = async (opts?: SignInOptions): Promise<NextRoute> => {
     const snap = await getDoc(ref);
 
     if (!snap.exists()) {
+      const email = result.user.email || "";
+      const studentVerified = isEduEmail(email);
       await setDoc(ref, {
         uid,
-        email: result.user.email || "",
+        email,
         name: result.user.displayName || "",
         picture: result.user.photoURL || undefined,
         tier: "free",
-        credits: 300,
-        maxCredits: 300,
+        credits: initialCreditsByTier("free"),
+        maxCredits: initialCreditsByTier("free"),
         emailsMonthKey: getMonthKey(),
         emailsUsedThisMonth: 0,
         needsOnboarding: true,
+        isStudent: studentVerified,
+        verifiedEduEmail: studentVerified ? email : null,
         createdAt: new Date().toISOString(),
         lastSignIn: new Date().toISOString(),
       });

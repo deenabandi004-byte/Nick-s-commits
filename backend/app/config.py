@@ -173,18 +173,18 @@ STRIPE_ELITE_PRICE_ID = os.getenv('STRIPE_ELITE_PRICE_ID', 'price_1ScLcfERY2WrVH
 # ========================================
 TIER_CONFIGS = {
     'free': {
-        'max_contacts': 3,   # Maximum contacts returned per search
+        'max_contacts': 5,   # Maximum contacts returned per search
         'batch_size': 1,      # Maximum batch operations allowed (per audit spec)
         'min_contacts': 1,
         'fields': ['FirstName', 'LastName', 'LinkedIn', 'Email', 'Title', 'Company', 'City', 'State', 'College', 'Hometown'],
         'uses_pdl': True,
         'uses_email_drafting': True,
         'uses_resume': False,
-        'credits': 300,
+        'credits': 500,
         'time_saved_minutes': 300,
         'description': 'Try it out for free',
-        'alumni_searches': 10,
-        'coffee_chat_preps': 3,
+        'alumni_searches': 'unlimited',
+        'coffee_chat_preps': 1,
         'interview_preps': 2,
         'firm_search': False,
         'smart_filters': False,
@@ -197,16 +197,16 @@ TIER_CONFIGS = {
         'agent_enabled': False,
     },
     'pro': {
-        'max_contacts': 8,   # Maximum contacts returned per search
+        'max_contacts': 15,  # Maximum contacts returned per search
         'batch_size': 5,      # Maximum batch operations allowed (per audit spec)
-        'min_contacts': 1, 
+        'min_contacts': 1,
         'fields': ['FirstName', 'LastName', 'LinkedIn', 'Email', 'Title', 'Company', 'City', 'State', 'College',
                   'Phone', 'PersonalEmail', 'WorkEmail', 'SocialProfiles', 'EducationTop', 'VolunteerHistory',
                   'WorkSummary', 'Group', 'Hometown', 'Similarity'],
         'uses_pdl': True,
         'uses_email_drafting': True,
         'uses_resume': True,
-        'credits': 1500,
+        'credits': 3000,
         'time_saved_minutes': 2500,
         'description': 'Best for Students',
         'alumni_searches': 'unlimited',
@@ -223,7 +223,7 @@ TIER_CONFIGS = {
         'agent_enabled': False,
     },
     'elite': {
-        'max_contacts': 15,  # Maximum contacts returned per search
+        'max_contacts': 30,  # Maximum contacts returned per search
         'batch_size': 15,     # Maximum batch operations allowed (per audit spec)
         'min_contacts': 1,
         'fields': ['FirstName', 'LastName', 'LinkedIn', 'Email', 'Title', 'Company', 'City', 'State', 'College',
@@ -232,7 +232,7 @@ TIER_CONFIGS = {
         'uses_pdl': True,
         'uses_email_drafting': True,
         'uses_resume': True,
-        'credits': 3000,
+        'credits': 12000,
         'time_saved_minutes': 5000,
         'description': 'For serious recruiting season',
         'alumni_searches': 'unlimited',
