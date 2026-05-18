@@ -29,7 +29,8 @@ Anchor with a public list price ($29 / $69). Show `.edu`-verified students the r
 | **Credits / month** | **500** | **3,000** | **12,000** |
 | Contacts per search | **5** | **15** | **30** |
 | Searches per day | 3 | unlimited | unlimited |
-| Coffee chat preps | 1 / month | 10 / month | unlimited |
+| **Concurrent Agents** | **0** | **1** | **Up to 5** ← *headline Elite differentiator* |
+| Coffee chat preps | 1 / month | **Unlimited** | **Unlimited** |
 | Alumni searches | within credit budget | within credit budget | within credit budget |
 | Email drafting | unlimited within credits | unlimited within credits | unlimited within credits |
 | Network tracker | view + manual add | full (Gmail sync) | full (Gmail sync) |
@@ -39,12 +40,17 @@ Anchor with a public list price ($29 / $69). Show `.edu`-verified students the r
 | Smart filters | locked | included | included |
 | Bulk drafting | locked | included | included |
 | Export | locked | included | included |
-| The Agent | locked | locked | included |
+| Priority queue + support | — | — | included |
 | Founder kickoff call | — | — | included |
 | Weekly insights | — | — | included |
 | Early access | — | — | included |
+| **Time saved / month** | **~28 hrs** | **~210 hrs** | **~1,120 hrs** |
 
-**Interview prep is dropped for now** — was 2/lifetime on Free, 5/mo on Pro, unlimited on Elite. Re-introduce later if/when the feature ships back.
+**The Pro → Elite differentiator is multi-agent concurrency.** Pro gives you The Agent (1 at a time). Elite lets you run up to 5 simultaneously — for the student who wants to outreach across multiple companies in parallel during peak recruiting. Coffee chat is unlimited on both Pro and Elite; it's no longer a differentiator.
+
+**Interview prep is dropped for the public surface** — backend route stays wired but is not surfaced in the pricing UI. Re-introduce later if/when the feature ships back.
+
+**Time-saved math**: each contact ≈ 84 minutes of manual research (LinkedIn lookup + email find + personalized outreach + CRM log). Free typical 20/mo × 84 = 1,680 min ≈ 28 hrs. Pro typical 150/mo × 84 = 12,600 min ≈ 210 hrs. Elite max 800/mo × 84 = 67,200 min ≈ 1,120 hrs — framed as "at max usage" in copy.
 
 ---
 

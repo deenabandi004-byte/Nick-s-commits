@@ -11,39 +11,47 @@ export const TIER_CONFIGS = {
     description: "Try out the platform free - up to 5 contacts per search + AI email drafts",
     coffeeChat: true,
     interviewPrep: false,
-    timeSavedMinutes: 300,
+    timeSavedMinutes: 1680,
     usesResume: false,
+    agentMaxConcurrent: 0,
   },
   pro: {
     maxContacts: 15,
     minContacts: 1,
     name: "Search Pro Plan Tier",
     credits: 3000,
-    description: "Up to 15 contacts per search, resume matching, firm search, bulk drafting",
+    description: "Up to 15 contacts/search, unlimited coffee chat prep, The Agent (1 at a time), all networking features",
     coffeeChat: true,
     interviewPrep: true,
-    timeSavedMinutes: 2500,
+    timeSavedMinutes: 12600,
     usesResume: true,
+    agentMaxConcurrent: 1,
   },
   elite: {
     maxContacts: 30,
     minContacts: 1,
     name: "Search Elite Plan Tier",
     credits: 12000,
-    description: "Up to 30 contacts per search, The Agent, unlimited coffee chat prep, all premium features",
+    description: "Run up to 5 agents simultaneously, 30 contacts/search, priority queue, founder kickoff call",
     coffeeChat: true,
     interviewPrep: true,
-    timeSavedMinutes: 5000,
+    timeSavedMinutes: 67200,
     usesResume: true,
+    agentMaxConcurrent: 5,
   },
 } as const;
 
-// Agent feature (Elite-only)
+// Agent feature — Pro gets 1 concurrent, Elite gets up to 5
 export const AGENT_CONFIG = {
   maxContactsPerWeek: 15,
   maxCreditsPerWeek: 150,
   minCreditBalance: 20,
-  enabledTiers: ["elite"] as const,
+  enabledTiers: ["pro", "elite"] as const,
+  concurrencyByTier: {
+    free: 0,
+    pro: 1,
+    elite: 5,
+  } as const,
 } as const;
 
 export type CoffeeChatHistoryItem = {

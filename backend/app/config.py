@@ -181,7 +181,7 @@ TIER_CONFIGS = {
         'uses_email_drafting': True,
         'uses_resume': False,
         'credits': 500,
-        'time_saved_minutes': 300,
+        'time_saved_minutes': 1680,  # 20 typical contacts/mo × 84 min/contact research
         'description': 'Try it out for free',
         'alumni_searches': 'unlimited',
         'coffee_chat_preps': 1,
@@ -195,6 +195,7 @@ TIER_CONFIGS = {
         'weekly_insights': False,
         'early_access': False,
         'agent_enabled': False,
+        'agent_max_concurrent': 0,
     },
     'pro': {
         'max_contacts': 15,  # Maximum contacts returned per search
@@ -207,10 +208,10 @@ TIER_CONFIGS = {
         'uses_email_drafting': True,
         'uses_resume': True,
         'credits': 3000,
-        'time_saved_minutes': 2500,
+        'time_saved_minutes': 12600,  # 150 typical contacts/mo × 84 min
         'description': 'Best for Students',
         'alumni_searches': 'unlimited',
-        'coffee_chat_preps': 10,
+        'coffee_chat_preps': 'unlimited',
         'interview_preps': 5,
         'firm_search': True,
         'smart_filters': True,
@@ -220,7 +221,8 @@ TIER_CONFIGS = {
         'personalized_templates': False,
         'weekly_insights': False,
         'early_access': False,
-        'agent_enabled': False,
+        'agent_enabled': True,
+        'agent_max_concurrent': 1,
     },
     'elite': {
         'max_contacts': 30,  # Maximum contacts returned per search
@@ -233,7 +235,7 @@ TIER_CONFIGS = {
         'uses_email_drafting': True,
         'uses_resume': True,
         'credits': 12000,
-        'time_saved_minutes': 5000,
+        'time_saved_minutes': 67200,  # 800 max contacts/mo × 84 min — displayed as hours in UI
         'description': 'For serious recruiting season',
         'alumni_searches': 'unlimited',
         'coffee_chat_preps': 'unlimited',
@@ -247,6 +249,7 @@ TIER_CONFIGS = {
         'weekly_insights': True,
         'early_access': True,
         'agent_enabled': True,
+        'agent_max_concurrent': 5,
     }
 }
 

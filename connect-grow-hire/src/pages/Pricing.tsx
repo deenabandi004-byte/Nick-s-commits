@@ -140,10 +140,17 @@ const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [billingCadence, setBillingCadence] = useState<'monthly' | 'annual'>('monthly');
+  // showStudentPrice is a visual toggle for the public pricing page — it lets visitors
+  // SEE the .edu discount before signing up. Actual checkout still uses the student
+  // Stripe Price IDs (only ones wired); list-price checkout will be wired when
+  // STRIPE_*_LIST_PRICE_ID env vars are added.
+  const [showStudentPrice, setShowStudentPrice] = useState(true);
   const navigate = useNavigate();
   const { user, updateUser, checkCredits } = useFirebaseAuth();
   const isStudent = Boolean(user?.isStudent);
-  const trialDays = isStudent ? 30 : 14;
+  // Trial badge follows the toggle (visual). Real trial length in Stripe is set
+  // server-side from the Firestore isStudent flag (see backend/app/services/stripe_client.py).
+  const trialDays = showStudentPrice ? 30 : 14;
 
   useEffect(() => {
     if (user) {
@@ -532,44 +539,85 @@ const Pricing = () => {
             300+ students · 22% upgrade to paid · No credit card for trial
           </p>
 
-          {/* Monthly / Annual toggle */}
-          <div className="inline-flex items-center bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-            <button
-              onClick={() => setBillingCadence('monthly')}
-              className={`px-5 py-2 text-sm font-semibold rounded-full transition-all ${
-                billingCadence === 'monthly'
-                  ? 'bg-[#0F172A] text-white shadow'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCadence('annual')}
-              className={`px-5 py-2 text-sm font-semibold rounded-full transition-all flex items-center gap-2 ${
-                billingCadence === 'annual'
-                  ? 'bg-[#0F172A] text-white shadow'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Annual
-              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                billingCadence === 'annual' ? 'bg-emerald-400 text-emerald-950' : 'bg-emerald-100 text-emerald-700'
-              }`}>
-                SAVE 17%
+          {/* Toggles — billing cadence + student-price visual */}
+          <div className="flex flex-col items-center gap-4">
+
+            {/* .edu Student Price toggle — the primary discount lever */}
+            <div className={`
+              flex items-center gap-3 px-4 py-3 rounded-full border-2 transition-all
+              ${showStudentPrice
+                ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-sm'
+                : 'bg-white border-gray-200'
+              }
+            `}>
+              <span className="text-base">🎓</span>
+              <span className={`text-sm font-semibold ${showStudentPrice ? 'text-blue-900' : 'text-gray-600'}`}>
+                {showStudentPrice ? 'Showing .edu student price — save ~50%' : 'Show .edu student price (~50% off)'}
               </span>
-            </button>
+              <button
+                onClick={() => setShowStudentPrice(!showStudentPrice)}
+                role="switch"
+                aria-checked={showStudentPrice}
+                aria-label="Toggle student price display"
+                className={`
+                  relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors
+                  ${showStudentPrice ? 'bg-blue-600' : 'bg-gray-300'}
+                `}
+              >
+                <span
+                  className={`
+                    inline-block h-5 w-5 transform rounded-full bg-white shadow transition
+                    ${showStudentPrice ? 'translate-x-5' : 'translate-x-0.5'}
+                  `}
+                />
+              </button>
+            </div>
+
+            {/* Monthly / Annual toggle */}
+            <div className="inline-flex items-center bg-white border border-gray-200 rounded-full p-1 shadow-sm">
+              <button
+                onClick={() => setBillingCadence('monthly')}
+                className={`px-5 py-2 text-sm font-semibold rounded-full transition-all ${
+                  billingCadence === 'monthly'
+                    ? 'bg-[#0F172A] text-white shadow'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCadence('annual')}
+                className={`px-5 py-2 text-sm font-semibold rounded-full transition-all flex items-center gap-2 ${
+                  billingCadence === 'annual'
+                    ? 'bg-[#0F172A] text-white shadow'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Annual
+                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  billingCadence === 'annual' ? 'bg-emerald-400 text-emerald-950' : 'bg-emerald-100 text-emerald-700'
+                }`}>
+                  SAVE 17%
+                </span>
+              </button>
+            </div>
+
+            {!showStudentPrice && (
+              <p className="text-xs text-gray-500 max-w-md">
+                Showing public list price. <button onClick={() => setShowStudentPrice(true)} className="text-blue-600 font-semibold hover:underline">Flip toggle</button> if you have a .edu — students lock in ~50% off + a 30-day trial for life.
+              </p>
+            )}
+            {billingCadence === 'annual' && !ANNUAL_ENABLED && (
+              <p className="text-xs text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+                Annual checkout launches once Stripe annual SKUs are set up — pricing shown for reference.
+              </p>
+            )}
           </div>
-          {billingCadence === 'annual' && !ANNUAL_ENABLED && (
-            <p className="mt-3 text-xs text-amber-700 bg-amber-50 inline-block px-3 py-1 rounded-full border border-amber-200">
-              Annual checkout launches once Stripe annual SKUs are set up — pricing shown for reference.
-            </p>
-          )}
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mb-16 animate-fadeInUp" style={{ animationDelay: '200ms' }}>
-          
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mt-12 mb-16 animate-fadeInUp" style={{ animationDelay: '200ms' }}>
+
           {/* Free Plan Card */}
           <div className="bg-white rounded-[3px] border border-gray-200 p-8 flex flex-col h-full hover:border-gray-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
             {/* Plan Header */}
@@ -624,53 +672,46 @@ const Pricing = () => {
           </div>
 
           {/* Pro Plan Card (Featured) */}
-          <div className="relative bg-gradient-to-b from-[#3B82F6] to-[#2563EB] rounded-[3px] p-[2px] flex flex-col hover:shadow-xl hover:shadow-[#3B82F6]/20 transition-all duration-300 md:scale-105 z-10 hover:-translate-y-1">
-            {/* Most Popular Badge */}
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
-              <span
-                style={{
-                  padding: '6px 16px',
-                  background: currentTier === 'pro' ? '#10B981' : '#0F172A',
-                  color: 'white',
-                  fontFamily: "'DM Sans', system-ui, sans-serif",
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  letterSpacing: '0.05em',
-                  borderRadius: '8px',
-                  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                  textTransform: 'uppercase',
-                }}
-              >
-                {currentTier === 'pro' ? 'Active' : 'Most Popular'}
-              </span>
-            </div>
-            
+          <div className="relative bg-gradient-to-b from-[#3B82F6] to-[#2563EB] rounded-[3px] p-[2px] flex flex-col hover:shadow-xl hover:shadow-[#3B82F6]/20 transition-all duration-300 hover:-translate-y-1">
+
             {/* Card Content */}
             <div className="bg-white rounded-[3px] p-8 flex flex-col h-full">
               {/* Plan Header */}
-              <div className="text-center mb-6 pt-2">
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-3 bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white text-[10px] font-bold tracking-wider uppercase rounded-full">
+                  {currentTier === 'pro' ? '✓ Your Plan' : '★ Most Popular'}
+                </div>
                 <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#3B82F6] to-[#2563EB] mb-2">Pro</h2>
                 <p className="text-gray-500">Best for Students</p>
               </div>
-              
+
               {/* Price */}
               <div className="text-center mb-6">
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-lg text-gray-400 line-through">${PRICES.pro.listMonthly}</span>
-                  <span className="text-4xl font-bold text-gray-900">
-                    ${billingCadence === 'annual' ? (PRICES.pro.studentAnnual / 12).toFixed(2) : PRICES.pro.studentMonthly}
-                  </span>
-                  <span className="text-gray-500">/mo</span>
-                </div>
+                {showStudentPrice ? (
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-lg text-gray-400 line-through">${PRICES.pro.listMonthly}</span>
+                    <span className="text-4xl font-bold text-gray-900">
+                      ${billingCadence === 'annual' ? (PRICES.pro.studentAnnual / 12).toFixed(2) : PRICES.pro.studentMonthly}
+                    </span>
+                    <span className="text-gray-500">/mo</span>
+                  </div>
+                ) : (
+                  <div className="flex items-baseline justify-center gap-2">
+                    <span className="text-4xl font-bold text-gray-900">${PRICES.pro.listMonthly}</span>
+                    <span className="text-gray-500">/mo</span>
+                  </div>
+                )}
                 <p className="text-sm text-gray-500 mt-2">
-                  {billingCadence === 'annual'
+                  {billingCadence === 'annual' && showStudentPrice
                     ? `Billed yearly at $${PRICES.pro.studentAnnual} · save $30/yr`
                     : '3,000 credits / month (~200 contacts)'}
                 </p>
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
-                    🎓 .edu student price
-                  </span>
+                  {showStudentPrice && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
+                      🎓 .edu required
+                    </span>
+                  )}
                   <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full text-xs font-semibold text-green-700">
                     {trialDays}-day free trial · no credit card
                   </span>
@@ -685,15 +726,15 @@ const Pricing = () => {
                 <FeatureItem highlight>3,000 credits / month (~200 contacts)</FeatureItem>
                 <FeatureItem>Up to 15 contacts per search</FeatureItem>
                 <FeatureItem><span className="font-semibold">Everything in Free, plus:</span></FeatureItem>
+                <FeatureItem>The Agent — autonomous outreach (1 at a time)</FeatureItem>
+                <FeatureItem>Unlimited Coffee Chat Prep</FeatureItem>
                 <FeatureItem>Find Hiring Managers</FeatureItem>
-                <FeatureItem>Coffee Chat Prep (10/month)</FeatureItem>
-                <FeatureItem>Smart school / major / career filters</FeatureItem>
                 <FeatureItem>Firm Search + Resume tools</FeatureItem>
-                <FeatureItem>Bulk drafting + Export (CSV & Gmail)</FeatureItem>
+                <FeatureItem>Smart filters + Bulk drafting + Export</FeatureItem>
                 <FeatureItem>Unlimited directory saving</FeatureItem>
-                <DisabledFeatureItem>The Agent (Elite only)</DisabledFeatureItem>
-                <DisabledFeatureItem>Priority queue + support</DisabledFeatureItem>
-                <FeatureItem highlight>Estimated time saved: ~2,500 min/mo</FeatureItem>
+                <DisabledFeatureItem>Run multiple agents at once (Elite)</DisabledFeatureItem>
+                <DisabledFeatureItem>Priority queue + founder kickoff call</DisabledFeatureItem>
+                <FeatureItem highlight>Save ~210 hours/mo on research</FeatureItem>
               </div>
               
               {/* CTA Button */}
@@ -749,22 +790,31 @@ const Pricing = () => {
             
             {/* Price */}
             <div className="text-center mb-6">
-              <div className="flex items-baseline justify-center gap-2">
-                <span className="text-lg text-gray-400 line-through">${PRICES.elite.listMonthly}</span>
-                <span className="text-4xl font-bold text-gray-900">
-                  ${billingCadence === 'annual' ? (PRICES.elite.studentAnnual / 12).toFixed(2) : PRICES.elite.studentMonthly}
-                </span>
-                <span className="text-gray-500">/mo</span>
-              </div>
+              {showStudentPrice ? (
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-lg text-gray-400 line-through">${PRICES.elite.listMonthly}</span>
+                  <span className="text-4xl font-bold text-gray-900">
+                    ${billingCadence === 'annual' ? (PRICES.elite.studentAnnual / 12).toFixed(2) : PRICES.elite.studentMonthly}
+                  </span>
+                  <span className="text-gray-500">/mo</span>
+                </div>
+              ) : (
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-4xl font-bold text-gray-900">${PRICES.elite.listMonthly}</span>
+                  <span className="text-gray-500">/mo</span>
+                </div>
+              )}
               <p className="text-sm text-gray-500 mt-2">
-                {billingCadence === 'annual'
+                {billingCadence === 'annual' && showStudentPrice
                   ? `Billed yearly at $${PRICES.elite.studentAnnual} · save $70/yr`
                   : '12,000 credits / month (~800 contacts)'}
               </p>
               <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
-                  🎓 .edu student price
-                </span>
+                {showStudentPrice && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
+                    🎓 .edu required
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full text-xs font-semibold text-green-700">
                   {trialDays}-day free trial · no credit card
                 </span>
@@ -776,18 +826,18 @@ const Pricing = () => {
 
               {/* Features */}
               <div className="flex-1 space-y-4">
+                <FeatureItem highlight>Run up to 5 Agents simultaneously</FeatureItem>
                 <FeatureItem highlight>12,000 credits / month (~800 contacts)</FeatureItem>
                 <FeatureItem>Up to 30 contacts per search</FeatureItem>
                 <FeatureItem><span className="font-semibold">Everything in Pro, plus:</span></FeatureItem>
-                <FeatureItem>The Agent — autonomous networking copilot</FeatureItem>
-                <FeatureItem>Unlimited Coffee Chat Prep</FeatureItem>
-                <FeatureItem>Personalized outreach templates (tailored to resume)</FeatureItem>
-                <FeatureItem>Weekly personalized firm insights</FeatureItem>
+                <FeatureItem>Multi-agent parallel outreach</FeatureItem>
                 <FeatureItem>Priority queue for contact generation</FeatureItem>
+                <FeatureItem>Personalized templates tailored to your resume</FeatureItem>
+                <FeatureItem>Weekly personalized firm insights</FeatureItem>
                 <FeatureItem>Early access to new AI tools</FeatureItem>
                 <FeatureItem>Priority support</FeatureItem>
                 <FeatureItem>30-min founder kickoff call</FeatureItem>
-                <FeatureItem highlight>Estimated time saved: ~5,000 min/mo</FeatureItem>
+                <FeatureItem highlight>Save ~1,120 hours/mo at max usage</FeatureItem>
               </div>
             
             {/* CTA Button */}
@@ -854,21 +904,21 @@ const Pricing = () => {
               <tbody className="divide-y divide-gray-100">
                 <ComparisonRow feature="Monthly Credits" free="500" pro="3,000" elite="12,000" />
                 <ComparisonRow feature="Contacts per Search" free="5" pro="15" elite="30" />
-                <ComparisonRow feature="Contact Search" free="Basic" pro="Full" elite="Full + Priority" />
+                <ComparisonRow feature="Concurrent Agents" free="—" pro="1" elite="Up to 5" />
+                <ComparisonRow feature="Coffee Chat Prep" free="1/month" pro="Unlimited" elite="Unlimited" />
                 <ComparisonRow feature="Find Companies" free="Credit-limited" pro={true} elite={true} />
                 <ComparisonRow feature="Find Hiring Managers" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Email Outreach Tracking" free={true} pro={true} elite={true} />
                 <ComparisonRow feature="Gmail Integration" free={true} pro={true} elite={true} />
-                <ComparisonRow feature="Coffee Chat Prep" free="1/month" pro="10/month" elite="Unlimited" />
                 <ComparisonRow feature="Resume Builder" free="Credit-limited" pro={true} elite={true} />
                 <ComparisonRow feature="Cover Letter Generator" free="Credit-limited" pro={true} elite={true} />
                 <ComparisonRow feature="Export to CSV" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Bulk Drafting" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Smart Filters" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Firm Search" free={false} pro={true} elite={true} />
-                <ComparisonRow feature="The Agent (autonomous copilot)" free={false} pro={false} elite={true} />
                 <ComparisonRow feature="Priority Queue + Support" free={false} pro={false} elite={true} />
                 <ComparisonRow feature="Founder Kickoff Call" free={false} pro={false} elite={true} />
+                <ComparisonRow feature="Time Saved / Month" free="~28 hrs" pro="~210 hrs" elite="~1,120 hrs" />
               </tbody>
             </table>
           </div>
