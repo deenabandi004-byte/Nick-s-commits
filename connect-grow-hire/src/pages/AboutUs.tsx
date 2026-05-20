@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, Link } from 'react-router-dom';
-import { Menu, X, ArrowRight, Linkedin } from 'lucide-react';
+import { Menu, X, Linkedin } from 'lucide-react';
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import OfferloopLogo from '@/assets/offerloop_logo2.png';
 
@@ -65,15 +65,17 @@ const AboutUs = () => {
   }, []);
 
   return (
-    <div className="min-h-screen w-full" style={{ fontFamily: 'var(--font-body)', background: 'var(--bg-white)' }}>
+    <div className="min-h-screen w-full" style={{ fontFamily: "'Inter', sans-serif", background: '#FFFFFF' }}>
       <Helmet>
-        <title>About Offerloop — AI Networking Platform for College Students</title>
+        <title>About Offerloop: AI Networking Platform for College Students</title>
         <meta name="description" content="Offerloop was founded in 2025 by USC students to help college students network into consulting, investment banking, and tech. Meet the team." />
         <link rel="canonical" href="https://offerloop.ai/about" />
-        <meta property="og:title" content="About Offerloop — AI Networking Platform for College Students" />
+        <meta property="og:title" content="About Offerloop: AI Networking Platform for College Students" />
         <meta property="og:description" content="Founded in 2025 by USC students. 300+ users across 6+ universities. Meet the team behind Offerloop." />
         <meta property="og:url" content="https://offerloop.ai/about" />
         <meta property="og:type" content="website" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
         <script type="application/ld+json">{JSON.stringify({
           "@context": "https://schema.org",
           "@type": "Organization",
@@ -123,119 +125,170 @@ const AboutUs = () => {
         ))}
       </Helmet>
 
-      {/* NAVBAR */}
-      <header
-        className="fixed top-0 left-0 right-0 z-50 h-16 flex items-center justify-between px-6 md:px-12"
-        style={{
-          background: navbarScrolled ? 'rgba(248, 250, 255, 0.96)' : 'rgba(248, 250, 255, 0.88)',
-          backdropFilter: 'blur(16px) saturate(1.4)',
-          WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
-          borderBottom: `1px solid ${navbarScrolled ? 'rgba(214, 222, 240, 0.8)' : 'rgba(214, 222, 240, 0.6)'}`,
-          transition: 'all 0.3s ease',
-        }}
-      >
-        <div className="flex items-center">
-          <img src={OfferloopLogo} alt="Offerloop" className="h-16 cursor-pointer logo-animate" onClick={() => navigate('/')} />
-        </div>
-        <nav className="hidden md:flex items-center gap-8">
-          <Link to="/pricing" className="nav-link text-sm font-medium relative" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }}>Pricing</Link>
-          <Link to="/about" className="nav-link text-sm font-medium relative" style={{ color: '#3B82F6', fontFamily: 'var(--font-body)' }}>About</Link>
-        </nav>
-        <div className="hidden md:flex items-center gap-4">
-          {user ? (
-            <button onClick={() => navigate('/find')} className="btn-ghost">Find people</button>
-          ) : (
-            <>
-              <button onClick={() => navigate('/signin?mode=signin')} className="btn-ghost">Sign in</button>
-              <button onClick={() => navigate('/signin?mode=signup')} className="btn-primary-lg" style={{ background: '#3B82F6' }}>Create account</button>
-            </>
-          )}
-        </div>
-        <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2" style={{ color: 'var(--text-secondary)' }}>
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
-      </header>
+      {/* NAVBAR: centered pill, matches landing page */}
+      <div className="fixed top-0 left-0 right-0 z-50 flex justify-center" style={{ padding: '12px 24px 8px' }}>
+        <header
+          className="flex items-center justify-between w-full h-12 px-5 md:px-6"
+          style={{
+            maxWidth: '860px',
+            width: '100%',
+            boxSizing: 'border-box',
+            marginBottom: '4px',
+            background: navbarScrolled ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.88)',
+            backdropFilter: 'blur(16px) saturate(1.4)',
+            WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+            border: '1px solid rgba(37,99,235,0.1)',
+            borderRadius: '100px',
+            boxShadow: navbarScrolled ? '0 2px 16px rgba(37,99,235,0.08)' : '0 1px 8px rgba(0,0,0,0.03)',
+            transition: 'all 0.3s ease',
+            overflow: 'visible',
+          }}
+        >
+          <div className="flex items-center">
+            <img
+              src={OfferloopLogo}
+              alt="Offerloop"
+              className="h-16 cursor-pointer logo-animate"
+              onClick={() => navigate('/')}
+            />
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center gap-5" style={{ flexShrink: 1, minWidth: 0 }}>
+            <Link to="/for-students" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+              For Students
+            </Link>
+            <Link to="/pricing" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+              Pricing
+            </Link>
+            <Link to="/about" className="nav-link text-sm relative" style={{ color: '#2563EB', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+              About
+            </Link>
+          </nav>
+
+          {/* Desktop CTA */}
+          <div className="hidden md:flex items-center gap-3" style={{ flexShrink: 0 }}>
+            {user ? (
+              <button onClick={() => navigate('/find')} className="btn-ghost" style={{ fontSize: '13px', fontWeight: 700, padding: '8px 16px' }}>
+                Find people
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={() => navigate('/signin?mode=signin')}
+                  style={{ background: 'transparent', color: '#0F172A', fontSize: '13px', fontWeight: 600, fontFamily: "'Libre Baskerville', Georgia, serif", padding: '8px 20px', borderRadius: '100px', border: '1px solid rgba(37,99,235,0.2)', cursor: 'pointer', transition: 'all 0.15s ease' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.35)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.2)'; }}
+                >
+                  Sign in
+                </button>
+                <button
+                  onClick={() => navigate('/signin?mode=signup')}
+                  style={{ background: '#2563EB', color: '#fff', fontSize: '13px', fontWeight: 600, fontFamily: "'Libre Baskerville', Georgia, serif", padding: '8px 20px', borderRadius: '3px', border: 'none', cursor: 'pointer', transition: 'background 0.15s ease', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1D4ED8'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#2563EB'; }}
+                >
+                  Create account
+                </button>
+              </>
+            )}
+          </div>
+
+          {/* Mobile Menu Button */}
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2" style={{ color: '#4A5E80' }}>
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </header>
+      </div>
 
       {/* Mobile Menu */}
       {mobileMenuOpen && (
-        <div className="fixed top-16 left-0 right-0 md:hidden z-40" style={{ background: 'var(--bg-white)', borderBottom: '1px solid var(--border-light)', backdropFilter: 'blur(16px)' }}>
-          <div className="flex flex-col p-6 gap-4">
-            <Link to="/pricing" className="text-left text-sm font-medium" style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-body)' }} onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
-            <div className="flex flex-col gap-3 pt-4 border-t" style={{ borderColor: 'var(--border-light)' }}>
+        <div className="fixed top-[72px] left-4 right-4 md:hidden z-40" style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(37,99,235,0.1)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(37,99,235,0.08)', backdropFilter: 'blur(16px)' }}>
+          <nav className="flex flex-col p-3 gap-1">
+            <Link to="/for-students" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>For Students</Link>
+            <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>Pricing</Link>
+            <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#2563EB', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>About</Link>
+            <div className="border-t mt-2 pt-2" style={{ borderColor: 'rgba(37,99,235,0.08)' }}>
               {user ? (
-                <button onClick={() => { navigate('/find'); setMobileMenuOpen(false); }} className="btn-ghost w-full text-left px-4 py-3">Find people</button>
+                <button onClick={() => { navigate('/find'); setMobileMenuOpen(false); }} className="btn-primary-lg w-full" style={{ borderRadius: '3px' }}>Find people</button>
               ) : (
-                <>
-                  <button onClick={() => { navigate('/signin?mode=signin'); setMobileMenuOpen(false); }} className="btn-ghost w-full text-left px-4 py-3">Sign in</button>
-                  <button onClick={() => { navigate('/signin?mode=signup'); setMobileMenuOpen(false); }} className="btn-primary-lg w-full" style={{ background: '#3B82F6' }}>Create account</button>
-                </>
+                <button onClick={() => { navigate('/signin?mode=signup'); setMobileMenuOpen(false); }} className="w-full text-center py-3 text-sm font-semibold" style={{ background: '#2563EB', color: '#fff', borderRadius: '3px', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Create account</button>
               )}
             </div>
-          </div>
+          </nav>
         </div>
       )}
 
-      <div className="h-16" />
+      {/* Spacer to clear fixed header */}
+      <div className="h-20" />
 
-      {/* Hero */}
-      <section className="relative py-[100px] px-6 md:px-12" style={{ background: 'var(--bg-white)' }}>
+      {/* HERO */}
+      <section className="relative py-[100px] px-6 md:px-12" style={{ background: '#FFFFFF' }}>
         <div className="max-w-7xl mx-auto">
           <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at center, rgba(37, 99, 235, 0.08) 0%, transparent 70%)', transform: 'scale(1.3)', filter: 'blur(40px)', zIndex: 0 }} />
-          <div className="relative z-10 text-center max-w-[780px] mx-auto reveal">
-            <h1 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '52px', fontWeight: 400, letterSpacing: '-0.03em', color: 'var(--text-primary)', marginBottom: '20px', lineHeight: 1.1 }}>
-              Built by students, <span style={{ color: '#3B82F6' }}>for students</span>
+          <div className="relative z-10 text-center max-w-[820px] mx-auto reveal">
+            <h1 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(36px, 5.5vw, 56px)', fontWeight: 400, letterSpacing: '-0.025em', color: '#0f2545', marginBottom: '24px', lineHeight: 1.15 }}>
+              Opportunity moves through people. <span style={{ color: '#2563EB' }}>We make them reachable.</span>
             </h1>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '17px', lineHeight: 1.7, color: 'var(--text-secondary)', maxWidth: '640px', margin: '0 auto' }}>
-              Offerloop is a networking and outreach platform — not an email provider. Founded in 2025 at the University of Southern California by three students who were frustrated with the manual grind of networking for internships, we built the tool we wished we had.
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '18px', lineHeight: 1.65, color: '#4A5E80', maxWidth: '640px', margin: '0 auto' }}>
+              We met in college chasing exactly that, and built Offerloop so getting to the right person doesn't have to be slow, manual, or left to chance.
             </p>
           </div>
         </div>
       </section>
 
-      {/* Founding Story */}
-      <section className="py-[80px] px-6 md:px-12" style={{ background: 'var(--bg-white)' }}>
-        <div className="max-w-[640px] mx-auto reveal">
-          <h2 className="text-center mb-8" style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '40px', fontWeight: 400, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>
-            Our Story
+      {/* WHY WE BUILT THIS: founder story */}
+      <section className="py-[90px] px-6 md:px-12" style={{ background: '#FFFFFF' }}>
+        <div className="max-w-[680px] mx-auto reveal">
+          <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: '13px', fontWeight: 700, color: '#2563EB', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '16px' }}>
+            Why we built this
+          </p>
+          <h2 className="mb-10" style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, letterSpacing: '-0.025em', color: '#0f2545', lineHeight: 1.2 }}>
+            We built the tool we couldn't find.
           </h2>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '17px', lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: '24px' }}>
-            During recruiting season at USC, we spent hundreds of hours doing the same thing every other student was doing — searching for professionals on LinkedIn, guessing email addresses, writing personalized outreach messages one by one, and tracking everything in messy spreadsheets. It was exhausting, inefficient, and it took away from the experiences that make college worth it.
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '17px', lineHeight: 1.75, color: '#4A5E80', marginBottom: '22px' }}>
+            We met in college, all chasing goals that came down to the same thing: getting in front of the right people. So we did what everyone does. We scrolled LinkedIn for hours hunting for the right person. We guessed at email addresses. We wrote outreach one message at a time and tracked it in spreadsheets that fell apart by week two.
           </p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '17px', lineHeight: 1.7, color: 'var(--text-secondary)', marginBottom: '24px' }}>
-            We realized the tools that existed — LinkedIn, Handshake, Apollo — weren't built for students. LinkedIn doesn't give you email addresses. Handshake only has job postings. Apollo costs $50-500/month and is designed for enterprise sales teams. There was nothing that helped a college student find the right person, write a great email, send it, and track the response — all in one place.
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '17px', lineHeight: 1.75, color: '#4A5E80', marginBottom: '22px' }}>
+            It worked, barely. But it was slow, and the tools were never built for it. LinkedIn won't give you an email. Handshake only lists jobs. Sales platforms like Apollo cost hundreds a month and are built for enterprise teams, not people. Nothing helped you do the whole thing in one place: find the right person, reach them well, and keep track.
           </p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '17px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-            So we built Offerloop. What started as a side project in a dorm room in 2025 has grown to 300+ users across USC, UCLA, Michigan, NYU, Georgetown, UPenn, and more. We're still students ourselves, which means we use Offerloop every day and understand the challenges firsthand.
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '17px', lineHeight: 1.75, color: '#4A5E80', marginBottom: '22px' }}>
+            The more people we talked to, the clearer it got. Thousands of students, recruiters, founders, and salespeople, all fighting the same broken process. Getting to the right person is one of the highest-leverage things you can do, and almost no one has good tools for it.
+          </p>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '17px', lineHeight: 1.75, color: '#4A5E80' }}>
+            So we built Offerloop: one place to find the right person, reach them with a message worth replying to, and keep the relationship moving. We started with students because that's who we were. But the problem belongs to anyone who's ever needed to reach someone.
           </p>
         </div>
       </section>
 
-      {/* Team */}
-      <section className="py-[80px] px-6 md:px-12" style={{ background: 'var(--bg-off)' }}>
+      {/* FOUNDERS: names, roles, LinkedIn */}
+      <section className="py-[90px] px-6 md:px-12" style={{ background: 'rgba(248, 250, 255, 0.5)' }}>
         <div className="max-w-7xl mx-auto">
-          <h2 className="text-center mb-14 reveal" style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '40px', fontWeight: 400, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>
-            Meet the Founders
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-[900px] mx-auto">
+          <div className="text-center mb-14 reveal">
+            <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: '13px', fontWeight: 700, color: '#2563EB', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              The team
+            </p>
+            <h2 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, letterSpacing: '-0.025em', color: '#0f2545' }}>
+              Founders
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-[900px] mx-auto">
             {founders.map((founder, i) => (
-              <div key={i} className="reveal rounded-[14px] text-center transition-all" style={{ background: 'rgba(248, 250, 255, 0.88)', backdropFilter: 'blur(8px)', border: '1px solid var(--border-light)', padding: '36px 28px' }}
-                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-6px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(37, 99, 235, 0.10)'; e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.18)'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border-light)'; }}
+              <div key={i} className="reveal rounded-[16px] text-center transition-all" style={{ background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(8px)', border: '1px solid rgba(37, 99, 235, 0.10)', padding: '36px 28px' }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 36px rgba(37, 99, 235, 0.10)'; e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.22)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.10)'; }}
               >
                 <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none' }}>
-                  <h3 style={{ fontFamily: 'var(--font-body)', fontSize: '17px', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em', marginBottom: '4px' }}>
+                  <h3 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: '20px', fontWeight: 700, color: '#0f2545', letterSpacing: '-0.01em', marginBottom: '6px' }}>
                     {founder.name}
                   </h3>
                 </a>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 500, color: '#3B82F6', marginBottom: '6px' }}>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', fontWeight: 600, color: '#2563EB', marginBottom: '16px' }}>
                   {founder.role}
                 </p>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)', marginBottom: '12px' }}>
-                  {founder.classYear}
-                </p>
-                <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--text-tertiary)', display: 'inline-block', transition: 'color 0.2s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.color = '#3B82F6'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}
+                <a href={founder.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${founder.name} on LinkedIn`} style={{ color: '#94A3B8', display: 'inline-block', transition: 'color 0.2s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = '#2563EB'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; }}
                 >
                   <Linkedin className="w-[18px] h-[18px]" />
                 </a>
@@ -245,85 +298,52 @@ const AboutUs = () => {
         </div>
       </section>
 
-      {/* Mission */}
-      <section className="py-[80px] px-6 md:px-12" style={{ background: 'var(--bg-white)' }}>
-        <div className="max-w-[640px] mx-auto text-center reveal">
-          <h2 className="mb-6" style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '40px', fontWeight: 400, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>
-            Our Mission
-          </h2>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '17px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
-            Our mission is to make professional networking accessible to every college student. Recruiting for competitive roles in consulting, investment banking, and tech shouldn't require hundreds of hours of manual work. Offerloop automates the busywork — finding contacts, writing emails, tracking conversations — so students can focus on building real relationships and preparing for the opportunities that matter.
-          </p>
-        </div>
-      </section>
-
-      {/* Traction */}
-      <section className="py-[80px] px-6 md:px-12" style={{ background: 'var(--bg-off)' }}>
-        <div className="max-w-[800px] mx-auto">
-          <h2 className="text-center mb-12 reveal" style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '40px', fontWeight: 400, letterSpacing: '-0.025em', color: 'var(--text-primary)' }}>
-            Traction
-          </h2>
+      {/* TRACTION */}
+      <section className="py-[90px] px-6 md:px-12" style={{ background: '#FFFFFF' }}>
+        <div className="max-w-[900px] mx-auto">
+          <div className="text-center mb-12 reveal">
+            <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: '13px', fontWeight: 700, color: '#2563EB', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '12px' }}>
+              Where we are
+            </p>
+            <h2 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, letterSpacing: '-0.025em', color: '#0f2545' }}>
+              The numbers, honestly.
+            </h2>
+          </div>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-6 reveal">
             {tractionStats.map((stat, i) => (
               <div key={i} className="text-center">
-                <p style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '32px', fontWeight: 400, color: '#3B82F6', marginBottom: '4px' }}>
+                <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(28px, 3.5vw, 36px)', fontWeight: 400, color: '#2563EB', marginBottom: '6px', lineHeight: 1.1 }}>
                   {stat.value}
                 </p>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-tertiary)', lineHeight: 1.4 }}>
+                <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '12px', color: '#64748b', lineHeight: 1.4 }}>
                   {stat.label}
                 </p>
               </div>
             ))}
           </div>
-          <p className="text-center mt-8 reveal" style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-tertiary)' }}>
-            Launched and validated at USC. Growing organically across UCLA, University of Michigan, NYU, Georgetown, and UPenn.
+          <p className="text-center mt-10 reveal" style={{ fontFamily: "'Inter', sans-serif", fontSize: '14px', color: '#94A3B8' }}>
+            Students at USC, UCLA, University of Michigan, NYU, Georgetown, and UPenn. No paid ads.
           </p>
         </div>
       </section>
 
-      {/* Timeline */}
-      <section className="py-[80px] px-6 md:px-12" style={{ background: 'var(--bg-white)' }}>
-        <div className="max-w-2xl mx-auto">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0 relative reveal">
-            {[
-              { period: 'Spring 2025', label: 'Idea born at USC' },
-              { period: 'Summer 2025', label: 'First prototype built' },
-              { period: 'Fall 2025', label: 'Beta launch, first users' },
-              { period: 'Now', label: '300+ users, growing daily' },
-            ].map((milestone, i) => (
-              <div key={i} className="text-center relative flex-1">
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: i === 3 ? '#3B82F6' : 'var(--border)', margin: '0 auto 12px' }} />
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>{milestone.period}</p>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)' }}>{milestone.label}</p>
-                {i < 3 && (
-                  <div className="hidden md:block absolute" style={{ width: 'calc(100% - 60px)', height: '1px', background: 'var(--border-light)', top: '4px', left: 'calc(50% + 30px)' }} />
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
-      <section className="py-[100px] pb-[110px] px-6 md:px-12" style={{ background: 'var(--bg-white)' }}>
+      <section className="py-[100px] pb-[110px] px-6 md:px-12" style={{ background: '#FFFFFF' }}>
         <div className="max-w-[640px] mx-auto">
-          <div className="relative rounded-[20px] transition-all reveal" style={{ background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(59, 130, 246, 0.06) 50%, rgba(37, 99, 235, 0.04) 100%)', border: '1px solid rgba(37, 99, 235, 0.12)', padding: '80px 48px', textAlign: 'center', maxWidth: '640px', margin: '0 auto', position: 'relative', overflow: 'hidden' }}
+          <div className="relative rounded-[20px] transition-all reveal" style={{ background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.04) 0%, rgba(59, 130, 246, 0.06) 50%, rgba(37, 99, 235, 0.04) 100%)', border: '1px solid rgba(37, 99, 235, 0.12)', padding: '72px 48px', textAlign: 'center', maxWidth: '640px', margin: '0 auto', position: 'relative', overflow: 'hidden' }}
             onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.22)'; e.currentTarget.style.boxShadow = '0 12px 48px rgba(37, 99, 235, 0.14)'; }}
             onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(37, 99, 235, 0.12)'; e.currentTarget.style.boxShadow = 'none'; }}
           >
             <div className="absolute pointer-events-none" style={{ width: '80px', height: '80px', border: '1.5px solid rgba(37, 99, 235, 0.15)', borderRadius: '50%', opacity: 0.4, top: '-30px', right: '-30px', background: 'radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%)' }} />
             <div className="absolute pointer-events-none" style={{ width: '60px', height: '60px', border: '1.5px solid rgba(59, 130, 246, 0.15)', borderRadius: '50%', opacity: 0.4, bottom: '-25px', left: '-25px', background: 'radial-gradient(circle, rgba(59, 130, 246, 0.05) 0%, transparent 70%)' }} />
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', fontWeight: 500, color: 'var(--text-tertiary)', letterSpacing: '0.02em', marginBottom: 20 }}>
-              Join 300+ students from USC, Georgetown, NYU &amp; more
-            </p>
-            <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '38px', fontWeight: 400, letterSpacing: '-0.025em', color: 'var(--text-primary)', marginBottom: '12px' }}>
-              Try Offerloop free
+            <h2 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(28px, 4vw, 38px)', fontWeight: 400, letterSpacing: '-0.025em', color: '#0f2545', marginBottom: '14px', lineHeight: 1.2 }}>
+              Start free in two minutes.
             </h2>
-            <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '32px' }}>
-              Free to start. Set up in under two minutes.
+            <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '15px', color: '#4A5E80', marginBottom: '32px' }}>
+              300 free credits. No credit card.
             </p>
             <div>
-              <button onClick={() => navigate('/signin?mode=signup')} className="btn-primary-lg btn-pulse" style={{ background: '#3B82F6' }}>
+              <button onClick={() => navigate('/signin?mode=signup')} className="btn-primary-lg btn-pulse" style={{ background: '#2563EB', fontFamily: "'Libre Baskerville', Georgia, serif" }}>
                 Create free account
               </button>
             </div>
@@ -332,19 +352,23 @@ const AboutUs = () => {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-6 md:px-12" style={{ background: 'var(--bg-white)', borderTop: '1px solid var(--border-light)' }}>
+      <footer className="py-12 px-6 md:px-12" style={{ background: '#FFFFFF', borderTop: '1px solid rgba(37, 99, 235, 0.08)' }}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-sm" style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)' }}>
+          <p style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#94A3B8' }}>
             &copy; 2026 Offerloop. All rights reserved.
           </p>
           <div className="flex gap-6">
             {[
               { label: 'About', path: '/about' },
+              { label: 'Pricing', path: '/pricing' },
               { label: 'Contact', path: '/contact-us' },
               { label: 'Privacy', path: '/privacy' },
               { label: 'Terms', path: '/terms-of-service' },
             ].map((link) => (
-              <Link key={link.path} to={link.path} className="footer-link text-sm relative" style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-tertiary)' }}>
+              <Link key={link.path} to={link.path} style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#64748b', textDecoration: 'none', transition: 'color .15s' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#2563EB'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#64748b'; }}
+              >
                 {link.label}
               </Link>
             ))}

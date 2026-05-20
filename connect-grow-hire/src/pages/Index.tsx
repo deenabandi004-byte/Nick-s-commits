@@ -5,31 +5,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Menu, X } from 'lucide-react';
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
 import OfferloopLogo from '@/assets/offerloop_logo2.png';
-import ChromeExtensionPic from '@/assets/Chrome_extensionpic.png';
-import GoogleLogo from '@/assets/Googlelogo.png';
-import HowItWorksVideo from '@/assets/Find People Insta Highlight part 1.mp4';
 import FindCompanyImg from '@/assets/findcompanylandingpage.png';
 import FindHiringManagerImg from '@/assets/findhiringmanagerlandingpage.png';
 import EmailOutreachImg from '@/assets/emailoutreach.png.png';
 import CoffeeChatImg from '@/assets/coffeechatlandingpage.png';
 import HeroSearchCTA from '@/components/HeroSearchCTA';
-import ChromeIcon from '@/assets/Google_Chrome_icon.png';
-import LinkedInLogo from '@/assets/LinkedIn_Logo.png';
-import uscLogo from '@/assets/USC-Logo.png';
-import uclaLogo from '@/assets/UCLA logo.png';
-import berkeleyLogo from '@/assets/UC Berkeley logo.png';
-import stanfordLogo from '@/assets/Stanford logo.avif';
-import uwLogo from '@/assets/UW Logo.png';
-import nyuLogo from '@/assets/NYU Logo.png';
-import georgetownLogo from '@/assets/Georgetown logo.png';
-import michiganLogo from '@/assets/Michigan logo.png';
-import whartonLogo from '@/assets/Wharton Logo .png';
-import notreDameLogo from '@/assets/Notre Dame logo.png';
-import dartmouthLogo from '@/assets/Dartmouth logo.png';
 import TimeComparison from '@/components/TimeComparison';
 import BulletinBoard from '@/components/BulletinBoard';
-import DavidJiPhoto from '@/assets/David-Ji.jpeg';
-import SarahUcuzogluPhoto from '@/assets/Sarah-Ucuzoglu.jpeg';
 
 const CHROME_EXTENSION_URL = 'https://chromewebstore.google.com/detail/offerloop/aabnjgecmobcnnhkilbeocggbmgilpcl';
 
@@ -156,11 +138,11 @@ const Index = () => {
   return (
     <div className="min-h-screen w-full" style={{ fontFamily: "'Inter', sans-serif", background: '#FFFFFF' }}>
       <Helmet>
-        <title>Offerloop — AI Networking for College Students | Find, Reach & Track Professionals</title>
-        <meta name="description" content="Offerloop helps college students find professionals, generate personalized cold emails, and track networking conversations. Search 2.2B verified contacts. Built for consulting, IB, and tech recruiting." />
+        <title>Offerloop: Find anyone. Reach anyone. Track every conversation.</title>
+        <meta name="description" content="Find the people you want to talk to. We draft the message, manage every reply, and prep you for the meeting." />
         <link rel="canonical" href="https://offerloop.ai/" />
-        <meta property="og:title" content="Offerloop — AI Networking for College Students" />
-        <meta property="og:description" content="Search 2.2B verified contacts, generate AI-personalized outreach emails, and track your networking pipeline. Free to start." />
+        <meta property="og:title" content="Offerloop: Find anyone. Reach anyone. Track every conversation." />
+        <meta property="og:description" content="Find the people you want to talk to. We draft the message, manage every reply, and prep you for the meeting." />
         <meta property="og:url" content="https://offerloop.ai/" />
         <meta property="og:type" content="website" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -221,15 +203,15 @@ const Index = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-5" style={{ flexShrink: 1, minWidth: 0 }}>
-            <button onClick={scrollToFeatures} className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600 }}>
-              Features
-            </button>
-            <button onClick={() => scrollToSection('extension')} className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600 }}>
-              Extension
-            </button>
-            <button onClick={() => scrollToSection('testimonials')} className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600 }}>
-              Reviews
-            </button>
+            <Link to="/for-students" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+              For Students
+            </Link>
+            <Link to="/pricing" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+              Pricing
+            </Link>
+            <Link to="/about" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+              About
+            </Link>
           </nav>
 
           {/* Desktop CTA */}
@@ -271,9 +253,9 @@ const Index = () => {
       {mobileMenuOpen && (
         <div className="fixed top-[72px] left-4 right-4 md:hidden z-40" style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(37,99,235,0.1)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(37,99,235,0.08)', backdropFilter: 'blur(16px)' }}>
           <nav className="flex flex-col p-3 gap-1">
-            <button onClick={() => { scrollToFeatures(); setMobileMenuOpen(false); }} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Features</button>
-            <button onClick={() => { scrollToSection('extension'); setMobileMenuOpen(false); }} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Extension</button>
-            <button onClick={() => { scrollToSection('testimonials'); setMobileMenuOpen(false); }} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Reviews</button>
+            <Link to="/for-students" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>For Students</Link>
+            <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>Pricing</Link>
+            <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>About</Link>
             <button onClick={() => { navigate('/signin?mode=signup'); setMobileMenuOpen(false); }} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Get started</button>
             <div className="border-t mt-2 pt-2" style={{ borderColor: 'rgba(37,99,235,0.08)' }}>
               {user ? (
@@ -466,371 +448,358 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══════════════ UNIVERSITY LOGO CAROUSEL ═══════════════ */}
-      <section style={{ background: '#ffffff', padding: '80px 0 40px', borderTop: '1px solid #EEF2F8', textAlign: 'center', overflow: 'hidden' }}>
-        <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 24px', marginBottom: 56 }}>
-          <h2 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(28px, 4.5vw, 44px)', fontWeight: 400, lineHeight: 1.2, color: '#0f2545' }}>
-            Trusted by students at<br />the country's top universities
-          </h2>
-        </div>
-        <div style={{ position: 'relative' }}>
-          {/* Fade edges */}
-          <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 220, background: 'linear-gradient(90deg, #ffffff 20%, transparent)', zIndex: 1, pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: 220, background: 'linear-gradient(270deg, #ffffff 20%, transparent)', zIndex: 1, pointerEvents: 'none' }} />
-          <div className="logo-carousel" style={{ display: 'flex', gap: 20, width: 'max-content' }}>
-            {[...Array(2)].map((_, setIdx) => (
-              <div key={setIdx} className="logo-carousel-track" style={{ display: 'flex', gap: 20, flexShrink: 0 }}>
-                {([
-                  { name: 'USC', logo: uscLogo },
-                  { name: 'UCLA', logo: uclaLogo },
-                  { name: 'UC Berkeley', logo: berkeleyLogo },
-                  { name: 'Stanford', logo: stanfordLogo },
-                  { name: 'UW', logo: uwLogo },
-                  { name: 'NYU', logo: nyuLogo },
-                  { name: 'Georgetown', logo: georgetownLogo },
-                  { name: 'Michigan', logo: michiganLogo },
-                  { name: 'Wharton', logo: whartonLogo },
-                  { name: 'Notre Dame', logo: notreDameLogo },
-                  { name: 'Dartmouth', logo: dartmouthLogo },
-                ] as const).map((school) => (
-                  <div key={`${setIdx}-${school.name}`} style={{ borderRadius: 12, border: '0.5px solid #e5e7eb', padding: '12px 20px', background: '#fff', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: 160, height: 72 }}>
-                    <img src={school.logo} alt={school.name} style={{ maxHeight: 44, maxWidth: 120, width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }} />
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════ FEATURED TESTIMONIALS (Clado-style) ═══════════════ */}
+      {/* ═══════════════ TESTIMONIALS (moved up — Hormozi: attack perceived likelihood under hero) ═══════════════ */}
       <section
         id="testimonials"
         style={{
           background: '#ffffff',
-          padding: '48px 32px 32px',
+          padding: '80px 32px 64px',
         }}
       >
         <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-          {/* Two cards side by side */}
+          {/* Section header */}
+          <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto 56px' }}>
+            <h2
+              style={{
+                fontFamily: "'Libre Baskerville', Georgia, serif",
+                fontSize: 'clamp(32px, 5vw, 52px)',
+                fontWeight: 400,
+                lineHeight: 1.1,
+                letterSpacing: '-.025em',
+                color: '#0f2545',
+                margin: '0 0 16px',
+              }}
+            >
+              Real conversations. Real meetings. Real results.
+            </h2>
+            <p
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 17,
+                lineHeight: 1.6,
+                color: '#475569',
+                margin: 0,
+              }}
+            >
+              In their words.
+            </p>
+          </div>
+
+          {/* Cork-board reviews: 6 visible + Show 6 more */}
+          <BulletinBoard />
+        </div>
+      </section>
+
+      {/* ═══════════════ START A LOOP ═══════════════ */}
+      <section
+        id="loops"
+        style={{
+          background: 'linear-gradient(180deg, #0B1F3D 0%, #0f2545 100%)',
+          borderTop: '1px solid #EEF2F8',
+          padding: '120px 32px 128px',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* Ambient blue glow */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: '-20%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '80%',
+            height: '70%',
+            background:
+              'radial-gradient(ellipse, rgba(37, 99, 235, 0.28), transparent 65%)',
+            filter: 'blur(80px)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        {/* Faint dot grid for texture */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage:
+              'radial-gradient(rgba(96, 165, 250, 0.08) 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+            maskImage:
+              'radial-gradient(ellipse 70% 60% at center, black 5%, transparent 90%)',
+            WebkitMaskImage:
+              'radial-gradient(ellipse 70% 60% at center, black 5%, transparent 90%)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1000, margin: '0 auto' }}>
+          {/* Eyebrow */}
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: 20 }}>
+            <span
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.18em',
+                color: '#60A5FA',
+                textTransform: 'uppercase',
+              }}
+            >
+              New · works for you 24/7
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h2
+            className="reveal"
+            style={{
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 'clamp(40px, 6.5vw, 68px)',
+              fontWeight: 400,
+              lineHeight: 1.05,
+              letterSpacing: '-.025em',
+              color: '#FFFFFF',
+              textAlign: 'center',
+              margin: '0 auto 18px',
+              maxWidth: 820,
+            }}
+          >
+            Start a Loop.
+          </h2>
+          <div
+            style={{
+              height: 1.5,
+              background:
+                'linear-gradient(90deg, transparent, #60A5FA, #93C5FD, transparent)',
+              maxWidth: 240,
+              margin: '0 auto 28px',
+            }}
+          />
+
+          {/* Subhead */}
+          <p
+            className="reveal"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 19,
+              lineHeight: 1.6,
+              color: '#C7D5E8',
+              textAlign: 'center',
+              margin: '0 auto 88px',
+              maxWidth: 660,
+            }}
+          >
+            Tell it what you want. Walk away. Get a text when the work&apos;s done.
+          </p>
+
+          {/* 4-step flow */}
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(500px, 1fr))',
-              gap: 32,
-              alignItems: 'stretch',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: 24,
+              marginBottom: 80,
             }}
           >
             {[
               {
-                photo: DavidJiPhoto,
-                quote:
-                  'As an international student, I had no pre-existing network, and Offerloop allowed me to find and connect with professionals that resulted in me landing an offer.',
-                name: 'David Ji',
-                role: 'Incoming FedEx Intern',
+                n: '01',
+                h: 'Tell it what you’re after.',
+                p: '“30 IB analysts at Goldman, JPM, and Morgan Stanley.” Or a specific company. Or the kind of person you want to meet. Plain English.',
               },
               {
-                photo: SarahUcuzogluPhoto,
-                quote:
-                  'Automating cold outreach gave me more time spent face to face with professionals who could actually help.',
-                name: 'Sarah Ucuzoglu',
-                role: 'Advisory Intern, PwC',
+                n: '02',
+                h: 'Hit Run.',
+                p: 'Your Loop goes to work in the background. Close the tab. Go to class.',
               },
-            ].map((t) => (
+              {
+                n: '03',
+                h: 'It finds everything.',
+                p: 'Companies, open roles, hiring managers, the right people, verified emails. Anything that matters.',
+              },
+              {
+                n: '04',
+                h: 'You get a text.',
+                p: 'Full report on your phone. One tap to send the emails. That’s the end of the Loop.',
+              },
+            ].map((step) => (
               <div
-                key={t.name}
+                key={step.n}
+                className="reveal"
                 style={{
-                  display: 'flex',
-                  background: '#0f2545',
-                  borderRadius: 18,
-                  overflow: 'hidden',
-                  border: '1px solid rgba(15, 37, 69, 0.10)',
-                  boxShadow:
-                    '0 2px 10px rgba(15, 37, 69, 0.08), 0 32px 72px rgba(15, 37, 69, 0.18)',
-                  minHeight: 340,
+                  padding: '28px 24px',
+                  borderRadius: 14,
+                  background: 'rgba(255, 255, 255, 0.035)',
+                  border: '1px solid rgba(96, 165, 250, 0.18)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
                 }}
               >
-                {/* Photo (left) */}
                 <div
                   style={{
-                    width: 260,
-                    flexShrink: 0,
-                    background: '#0f2545',
-                    overflow: 'hidden',
+                    fontFamily: "'Libre Baskerville', Georgia, serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    color: '#60A5FA',
+                    marginBottom: 14,
                   }}
                 >
-                  <img
-                    src={t.photo}
-                    alt={t.name}
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      objectPosition: 'center top',
-                      display: 'block',
-                    }}
-                  />
+                  {step.n}
                 </div>
-
-                {/* Quote card (right) */}
-                <div
+                <h3
                   style={{
-                    flex: 1,
-                    padding: '40px 40px 32px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    color: '#ffffff',
+                    fontFamily: "'Libre Baskerville', Georgia, serif",
+                    fontSize: 22,
+                    fontWeight: 400,
+                    lineHeight: 1.2,
+                    color: '#FFFFFF',
+                    margin: '0 0 12px',
+                    letterSpacing: '-0.01em',
                   }}
                 >
-                  <p
-                    style={{
-                      fontFamily: "'Libre Baskerville', Georgia, serif",
-                      fontSize: 20,
-                      lineHeight: 1.55,
-                      color: '#F1F5F9',
-                      margin: 0,
-                      fontWeight: 400,
-                      letterSpacing: '-0.008em',
-                    }}
-                  >
-                    &ldquo;{t.quote}&rdquo;
-                  </p>
-                  <div style={{ marginTop: 28 }}>
-                    <div
-                      style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 16,
-                        fontWeight: 700,
-                        color: '#ffffff',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
-                      {t.name}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 13.5,
-                        color: '#94A3B8',
-                        marginTop: 3,
-                      }}
-                    >
-                      {t.role}
-                    </div>
-                  </div>
-                </div>
+                  {step.h}
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: 15,
+                    lineHeight: 1.6,
+                    color: '#94A8C2',
+                    margin: 0,
+                  }}
+                >
+                  {step.p}
+                </p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
 
-      {/* ═══════════════ STATS CREST ═══════════════ */}
-      <div style={{ background: '#ffffff', padding: '56px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        {/* Top ornament */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 28, width: '100%', maxWidth: 400 }}>
-          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #cbd5e1)' }} />
-          <svg width="20" height="12" viewBox="0 0 20 12" fill="none">
-            <path d="M10 0L13 4H7L10 0Z" fill="#2563EB" opacity=".3"/>
-            <path d="M10 12L7 8H13L10 12Z" fill="#2563EB" opacity=".3"/>
-            <circle cx="3" cy="6" r="1.5" fill="#cbd5e1"/>
-            <circle cx="17" cy="6" r="1.5" fill="#cbd5e1"/>
-          </svg>
-          <div style={{ flex: 1, height: 1, background: 'linear-gradient(270deg, transparent, #cbd5e1)' }} />
-        </div>
-
-        {/* Numbers */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 56, alignItems: 'center' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 400, color: '#2563EB', lineHeight: 1 }}>2.2B+</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#94a3b8', marginTop: 8, letterSpacing: '.06em', textTransform: 'uppercase' }}>verified contacts</div>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <div style={{ width: 1, height: 20, background: 'linear-gradient(to bottom, transparent, #cbd5e1)' }} />
-            <div style={{ width: 5, height: 5, borderRadius: '50%', border: '1px solid #cbd5e1' }} />
-            <div style={{ width: 1, height: 20, background: 'linear-gradient(to top, transparent, #cbd5e1)' }} />
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: 400, color: '#2563EB', lineHeight: 1 }}>2,400+</div>
-            <div style={{ fontFamily: "'Inter', sans-serif", fontSize: 12, color: '#94a3b8', marginTop: 8, letterSpacing: '.06em', textTransform: 'uppercase' }}>students</div>
-          </div>
-        </div>
-
-        {/* Bottom ornament */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 28, width: '100%', maxWidth: 400 }}>
-          <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg, transparent, #cbd5e1)' }} />
-          <svg width="20" height="8" viewBox="0 0 20 8" fill="none">
-            <path d="M0 4Q5 0 10 4Q15 8 20 4" stroke="#cbd5e1" strokeWidth="1" fill="none"/>
-          </svg>
-          <div style={{ flex: 1, height: 1, background: 'linear-gradient(270deg, transparent, #cbd5e1)' }} />
-        </div>
-      </div>
-
-      {/* ═══════════════ CHAPTER I: HOW IT WORKS ═══════════════ */}
-      <section id="how-it-works" className="relative px-6 md:px-12" style={{ padding: '72px 64px 60px', background: '#ffffff' }}>
-
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-.025em', color: '#0f2545', marginBottom: 0 }}>
-            How It Works
-          </h2>
-          <div style={{ height: 1.5, background: 'linear-gradient(90deg, #2563EB, #60A5FA, transparent)', maxWidth: 200, margin: '10px auto 16px' }} />
-          <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 16, lineHeight: 1.75, color: '#6B7280', maxWidth: 640, margin: '0 auto 48px' }}>
-            Prompt the type of person you want to talk to and instantly have personalized emails created in your drafts ready to send. At the same time their information is stored into a networking tracker spreadsheet.
-          </p>
-
-          <div style={{ maxWidth: 920, margin: '0 auto', position: 'relative' }}>
-            {/* Soft blue glow underneath the video for extra depth */}
-            <div
-              aria-hidden
-              style={{
-                position: 'absolute',
-                inset: '20px 40px -10px 40px',
-                background:
-                  'radial-gradient(ellipse at center, rgba(37, 99, 235, 0.22), transparent 70%)',
-                filter: 'blur(36px)',
-                pointerEvents: 'none',
-                zIndex: 0,
-              }}
-            />
-            <div
-              style={{
-                position: 'relative',
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: '1px solid rgba(15, 37, 69, 0.10)',
-                boxShadow: `
-                  0 1px 2px rgba(15, 37, 69, 0.04),
-                  0 6px 12px rgba(15, 37, 69, 0.06),
-                  0 18px 36px rgba(37, 99, 235, 0.14),
-                  0 40px 80px rgba(15, 23, 42, 0.18)
-                `,
-                zIndex: 1,
-              }}
-            >
-              <video src={HowItWorksVideo} autoPlay loop muted playsInline className="w-full" style={{ display: 'block' }} />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Chrome Extension */}
-      <section id="extension" className="relative px-6 md:px-12" style={{ padding: '72px 64px 60px', borderTop: '1px solid #EEF2F8', background: '#E8F1FB', overflow: 'hidden' }}>
-        {/* Large faded Chrome logo */}
-
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
-          <h2 style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-.025em', color: '#0f2545', marginBottom: 0 }}>
-            Works right inside LinkedIn
-          </h2>
-          <div style={{ height: 1.5, background: 'linear-gradient(90deg, #2563EB, #60A5FA, transparent)', maxWidth: 200, margin: '10px auto 16px' }} />
-          <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 16, lineHeight: 1.75, color: '#6B7280', maxWidth: 540, margin: '0 auto 32px' }}>
-            Write emails to anyone from their profile. Find hiring managers on any job posting. All from a single Chrome extension.
-          </p>
-
-          <a
-            href={CHROME_EXTENSION_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: '#2563EB', color: '#fff', textDecoration: 'none', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, fontSize: 14, padding: '13px 28px', borderRadius: 3, border: 'none', cursor: 'pointer', transition: 'background 0.15s ease' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = '#1D4ED8'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = '#2563EB'; }}
-          >
-            <img src={ChromeIcon} alt="" style={{ width: 18, height: 18, objectFit: 'contain' }} />
-            Add to Chrome — it's free
-          </a>
-
-          {/* Tilted screenshot with depth and hover untilt */}
-          <style>{`
-            .ext-frame {
-              transform: rotateY(-3.5deg) rotateX(2deg);
-              transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-              transform-origin: center center;
-            }
-            .ext-frame-wrap:hover .ext-frame {
-              transform: rotateY(0deg) rotateX(0deg);
-            }
-          `}</style>
-
+          {/* Video placeholder */}
           <div
-            className="ext-frame-wrap"
+            className="reveal"
             style={{
-              maxWidth: 920,
-              margin: '56px auto 0',
               position: 'relative',
-              perspective: '1600px',
+              maxWidth: 820,
+              margin: '0 auto 64px',
+              borderRadius: 14,
+              overflow: 'hidden',
+              border: '1px solid rgba(96, 165, 250, 0.22)',
+              background:
+                'linear-gradient(180deg, rgba(96,165,250,0.06), rgba(96,165,250,0.02))',
+              aspectRatio: '16 / 9',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow:
+                '0 1px 2px rgba(0,0,0,0.2), 0 30px 60px rgba(0,0,0,0.35)',
             }}
           >
-            {/* Soft blue glow underneath the screenshot for extra depth */}
-            <div
-              aria-hidden
-              style={{
-                position: 'absolute',
-                inset: '20px 40px -10px 40px',
-                background: 'radial-gradient(ellipse at center, rgba(37, 99, 235, 0.22), transparent 70%)',
-                filter: 'blur(36px)',
-                pointerEvents: 'none',
-                zIndex: 0,
-              }}
-            />
-
-            {/* The screenshot itself — tilted */}
-            <div
-              className="ext-frame"
-              style={{
-                position: 'relative',
-                borderRadius: 12,
-                overflow: 'hidden',
-                border: '1px solid rgba(15, 37, 69, 0.10)',
-                boxShadow: `
-                  0 1px 2px rgba(15, 37, 69, 0.04),
-                  0 6px 12px rgba(15, 37, 69, 0.06),
-                  0 18px 36px rgba(37, 99, 235, 0.14),
-                  0 40px 80px rgba(15, 23, 42, 0.18)
-                `,
-                zIndex: 1,
-              }}
-            >
-              <img
-                src={ChromeExtensionPic}
-                alt="Offerloop Chrome extension on a LinkedIn profile"
-                style={{ width: '100%', display: 'block', objectFit: 'cover', objectPosition: 'top left' }}
-              />
+            {/* TODO: replace with <video> when the demo is ready */}
+            <div style={{ textAlign: 'center' }}>
+              <div
+                aria-hidden
+                style={{
+                  width: 64,
+                  height: 64,
+                  borderRadius: '50%',
+                  background: 'rgba(37, 99, 235, 0.85)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px',
+                  boxShadow: '0 10px 40px rgba(37, 99, 235, 0.4)',
+                }}
+              >
+                <div
+                  style={{
+                    width: 0,
+                    height: 0,
+                    borderLeft: '14px solid #fff',
+                    borderTop: '9px solid transparent',
+                    borderBottom: '9px solid transparent',
+                    marginLeft: 4,
+                  }}
+                />
+              </div>
+              <p
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 13,
+                  color: '#94A8C2',
+                  margin: 0,
+                  letterSpacing: '0.04em',
+                }}
+              >
+                Demo video — coming soon
+              </p>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ═══════════════ COMPARISON ═══════════════ */}
-      <section id="comparison" style={{ borderTop: '1px solid #EEF2F8', background: '#ffffff' }}>
-        <TimeComparison />
+          {/* Demystifying line — single Agent mention on the page */}
+          <p
+            className="reveal"
+            style={{
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 16,
+              lineHeight: 1.6,
+              color: '#94A8C2',
+              textAlign: 'center',
+              margin: '0 auto 40px',
+              maxWidth: 560,
+              fontStyle: 'italic',
+            }}
+          >
+            Some people call it an agent. We call it a Loop. Either way, it&apos;s working while you do anything else.
+          </p>
+
+          {/* CTA */}
+          <div className="reveal" style={{ textAlign: 'center' }}>
+            <button
+              onClick={() => navigate('/signin?mode=signup')}
+              style={{
+                background: '#2563EB',
+                color: '#fff',
+                fontFamily: "'Libre Baskerville', Georgia, serif",
+                fontSize: 15,
+                fontWeight: 600,
+                padding: '14px 32px',
+                borderRadius: 3,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1D4ED8'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#2563EB'; }}
+            >
+              Start your first Loop
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* ═══════════════ CHAPTER III: FEATURES ═══════════════ */}
       <style>{`
-        .feature-frame {
-          transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-          transform: perspective(1400px) rotateY(0deg) rotateX(0deg);
+        .feature-card {
+          transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
         }
-        .feature-row.text-left .feature-frame {
-          transform: perspective(1400px) rotateY(-2deg) rotateX(1.5deg);
-        }
-        .feature-row.text-right .feature-frame {
-          transform: perspective(1400px) rotateY(2deg) rotateX(1.5deg);
-        }
-        .feature-row:hover .feature-frame {
-          transform: perspective(1400px) rotateY(0) rotateX(0) translateY(-4px);
+        .feature-card:hover {
+          transform: translateY(-4px);
           box-shadow:
             0 1px 2px rgba(15, 37, 69, 0.04),
-            0 8px 16px rgba(15, 37, 69, 0.08),
-            0 24px 48px rgba(37, 99, 235, 0.18),
-            0 56px 100px rgba(15, 23, 42, 0.22) !important;
+            0 14px 36px rgba(37, 99, 235, 0.12),
+            0 28px 64px rgba(15, 23, 42, 0.12);
         }
       `}</style>
       <section
         id="features"
-        className="relative px-6 md:px-12"
+        className="relative"
         style={{
-          padding: '96px 64px 88px',
+          padding: '96px 32px 96px',
           borderTop: '1px solid #EEF2F8',
           background:
             'radial-gradient(ellipse 90% 60% at 50% 40%, #E8F1FB 0%, #DCE7F7 100%)',
@@ -871,110 +840,344 @@ const Index = () => {
 
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
           <h2 className="reveal" style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-.025em', color: '#0f2545', marginBottom: 0 }}>
-            Everything You Need to <span style={{ color: '#2563EB' }}>Network Smarter</span>
+            Outreach, end to end.
           </h2>
           <div style={{ height: 1.5, background: 'linear-gradient(90deg, transparent, #2563EB, #60A5FA, transparent)', maxWidth: 240, margin: '14px auto 16px' }} />
         </div>
 
-        <div className="max-w-5xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 112, marginTop: 88, position: 'relative', zIndex: 1 }}>
+        <div
+          style={{
+            maxWidth: 1040,
+            margin: '64px auto 0',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
+            gap: 24,
+            position: 'relative',
+            zIndex: 1,
+          }}
+        >
           {[
-            { title: 'Find Hiring Managers', description: "Paste a job posting URL and we'll find the recruiters and hiring managers for that role.", image: FindHiringManagerImg },
-            { title: 'Manage Emails', description: "Track every email you've sent, see who opened it, who replied, and who needs a follow-up.", image: EmailOutreachImg },
-            { title: 'Coffee Chat Prep', description: "Paste a LinkedIn URL and get a personalized prep sheet with talking points, recent news, and smart questions.", image: CoffeeChatImg },
-            { title: 'Find Company', description: "Describe the type of companies you're looking for in plain English and we'll find them for you.", image: FindCompanyImg },
-          ].map((feature, i) => {
-            const isTextLeft = i % 2 === 0;
-            return (
-              <div
-                key={feature.title}
-                className={`reveal feature-row ${isTextLeft ? 'text-left' : 'text-right'}`}
+            {
+              title: "Search anyone, sorted by who's most likely to reply.",
+              description: 'Type a role, a company, or a school. We surface people who share your school, major, hometown, career path, etc. The ones with a reason to write back.',
+              image: FindHiringManagerImg,
+            },
+            {
+              title: 'Personalized emails, drafted into your Gmail.',
+              description: "We write the message using your commonalities. Drafts land in your real Gmail. Your account, your voice. Won't go to spam.",
+              image: EmailOutreachImg,
+            },
+            {
+              title: 'The moment someone replies, we take it from there.',
+              description: 'The tracker updates. A follow-up draft appears. Prep is ready before you need it.',
+              image: FindCompanyImg,
+            },
+            {
+              title: 'When the meeting gets booked, the prep is already done.',
+              description: 'Research, talking points, and questions worth asking. Generated the moment they say yes.',
+              image: CoffeeChatImg,
+            },
+          ].map((feature) => (
+            <div
+              key={feature.title}
+              className="reveal feature-card"
+              style={{
+                background: '#ffffff',
+                border: '1px solid rgba(15, 37, 69, 0.08)',
+                borderRadius: 20,
+                padding: 28,
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow:
+                  '0 1px 2px rgba(15, 37, 69, 0.03), 0 8px 28px rgba(15, 37, 69, 0.06)',
+              }}
+            >
+              <h3
                 style={{
-                  display: 'flex',
-                  flexDirection: isTextLeft ? 'row' : 'row-reverse',
-                  alignItems: 'center',
-                  gap: 64,
-                  flexWrap: 'wrap',
+                  fontFamily: "'Libre Baskerville', Georgia, serif",
+                  fontSize: 22,
+                  fontWeight: 400,
+                  lineHeight: 1.25,
+                  letterSpacing: '-0.012em',
+                  color: '#0f2545',
+                  margin: '0 0 12px',
                 }}
               >
-                {/* Text column */}
-                <div style={{ flex: '1 1 360px', minWidth: 0 }}>
-                  <h3
-                    style={{
-                      fontFamily: "'Libre Baskerville', Georgia, serif",
-                      fontSize: 'clamp(28px, 3.2vw, 38px)',
-                      fontWeight: 400,
-                      lineHeight: 1.1,
-                      letterSpacing: '-0.018em',
-                      color: '#0f2545',
-                      marginBottom: 16,
-                    }}
-                  >
-                    {feature.title}
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 17,
-                      lineHeight: 1.65,
-                      color: '#475569',
-                      margin: 0,
-                      maxWidth: 440,
-                    }}
-                  >
-                    {feature.description}
-                  </p>
-                </div>
+                {feature.title}
+              </h3>
+              <p
+                style={{
+                  fontFamily: "'Inter', sans-serif",
+                  fontSize: 15,
+                  lineHeight: 1.6,
+                  color: '#475569',
+                  margin: 0,
+                  flex: 1,
+                }}
+              >
+                {feature.description}
+              </p>
 
-                {/* Image column with depth + tilt */}
-                <div
+              {/* Inset media preview — swap to <video> when ready */}
+              <div
+                style={{
+                  marginTop: 24,
+                  aspectRatio: '16 / 10',
+                  borderRadius: 12,
+                  border: '1px solid rgba(15, 37, 69, 0.08)',
+                  overflow: 'hidden',
+                  background: '#F4F7FB',
+                }}
+              >
+                <img
+                  src={feature.image}
+                  alt={feature.title}
                   style={{
-                    flex: '1 1 460px',
-                    minWidth: 0,
-                    maxWidth: 560,
-                    perspective: '1400px',
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'top center',
+                    display: 'block',
                   }}
-                >
-                  <div
-                    className="feature-frame"
-                    style={{
-                      position: 'relative',
-                      borderRadius: 14,
-                      overflow: 'hidden',
-                      border: '1px solid rgba(15, 37, 69, 0.10)',
-                      boxShadow: `
-                        0 1px 2px rgba(15, 37, 69, 0.04),
-                        0 6px 14px rgba(15, 37, 69, 0.08),
-                        0 22px 44px rgba(37, 99, 235, 0.16),
-                        0 48px 88px rgba(15, 23, 42, 0.20)
-                      `,
-                      background: '#ffffff',
-                      transformStyle: 'preserve-3d',
-                    }}
-                  >
-                    <img
-                      src={feature.image}
-                      alt={feature.title}
-                      style={{ width: '100%', display: 'block', objectFit: 'cover' }}
-                    />
-                  </div>
-                </div>
+                />
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </section>
 
-      {/* ═══════════════ BULLETIN BOARD ═══════════════ */}
-      <BulletinBoard />
+      {/* ═══════════════ TIME SAVINGS (moved down — was above features) ═══════════════ */}
+      <section id="comparison" style={{ borderTop: '1px solid #EEF2F8', background: '#ffffff' }}>
+        <TimeComparison />
+      </section>
+
+      {/* ═══════════════ TRUST BAND ═══════════════ */}
+      <section style={{ background: '#ffffff', padding: '88px 32px', borderTop: '1px solid #EEF2F8', textAlign: 'center' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <h2
+            style={{
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 'clamp(28px, 4.5vw, 44px)',
+              fontWeight: 400,
+              lineHeight: 1.2,
+              letterSpacing: '-.02em',
+              color: '#0f2545',
+              margin: 0,
+            }}
+          >
+            Used by thousands of users and growing.
+          </h2>
+          <div
+            style={{
+              height: 1.5,
+              background:
+                'linear-gradient(90deg, transparent, #2563EB, #60A5FA, transparent)',
+              maxWidth: 200,
+              margin: '20px auto 0',
+            }}
+          />
+        </div>
+      </section>
+
+      {/* ═══════════════ FAQ ═══════════════ */}
+      <section
+        id="faq"
+        style={{
+          background: 'linear-gradient(180deg, #0B1F3D 0%, #0f2545 100%)',
+          borderTop: '1px solid #EEF2F8',
+          padding: '96px 32px 96px',
+        }}
+      >
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <h2
+            style={{
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 'clamp(32px, 5vw, 52px)',
+              fontWeight: 400,
+              lineHeight: 1.1,
+              letterSpacing: '-.025em',
+              color: '#FFFFFF',
+              textAlign: 'center',
+              margin: '0 0 56px',
+            }}
+          >
+            Questions you probably have.
+          </h2>
+
+          <style>{`
+            .faq-item summary { list-style: none; cursor: pointer; }
+            .faq-item summary::-webkit-details-marker { display: none; }
+            .faq-item summary::after {
+              content: '+';
+              float: right;
+              font-family: 'Inter', sans-serif;
+              font-size: 24px;
+              font-weight: 300;
+              color: #94A8C2;
+              line-height: 1;
+              transition: transform 0.2s ease;
+            }
+            .faq-item[open] summary::after { content: '−'; color: #60A5FA; }
+            .faq-item summary:hover { color: #60A5FA; }
+          `}</style>
+
+          <div>
+            {[
+              {
+                q: "How do you find people's emails?",
+                a: "We pull from a database of 2.2 billion verified contacts and verify the email before showing it to you. If we can't verify, we tell you.",
+              },
+              {
+                q: 'Is this just AI spam?',
+                a: "No. Every draft is written from your resume and the contact's background. You review it in Gmail before it sends. AI handles the typing; the message is yours.",
+              },
+              {
+                q: "What's free vs paid?",
+                a: 'Free gives you 5 contacts per search and 300 credits a month. Pro and Elite raise the limits and unlock advanced search, resume tools, and prep. Full details on the pricing page.',
+              },
+              {
+                q: 'How is this different from LinkedIn, Apollo, or coaching?',
+                a: 'LinkedIn has the data but not the emails. Apollo has the emails but is built for sales teams. Coaching gives you advice in a PDF. Offerloop does all three.',
+              },
+              {
+                q: 'Will my Gmail get flagged?',
+                a: 'Drafts land in your own Gmail. You send them yourself, one at a time. Volume stays low enough that Gmail treats them like the personal emails they are.',
+              },
+              {
+                q: 'What happens after someone replies?',
+                a: 'The tracker advances, a follow-up draft is ready, and a prep PDF generates with research on the person. You walk in prepared.',
+              },
+              {
+                q: 'Can I edit drafts before sending?',
+                a: "Yes. The draft is in your Gmail. Rewrite, swap, scrap, start over. It's your account.",
+              },
+              {
+                q: 'What does Offerloop cost?',
+                a: 'Free is always free. Pro and Elite are monthly subscriptions. See the pricing page for current numbers.',
+                pricingLink: true,
+              },
+            ].map((item) => (
+              <details
+                key={item.q}
+                className="faq-item"
+                style={{
+                  borderBottom: '1px solid rgba(96, 165, 250, 0.18)',
+                  padding: '24px 0',
+                }}
+              >
+                <summary
+                  style={{
+                    fontFamily: "'Libre Baskerville', Georgia, serif",
+                    fontSize: 19,
+                    fontWeight: 400,
+                    color: '#FFFFFF',
+                    transition: 'color 0.15s ease',
+                  }}
+                >
+                  {item.q}
+                </summary>
+                <p
+                  style={{
+                    fontFamily: "'Inter', sans-serif",
+                    fontSize: 16,
+                    lineHeight: 1.7,
+                    color: '#94A8C2',
+                    margin: '16px 0 0',
+                    maxWidth: 640,
+                  }}
+                >
+                  {item.a}
+                  {item.pricingLink && (
+                    <>
+                      {' '}
+                      <Link to="/pricing" style={{ color: '#60A5FA', textDecoration: 'underline', textUnderlineOffset: 3 }}>
+                        See pricing
+                      </Link>
+                      .
+                    </>
+                  )}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ FOOTER CTA ═══════════════ */}
+      <section
+        style={{
+          background: 'radial-gradient(ellipse 90% 70% at 50% 50%, #EEF4FD 0%, #DCE7F7 100%)',
+          borderTop: '1px solid #EEF2F8',
+          padding: '120px 32px',
+          textAlign: 'center',
+        }}
+      >
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <h2
+            style={{
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 'clamp(40px, 6vw, 64px)',
+              fontWeight: 400,
+              lineHeight: 1.1,
+              letterSpacing: '-.025em',
+              color: '#0f2545',
+              margin: '0 0 40px',
+            }}
+          >
+            Find them. Reach them. Hear back.
+          </h2>
+          <button
+            onClick={() => navigate('/signin?mode=signup')}
+            style={{
+              background: '#2563EB',
+              color: '#fff',
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 15,
+              fontWeight: 600,
+              padding: '14px 32px',
+              borderRadius: 3,
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#1D4ED8'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#2563EB'; }}
+          >
+            Create account
+          </button>
+          <p
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 13,
+              color: '#64748b',
+              margin: '20px 0 0',
+            }}
+          >
+            Free. No credit card. 5 contacts in your first search.
+          </p>
+        </div>
+      </section>
 
       {/* FOOTER */}
       <footer style={{ background: '#ffffff', borderTop: '1px solid #EEF2F8' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', padding: '64px 32px 0' }}>
           {/* Top: Logo + Link Columns */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: 64, alignItems: 'start' }}>
-            {/* Logo */}
+            {/* Logo + brand line */}
             <div>
               <img src={OfferloopLogo} alt="Offerloop" style={{ height: 160, cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
+              <p
+                style={{
+                  fontFamily: "'Libre Baskerville', Georgia, serif",
+                  fontSize: 14,
+                  color: '#64748b',
+                  margin: '8px 0 0',
+                  maxWidth: 280,
+                  lineHeight: 1.5,
+                }}
+              >
+                Find them. Reach them. Hear back.
+              </p>
             </div>
 
             {/* Features */}

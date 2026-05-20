@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import './TimeComparison.css';
 
 const scales = [
-  { bad: { num: '20 min', desc: 'Finding one person\'s email' }, good: { num: '~3 sec', desc: 'Verified email, instantly' }, noStrike: false },
-  { bad: { num: '15 min', desc: 'Writing one personalized email' }, good: { num: '~10 sec', desc: 'AI-drafted and in your Gmail' }, noStrike: false },
-  { bad: { num: '45 min', desc: 'Prepping for one coffee chat' }, good: { num: '~30 sec', desc: 'Full prep sheet with talking points' }, noStrike: false },
-  { bad: { num: '5 min', desc: 'Logging each contact to a spreadsheet' }, good: { num: '0 sec', desc: 'Auto-tracked the moment you search' }, noStrike: false },
-  { bad: { num: '1 hr 25 min', desc: 'Total time per contact, manually' }, good: { num: '< 1 min', desc: 'Same contact, fully handled' }, noStrike: true },
+  { bad: { num: '2 hrs', desc: 'Finding 12 people on LinkedIn' }, good: { num: '~30 sec', desc: '12 verified emails, instantly' }, noStrike: false },
+  { bad: { num: '3 hrs', desc: 'Writing 12 personalized emails' }, good: { num: '~2 min', desc: '12 drafts in your Gmail' }, noStrike: false },
+  { bad: { num: '4 hr 30 min', desc: 'Prepping for 12 meetings' }, good: { num: '~2 min', desc: '12 full prep sheets, talking points included' }, noStrike: false },
+  { bad: { num: '30 min', desc: 'Logging 12 contacts to a spreadsheet' }, good: { num: '0 sec', desc: 'Auto-tracked the moment you search' }, noStrike: false },
+  { bad: { num: '10 hrs', desc: 'A full weekend, manually' }, good: { num: '< 5 min', desc: "Same weekend's work, fully handled" }, noStrike: true },
 ];
 
 export default function TimeComparison() {
@@ -81,7 +81,7 @@ export default function TimeComparison() {
   return (
     <div className="tc-wrap" ref={wrapRef}>
       <div className="tc-heading">
-        Where your time<br />actually goes.
+        What used to take a weekend.<br />Now takes minutes.
       </div>
       <div style={{ height: 1.5, background: 'linear-gradient(90deg, #2563EB, #60A5FA, transparent)', maxWidth: 200, margin: '0 auto 28px' }} />
 
@@ -121,17 +121,17 @@ export default function TimeComparison() {
         <div className="tc-score-top">
           <div className="tc-score-side without">
             <div className="tc-score-label">Without Offerloop</div>
-            <div className="tc-score-total">1 hr 25 min</div>
-            <div className="tc-score-sub">per contact, manually</div>
+            <div className="tc-score-total">10 hrs</div>
+            <div className="tc-score-sub">per weekend, manually</div>
           </div>
           <div className="tc-score-side with">
             <div className="tc-score-label">With Offerloop</div>
-            <div className="tc-score-total">&lt; 1 min</div>
-            <div className="tc-score-sub">same contact, done</div>
+            <div className="tc-score-total">&lt; 5 min</div>
+            <div className="tc-score-sub">same weekend, done</div>
           </div>
         </div>
         <div className="tc-score-bottom">
-          <div className="tc-score-bottom-text">That's <span>84 minutes back</span> — per contact you reach out to.</div>
+          <div className="tc-score-bottom-text">That's <span>10 hours back</span>, every weekend.</div>
         </div>
       </div>
     </div>

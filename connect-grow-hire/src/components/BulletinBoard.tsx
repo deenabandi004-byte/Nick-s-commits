@@ -65,11 +65,7 @@ export default function BulletinBoard() {
   );
 
   return (
-    <section className="bb-section" id="testimonials">
-      <h2 className="bb-heading">Be the next to land your offer.</h2>
-      <div className="bb-rule" />
-      <p className="bb-sub">Real students. Real outreach. Real offers.</p>
-
+    <section className="bb-section">
       <div className="bb-grid">
         {visibleNotes.map(renderNote)}
       </div>

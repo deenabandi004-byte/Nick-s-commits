@@ -92,7 +92,7 @@ const DEMO_ROWS: DemoRow[] = [
     avatarBg: '#BBF7D0',
     sender: 'Aidan Murphy',
     email: 'amurphy@bain.com',
-    subject: 'Fellow Trojan — 15 min coffee chat?',
+    subject: 'Fellow Trojan, 15 min coffee chat?',
     preview: "Hi Aidan, as a fellow USC student heading into consulting…",
     time: '38m',
     final: 'replied',
@@ -112,7 +112,7 @@ const DEMO_ROWS: DemoRow[] = [
     avatarBg: '#FBCFE8',
     sender: 'Priya Sharma',
     email: 'priya.sharma@bcg.com',
-    subject: 'BCG consulting — 15 min chat',
+    subject: 'BCG consulting, 15 min chat',
     preview: "Hi Priya, saw your recent work on the retail practice…",
     time: '3h',
     final: 'replied',
@@ -454,59 +454,36 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
       <div className="hsc-grid">
         {/* ═════════════ LEFT: pitch + prompt input ═════════════ */}
         <div className="hsc-left">
-          {/* Small eyebrow pill */}
-          <div
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 7,
-              padding: '6px 13px',
-              borderRadius: 100,
-              background: 'rgba(37, 99, 235, 0.08)',
-              border: '1px solid rgba(37, 99, 235, 0.18)',
-              marginBottom: 26,
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 12.5,
-              fontWeight: 600,
-              color: '#2563EB',
-              letterSpacing: '0.01em',
-            }}
-          >
-            <Sparkles size={12} strokeWidth={2.6} />
-            Made for students chasing their first offer
-          </div>
-
-          {/* Headline — strict two lines, parallel structure */}
+          {/* Headline — two parallel phrases, product loop */}
           <h1
             style={{
               fontFamily: "'Libre Baskerville', Georgia, serif",
-              fontSize: 'clamp(36px, 3.6vw, 50px)',
+              fontSize: 'clamp(44px, 4.4vw, 64px)',
               fontWeight: 400,
-              lineHeight: 1.12,
+              lineHeight: 1.1,
               letterSpacing: '-0.02em',
               color: '#0f2545',
               margin: 0,
-              whiteSpace: 'nowrap',
             }}
           >
-            We do the <span style={{ color: '#2563EB' }}>outreach</span>
+            Reach anyone.
             <br />
-            You land the <span style={{ color: '#2563EB' }}>offer</span>
+            Track every conversation.
           </h1>
 
-          {/* Subheadline — conversational, no em dashes */}
+          {/* Subheadline — names mechanisms */}
           <p
             style={{
               fontFamily: "'Inter', sans-serif",
               fontSize: 17,
               lineHeight: 1.6,
               color: '#475569',
-              maxWidth: 500,
+              maxWidth: 540,
               margin: '24px 0 32px',
             }}
           >
-            Tell us who you want to meet. We write personalized intros in your
-            Gmail and track every reply for you.
+            Tell us who you want to meet. We find them, draft the message, and
+            manage every reply, follow-up, and meeting prep.
           </p>
 
           {/* Prompt input — larger, with a typewriter placeholder */}
@@ -1150,7 +1127,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                                 textOverflow: 'ellipsis',
                               }}
                             >
-                              — {row.preview}
+                              · {row.preview}
                             </span>
                           )}
                         </div>

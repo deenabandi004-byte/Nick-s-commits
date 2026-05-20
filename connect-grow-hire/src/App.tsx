@@ -25,6 +25,7 @@ import UscBeta from "@/pages/UscBeta";
 
 // Lazy load heavy pages for code splitting
 const AboutUs = React.lazy(() => import("./pages/AboutUs"));
+const ForStudents = React.lazy(() => import("./pages/ForStudents"));
 const NetworkTracker = React.lazy(() => import("./pages/NetworkTracker"));
 const CompanyTrackerPage = React.lazy(() => import("./pages/CompanyTrackerPage"));
 const CalendarPage = React.lazy(() => import("./pages/CalendarPage"));
@@ -82,6 +83,7 @@ const ColdEmailGuidePage = React.lazy(() => import("./pages/ColdEmailGuidePage")
 const CoffeeChatGuidePage = React.lazy(() => import("./pages/CoffeeChatGuidePage"));
 const RoleNetworkingGuidePage = React.lazy(() => import("./pages/RoleNetworkingGuidePage"));
 const CompanyComparisonPage = React.lazy(() => import("./pages/CompanyComparisonPage"));
+const CoffeeChatPrepPreview = React.lazy(() => import("./pages/seo-preview/CoffeeChatPrepPreview"));
 
 // Optimized QueryClient with caching
 const queryClient = new QueryClient({
@@ -321,6 +323,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/compare/apollo" element={<Suspense fallback={<PageLoader />}><CompareApollo /></Suspense>} />
       <Route path="/compare/chatgpt" element={<Suspense fallback={<PageLoader />}><CompareChatGPT /></Suspense>} />
 
+      {/* SEO format preview — not linked, not in sitemap, noindex */}
+      <Route path="/seo-preview/coffee-chat-mckinsey" element={<Suspense fallback={<PageLoader />}><CoffeeChatPrepPreview /></Suspense>} />
+
       {/* SEO Landing Pages */}
       <Route path="/cold-email-consulting" element={<Suspense fallback={<PageLoader />}><ColdEmailConsulting /></Suspense>} />
       <Route path="/cold-email-investment-banking" element={<Suspense fallback={<PageLoader />}><ColdEmailBanking /></Suspense>} />
@@ -339,6 +344,7 @@ const AppRoutes: React.FC = () => {
 
       {/* Public informational pages */}
       <Route path="/about" element={<Suspense fallback={<PageLoader />}><AboutUs /></Suspense>} />
+      <Route path="/for-students" element={<Suspense fallback={<PageLoader />}><ForStudents /></Suspense>} />
       <Route path="/contact" element={<Suspense fallback={<PageLoader />}><Contact /></Suspense>} />
       <Route path="/contact-us" element={<Suspense fallback={<PageLoader />}><ContactUs /></Suspense>} />
 

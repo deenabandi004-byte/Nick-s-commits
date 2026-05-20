@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
-import { Check, ArrowLeft, Settings, Shield, ChevronDown, X } from "lucide-react";
+import { Check, ArrowLeft, Settings, Shield, ChevronDown, X, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
+import OfferloopLogo from '@/assets/offerloop_logo2.png';
 import { loadStripe } from "@stripe/stripe-js";
 import { getAuth } from 'firebase/auth';
 import { BACKEND_URL } from '@/services/api';
@@ -145,6 +146,8 @@ const Pricing = () => {
   // Stripe Price IDs (only ones wired); list-price checkout will be wired when
   // STRIPE_*_LIST_PRICE_ID env vars are added.
   const [showStudentPrice, setShowStudentPrice] = useState(true);
+  const [navbarScrolled, setNavbarScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { user, updateUser, checkCredits } = useFirebaseAuth();
   const isStudent = Boolean(user?.isStudent);
@@ -157,6 +160,12 @@ const Pricing = () => {
       fetchSubscriptionStatus();
     }
   }, [user]);
+
+  useEffect(() => {
+    const handleScroll = () => setNavbarScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const fetchSubscriptionStatus = async () => {
     try {
@@ -448,18 +457,100 @@ const Pricing = () => {
         <meta name="description" content="Students save ~50% with a .edu email. Pro $14.99/mo, Elite $34.99/mo, plus annual plans. Offerloop helps college students network into consulting, investment banking, and tech." />
         <link rel="canonical" href="https://offerloop.ai/pricing" />
       </Helmet>
+
+      {/* Pill header — logged-out (marketing) visitors only. In-app pricing keeps its own nav. */}
+      {!user && (
+        <>
+          <div className="fixed top-0 left-0 right-0 z-50 flex justify-center" style={{ padding: '12px 24px 8px' }}>
+            <header
+              className="flex items-center justify-between w-full h-12 px-5 md:px-6"
+              style={{
+                maxWidth: '860px',
+                width: '100%',
+                boxSizing: 'border-box',
+                marginBottom: '4px',
+                background: navbarScrolled ? 'rgba(255,255,255,0.96)' : 'rgba(255,255,255,0.88)',
+                backdropFilter: 'blur(16px) saturate(1.4)',
+                WebkitBackdropFilter: 'blur(16px) saturate(1.4)',
+                border: '1px solid rgba(37,99,235,0.1)',
+                borderRadius: '100px',
+                boxShadow: navbarScrolled ? '0 2px 16px rgba(37,99,235,0.08)' : '0 1px 8px rgba(0,0,0,0.03)',
+                transition: 'all 0.3s ease',
+                overflow: 'visible',
+              }}
+            >
+              <div className="flex items-center">
+                <img src={OfferloopLogo} alt="Offerloop" className="h-16 cursor-pointer logo-animate" onClick={() => navigate('/')} />
+              </div>
+
+              <nav className="hidden md:flex items-center gap-5" style={{ flexShrink: 1, minWidth: 0 }}>
+                <Link to="/for-students" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+                  For Students
+                </Link>
+                <Link to="/pricing" className="nav-link text-sm relative" style={{ color: '#2563EB', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+                  Pricing
+                </Link>
+                <Link to="/about" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+                  About
+                </Link>
+              </nav>
+
+              <div className="hidden md:flex items-center gap-3" style={{ flexShrink: 0 }}>
+                <button
+                  onClick={() => navigate('/signin?mode=signin')}
+                  style={{ background: 'transparent', color: '#0F172A', fontSize: '13px', fontWeight: 600, fontFamily: "'Libre Baskerville', Georgia, serif", padding: '8px 20px', borderRadius: '100px', border: '1px solid rgba(37,99,235,0.2)', cursor: 'pointer', transition: 'all 0.15s ease' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.35)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.2)'; }}
+                >
+                  Sign in
+                </button>
+                <button
+                  onClick={() => navigate('/signin?mode=signup')}
+                  style={{ background: '#2563EB', color: '#fff', fontSize: '13px', fontWeight: 600, fontFamily: "'Libre Baskerville', Georgia, serif", padding: '8px 20px', borderRadius: '3px', border: 'none', cursor: 'pointer', transition: 'background 0.15s ease', flexShrink: 0, whiteSpace: 'nowrap' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1D4ED8'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = '#2563EB'; }}
+                >
+                  Create account
+                </button>
+              </div>
+
+              <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2" style={{ color: '#4A5E80' }}>
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </header>
+          </div>
+
+          {mobileMenuOpen && (
+            <div className="fixed top-[72px] left-4 right-4 md:hidden z-40" style={{ background: 'rgba(255,255,255,0.98)', border: '1px solid rgba(37,99,235,0.1)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(37,99,235,0.08)', backdropFilter: 'blur(16px)' }}>
+              <nav className="flex flex-col p-3 gap-1">
+                <Link to="/for-students" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>For Students</Link>
+                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#2563EB', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>Pricing</Link>
+                <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>About</Link>
+                <div className="border-t mt-2 pt-2" style={{ borderColor: 'rgba(37,99,235,0.08)' }}>
+                  <button onClick={() => { navigate('/signin?mode=signup'); setMobileMenuOpen(false); }} className="w-full text-center py-3 text-sm font-semibold" style={{ background: '#2563EB', color: '#fff', borderRadius: '3px', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Create account</button>
+                </div>
+              </nav>
+            </div>
+          )}
+
+          <div className="h-20" />
+        </>
+      )}
+
       <div className="w-full px-3 py-6 sm:px-6 sm:py-12" style={{ maxWidth: '900px', margin: '0 auto' }}>
 
-        {/* Back Navigation — logged-out visitors go home, logged-in visitors go to Find */}
-        <div className="mb-8 animate-fadeInUp">
-          <button
-            onClick={() => navigate(user ? "/find" : "/")}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">{user ? "Find people" : "Back to Offerloop"}</span>
-          </button>
-        </div>
+        {/* Back Navigation — in-app (logged-in) visitors only. Marketing visitors use the pill header. */}
+        {user && (
+          <div className="mb-8 animate-fadeInUp">
+            <button
+              onClick={() => navigate("/find")}
+              className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span className="font-medium">Find people</span>
+            </button>
+          </div>
+        )}
 
         {/* Subscription Status Banner */}
         {hasActiveSubscription && (
@@ -500,14 +591,14 @@ const Pricing = () => {
         {/* Header Section */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1
-            className="text-[28px] sm:text-[42px]"
             style={{
-              fontFamily: "'Lora', Georgia, serif",
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 'clamp(36px, 5.5vw, 56px)',
               fontWeight: 400,
               letterSpacing: '-0.025em',
               color: '#0F172A',
               textAlign: 'center',
-              marginBottom: '10px',
+              marginBottom: '14px',
               lineHeight: 1.1,
             }}
           >
@@ -517,7 +608,7 @@ const Pricing = () => {
             style={{
               fontFamily: "'DM Sans', system-ui, sans-serif",
               fontSize: '16px',
-              color: '#64748B',
+              color: '#0F172A',
               textAlign: 'center',
               marginBottom: '12px',
               lineHeight: 1.5,
