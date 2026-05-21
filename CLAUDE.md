@@ -19,6 +19,7 @@ These rules are absolute. They apply to all code, UI copy, comments, docs, blog 
 1. **No em dashes.** Never use the em dash character (Unicode U+2014). Use a comma, parentheses, a colon, or a spaced hyphen ` - ` instead. This includes generated content and the text of prompts sent to LLMs.
 2. **No Sparkles / sparkle / ✨ icon.** Do not import or render the lucide `Sparkles` or `Sparkle` icon, and do not use the ✨ emoji in the UI. It reads as generic AI slop. Pick a concrete icon that names the actual function instead, for example `Lightbulb` for suggestions, `Bot` for the Scout assistant, `TrendingUp` for optimization, `FileText` for documents, `Target` for fit analysis.
 3. **The feature is "Meeting Prep"** (formerly "Coffee Chat Prep"). Use "meeting", not "coffee chat", in all new copy and identifiers. The only exceptions are three legacy persisted identifiers documented under Known Fragile Areas.
+4. **Color is a signal, not decoration.** The authenticated app interior is cool-slate neutral with brand blue `#3B82F6` as the single accent (primary actions, links, active and selected states); status colors (green / amber / red) carry meaning only. Do not add new accent hues, warm or navy greys, gradients on functional UI, or saturated card / panel fills. Prefer the canonical `--c-*` tokens defined in `connect-grow-hire/src/index.css` over raw hex. Marketing and landing pages are exempt and keep their existing palette and gradients. Run `scripts/check-app-colors.sh` to catch regressions.
 
 ---
 
