@@ -925,7 +925,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
           gap: 6,
           padding: '5px 10px',
           background: '#ffffff',
-          borderBottom: '1px solid #e5e5e3',
+          borderBottom: '1px solid #E2E8F0',
         }}
       >
         {/* Search */}
@@ -938,7 +938,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             style={{
               fontFamily: mono, fontSize: 12, color: '#2a2a2a',
-              background: '#ffffff', border: '1px solid #e5e5e3',
+              background: '#ffffff', border: '1px solid #E2E8F0',
               outline: 'none', padding: '4px 6px 4px 24px', width: '100%',
             }}
           />
@@ -953,7 +953,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
           className="contact-directory-export-btn disabled:opacity-40"
           style={{
             fontFamily: mono, fontSize: 11,
-            border: '1px solid #e5e5e3', background: '#fff', color: '#555',
+            border: '1px solid #E2E8F0', background: '#fff', color: '#555',
             padding: '4px 10px', cursor: 'pointer',
             display: 'inline-flex', alignItems: 'center', gap: 4,
           }}
@@ -965,7 +965,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
           disabled={isLoading}
           className="disabled:opacity-40"
           style={{
-            border: '1px solid #e5e5e3', background: '#fff', color: '#555',
+            border: '1px solid #E2E8F0', background: '#fff', color: '#555',
             padding: '4px 8px', cursor: 'pointer',
           }}
         >
@@ -995,20 +995,20 @@ const SpreadsheetContactDirectory: React.FC = () => {
           display: 'flex',
           alignItems: 'center',
           height: 26,
-          borderBottom: '1px solid #e5e5e3',
+          borderBottom: '1px solid #E2E8F0',
           background: '#ffffff',
         }}
       >
         <div style={{
           width: 60, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: '#ffffff', borderRight: '1px solid #e5e5e3',
+          background: '#ffffff', borderRight: '1px solid #E2E8F0',
           fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', color: '#2a2a2a',
           fontFamily: mono,
         }}>
           {getActiveCellRef()}
         </div>
         <div style={{
-          padding: '0 10px', borderRight: '1px solid #e5e5e3',
+          padding: '0 10px', borderRight: '1px solid #E2E8F0',
           fontSize: 11, color: '#bbb', fontStyle: 'italic', fontFamily: mono,
           display: 'flex', alignItems: 'center', height: '100%',
         }}>
@@ -1041,7 +1041,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
               onClick={() => navigate('/find')}
               style={{
                 fontFamily: mono, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.05em',
-                border: '1px solid #e5e5e3', background: '#fff', color: '#555',
+                border: '1px solid #E2E8F0', background: '#fff', color: '#555',
                 padding: '6px 14px', cursor: 'pointer',
               }}
             >
@@ -1053,11 +1053,11 @@ const SpreadsheetContactDirectory: React.FC = () => {
             <table className="contact-directory-table" style={{ width: '100%', minWidth: 1000, borderCollapse: 'collapse', fontFamily: mono }}>
               {/* Column Letter Row */}
               <thead>
-                <tr style={{ borderBottom: '1px solid #e5e5e3' }}>
+                <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
                   {/* Gutter */}
-                  <th style={{ width: GUTTER_W, background: '#ffffff', borderRight: '1px solid #e5e5e3', padding: 0 }} />
+                  <th style={{ width: GUTTER_W, background: '#ffffff', borderRight: '1px solid #E2E8F0', padding: 0 }} />
                   {/* Checkbox */}
-                  <th style={{ width: CHECKBOX_W, background: '#ffffff', borderRight: '1px solid #e5e5e3', padding: 0 }} />
+                  <th style={{ width: CHECKBOX_W, background: '#ffffff', borderRight: '1px solid #E2E8F0', padding: 0 }} />
                   {COL_DEFS.map((col) => {
                     const isActiveCol = activeCell?.col === col.key;
                     return (
@@ -1067,7 +1067,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                           fontSize: 10, color: isActiveCol ? '#2a2a2a' : '#999',
                           fontWeight: isActiveCol ? 500 : 400,
                           background: isActiveCol ? '#f0f0ee' : '#ffffff',
-                          borderRight: '1px solid #e5e5e3',
+                          borderRight: '1px solid #E2E8F0',
                           textAlign: 'center', padding: '3px 0',
                           width: col.width,
                         }}
@@ -1081,10 +1081,10 @@ const SpreadsheetContactDirectory: React.FC = () => {
                 </tr>
 
                 {/* Column Label Row */}
-                <tr style={{ borderBottom: '2px solid #e5e5e3' }}>
+                <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
                   {/* Gutter header */}
                   <th style={{
-                    width: GUTTER_W, background: '#F8FAFC', borderRight: '1px solid #e5e5e3',
+                    width: GUTTER_W, background: '#F8FAFC', borderRight: '1px solid #E2E8F0',
                     fontSize: 10, color: '#64748B', textAlign: 'center', padding: '11px 0',
                     position: 'sticky', top: 0, zIndex: 10,
                   }}>
@@ -1092,7 +1092,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                   </th>
                   {/* Checkbox header */}
                   <th style={{
-                    width: CHECKBOX_W, background: '#F8FAFC', borderRight: '1px solid #e5e5e3',
+                    width: CHECKBOX_W, background: '#F8FAFC', borderRight: '1px solid #E2E8F0',
                     textAlign: 'center', padding: '11px 4px',
                     position: 'sticky', top: 0, zIndex: 10,
                   }}>
@@ -1158,7 +1158,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                           width: GUTTER_W, textAlign: 'center', fontSize: 10,
                           color: isSelected ? '#fff' : '#999',
                           background: isSelected ? '#2563EB' : '#ffffff',
-                          borderRight: '1px solid #e5e5e3',
+                          borderRight: '1px solid #E2E8F0',
                           padding: '0 4px',
                           transition: 'background 0.08s, color 0.08s',
                         }}
@@ -1169,7 +1169,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                       </td>
 
                       {/* Checkbox */}
-                      <td style={{ width: CHECKBOX_W, textAlign: 'center', borderRight: '1px solid #e5e5e3', padding: '0 4px' }}>
+                      <td style={{ width: CHECKBOX_W, textAlign: 'center', borderRight: '1px solid #E2E8F0', padding: '0 4px' }}>
                         <input
                           type="checkbox"
                           checked={isSelected}
@@ -1503,7 +1503,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
           alignItems: 'stretch',
           height: 30,
           background: '#ffffff',
-          borderTop: '1px solid #e5e5e3',
+          borderTop: '1px solid #E2E8F0',
           fontFamily: mono,
         }}
       >
@@ -1511,7 +1511,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
         <div
           style={{
             width: 32, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            borderRight: '1px solid #e5e5e3', fontSize: 16, color: '#bbb', cursor: 'pointer',
+            borderRight: '1px solid #E2E8F0', fontSize: 16, color: '#bbb', cursor: 'pointer',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = '#555'; }}
           onMouseLeave={(e) => { e.currentTarget.style.color = '#bbb'; }}
@@ -1538,7 +1538,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                 fontWeight: isActive ? 600 : 400,
                 background: isActive ? '#EFF6FF' : 'transparent',
                 borderTop: isActive ? '2px solid #2563EB' : '2px solid transparent',
-                borderRight: '1px solid #e5e5e3',
+                borderRight: '1px solid #E2E8F0',
                 marginTop: -1,
               }}
             >
@@ -1561,7 +1561,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
       {/* Mail App Selection Dialog */}
       {mailAppDialogOpen && selectedContactForEmail && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div style={{ background: '#fff', border: '1px solid #e5e5e3', padding: 24, maxWidth: 400, width: '100%', margin: '0 16px' }}>
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', padding: 24, maxWidth: 400, width: '100%', margin: '0 16px' }}>
             <h3 style={{ fontSize: 14, fontWeight: 500, color: '#2a2a2a', marginBottom: 12, fontFamily: mono }}>Choose Email App</h3>
             <p style={{ fontSize: 12, color: '#555', marginBottom: 20, fontFamily: mono }}>
               Send email to {getDisplayName(selectedContactForEmail)}
@@ -1571,7 +1571,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
               <button
                 onClick={() => handleMailAppSelect('apple')}
                 style={{
-                  flex: 1, padding: '16px 0', border: '1px solid #e5e5e3', background: '#fff',
+                  flex: 1, padding: '16px 0', border: '1px solid #E2E8F0', background: '#fff',
                   cursor: 'pointer', fontFamily: mono, fontSize: 12, color: '#555',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                 }}
@@ -1584,7 +1584,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
               <button
                 onClick={() => handleMailAppSelect('gmail')}
                 style={{
-                  flex: 1, padding: '16px 0', border: '1px solid #e5e5e3', background: '#fff',
+                  flex: 1, padding: '16px 0', border: '1px solid #E2E8F0', background: '#fff',
                   cursor: 'pointer', fontFamily: mono, fontSize: 12, color: '#555',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                 }}

@@ -640,14 +640,14 @@ const RecruiterSpreadsheet: React.FC = () => {
       {/* Toolbar */}
       <div className="recruiter-toolbar" style={{
         flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6,
-        padding: '5px 10px', background: '#ffffff', borderBottom: '1px solid #e5e5e3',
+        padding: '5px 10px', background: '#ffffff', borderBottom: '1px solid #E2E8F0',
       }}>
         <div className="relative recruiter-search-wrap" style={{ flex: '0 0 220px' }}>
           <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3" style={{ color: '#bbb' }} />
           <input
             type="text" placeholder="Search..." value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ fontFamily: mono, fontSize: 12, color: '#2a2a2a', background: '#fff', border: '1px solid #e5e5e3', outline: 'none', padding: '4px 6px 4px 24px', width: '100%' }}
+            style={{ fontFamily: mono, fontSize: 12, color: '#2a2a2a', background: '#fff', border: '1px solid #E2E8F0', outline: 'none', padding: '4px 6px 4px 24px', width: '100%' }}
           />
         </div>
         <div style={{ flex: 1 }} />
@@ -655,12 +655,12 @@ const RecruiterSpreadsheet: React.FC = () => {
           onClick={handleExportCsv}
           disabled={recruiters.length === 0 || currentUser?.tier === 'free'}
           className="disabled:opacity-40"
-          style={{ fontFamily: mono, fontSize: 11, border: '1px solid #e5e5e3', background: '#fff', color: '#555', padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+          style={{ fontFamily: mono, fontSize: 11, border: '1px solid #E2E8F0', background: '#fff', color: '#555', padding: '4px 10px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
         >
           <Download className="h-3 w-3" /> Export CSV
         </button>
         <button onClick={loadRecruiters} disabled={isLoading} className="disabled:opacity-40"
-          style={{ border: '1px solid #e5e5e3', background: '#fff', color: '#555', padding: '4px 8px', cursor: 'pointer' }}>
+          style={{ border: '1px solid #E2E8F0', background: '#fff', color: '#555', padding: '4px 8px', cursor: 'pointer' }}>
           <RefreshCw className="h-3.5 w-3.5" />
         </button>
         <button onClick={clearAllRecruiters} disabled={recruiters.length === 0} className="disabled:opacity-40"
@@ -674,11 +674,11 @@ const RecruiterSpreadsheet: React.FC = () => {
       </div>
 
       {/* Formula Bar */}
-      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', height: 26, borderBottom: '1px solid #e5e5e3', background: '#fff' }}>
-        <div style={{ width: 60, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff', borderRight: '1px solid #e5e5e3', fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', color: '#2a2a2a', fontFamily: mono }}>
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', height: 26, borderBottom: '1px solid #E2E8F0', background: '#fff' }}>
+        <div style={{ width: 60, height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#ffffff', borderRight: '1px solid #E2E8F0', fontSize: 11, fontWeight: 500, letterSpacing: '0.08em', color: '#2a2a2a', fontFamily: mono }}>
           {getActiveCellRef()}
         </div>
-        <div style={{ padding: '0 10px', borderRight: '1px solid #e5e5e3', fontSize: 11, color: '#bbb', fontStyle: 'italic', fontFamily: mono, display: 'flex', alignItems: 'center', height: '100%' }}>fx</div>
+        <div style={{ padding: '0 10px', borderRight: '1px solid #E2E8F0', fontSize: 11, color: '#bbb', fontStyle: 'italic', fontFamily: mono, display: 'flex', alignItems: 'center', height: '100%' }}>fx</div>
         <div style={{ flex: 1, padding: '0 10px', fontSize: 12, color: '#2a2a2a', fontFamily: mono, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', height: '100%' }}>
           {getActiveCellValue()}
         </div>
@@ -700,12 +700,12 @@ const RecruiterSpreadsheet: React.FC = () => {
             <table className="recruiter-table" style={{ width: '100%', minWidth: 1100, borderCollapse: 'collapse', fontFamily: mono }}>
               <thead>
                 {/* Column Letter Row */}
-                <tr style={{ borderBottom: '1px solid #e5e5e3' }}>
-                  <th style={{ width: GUTTER_W, background: '#ffffff', borderRight: '1px solid #e5e5e3', padding: 0 }} />
+                <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                  <th style={{ width: GUTTER_W, background: '#ffffff', borderRight: '1px solid #E2E8F0', padding: 0 }} />
                   {REC_COLS.map((col) => {
                     const isActive = activeCell?.col === col.key;
                     return (
-                      <th key={col.letter} style={{ fontSize: 10, color: isActive ? '#2a2a2a' : '#999', fontWeight: isActive ? 500 : 400, background: isActive ? '#f0f0ee' : '#ffffff', borderRight: '1px solid #e5e5e3', textAlign: 'center', padding: '3px 0', width: col.width }}>
+                      <th key={col.letter} style={{ fontSize: 10, color: isActive ? '#2a2a2a' : '#999', fontWeight: isActive ? 500 : 400, background: isActive ? '#f0f0ee' : '#ffffff', borderRight: '1px solid #E2E8F0', textAlign: 'center', padding: '3px 0', width: col.width }}>
                         {col.letter}
                       </th>
                     );
@@ -714,8 +714,8 @@ const RecruiterSpreadsheet: React.FC = () => {
                 </tr>
 
                 {/* Column Label Row */}
-                <tr style={{ borderBottom: '2px solid #e5e5e3' }}>
-                  <th style={{ width: GUTTER_W, background: '#F8FAFC', borderRight: '1px solid #e5e5e3', fontSize: 10, color: '#64748B', textAlign: 'center', padding: '11px 0', position: 'sticky', top: 0, zIndex: 10 }}>#</th>
+                <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
+                  <th style={{ width: GUTTER_W, background: '#F8FAFC', borderRight: '1px solid #E2E8F0', fontSize: 10, color: '#64748B', textAlign: 'center', padding: '11px 0', position: 'sticky', top: 0, zIndex: 10 }}>#</th>
                   {REC_COLS.map((col) => {
                     const isActive = activeCell?.col === col.key;
                     return (
@@ -747,7 +747,7 @@ const RecruiterSpreadsheet: React.FC = () => {
                       onMouseLeave={(e) => { e.currentTarget.style.background = index % 2 === 1 ? '#F8FAFC' : 'white'; }}
                     >
                       {/* Row Number */}
-                      <td style={{ width: GUTTER_W, textAlign: 'center', fontSize: 10, color: '#999', background: '#ffffff', borderRight: '1px solid #e5e5e3', padding: '0 4px' }}
+                      <td style={{ width: GUTTER_W, textAlign: 'center', fontSize: 10, color: '#999', background: '#ffffff', borderRight: '1px solid #E2E8F0', padding: '0 4px' }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = '#EFF6FF'; e.currentTarget.style.color = '#2563EB'; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = '#ffffff'; e.currentTarget.style.color = '#999'; }}
                       >{index + 1}</td>
@@ -853,7 +853,7 @@ const RecruiterSpreadsheet: React.FC = () => {
       </div>
 
       {/* Bottom Bar */}
-      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'stretch', height: 30, background: '#ffffff', borderTop: '1px solid #e5e5e3', fontFamily: mono }}>
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'stretch', height: 30, background: '#ffffff', borderTop: '1px solid #E2E8F0', fontFamily: mono }}>
         <div style={{ flex: 1 }} />
         <div style={{ display: 'flex', alignItems: 'center', padding: '0 12px', fontSize: 10, color: '#bbb', whiteSpace: 'nowrap' }}>
           {filteredRecruiters.length} rows · offerloop.ai
@@ -863,16 +863,16 @@ const RecruiterSpreadsheet: React.FC = () => {
       {/* Mail App Selection Dialog */}
       {mailAppDialogOpen && selectedRecruiterForEmail && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div style={{ background: '#fff', border: '1px solid #e5e5e3', padding: 24, maxWidth: 400, width: '100%', margin: '0 16px' }}>
+          <div style={{ background: '#fff', border: '1px solid #E2E8F0', padding: 24, maxWidth: 400, width: '100%', margin: '0 16px' }}>
             <h3 style={{ fontSize: 14, fontWeight: 500, color: '#2a2a2a', marginBottom: 12, fontFamily: mono }}>Choose Email App</h3>
             <p style={{ fontSize: 12, color: '#555', marginBottom: 20, fontFamily: mono }}>Send email to {getDisplayName(selectedRecruiterForEmail)}</p>
             <div style={{ display: 'flex', gap: 8 }}>
               <button onClick={() => handleMailAppSelect('apple')}
-                style={{ flex: 1, padding: '16px 0', border: '1px solid #e5e5e3', background: '#fff', cursor: 'pointer', fontFamily: mono, fontSize: 12, color: '#555', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
+                style={{ flex: 1, padding: '16px 0', border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', fontFamily: mono, fontSize: 12, color: '#555', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#ffffff'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
               ><Mail className="h-4 w-4" />Apple Mail</button>
               <button onClick={() => handleMailAppSelect('gmail')}
-                style={{ flex: 1, padding: '16px 0', border: '1px solid #e5e5e3', background: '#fff', cursor: 'pointer', fontFamily: mono, fontSize: 12, color: '#555', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
+                style={{ flex: 1, padding: '16px 0', border: '1px solid #E2E8F0', background: '#fff', cursor: 'pointer', fontFamily: mono, fontSize: 12, color: '#555', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = '#ffffff'; }} onMouseLeave={(e) => { e.currentTarget.style.background = '#fff'; }}
               ><Mail className="h-4 w-4" />Gmail</button>
             </div>

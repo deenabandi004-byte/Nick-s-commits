@@ -101,7 +101,7 @@ function ActivityBars({ count = 5, height = 12 }: { count?: number; height?: num
     }}>
       {Array.from({ length: count }, (_, i) => (
         <span key={i} style={{
-          width: 2, height, background: "#8089a0", borderRadius: 1,
+          width: 2, height, background: "#94A3B8", borderRadius: 1,
           animation: `om-bars ${1.2 + i * 0.1}s ease-in-out ${i * 0.13}s infinite`,
           transformOrigin: "bottom",
         }} />
@@ -452,7 +452,7 @@ export function AgentSnapshot({
               padding: "10px 14px",
               borderRight: i < arr.length - 1 ? "1px solid #e9eaef" : "none",
             }}>
-              <div className="text-[10px] tracking-[0.05em] uppercase text-[#8089a0] font-medium">
+              <div className="text-[10px] tracking-[0.05em] uppercase text-[#94A3B8] font-medium">
                 {it.label}
               </div>
               <div className="flex items-baseline gap-1.5">
@@ -461,7 +461,7 @@ export function AgentSnapshot({
                   fontSize: 18, fontWeight: 500, fontVariantNumeric: "tabular-nums",
                   color: "var(--ink, #0F172A)",
                 }}>{it.value}</span>
-                <span className="text-[11px] text-[#8089a0]">{it.sub}</span>
+                <span className="text-[11px] text-[#94A3B8]">{it.sub}</span>
               </div>
             </div>
           ))}
@@ -479,7 +479,7 @@ export function AgentSnapshot({
               className="relative pb-2.5 text-[13px] tracking-[-0.01em] cursor-pointer bg-transparent border-0 flex items-center gap-1.5 transition-colors"
               style={{
                 fontWeight: on ? 500 : 400,
-                color: on ? "var(--ink, #0F172A)" : "#8089a0",
+                color: on ? "var(--ink, #0F172A)" : "#94A3B8",
                 borderBottom: on
                   ? "1.5px solid var(--ink, #0F172A)"
                   : "1.5px solid transparent",
@@ -716,7 +716,7 @@ function OverviewContent({
                     {co.name}
                   </span>
                 </div>
-                <div className="text-[11.5px] text-[#8089a0]">
+                <div className="text-[11.5px] text-[#94A3B8]">
                   {co.contacts} contacts
                   {co.hms > 0 && ` · ${co.hms} HM`}
                   {co.jobs > 0 && ` · ${co.jobs} jobs`}
@@ -769,12 +769,12 @@ function SummaryTile({
         }} />
       )}
       <div className="flex justify-between items-baseline">
-        <div className="text-[11.5px] text-[#8089a0] font-medium tracking-[0.04em] uppercase">
+        <div className="text-[11.5px] text-[#94A3B8] font-medium tracking-[0.04em] uppercase">
           {label}
         </div>
         {delta && (
           <div style={{
-            fontSize: 10.5, color: "#8089a0",
+            fontSize: 10.5, color: "#94A3B8",
             fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
           }}>{delta}</div>
         )}
@@ -822,7 +822,7 @@ function ViewAll({
   return (
     <Link
       to={to}
-      className="text-[12px] text-[#8089a0] hover:text-[#4b5567] transition-colors"
+      className="text-[12px] text-[#94A3B8] hover:text-[#4b5567] transition-colors"
     >
       {children}
     </Link>
@@ -832,7 +832,7 @@ function ViewAll({
 function EmptyText({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
-      <p className="text-[13px] text-[#8089a0]">{children}</p>
+      <p className="text-[13px] text-[#94A3B8]">{children}</p>
     </div>
   );
 }
@@ -865,7 +865,7 @@ function DraftRow({
           <span className="text-[13.5px] font-semibold tracking-[-0.01em]">
             {d.name}
           </span>
-          <span className="text-[12.5px] text-[#8089a0]">
+          <span className="text-[12.5px] text-[#94A3B8]">
             {d.role}
             {d.company && `, ${d.company}`}
           </span>
@@ -884,7 +884,7 @@ function DraftRow({
           </div>
         )}
         {d.preview && (
-          <div className="text-[12.5px] text-[#8089a0] leading-snug line-clamp-1">
+          <div className="text-[12.5px] text-[#94A3B8] leading-snug line-clamp-1">
             {d.preview}
           </div>
         )}
@@ -923,7 +923,7 @@ function JobRow({ j, last }: { j: AgentJob; last: boolean }) {
         <div className="text-[13.5px] font-semibold tracking-[-0.01em] leading-snug">
           {j.title}
         </div>
-        <div className="text-[12.5px] text-[#8089a0] mt-1">
+        <div className="text-[12.5px] text-[#94A3B8] mt-1">
           {j.company}
           {j.location && ` · ${j.location}`}
         </div>
@@ -968,7 +968,7 @@ function CompanyRow({ c, last }: { c: AgentCompany; last: boolean }) {
           )}
         </div>
         {c.reason && (
-          <div className="text-[12.5px] text-[#8089a0] mt-0.5">{c.reason}</div>
+          <div className="text-[12.5px] text-[#94A3B8] mt-0.5">{c.reason}</div>
         )}
       </div>
       <Link to={`/find?tab=companies&q=${encodeURIComponent(c.name)}`}>
@@ -1019,7 +1019,7 @@ function ApprovalRow({
           </span>
         </div>
         {action.reason && (
-          <div className="text-[12.5px] text-[#8089a0] leading-snug">
+          <div className="text-[12.5px] text-[#94A3B8] leading-snug">
             {action.reason}
           </div>
         )}
@@ -1033,7 +1033,7 @@ function ApprovalRow({
         <button
           onClick={onReject}
           disabled={loading}
-          className="bg-white text-[#8089a0] border border-[#e9eaef] rounded-md px-3 py-1.5 text-[12px] font-medium cursor-pointer hover:bg-[#fafafa] transition-colors disabled:opacity-50 flex items-center gap-1"
+          className="bg-white text-[#94A3B8] border border-[#e9eaef] rounded-md px-3 py-1.5 text-[12px] font-medium cursor-pointer hover:bg-[#fafafa] transition-colors disabled:opacity-50 flex items-center gap-1"
         >
           <XCircle className="h-3 w-3" /> Skip
         </button>
@@ -1078,7 +1078,7 @@ function ActivityList({ items }: { items: AgentAction[] }) {
           className="flex gap-3.5 py-2.5 text-[12.5px] animate-in slide-in-from-top duration-300"
           style={{ borderBottom: "1px solid #f1f1f4", animationDelay: `${idx * 50}ms` }}
         >
-          <span className="text-[#8089a0] w-[90px] shrink-0">
+          <span className="text-[#94A3B8] w-[90px] shrink-0">
             {a.createdAt ? relativeTime(a.createdAt) : ""}
           </span>
           <span className="text-muted-foreground flex-1">
@@ -1186,7 +1186,7 @@ function StepList({
               {step.label || ACTION_LABELS[step.action] || step.action}
             </span>
             {step.resultSummary && (
-              <span className="text-[11.5px] text-[#8089a0] ml-1.5">
+              <span className="text-[11.5px] text-[#94A3B8] ml-1.5">
                  - {step.resultSummary}
               </span>
             )}
@@ -1216,7 +1216,7 @@ function StepList({
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (
     <div className="border border-[#e9eaef] rounded-md p-2.5" style={{ background: "#fff" }}>
-      <div className="text-[9.5px] uppercase tracking-[0.06em] text-[#8089a0] font-medium">
+      <div className="text-[9.5px] uppercase tracking-[0.06em] text-[#94A3B8] font-medium">
         {label}
       </div>
       <div style={{
@@ -1253,13 +1253,13 @@ export function AgentActivityRail() {
         <MiniStat label="running" value={runningCount} />
       </div>
 
-      <div className="text-[11px] uppercase tracking-[0.06em] text-[#8089a0] font-medium mb-2">
+      <div className="text-[11px] uppercase tracking-[0.06em] text-[#94A3B8] font-medium mb-2">
         Activity
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
         {liveActions.length === 0 && (
-          <div className="text-[12px] text-[#8089a0] py-4">No activity yet.</div>
+          <div className="text-[12px] text-[#94A3B8] py-4">No activity yet.</div>
         )}
         {liveActions.slice(0, 20).map((a, i, arr) => {
           const kind = ACTION_KIND[a.action] || "watch";
@@ -1293,7 +1293,7 @@ export function AgentActivityRail() {
       </div>
 
       {countdown && (
-        <div className="mt-3 pt-3 border-t border-[#e9eaef] text-[11px] text-[#8089a0]">
+        <div className="mt-3 pt-3 border-t border-[#e9eaef] text-[11px] text-[#94A3B8]">
           Next cycle in <span className="text-[#4b5567] font-medium">{countdown}</span>
         </div>
       )}
