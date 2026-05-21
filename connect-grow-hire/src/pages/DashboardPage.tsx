@@ -216,19 +216,19 @@ function buildDiscovery(p?: Profile): Discovery {
 
 const CATS = {
   people: {
-    color: "#2563EB", grad: "linear-gradient(135deg,#3B82F6 0%,#60A5FA 100%)",
+    color: "#2563EB",
     label: "People", Icon: Users, action: "Find people",
   },
   companies: {
-    color: "#7C3AED", grad: "linear-gradient(135deg,#8B5CF6 0%,#A78BFA 100%)",
+    color: "#7C3AED",
     label: "Companies", Icon: Building2, action: "Find firms",
   },
   hm: {
-    color: "#0E9F6E", grad: "linear-gradient(135deg,#10B981 0%,#34D399 100%)",
+    color: "#0E9F6E",
     label: "Hiring", Icon: UserPlus, action: "Find hiring managers",
   },
   loop: {
-    color: "#D97706", grad: "linear-gradient(135deg,#F59E0B 0%,#FBBF24 100%)",
+    color: "#D97706",
     label: "Loop", Icon: Repeat, action: "Set up loop",
   },
 } as const;
@@ -277,24 +277,22 @@ function DiscoveryCard({
   return (
     <button
       onClick={onClick}
-      className="snap-start shrink-0 w-[230px] overflow-hidden rounded-[14px] border border-[#E8ECF2] bg-white text-left shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all duration-150 hover:-translate-y-1 hover:shadow-[0_12px_28px_rgba(15,23,42,0.16)]"
+      className="snap-start shrink-0 w-[230px] rounded-[14px] border border-[#E2E8F0] bg-white text-left shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all duration-150 hover:-translate-y-1 hover:border-[#CBD5E1] hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
     >
-      <div className="relative h-[86px] overflow-hidden px-3.5 py-3" style={{ background: c.grad }}>
-        <Icon className="absolute -bottom-4 -right-3 h-[72px] w-[72px] text-white/[0.16]" strokeWidth={1.5} />
-        <div className="relative flex h-full items-start justify-between">
+      <div className="p-3.5">
+        {/* category row: small tinted icon tile + neutral label */}
+        <div className="flex items-center justify-between">
           <span
-            className="flex h-10 w-10 items-center justify-center rounded-[10px] bg-white text-[16px] font-bold shadow-sm"
-            style={{ color: c.color }}
+            className="flex h-9 w-9 items-center justify-center rounded-[9px] text-[14px] font-bold"
+            style={{ background: `${c.color}14`, color: c.color }}
           >
-            {monogram ? monogram : <Icon className="h-5 w-5" />}
+            {monogram ? monogram : <Icon className="h-[18px] w-[18px]" />}
           </span>
-          <span className="rounded-full bg-white/25 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-[#94A3B8]">
             {c.label}
           </span>
         </div>
-      </div>
-      <div className="p-3.5">
-        <p className="truncate text-[14px] font-semibold text-[#0F172A]">{title}</p>
+        <p className="mt-3 truncate text-[14px] font-semibold text-[#0F172A]">{title}</p>
         <p className="mt-0.5 truncate text-[12px] text-[#94A3B8]">{subtitle}</p>
         <p className="mt-2.5 flex items-center gap-1 text-[12.5px] font-semibold" style={{ color: c.color }}>
           {c.action} <ArrowRight className="h-3.5 w-3.5" />
