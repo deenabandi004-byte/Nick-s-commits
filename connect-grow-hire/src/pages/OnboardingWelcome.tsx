@@ -14,7 +14,7 @@ export const OnboardingWelcome = ({ onNext, userName: _userName = "there" }: Onb
         <div className="space-y-6 text-center lg:text-left">
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
             Welcome to{" "}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="text-[#3B82F6]">
               Offerloop
             </span>
           </h1>

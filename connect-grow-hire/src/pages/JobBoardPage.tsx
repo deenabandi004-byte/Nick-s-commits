@@ -591,7 +591,7 @@ const EmptyState: React.FC<{
       {/* Animated glow effect */}
       <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full scale-150 animate-pulse"></div>
       {/* Icon container with subtle animation */}
-      <div className="relative w-24 h-24 rounded-[3px] bg-gradient-to-br from-primary/30 via-primary/20 to-accent/20 flex items-center justify-center border border-primary/30 shadow-xl shadow-primary/10 transform transition-transform hover:scale-105">
+      <div className="relative w-24 h-24 rounded-[3px] bg-[#EFF6FF] flex items-center justify-center border border-primary/30 shadow-xl shadow-primary/10 transform transition-transform hover:scale-105">
         {icon}
       </div>
     </div>
@@ -1892,7 +1892,7 @@ const JobBoardPage: React.FC = () => {
                                   {job.employer_logo ? (
                                     <img src={job.employer_logo} alt={job.company} className="w-8 h-8 rounded-md object-cover bg-muted flex-shrink-0" />
                                   ) : (
-                                    <div className="w-8 h-8 rounded-md bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-8 h-8 rounded-md bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
                                       <Building2 className="w-4 h-4 text-primary" />
                                     </div>
                                   )}
@@ -2586,7 +2586,7 @@ const JobBoardPage: React.FC = () => {
                 {job.employer_logo ? (
                   <img src={job.employer_logo} alt={job.company} className="w-12 h-12 rounded-lg object-cover bg-muted flex-shrink-0" />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-[#EFF6FF] flex items-center justify-center flex-shrink-0">
                     <Building2 className="w-6 h-6 text-primary/60" />
                   </div>
                 )}

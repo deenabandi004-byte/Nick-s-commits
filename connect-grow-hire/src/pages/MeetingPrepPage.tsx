@@ -1012,7 +1012,7 @@ const MeetingPrepPage: React.FC = () => {
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                                   <div style={{
-                                    width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #1E293B, #2C4A6E)',
+                                    width: 32, height: 32, borderRadius: '50%', background: '#1E293B',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                   }}>
                                     <span style={{ fontSize: 11, fontWeight: 600, color: '#fff' }}>

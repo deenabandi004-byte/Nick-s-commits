@@ -554,7 +554,7 @@ const Pricing = () => {
 
         {/* Subscription Status Banner */}
         {hasActiveSubscription && (
-          <div className="mb-10 bg-gradient-to-r from-[#0F172A] to-[#1E293B] rounded-[3px] p-[2px] animate-fadeInUp" style={{ animationDelay: '50ms' }}>
+          <div className="mb-10 bg-[#0F172A] rounded-[3px] p-[2px] animate-fadeInUp" style={{ animationDelay: '50ms' }}>
             <div className="bg-white rounded-[3px] px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div>
@@ -579,7 +579,7 @@ const Pricing = () => {
               <button 
                 onClick={handleManageSubscription}
                 disabled={isLoading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[#0F172A] to-[#1E293B] text-white font-medium rounded-[3px] hover:shadow-lg hover:shadow-[#3B82F6]/30 transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2.5 bg-[#0F172A] text-white font-medium rounded-[3px] hover:shadow-lg hover:shadow-[#3B82F6]/30 transition-all disabled:opacity-50"
               >
                 <Settings className="w-4 h-4" />
                 Manage Subscription
@@ -625,7 +625,7 @@ const Pricing = () => {
             <div className={`
               flex items-center gap-3 px-4 py-3 rounded-full border-2 transition-all
               ${showStudentPrice
-                ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-300 shadow-sm'
+                ? 'bg-[#EFF6FF] border-blue-300 shadow-sm'
                 : 'bg-white border-gray-200'
               }
             `}>
@@ -742,16 +742,16 @@ const Pricing = () => {
           </div>
 
           {/* Pro Plan Card (Featured) */}
-          <div className="relative bg-gradient-to-b from-[#3B82F6] to-[#2563EB] rounded-[3px] p-[2px] flex flex-col hover:shadow-xl hover:shadow-[#3B82F6]/20 transition-all duration-300 hover:-translate-y-1">
+          <div className="relative bg-[#3B82F6] rounded-[3px] p-[2px] flex flex-col hover:shadow-xl hover:shadow-[#3B82F6]/20 transition-all duration-300 hover:-translate-y-1">
 
             {/* Card Content */}
             <div className="bg-white rounded-[3px] p-8 flex flex-col h-full">
               {/* Plan Header */}
               <div className="text-center mb-6">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-3 bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white text-[10px] font-bold tracking-wider uppercase rounded-full">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-3 bg-[#3B82F6] text-white text-[10px] font-bold tracking-wider uppercase rounded-full">
                   {currentTier === 'pro' ? '✓ Your Plan' : '★ Most Popular'}
                 </div>
-                <h2 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#3B82F6] to-[#2563EB] mb-2">Pro</h2>
+                <h2 className="text-2xl font-bold text-[#3B82F6] mb-2">Pro</h2>
                 <p className="text-gray-500">Best for Students</p>
               </div>
 
@@ -828,8 +828,8 @@ const Pricing = () => {
                     ${currentTier === 'elite' 
                       ? 'bg-gray-100 text-gray-500 cursor-not-allowed' 
                       : currentTier === 'pro'
-                        ? 'bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white'
-                        : 'bg-gradient-to-r from-[#3B82F6] to-[#2563EB] text-white hover:shadow-lg hover:shadow-[#3B82F6]/30 hover:scale-[1.02] active:scale-100'
+                        ? 'bg-[#3B82F6] text-white'
+                        : 'bg-[#3B82F6] text-white hover:shadow-lg hover:shadow-[#3B82F6]/30 hover:scale-[1.02] active:scale-100'
                     }
                     disabled:opacity-50
                   `}
@@ -940,7 +940,7 @@ const Pricing = () => {
 
         {/* Money-Back Guarantee Banner */}
         <div className="max-w-2xl mx-auto mb-16 animate-fadeInUp" style={{ animationDelay: '300ms' }}>
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-[3px] p-6 border border-green-200 text-center">
+          <div className="bg-green-50 rounded-[3px] p-6 border border-green-200 text-center">
             <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
               <Shield className="w-6 h-6 text-green-600" />
             </div>
@@ -964,7 +964,7 @@ const Pricing = () => {
                 <tr className="bg-gray-50 border-b border-gray-200">
                   <th className="text-left py-4 px-6 font-semibold text-gray-900">Feature</th>
                   <th className="text-center py-4 px-6 font-semibold text-gray-900">Free</th>
-                  <th className="text-center py-4 px-6 font-semibold text-transparent bg-clip-text bg-gradient-to-r from-[#3B82F6] to-[#2563EB]">Pro</th>
+                  <th className="text-center py-4 px-6 font-semibold text-[#3B82F6]">Pro</th>
                   <th className="text-center py-4 px-6 font-semibold text-gray-900">Elite</th>
                 </tr>
               </thead>

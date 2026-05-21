@@ -544,7 +544,7 @@ const ScoutChatbot: React.FC<ScoutChatbotProps> = ({ onJobTitleSuggestion, userR
                     ? 'text-white'
                     : 'bg-[#F5F7FF] text-slate-800'
                 }`}
-                style={message.role === 'user' ? { background: 'linear-gradient(135deg, #0F172A, #1E293B)' } : undefined}
+                style={message.role === 'user' ? { background: '#0F172A' } : undefined}
               >
                 {/* Message content */}
                 <div
@@ -692,7 +692,7 @@ const ScoutChatbot: React.FC<ScoutChatbotProps> = ({ onJobTitleSuggestion, userR
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="flex-shrink-0 px-3 py-1.5 text-xs font-medium text-white rounded transition-all shadow-sm hover:shadow-md hover:opacity-90 flex items-center gap-1.5 whitespace-nowrap"
-                                    style={{ background: 'linear-gradient(135deg, #0F172A, #1E293B)' }}
+                                    style={{ background: '#0F172A' }}
                                     title="View job posting"
                                     onClick={(e) => {
                                       e.stopPropagation();
@@ -848,7 +848,7 @@ const ScoutChatbot: React.FC<ScoutChatbotProps> = ({ onJobTitleSuggestion, userR
                                     handleJobClick(job);
                                   }}
                                   className="flex-1 py-2 text-sm font-medium text-white rounded"
-                                  style={{ background: 'linear-gradient(135deg, #0F172A, #1E293B)' }}
+                                  style={{ background: '#0F172A' }}
                                 >
                                   Find Contacts in This Role
                                 </button>
@@ -905,7 +905,7 @@ const ScoutChatbot: React.FC<ScoutChatbotProps> = ({ onJobTitleSuggestion, userR
             onClick={sendMessage}
             disabled={!input.trim() || isLoading}
             className="relative overflow-hidden hover:opacity-90 rounded-md"
-            style={{ background: 'linear-gradient(135deg, #0F172A, #1E293B)' }}
+            style={{ background: '#0F172A' }}
           >
             <Send className="h-4 w-4" />
             <InlineLoadingBar isLoading={isLoading} />

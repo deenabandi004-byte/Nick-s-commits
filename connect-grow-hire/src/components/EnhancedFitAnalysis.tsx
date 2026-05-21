@@ -87,7 +87,7 @@ export const EnhancedFitAnalysisPanel: React.FC<EnhancedFitAnalysisPanelProps> =
   return (
     <div className="bg-white rounded-[3px] border border-gray-200 overflow-hidden">
       {/* Header with Score */}
-      <div className="bg-gradient-to-r from-[#FAFBFF] to-[#FAFBFF] p-4 border-b border-gray-200">
+      <div className="bg-[#F8FAFC] p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-gray-900">
@@ -338,7 +338,7 @@ export const EnhancedFitAnalysisPanel: React.FC<EnhancedFitAnalysisPanelProps> =
         {activeTab === 'edits' && (
           <div className="space-y-3">
             {/* Potential Score Improvement */}
-            <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-[3px] p-3 mb-4">
+            <div className="bg-green-50 rounded-[3px] p-3 mb-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-green-800">
                   Potential score after edits:

@@ -490,7 +490,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
               <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => navigate('/pricing')}
-                className="text-white rounded-full bg-gradient-to-r from-[#0F172A] to-[#1E293B]"
+                className="text-white rounded-full bg-[#0F172A]"
               >
                 Upgrade to Pro/Elite
               </AlertDialogAction>
@@ -508,7 +508,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
         {/* Main Preview Card */}
         <div className="bg-transparent rounded-none shadow-none border-none overflow-hidden animate-fadeInUp">
           {/* Subtle top accent line */}
-          <div className="h-px bg-gradient-to-r from-transparent via-[#3B82F6]/40 to-transparent mb-8"></div>
+          <div className="h-px bg-[#3B82F6]/40 mb-8"></div>
           
           <div className="p-8">
             {/* Header */}
@@ -528,15 +528,15 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
 
             {/* Stats Cards */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-[#FAFBFF] to-[#EEF2F8] rounded-[3px] p-4 text-center">
+              <div className="bg-[#F8FAFC] rounded-[3px] p-4 text-center">
                 <p className="text-2xl font-bold text-gray-900">{previewData.total_rows}</p>
                 <p className="text-sm text-gray-500">Total rows</p>
               </div>
-              <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-[3px] p-4 text-center">
+              <div className="bg-green-50 rounded-[3px] p-4 text-center">
                 <p className="text-2xl font-bold text-green-600">{previewData.valid_rows}</p>
                 <p className="text-sm text-gray-500">Valid contacts</p>
               </div>
-              <div className="bg-gradient-to-br from-[#FAFBFF] to-[rgba(59,130,246,0.10)] rounded-[3px] p-4 text-center">
+              <div className="bg-[#EFF6FF] rounded-[3px] p-4 text-center">
                 <p className="text-2xl font-bold text-[#3B82F6]">{previewData.credits.available}</p>
                 <p className="text-sm text-gray-500">Credits available</p>
               </div>
@@ -582,7 +582,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
 
             {/* Column Mapping */}
             <div className="bg-[#FAFBFF] rounded-[3px] border border-gray-200 overflow-hidden mb-6">
-              <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-[#EEF2F8] to-[#EEF2F8]">
+              <div className="px-4 py-3 border-b border-gray-200 bg-[#F8FAFC]">
                 <h3 className="font-medium text-gray-900">Column Mapping</h3>
                 <p className="text-sm text-gray-500">Adjust how your spreadsheet columns map to contact fields</p>
               </div>
@@ -620,7 +620,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
             {/* Sample Preview Table */}
             {previewData.sample_contacts.length > 0 && (
               <div className="bg-[#FAFBFF] rounded-[3px] border border-gray-200 overflow-hidden mb-6">
-                <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-[#EEF2F8] to-[#EEF2F8]">
+                <div className="px-4 py-3 border-b border-gray-200 bg-[#F8FAFC]">
                   <h3 className="font-medium text-gray-900">Sample Preview</h3>
                   <p className="text-sm text-gray-500">First {previewData.sample_contacts.length} contacts</p>
                 </div>
@@ -682,7 +682,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
                   transition-all duration-200 transform
                   ${isLoading || previewData.valid_rows === 0
                     ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-[#0F172A] to-[#1E293B] text-white shadow-lg shadow-[#3B82F6]/30 hover:shadow-xl hover:shadow-[#3B82F6]/40 hover:scale-105 active:scale-100'
+                    : 'bg-[#0F172A] text-white shadow-lg shadow-[#3B82F6]/30 hover:shadow-xl hover:shadow-[#3B82F6]/40 hover:scale-105 active:scale-100'
                   }
                 `}
               >

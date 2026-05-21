@@ -27,7 +27,7 @@ const LockedFeatureOverlay: React.FC<LockedFeatureOverlayProps> = ({
           <div className="mt-[400px] space-y-4">
             <Lock className="w-32 h-32 text-white mx-auto mb-6" />
             <p className="text-white font-medium text-6xl mb-4">
-              Upgrade to <span className="bg-gradient-to-r from-[#3B82F6] to-[#2563EB] bg-clip-text text-transparent">Pro</span> to Unlock
+              Upgrade to <span className="text-[#3B82F6]">Pro</span> to Unlock
             </p>
             <p className="text-gray-400 text-base max-w-2xl mx-auto mb-6">
               {featureName === "Interview Prep" ? (
@@ -43,7 +43,7 @@ const LockedFeatureOverlay: React.FC<LockedFeatureOverlayProps> = ({
                  });
                  navigate('/pricing');
                }}
-               className="bg-gradient-to-r from-[#0F172A] to-[#1E293B] hover:from-[#1E293B] hover:to-[#0F172A] mt-2"
+               className="bg-[#0F172A] hover:bg-[#1E293B] mt-2"
              >
                Upgrade Plan
              </Button>

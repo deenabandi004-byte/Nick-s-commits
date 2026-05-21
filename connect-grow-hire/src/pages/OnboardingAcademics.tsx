@@ -713,7 +713,7 @@ export const OnboardingAcademics = ({ onNext, onBack, initialData, linkedinData 
       <div className="space-y-8">
         <div className="space-y-6">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
-            Academic <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Information</span>
+            Academic <span className="text-[#3B82F6]">Information</span>
           </h2>
           <p className="text-lg md:text-xl text-muted-foreground leading-relaxed">
             Tell us about your educational background to help us find the best opportunities for you.

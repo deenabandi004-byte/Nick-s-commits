@@ -59,7 +59,7 @@ const JobCard: React.FC<{
             className="w-12 h-12 rounded-[3px] object-cover bg-muted"
           />
         ) : (
-          <div className="w-12 h-12 rounded-[3px] bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-[3px] bg-[#EFF6FF] flex items-center justify-center">
             <Building2 className="w-6 h-6 text-primary" />
           </div>
         )}

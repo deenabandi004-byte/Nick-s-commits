@@ -59,7 +59,7 @@ export const ProductTour: React.FC = () => {
             
             {/* Video - Right Side */}
             <div className="relative">
-              <div className="aspect-video rounded-[3px] overflow-hidden border border-[#3B82F6]/20 border-[#3B82F6]/60 bg-gradient-to-br from-[#3B82F6]/5 to-[#2563EB]/5 from-[#FAFBFF]/80 to-[#FAFBFF]/80 shadow-lg shadow-[#E2E8F0]/50">
+              <div className="aspect-video rounded-[3px] overflow-hidden border border-[#3B82F6]/60 bg-[#F8FAFC] shadow-lg shadow-[#E2E8F0]/50">
                 <video
                   src={dashboardVideo}
                   autoPlay
@@ -86,7 +86,7 @@ export const ProductTour: React.FC = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Video - Left Side */}
             <div className="relative">
-              <div className="aspect-video rounded-[3px] overflow-hidden border border-[#3B82F6]/20 border-[#3B82F6]/60 bg-gradient-to-br from-[#3B82F6]/5 to-[#3B82F6]/5 from-[#FAFBFF]/80 to-[#FAFBFF]/80 shadow-lg shadow-[#E2E8F0]/50">
+              <div className="aspect-video rounded-[3px] overflow-hidden border border-[#3B82F6]/60 bg-[#F8FAFC] shadow-lg shadow-[#E2E8F0]/50">
                 <video
                   src={contactSearchVideo}
                   autoPlay
@@ -129,7 +129,7 @@ export const ProductTour: React.FC = () => {
             
             {/* Video - Right Side */}
             <div className="relative">
-              <div className="aspect-video rounded-[3px] overflow-hidden border border-emerald-500/20 border-emerald-300/60 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 from-emerald-50/80 to-teal-50/80 shadow-lg shadow-emerald-100/50">
+              <div className="aspect-video rounded-[3px] overflow-hidden border border-emerald-300/60 bg-[#F8FAFC] shadow-lg shadow-emerald-100/50">
                 <video
                   src={firmSearchVideo}
                   autoPlay
@@ -156,7 +156,7 @@ export const ProductTour: React.FC = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Video - Left Side */}
             <div className="relative">
-              <div className="aspect-video rounded-[3px] overflow-hidden border border-[#3B82F6]/20 border-[#3B82F6]/60 bg-gradient-to-br from-[#3B82F6]/5 to-[#3B82F6]/5 from-[#FAFBFF]/80 to-[#FAFBFF]/80 shadow-lg shadow-[#E2E8F0]/50">
+              <div className="aspect-video rounded-[3px] overflow-hidden border border-[#3B82F6]/60 bg-[#F8FAFC] shadow-lg shadow-[#E2E8F0]/50">
                 <video
                   src={interviewPrepVideo}
                   autoPlay
@@ -289,7 +289,7 @@ export const ProductTour: React.FC = () => {
                     <div 
                       className="absolute inset-0 pointer-events-none rounded-[3px]"
                       style={{
-                        background: `linear-gradient(135deg, ${color.light} 0%, transparent 50%)`,
+                        background: color.light,
                       }}
                     />
                   )}

@@ -26,7 +26,7 @@
 }
 .bb-rule{
   height:1.5px;
-  background:linear-gradient(90deg,#2563EB,#60A5FA,transparent);
+  background:#3B82F6;
   max-width:200px;
   margin:10px auto 8px;
 }
@@ -116,10 +116,10 @@
   border-radius:50%;
   background:rgba(255,255,255,.45);
 }
-.bb-tack.tack-red{background:linear-gradient(135deg,#ef4444,#dc2626);}
-.bb-tack.tack-blue{background:linear-gradient(135deg,#3b82f6,#2563EB);}
-.bb-tack.tack-green{background:linear-gradient(135deg,#22c55e,#16a34a);}
-.bb-tack.tack-yellow{background:linear-gradient(135deg,#facc15,#ca8a04);}
+.bb-tack.tack-red{background:#ef4444;}
+.bb-tack.tack-blue{background:#3b82f6;}
+.bb-tack.tack-green{background:#22c55e;}
+.bb-tack.tack-yellow{background:#facc15;}
 
 /* Offer badge */
 .bb-badge{

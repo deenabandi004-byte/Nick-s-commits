@@ -465,7 +465,7 @@ export function Dashboard() {
       {/* ================================================================== */}
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, rgba(59, 130, 246, 0.10) 100%)',
+          background: '#EFF6FF',
           border: '1px solid rgba(59, 130, 246, 0.12)',
           borderRadius: '14px',
           padding: '24px 28px',

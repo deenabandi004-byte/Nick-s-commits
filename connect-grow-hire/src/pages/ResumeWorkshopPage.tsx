@@ -778,7 +778,7 @@ export default function ResumeWorkshopPage() {
           <AppSidebar />
           <MainContentWrapper>
             <AppHeader title="" />
-            <main className="bg-gradient-to-b from-slate-50 via-white to-white min-h-screen">
+            <main className="bg-[#F8FAFC] min-h-screen">
               <div className="max-w-7xl mx-auto px-6 pt-10 pb-4">
                 <div className="flex items-center justify-center py-16">
                   <Loader2 className="h-8 w-8 animate-spin text-gray-500" />

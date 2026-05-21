@@ -334,7 +334,7 @@ export function QueuePanel({ isActive }: QueuePanelProps) {
   if (isFree) {
     return (
       <div className="p-3 space-y-3">
-        <div className="rounded-[6px] bg-gradient-to-br from-[#EFF6FF] to-white border border-[#3B82F6]/20 px-4 py-4 flex items-start gap-3">
+        <div className="rounded-[6px] bg-[#EFF6FF] border border-[#3B82F6]/20 px-4 py-4 flex items-start gap-3">
           <div className="w-8 h-8 rounded-full bg-[#3B82F6]/10 flex items-center justify-center flex-shrink-0">
             <Zap className="w-4 h-4 text-[#3B82F6]" />
           </div>

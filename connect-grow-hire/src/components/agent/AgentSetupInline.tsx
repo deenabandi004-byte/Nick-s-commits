@@ -667,7 +667,7 @@ function StepReview({ form }: { form: FormState }) {
       >
         <span
           className="w-7 h-7 rounded-lg shrink-0 inline-flex items-center justify-center text-white text-[13px] font-semibold"
-          style={{ background: "linear-gradient(135deg, #f5b945, #e08a2a)" }}
+          style={{ background: "#f5b945" }}
         >
           S
         </span>

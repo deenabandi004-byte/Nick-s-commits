@@ -164,7 +164,7 @@ export const OnboardingProfile = ({ onNext, onBack, initialData }: OnboardingPro
         <div className="space-y-6">
           <h2 className="text-4xl lg:text-5xl font-bold text-foreground">
             Create Your{" "}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="text-[#3B82F6]">
               Profile
             </span>
           </h2>

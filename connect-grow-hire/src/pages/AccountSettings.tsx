@@ -1460,7 +1460,7 @@ export default function AccountSettings() {
                         </label>
                         
                         {resumeData ? (
-                          <div className="bg-gradient-to-r from-[#FAFBFF] to-[#FAFBFF] border border-[#E2E8F0] rounded-[3px] p-5">
+                          <div className="bg-[#F8FAFC] border border-[#E2E8F0] rounded-[3px] p-5">
                             <div className="flex items-start gap-4">
                               {/* File Icon */}
                               <div className="w-14 h-14 bg-white rounded-[3px] border border-[#E2E8F0] flex items-center justify-center flex-shrink-0">

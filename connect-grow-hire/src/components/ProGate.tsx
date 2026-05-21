@@ -58,7 +58,7 @@ export function ProGate({ title, description, videoId, children, bypass }: ProGa
             onClick={() => navigate("/pricing")}
             className="inline-flex items-center justify-center gap-2 px-8 py-3 rounded-full font-bold text-base text-white transition-all duration-150 hover:shadow-md hover:scale-[1.02] mt-[30px]"
             style={{
-              background: "linear-gradient(to right, #0F172A, #1E293B)",
+              background: "#0F172A",
             }}
           >
             <Unlock className="h-4 w-4" />

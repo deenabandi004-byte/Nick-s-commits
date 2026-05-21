@@ -176,8 +176,8 @@ export const PromptSearchFlow: React.FC<PromptSearchFlowProps> = ({
 
               <div className="bg-muted/30 rounded-[3px] p-4 sm:p-6 border border-border shadow-lg">
                 <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
-                  <div className="bg-gradient-to-br from-[#3B82F6]/20 to-[#2563EB]/20 border border-[#3B82F6]/40 rounded-[3px] px-4 py-3 min-w-[60px] sm:min-w-[70px] text-center shadow-inner">
-                    <span className="text-2xl font-bold bg-gradient-to-r from-[#3B82F6] to-[#2563EB] bg-clip-text text-transparent">
+                  <div className="bg-[#EFF6FF] border border-[#3B82F6]/40 rounded-[3px] px-4 py-3 min-w-[60px] sm:min-w-[70px] text-center shadow-inner">
+                    <span className="text-2xl font-bold text-[#3B82F6]">
                       {batchSize}
                     </span>
                   </div>

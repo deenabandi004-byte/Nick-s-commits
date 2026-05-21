@@ -292,7 +292,7 @@ const ScoutFirmAssistantButton: React.FC<ScoutFirmAssistantButtonProps> = ({
       {/* Header Button */}
       <button
         onClick={() => setIsScoutChatOpen(true)}
-        className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 bg-[#FAFBFF] border-[#E2E8F0] text-sm font-medium text-[#0F172A] shadow-sm hover:shadow-md hover:scale-105 hover:bg-gradient-to-r hover:from-[#FAFBFF] hover:to-white cursor-pointer transition-all duration-150"
+        className="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 bg-[#FAFBFF] border-[#E2E8F0] text-sm font-medium text-[#0F172A] shadow-sm hover:shadow-md hover:scale-105 hover:bg-white cursor-pointer transition-all duration-150"
       >
         <div className="relative flex items-center justify-center h-6 w-6 rounded-full bg-[#FFF7EA] flex-shrink-0">
           <img

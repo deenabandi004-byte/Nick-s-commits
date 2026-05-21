@@ -70,7 +70,7 @@ const ScoutBubble: React.FC<ScoutBubbleProps> = ({ onJobTitleSuggestion }) => {
       {isScoutChatOpen && (
         <div className="fixed right-0 top-0 h-full w-80 bg-background shadow-2xl z-40 border-l border-border">
           <div className="h-full flex flex-col">
-            <div className="p-4 border-b border-border bg-gradient-to-r from-[#3B82F6] to-[#2563EB]">
+            <div className="p-4 border-b border-border bg-[#3B82F6]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div
@@ -112,7 +112,7 @@ const ScoutBubble: React.FC<ScoutBubbleProps> = ({ onJobTitleSuggestion }) => {
         >
           <div className="relative">
             {/* Main bubble */}
-            <div className="relative bg-gradient-to-r from-[#3B82F6] to-[#2563EB] rounded-full p-1 shadow-2xl hover:shadow-[#3B82F6]/50 transition-all duration-300 hover:scale-110">
+            <div className="relative bg-[#3B82F6] rounded-full p-1 shadow-2xl hover:shadow-[#3B82F6]/50 transition-all duration-300 hover:scale-110">
               <div className="bg-background rounded-full p-3">
                 <div className="flex items-center gap-3 px-2">
                   <div

@@ -117,7 +117,7 @@ export const OnboardingLocationPreferences = ({
         <div className="space-y-6">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground">
             Career{" "}
-            <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            <span className="text-[#3B82F6]">
               Preferences
             </span>
           </h2>
@@ -356,7 +356,7 @@ export const OnboardingLocationPreferences = ({
             <Button
               type="submit"
               variant="default"
-              className="px-12 py-3 rounded-full font-bold group bg-gradient-to-r from-primary to-secondary hover:opacity-90"
+              className="px-12 py-3 rounded-full font-bold group bg-[#3B82F6] hover:opacity-90"
               disabled={isSubmitting} // ← DISABLE SUBMIT BUTTON WHILE SUBMITTING
             >
               {isSubmitting ? (

@@ -535,7 +535,7 @@ export function AppSidebar() {
                     className="h-full rounded-full transition-all duration-300"
                     style={{
                       width: `${creditPercentage}%`,
-                      background: "linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)",
+                      background: "#3B82F6",
                     }}
                   />
                 </div>
@@ -549,7 +549,7 @@ export function AppSidebar() {
                 }}
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] transition-all"
                 style={{
-                  background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+                  background: "#2563EB",
                   color: "#FFFFFF",
                   fontFamily: "var(--font-body)",
                   fontSize: "14px",
@@ -559,14 +559,12 @@ export function AppSidebar() {
                     "0 6px 16px -3px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background =
-                    "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)";
+                  e.currentTarget.style.background = "#1D4ED8";
                   e.currentTarget.style.boxShadow =
                     "0 8px 20px -3px rgba(37,99,235,0.55), inset 0 1px 0 rgba(255,255,255,0.22)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background =
-                    "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)";
+                  e.currentTarget.style.background = "#2563EB";
                   e.currentTarget.style.boxShadow =
                     "0 6px 16px -3px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.22)";
                 }}
@@ -585,19 +583,17 @@ export function AppSidebar() {
                   }}
                   className="w-full flex items-center justify-center p-2.5 rounded-[8px] transition-all"
                   style={{
-                    background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+                    background: "#2563EB",
                     color: "#FFFFFF",
                     border: "none",
                     boxShadow:
                       "0 6px 16px -3px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background =
-                      "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)";
+                    e.currentTarget.style.background = "#1D4ED8";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background =
-                      "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)";
+                    e.currentTarget.style.background = "#2563EB";
                   }}
                 >
                   <Zap className="h-5 w-5" style={{ color: "#FCD34D", fill: "#FCD34D" }} />

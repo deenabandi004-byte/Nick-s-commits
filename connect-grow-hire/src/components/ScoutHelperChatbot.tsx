@@ -412,7 +412,7 @@ const ScoutHelperChatbot: React.FC<ScoutHelperChatbotProps> = ({
                       ? 'text-white'
                       : 'bg-[#FAFBFF] text-slate-800'
                   }`}
-                  style={message.role === 'user' ? { background: 'linear-gradient(135deg, #0F172A, #1E293B)' } : undefined}
+                  style={message.role === 'user' ? { background: '#0F172A' } : undefined}
                 >
                   {message.content && (
                     <div
@@ -530,7 +530,7 @@ const ScoutHelperChatbot: React.FC<ScoutHelperChatbotProps> = ({
               onClick={sendMessage}
               disabled={!input.trim() || isLoading}
               className="hover:opacity-90 rounded-md px-5 py-3"
-              style={{ background: 'linear-gradient(135deg, #0F172A, #1E293B)' }}
+              style={{ background: '#0F172A' }}
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

@@ -1286,7 +1286,7 @@ export function TailorTab({
       <div className="flex flex-col h-full pb-6">
         {/* Sticky hero: Apply All Suggestions */}
         <div className="sticky top-0 z-10 shrink-0 mx-4 mt-4 mb-2">
-          <div className="flex items-center justify-between gap-4 rounded-[3px] shadow-md bg-gradient-to-r from-[#0F172A] to-[#1E293B] py-3 px-6">
+          <div className="flex items-center justify-between gap-4 rounded-[3px] shadow-md bg-[#0F172A] py-3 px-6">
             <button
               type="button"
               onClick={() => {

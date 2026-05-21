@@ -77,7 +77,7 @@ export function LoadingBar({
           <div
             className={`
               ${heightClass} rounded-full
-              bg-gradient-to-r from-[#3B82F6] to-[#2563EB]
+              bg-[#3B82F6]
               transition-all duration-300 ease-out
               shadow-[0_0_8px_rgba(59,130,246,0.4)]
             `}
@@ -183,7 +183,7 @@ export function SteppedLoadingBar({ steps, currentStepId, className = '' }: Step
         <div
           className="
             h-full rounded-full
-            bg-gradient-to-r from-[#3B82F6] to-[#2563EB]
+            bg-[#3B82F6]
             transition-all duration-500 ease-out
             shadow-[0_0_8px_rgba(59,130,246,0.4)]
           "
