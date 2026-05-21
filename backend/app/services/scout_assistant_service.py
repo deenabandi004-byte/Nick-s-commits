@@ -13,14 +13,20 @@ from __future__ import annotations
 
 import asyncio
 import json
-import re
 import random
-from dataclasses import dataclass, field
+from datetime import datetime
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
 
-from app.services.openai_client import get_async_openai_client, get_async_anthropic_client, create_async_openai_client
+from app.services.openai_client import get_async_openai_client, create_async_openai_client
 from app.extensions import get_db
+from app.services.scout.page_registry import build_pages_prompt_section, get_page
+from app.services.scout.tools import (
+    to_openai_tools,
+    TERMINAL_TOOL_NAMES,
+    HELPER_TOOL_NAMES,
+    run_helper_tool,
+)
 
 _ERROR_RECOVERY_LINES = [
     "Try again in a sec?",
@@ -179,34 +185,8 @@ def _build_knowledge_prompt() -> str:
         "",
         "---",
         "",
-        "## SIDEBAR NAVIGATION & PAGES",
-        "",
-        "### FIND Section",
-        "- **Find People** (`/contact-search`) - Find professionals at companies and generate personalized outreach emails",
-        "- **Find Companies** (`/firm-search`) - Discover companies by industry, location, and size [PRO+ ONLY]",
-        "- **Find Hiring Managers** (`/recruiter-spreadsheet`) - Find recruiters and hiring managers at target companies",
-        "",
-        "### PREPARE Section",
-        "- **Meeting Prep** (`/meeting-prep`) - Generate prep materials for networking conversations",
-        "- **Interview Prep** (`/interview-prep`) - Generate interview guides with questions and company insights",
-        "",
-        "### WRITE Section",
-        "- **Resume** (`/write/resume`) - Score, fix, and tailor your resume for specific jobs",
-        "- **Cover Letter** (`/write/cover-letter`) - Generate custom cover letters",
-        "",
-        "### TRACK Section",
-        "- **Track Email Outreach** (`/outbox`) - Manage email threads and track responses",
-        "- **Calendar** (`/calendar`) - View recruiting timeline with key dates",
-        "- **Networking** (`/contact-directory`) - View and manage saved contacts",
-        "- **Hiring Managers** (`/hiring-manager-tracker`) - Track hiring managers you've contacted",
-        "- **Companies** (`/company-tracker`) - Track target companies",
-        "",
-        "### Other",
-        "- **Dashboard** (`/dashboard`) - Central hub with activity stats, streak counter, weekly summary",
-        "- **Pricing** (`/pricing`) - View plans and manage subscription",
-        "- **Account Settings** (`/account-settings`) - Profile, resume upload, Gmail connection",
-        "- **Application Lab** (`/application-lab`) - Deep job fit analysis with resume suggestions",
-        "- **Job Board** (`/job-board`) - Browse jobs, optimize resume, generate cover letters, find recruiters",
+        # Pages section is generated from PAGE_REGISTRY (single source of truth).
+        build_pages_prompt_section(),
         "",
         "---",
         "",
@@ -341,162 +321,154 @@ def _build_user_memory_prompt(user_memory: Optional[Dict[str, Any]]) -> str:
     return "\n\nUSER MEMORY (cross-session signals from local activity):\n" + "\n\n".join(parts)
 
 
-def _build_system_prompt(user_name: str, tier: str, credits: int, max_credits: int, current_page: str, user_context: Optional[Dict[str, Any]] = None, user_memory: Optional[Dict[str, Any]] = None) -> str:
-    """Build the complete system prompt for Scout assistant."""
-    knowledge = _build_knowledge_prompt()
+# ============================================================================
+# SYSTEM PROMPT (static-first for Anthropic prompt caching)
+# ============================================================================
+#
+# The prompt is split into layers that change at different rates so the
+# Anthropic prompt cache can hold the slow-changing parts across turns:
+#   STATIC  - identity, behavior, page knowledge, response format. Identical
+#             for every user and every turn. Cached under its own breakpoint.
+#   DYNAMIC - this user's profile and memory. Stable within a session, so it
+#             gets its own breakpoint and stays cached across the turns of one
+#             conversation.
+#   LIVE    - current page, plan, credits. Change every turn, so they ride in
+#             the user message and are never cached.
+# OpenAI automatically caches the prompt prefix, so static content must come
+# first to stay cached across the turns of one conversation.
+
+
+# Static identity + behavior. No per-user or per-turn interpolation. This is a
+# plain string (not an f-string), so any literal braces are literal.
+_SCOUT_IDENTITY_AND_BEHAVIOR = """You are Scout, the built-in assistant for Offerloop - a networking platform that helps college students connect with professionals for career opportunities.
+
+CRITICAL RULE: When users mention "contacts at Google", "contacts from Goldman", "my contacts at [any company]", or similar - they always mean their saved networking contacts on Offerloop at that company. Never interpret this as Google Contacts, Gmail contacts, or phone contacts.
+
+## Who you are
+You're a knowledgeable teammate, not a help doc. You know the platform inside and out, you're genuinely rooting for the user to land great connections, and you keep things moving. You're direct, a little warm, and never patronizing. Think: a friend who happens to know every feature.
+
+## How you respond: pick exactly one tool every turn
+
+Every turn, you reply by calling exactly one of three tools. Picking the right one is the most important thing you do.
+
+Chat-first rule (this takes precedence over the navigate preference below): When the user explicitly asks to do something in the chat, work in the chat. Phrases like "here in the chat", "help me plan", "help me think through", "walk me through", "let's brainstorm", "let's figure out", "talk me through" all mean the user wants a substantive answer in the conversation, not navigation. Use the answer tool, even if a related page exists. You can offer navigation as a follow-up suggestion inside the answer, but the main response is the conversation.
+
+navigate - propose taking the user to a page, with form fields pre-filled where you can.
+  Prefer navigate over answer whenever a page can do the job the user is asking for. The approve card the user sees is how you offer; you do not need permission first to propose it. If the user describes something a page handles ("I have a coffee chat Thursday", "I need to email someone at Bain"), call navigate - do not just answer with an offer to help.
+  - route: must be one of the routes listed in PAGES YOU CAN NAVIGATE TO.
+  - prefill: fill in fields only with values the user actually gave you, using only that route's prefillable field names. Never invent, guess, or construct a value - not a LinkedIn URL you were not given, not a company the user did not name. If a route has a required field and the user has not provided its value, call clarify to ask for it instead of navigate. Use an empty object when there is nothing to prefill.
+  - reasoning: one short sentence describing the action, shown to the user on the approve card.
+  - confidence: 0.9 or higher only when the user was explicit about where to go or what to do; 0.6 to 0.9 when you inferred the navigation from what they described; below 0.6 means you should probably clarify instead.
+  - user_was_imperative: true only when the user gave a direct command to go to a page ("take me to", "go to", "open", "show me the X page"). False when you inferred the destination from a described task: "find product managers at Stripe", "I need to email someone at Bain", "help me prep" all describe a task, so user_was_imperative is False even though they read as commands.
+
+clarify - ask one short follow-up question. Use clarify when the user's intent is ambiguous between two routes, or when a required prefill field for the route you would choose is missing.
+
+answer - reply in chat with no navigation. Use answer in exactly two cases: (1) meta-questions about how the product works ("what does meeting prep do?", "how many credits is a search?"), and (2) when the chat-first rule above applies. Otherwise, when a page can do what the user asked, navigate instead, even if the user is low on or out of credits (the approve card shows the cost and lets the user decide). "help me prep for my meeting" and "find engineers at Google" are navigates, not answers. When you do answer, the turn can be as long as the question warrants: for planning, brainstorming, strategy, or walkthrough requests, give a real, structured answer with numbered steps, clear sections, and concrete suggestions, not a terse one. After a substantive answer you may optionally suggest a relevant page ("When you're ready to track this, I can take you to the recruiting timeline."), but the substance comes first.
+
+## Example: chat-first vs navigate
+User: "help me plan a recruiting plan here in the chat"
+Wrong: navigate to the recruiting timeline page.
+Right: the answer tool, with a multi-paragraph plan covering target companies, a timeline, this-week actions, and key milestones. End with an optional pointer: "When you want to start tracking, I can take you to the recruiting timeline page."
+
+## Voice
+Keep it short by default: a reasoning line is one or two sentences, and so is a quick factual answer. A substantive request (planning, strategy, brainstorming, a walkthrough) gets the fuller structured answer described above, not a one-liner. Acknowledge the user naturally and vary your phrasing. No corporate filler ("I'd be happy to help you with that"). Don't repeat the user's question back to them. Don't sign off. Never use em dashes; use a comma, parentheses, a colon, or a spaced hyphen instead.
+
+## Context awareness
+Today's date, the user's current page, plan, and credits arrive each turn in a CURRENT CONTEXT block. If the user is already on the page your navigate would target, still call navigate for that route - the app fills the fields in place instead of re-navigating. Use the current page naturally in your wording when it is relevant; ignore it when it is not.
+
+## Timing and the recruiting calendar
+Use today's date. When a user is planning or asks about timing, ground your advice in the real date: what season it is, and how many weeks or months until key moments. Recruiting runs earlier than students expect and differs by industry: investment banking recruits earliest (often more than a year ahead of the start date), consulting leans on fall cycles, and tech tends to be more rolling. When a user is building a recruiting plan, factor the calendar in, and point them to the Calendar page, which holds their personalized recruiting timeline with key dates and milestones.
+
+## Continuity
+The user's recent messages are included for context. If they're continuing a topic, pick up where you left off. Don't re-introduce yourself or repeat information you already gave.
+
+## Your name
+You're Scout. Use it sparingly."""
+
+
+@lru_cache(maxsize=1)
+def _build_static_system_prompt() -> str:
+    """Build the static, user-independent system prompt.
+
+    Identical for every user and every turn. It sits first in the message list
+    so OpenAI's automatic prefix caching can reuse it across turns and across
+    users. lru_cache keeps it byte-identical. Nothing here may interpolate
+    per-user or per-turn data.
+    """
+    return "\n\n".join([
+        _SCOUT_IDENTITY_AND_BEHAVIOR,
+        _build_knowledge_prompt(),
+    ])
+
+
+def _build_dynamic_context_prompt(
+    user_name: str,
+    user_context: Optional[Dict[str, Any]] = None,
+    user_memory: Optional[Dict[str, Any]] = None,
+) -> str:
+    """Build the per-session context block: user identity, profile, memory.
+
+    Differs per user but is stable within a conversation, so it sits second in
+    the Anthropic system array under its own cache_control breakpoint: it stays
+    cached across the turns of one conversation and only rewrites when the
+    profile changes. It must NOT carry fast-changing data (current page,
+    credits) - that goes in the user turn via _build_live_context.
+    """
     user_context_section = _build_user_context_prompt(user_context) if user_context else ""
     user_memory_section = _build_user_memory_prompt(user_memory)
 
-    # Diagnostic so we can confirm user_context flowed through. The number of
-    # populated keys + whether the rendered section is non-empty tells us
-    # whether the LLM is being given the data - if these print zero/empty and
-    # Scout still claims access, that's a Firestore read issue, not a prompt
-    # issue. If these print real values and Scout STILL gaslights, that's an
-    # LLM compliance problem to harden the prompt against.
+    # Diagnostic: confirms user_context actually reached the prompt. If this
+    # prints zero keys / empty while Scout still claims profile access, it is a
+    # Firestore read issue, not a prompt issue.
     try:
         ctx_keys = list((user_context or {}).keys())
         print(f"[ScoutPrompt] user_context keys: {ctx_keys} | rendered_len={len(user_context_section)}")
     except Exception:
         pass
 
-    # The user_context section can be empty if the user has zero profile data.
-    # In that case we don't want the "you HAVE the profile" framing dangling
-    # without anything below it - that's worse than no framing. Render the
-    # access-rule preamble ONLY when the section actually carries data.
-    profile_access_rule = ""
+    parts = [f"USER: {user_name}"]
+
+    # The profile-access rule only makes sense when there is profile data to
+    # point at. Rendering "you HAVE the profile" with nothing below it is worse
+    # than no framing, so gate it on the section actually carrying data.
     if user_context_section.strip():
-        profile_access_rule = (
-            "\n\nCRITICAL RULE - PROFILE ACCESS: You have full visibility into the user's "
+        parts.append(
+            "CRITICAL RULE - PROFILE ACCESS: You have full visibility into the user's "
             "profile (academics, goals, target firms, location, resume, recent searches, "
-            "saved contacts, meeting preps). The data is rendered in the USER PROFILE "
-            "& RECENT ACTIVITY section below. NEVER say \"I can't view your profile\", "
-            "\"I can't access your profile\", \"I don't have visibility into...\", or any "
-            "variation of that. If a specific field is empty, say so plainly (\"I don't see "
-            "a target industry on your profile yet\"). Do NOT ask the user to share "
+            "saved contacts, meeting preps). The data is in the USER PROFILE & RECENT "
+            "ACTIVITY section below. NEVER say \"I can't view your profile\", \"I can't "
+            "access your profile\", \"I don't have visibility into...\", or any variation "
+            "of that. If a specific field is empty, say so plainly (\"I don't see a "
+            "target industry on your profile yet\"). Do NOT ask the user to share "
             "information that's already in their profile below."
         )
+        parts.append(user_context_section.strip())
 
-    routes_list = "\n".join([f"  {route}" for route in ROUTE_KEYWORDS.keys()])
+    if user_memory_section.strip():
+        parts.append(user_memory_section.strip())
 
-    return f"""You are Scout, the built-in assistant for Offerloop - a networking platform that helps college students connect with professionals for career opportunities.
+    return "\n\n".join(parts)
 
-CRITICAL RULE: When users mention "contacts at Google", "contacts from Goldman", "my contacts at [any company]", or similar - they ALWAYS mean their saved networking contacts on Offerloop at that company. NEVER interpret this as Google Contacts, Gmail contacts, or phone contacts. This is the #1 most common query you receive. Always search/show their saved Offerloop contacts.{profile_access_rule}
 
-## Who you are
-You're a knowledgeable teammate, not a help doc. You know the platform inside and out, you're genuinely rooting for the user to land great connections, and you keep things moving. You're direct, a little warm, and never patronizing. Think: a friend who happens to know every feature.
+def _build_live_context(current_page: str, tier: str, credits: int, max_credits: int) -> str:
+    """Build the fast-changing context block.
 
-## How you talk
-
-Default length: 2–4 sentences. Enough to be helpful, short enough to feel like a chat.
-
-When the user asks "how does X work?" or "tell me more": You can go longer - up to a short paragraph. Match the depth of the question.
-
-Acknowledge before answering. Start with a brief, natural lead-in that shows you heard them. Vary these - never repeat the same one twice in a row. Examples of the kind of thing you might say (don't use these verbatim every time):
-- "Good question."
-- "So for that…"
-- "Here's how that works."
-- "Yeah - so…"
-- "Sure thing."
-
-Never do:
-- Start with "Great question!" every time
-- Use corporate filler ("I'd be happy to help you with that!")
-- List steps with bullet points unless the user explicitly asks for steps
-- Repeat the user's question back to them
-- Say "I understand" or "I see" - just answer
-
-## Turn-taking
-
-When the request is clear: Answer directly.
-
-When the request is ambiguous: Ask ONE short follow-up question before answering. Examples:
-- "Are you looking for full-time roles or internships?"
-- "Do you want people at a specific company, or anyone in that field?"
-- "Are you trying to cold email them or set up a meeting?"
-
-Never ask more than one clarifying question at a time.
-
-## Navigation
-
-Offer, don't command. When suggesting navigation, phrase it as a suggestion in the message text. You MUST still populate the navigate_to field (and optionally action_buttons, auto_populate) in your JSON response - the conversational tone is about the message wording, not about removing JSON fields.
-- Good message: "Want me to take you to Contact Search so you can try that?"
-- Good message: "I can take you to Firm Search - want to go?"
-- Bad message: "Head to Contact Search."
-- Bad message: "Navigate to Settings > Gmail."
-
-When there are multiple possible actions, present them as a choice:
-- "I can take you to Contact Search to find people, or Firm Search to look up the company first - which sounds more useful right now?"
-
-## Context awareness
-
-The user's current page is provided in USER CONTEXT below. Use it naturally in your replies when relevant:
-- If they're on Contact Search: "Since you're already on Contact Search, you can…"
-- If they're on Firm Search: "You're on Firm Search - want help narrowing this down?"
-- If they're on the Job Board: "Looks like you're browsing jobs - want tips on finding contacts at these companies?"
-- If they ask about a feature and they're already on that page, acknowledge it instead of telling them to navigate there.
-Don't force it. If the current page isn't relevant to the question, ignore it.
-
-## Continuity
-
-The user's recent messages are included for context. If they're continuing a previous topic, pick up where you left off naturally ("So for the Gmail thing…", "Building on that…"). Don't re-introduce yourself or repeat information you already gave.
-
-## What you know
-
-You can help with:
-- Finding contacts (job titles, companies, industries, locations)
-- Finding firms and understanding firm profiles
-- Understanding credits, plans (Free / Pro / Elite), and billing
-- Connecting Gmail and sending emails
-- Meeting prep and interview prep features
-- Job Board and how to use it
-- General "what should I do?" career networking questions on the platform
-
-If someone asks about something outside the platform, give a brief helpful answer if you can, but gently steer back: "That's a bit outside what I cover, but here's a quick thought…"
-
-## Your name
-You're Scout. Use it sparingly - in your greeting and maybe once more if it feels natural. Don't sign off every message.
-
-USER CONTEXT:
-- Name: {user_name}
-- Plan: {tier}
-- Credits: {credits}/{max_credits}
-- Current page: {current_page}
-
-{knowledge}
-{user_context_section}
-{user_memory_section}
-
-AVAILABLE ROUTES FOR NAVIGATION:
-{routes_list}
-
-AUTO-POPULATE INSTRUCTIONS:
-
-When the user provides ANY searchable field (company, job title, location, or industry), you MUST include auto_populate and set navigate_to. Don't wait for "perfect" input.
-
-Contact search (navigate_to: "/contact-search"): auto_populate: {{"search_type": "contact", "job_title": "...", "company": "...", "location": "..."}} - use "" for unspecified fields.
-Firm search (navigate_to: "/firm-search"): auto_populate: {{"search_type": "firm", "industry": "...", "location": "..."}} - use "" for unspecified fields.
-For other routes or no criteria: auto_populate is null.
-
-RESPONSE FORMAT:
-You must respond with valid JSON in this exact format:
-{{
-  "message": "Your helpful response text here",
-  "navigate_to": "/route-path" or null,
-  "action_buttons": [
-    {{"label": "Button text", "route": "/route"}}
-  ] or [],
-  "auto_populate": {{
-    "search_type": "contact" or "firm",
-    "job_title": "..." or "",
-    "company": "..." or "",
-    "location": "..." or "",
-    "industry": "..." or ""
-  }} or null
-}}
-- "navigate_to": The most relevant route, or null if no navigation needed.
-- "action_buttons": Additional navigation options (max 2–3), or [].
-- "auto_populate": REQUIRED when navigate_to is "/contact-search" or "/firm-search" and the user has provided any search criteria (even across multiple messages). null otherwise.
-"""
+    Current page, plan, and credits change turn to turn, so this is prepended
+    to the user's message (the uncached tail of the prompt) instead of being
+    baked into the cached system blocks.
+    """
+    today = datetime.now().strftime("%A, %B %d, %Y")
+    return (
+        "[CURRENT CONTEXT - changes each turn]\n"
+        f"- Today's date: {today}\n"
+        f"- Current page: {current_page}\n"
+        f"- Plan: {tier}\n"
+        f"- Credits: {credits}/{max_credits}\n"
+        "- The credit balance is informational only. Never refuse a navigate, "
+        "never switch to the answer tool, and never lecture the user about "
+        "credits just because the balance is low or zero. Propose the navigate "
+        "as normal; the destination page and its approve card handle the cost."
+    )
 
 
 def _build_user_context_prompt(user_context: Dict[str, Any]) -> str:
@@ -551,9 +523,13 @@ def _build_user_context_prompt(user_context: Dict[str, Any]) -> str:
         if level:
             parts.append(f"- Experience level: {level}")
 
-    resume = user_context.get("resume_summary")
+    resume = user_context.get("resume")
     if resume:
-        parts.append(f"- Resume: {resume[:300]}")
+        parts.append(
+            "- Resume (the user's actual resume; ground every piece of advice "
+            "in this real experience, skills, and education, and never ask for "
+            "what is already here):\n" + str(resume).strip()
+        )
 
     personal = user_context.get("personal_note")
     if personal:
@@ -629,182 +605,28 @@ def _build_user_context_prompt(user_context: Dict[str, Any]) -> str:
     parts.append('- "Write an email for a data engineer" → Use their email template style and resume context')
     parts.append('- "What companies should I target?" → Reference their dream companies and target industries')
     parts.append('- "Look at my profile" → Read the data above and respond - do NOT ask them to share what\'s there')
+    parts.append('- Planning, strategy, or interview/outreach advice → Ground it in their resume, school, and goals above; be specific to their background, never generic')
     parts.append("Only ask follow-up questions when the profile genuinely doesn't have the needed information.")
     parts.append("If the user references a person they're prepping for or just saved, reference them by name from the lists above.")
 
     return "\n".join(parts)
 
 
-# ============================================================================
-# TOOL DEFINITIONS (OpenAI function calling)
-# ============================================================================
+def _strip_em_dashes(text: str) -> str:
+    """Replace em dashes (U+2014) with a spaced hyphen.
 
-SCOUT_TOOLS = [
-    {
-        "type": "function",
-        "function": {
-            "name": "search_saved_contacts",
-            "description": "Search the user's saved contacts by company, job title, name, or status. Use when the user asks about their contacts, wants to see who they've saved, or asks about contacts at a specific company.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "company": {
-                        "type": "string",
-                        "description": "Filter by company name (partial match)",
-                    },
-                    "job_title": {
-                        "type": "string",
-                        "description": "Filter by job title (partial match)",
-                    },
-                    "name": {
-                        "type": "string",
-                        "description": "Filter by contact name (partial match)",
-                    },
-                    "status": {
-                        "type": "string",
-                        "description": "Filter by pipeline status",
-                        "enum": ["needs_attention", "active", "done"],
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "generate_email_preview",
-            "description": "Generate a draft email preview for outreach to a professional. Use when the user asks to write, draft, or compose an email for a specific person or role.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "recipient_name": {
-                        "type": "string",
-                        "description": "Name of the recipient",
-                    },
-                    "recipient_company": {
-                        "type": "string",
-                        "description": "Company the recipient works at",
-                    },
-                    "recipient_title": {
-                        "type": "string",
-                        "description": "Job title of the recipient",
-                    },
-                    "purpose": {
-                        "type": "string",
-                        "description": "Purpose of the email",
-                        "enum": ["networking", "referral", "meeting", "follow_up", "thank_you"],
-                    },
-                },
-                "required": ["recipient_company"],
-            },
-        },
-    },
-    {
-        "type": "function",
-        "function": {
-            "name": "suggest_networking_strategy",
-            "description": "Suggest a personalized networking strategy based on the user's goals, dream companies, and resume. Use when the user asks for advice on who to reach out to, how to network, or what their next steps should be.",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "focus_area": {
-                        "type": "string",
-                        "description": "Optional focus area for strategy",
-                        "enum": ["getting_started", "expanding_network", "specific_company", "industry_switch", "interview_prep"],
-                    },
-                    "target_company": {
-                        "type": "string",
-                        "description": "Optional specific company to focus strategy on",
-                    },
-                },
-                "required": [],
-            },
-        },
-    },
-]
-
-
-def _detect_route_from_query(query: str) -> Optional[str]:
-    """Detect if the query mentions a specific route/page."""
-    query_lower = query.lower()
-
-    for route, keywords in ROUTE_KEYWORDS.items():
-        for keyword in keywords:
-            if keyword in query_lower:
-                return route
-
-    return None
-
-
-# Intent patterns for smart tool routing
-_INTENT_PATTERNS = {
-    "contacts": re.compile(
-        r"(?:my contacts|saved contacts|contacts at|who (?:do i|have i)|show me .* contacts|"
-        r"contacts (?:at|from|in)|how many contacts|list .*contacts)",
-        re.IGNORECASE,
-    ),
-    "email": re.compile(
-        r"(?:write (?:an? )?email|draft (?:an? )?email|compose|reach out to|"
-        r"email (?:to|for|preview)|send (?:an? )?email|outreach email)",
-        re.IGNORECASE,
-    ),
-    "strategy": re.compile(
-        r"(?:networking strategy|who should i|advice|what should i do|"
-        r"how (?:should|do) i (?:network|start|approach)|next steps|strategy for)",
-        re.IGNORECASE,
-    ),
-    "research": re.compile(
-        r"(?:tell me about|what is|what are|describe|explain|info(?:rmation)? (?:on|about)|"
-        r"research|how does .+ (?:work|hire|recruit)|"
-        r"(?:interview|hiring|recruiting) (?:process|culture|timeline) (?:at|for)|"
-        r"what.+(?:like|about).+(?:work|working).+at|"
-        r"(?:culture|salary|compensation|benefits|interview) at)",
-        re.IGNORECASE,
-    ),
-}
-
-
-def _detect_intent(message: str) -> str:
-    """Fast keyword/regex check to determine intent and select appropriate tools.
-
-    Returns one of: "contacts", "email", "strategy", "general"
+    House style bans the em dash in all output. The system prompt also asks the
+    model to avoid it, but a prompt is not a guarantee, so every model-authored
+    string is run through this before it reaches the user.
     """
-    for intent, pattern in _INTENT_PATTERNS.items():
-        if pattern.search(message):
-            return intent
-    return "general"
-
-
-# ============================================================================
-# DATA CLASSES
-# ============================================================================
-
-@dataclass
-class ScoutAssistantResponse:
-    """Response from Scout assistant."""
-    message: str
-    navigate_to: Optional[str] = None
-    action_buttons: List[Dict[str, str]] = field(default_factory=list)
-    auto_populate: Optional[Dict[str, Any]] = None
-    contacts_results: Optional[List[Dict[str, Any]]] = None
-    email_preview: Optional[Dict[str, str]] = None
-    tool_used: Optional[str] = None
-
-    def to_dict(self) -> Dict[str, Any]:
-        result = {
-            "message": self.message,
-            "navigate_to": self.navigate_to,
-            "action_buttons": self.action_buttons,
-            "auto_populate": self.auto_populate,
-        }
-        if self.contacts_results is not None:
-            result["contacts_results"] = self.contacts_results
-        if self.email_preview is not None:
-            result["email_preview"] = self.email_preview
-        if self.tool_used is not None:
-            result["tool_used"] = self.tool_used
-        return result
+    em = chr(0x2014)  # em dash, kept out of the source as a literal character
+    if not text or em not in text:
+        return text
+    # Handles both the spaced and unspaced forms of the em dash.
+    cleaned = text.replace(" " + em + " ", " - ").replace(em, " - ")
+    while "  " in cleaned:
+        cleaned = cleaned.replace("  ", " ")
+    return cleaned
 
 
 # ============================================================================
@@ -814,8 +636,9 @@ class ScoutAssistantResponse:
 class ScoutAssistantService:
     """Service for Scout product assistant functionality."""
 
-    DEFAULT_MODEL = "gpt-4o-mini"
-    CLAUDE_MODEL = "claude-haiku-4-5-20251001"
+    # Scout runs on the OpenAI API. gpt-4.1-mini: strong tool-calling, low cost,
+    # and automatic prompt-prefix caching for the static-first system prompt.
+    DEFAULT_MODEL = "gpt-4.1-mini"
 
     def __init__(self):
         self._openai = get_async_openai_client()
@@ -840,326 +663,256 @@ class ScoutAssistantService:
         user_memory: Optional[Dict[str, Any]] = None,
         uid: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Handle a chat message from the user."""
+        """Handle one chat turn.
+
+        Scout answers by calling exactly one tool (navigate / answer / clarify).
+        The result is a structured dict the frontend approve flow consumes; see
+        _build_tool_response for the shape.
+        """
         message = (message or "").strip()
         conversation_history = conversation_history or []
 
-        # Handle empty message
         if not message:
-            return ScoutAssistantResponse(
-                message=f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout - I know the platform inside and out. What are you trying to do right now?",
-                navigate_to=None,
-                action_buttons=[],
-            ).to_dict()
+            return self._greeting_response(user_name)
 
-        # Detect intent for smart tool routing
-        intent = _detect_intent(message)
+        # Static-first message order: the static prompt sits first so OpenAI's
+        # automatic prefix caching reuses it across turns and across users.
+        # Per-session context follows; fast-changing context rides in the user
+        # turn so it never breaks the cached prefix.
+        static_system = _build_static_system_prompt()
+        dynamic_context = _build_dynamic_context_prompt(user_name, user_context, user_memory)
+        live_context = _build_live_context(current_page, tier, credits, max_credits)
+        combined_system = static_system + (("\n\n" + dynamic_context) if dynamic_context else "")
 
-        # Build system prompt with user context + memory
-        system_prompt = _build_system_prompt(
-            user_name=user_name,
-            tier=tier,
-            credits=credits,
-            max_credits=max_credits,
-            current_page=current_page,
-            user_context=user_context,
-            user_memory=user_memory,
-        )
-
-        # Build messages list
-        messages = [{"role": "system", "content": system_prompt}]
-
-        # Add conversation history (last 6 messages)
+        messages: List[Dict[str, str]] = [{"role": "system", "content": combined_system}]
         for msg in conversation_history[-6:]:
             role = msg.get("role", "user")
             content = msg.get("content", "")
-            if role in ["user", "assistant"] and content:
+            if role in ("user", "assistant") and content:
                 messages.append({"role": role, "content": content})
-
-        # For contacts intent: pre-load contacts into prompt to avoid tool call
-        contacts_results = None
-        tool_used = None
-        email_preview = None
-
-        if intent == "contacts" and uid:
-            # Extract filter from message and pre-load contacts
-            pre_loaded = await self._preload_contacts(uid, message)
-            if pre_loaded:
-                contacts_results = pre_loaded.get("contacts", [])
-                tool_used = "search_saved_contacts"
-                # Add contacts data to the user message so model can reference them
-                contacts_info = json.dumps(pre_loaded, indent=None)
-                messages.append({
-                    "role": "user",
-                    "content": f"{message}\n\n[SAVED OFFERLOOP CONTACTS - these are the user's saved networking contacts. Summarize them in your response. Do NOT confuse with Google/Gmail contacts.]\n{contacts_info}",
-                })
-            else:
-                messages.append({"role": "user", "content": message})
-        elif intent == "research":
-            research_context = await self._fetch_research_context(message)
-            if research_context:
-                messages.append({
-                    "role": "user",
-                    "content": f"{message}\n\n[REAL-TIME RESEARCH DATA - use this to give a detailed, specific answer. Cite sources when relevant.]\n{research_context}",
-                })
-            else:
-                messages.append({"role": "user", "content": message})
-        else:
-            messages.append({"role": "user", "content": message})
-
-        # Select tools based on intent
-        tools_for_intent = self._get_tools_for_intent(intent, uid)
+        messages.append({"role": "user", "content": f"{live_context}\n\n{message}"})
 
         try:
-            # For "general" intent (no tools) or pre-loaded contacts: try Claude first, single LLM call
-            if not tools_for_intent:
-                content = await self._call_llm_json(messages, system_prompt)
-            else:
-                # Tool-based flow (email, strategy): use OpenAI with function calling
-                content, tool_used_from_call, contacts_from_call, email_from_call = (
-                    await self._call_with_tools(messages, system_prompt, conversation_history, message, tools_for_intent, uid, user_context)
-                )
-                tool_used = tool_used or tool_used_from_call
-                contacts_results = contacts_results or contacts_from_call
-                email_preview = email_preview or email_from_call
-
-            # Parse the final JSON response
-            parsed = self._parse_json_response(content)
-
-            response_message = parsed.get("message", "I'm not sure how to help with that. Could you rephrase?")
-            navigate_to = self._validate_route(parsed.get("navigate_to"))
-            action_buttons = self._validate_buttons(parsed.get("action_buttons", []))
-            auto_populate = self._validate_auto_populate(parsed.get("auto_populate"))
-
-            return ScoutAssistantResponse(
-                message=response_message,
-                navigate_to=navigate_to,
-                action_buttons=action_buttons,
-                auto_populate=auto_populate,
-                contacts_results=contacts_results,
-                email_preview=email_preview,
-                tool_used=tool_used,
-            ).to_dict()
-
+            tool_call = await self._call_scout_tools(messages)
+            return self._build_tool_response(tool_call, current_page)
         except Exception as e:
             print(f"[ScoutAssistant] Error: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
+            return {
+                "tool": "answer",
+                "message": f"I'm having a moment! {random.choice(_ERROR_RECOVERY_LINES)}",
+                "navigate": None,
+            }
 
-            return ScoutAssistantResponse(
-                message=f"I'm having a moment! {random.choice(_ERROR_RECOVERY_LINES)}",
-                navigate_to=None,
-                action_buttons=[],
-                auto_populate=None,
-            ).to_dict()
+    def _greeting_response(self, user_name: str) -> Dict[str, Any]:
+        """Opening message when the user opens Scout with no input yet."""
+        name = f", {user_name}" if user_name and user_name != "there" else ""
+        return {
+            "tool": "answer",
+            "message": f"Hey{name}! I'm Scout. What are you trying to get done?",
+            "navigate": None,
+        }
 
-    def _get_tools_for_intent(self, intent: str, uid: Optional[str]) -> Optional[List[Dict]]:
-        """Return the subset of tools appropriate for the detected intent."""
-        if not uid:
-            return None
-        if intent == "contacts":
-            # Contacts are pre-loaded into prompt; no tool needed
-            return None
-        if intent == "email":
-            return [t for t in SCOUT_TOOLS if t["function"]["name"] == "generate_email_preview"]
-        if intent == "strategy":
-            return [t for t in SCOUT_TOOLS if t["function"]["name"] == "suggest_networking_strategy"]
-        # "general" - no tools, fastest path
-        return None
+    async def _call_scout_tools(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Run one Scout turn and return the terminal tool it ends on, as
+        {name, args}.
 
-    async def _preload_contacts(self, uid: str, message: str) -> Optional[Dict[str, Any]]:
-        """Pre-load contacts matching the user's query to avoid a tool call."""
-        # Extract a rough filter from the message
-        args: Dict[str, Any] = {}
-        # Try to extract company name - look for "at <company>"
-        at_match = re.search(r'\bat\s+(\w[\w&.\' -]+)', message, re.IGNORECASE)
-        if at_match:
-            args["company"] = at_match.group(1).strip()
-        # Try "from <company>"
-        elif (from_match := re.search(r'\bfrom\s+(\w[\w&.\' -]+)', message, re.IGNORECASE)):
-            args["company"] = from_match.group(1).strip()
-        try:
-            result_str = await self._tool_search_contacts(uid, args)
-            result = json.loads(result_str) if isinstance(result_str, str) else result_str
-            contacts = result.get("contacts", [])
-            if isinstance(contacts, list):
-                return result
-        except Exception as e:
-            print(f"[ScoutAssistant] Pre-load contacts failed: {e}")
-        return None
+        Each step the model calls exactly one tool (parallel_tool_calls=False,
+        tool_choice="required"). It may call helper tools (parse_job_url, ...)
+        to gather data; their results are fed back and the loop continues. The
+        final step is offered only the terminal tools, so a turn always ends on
+        exactly one of navigate / answer / clarify.
+        """
+        client = self._get_openai()
+        convo: List[Dict[str, Any]] = list(messages)
+        # At most a few helper calls, then a forced terminal tool.
+        MAX_STEPS = 4
 
-    async def _fetch_research_context(self, message: str) -> Optional[str]:
-        """Fetch real-time research data via Perplexity for research-intent queries."""
-        try:
-            from app.services.perplexity_client import quick_search
-            loop = asyncio.get_event_loop()
-            result = await loop.run_in_executor(None, lambda: quick_search(message))
-            if result and result.get("content"):
-                citations = result.get("citations", [])
-                context = result["content"]
-                if citations:
-                    context += "\n\nSources:\n" + "\n".join(f"- {c}" for c in citations[:5])
-                return context
-        except Exception as e:
-            print(f"[ScoutAssistant] Perplexity research failed: {e}")
-        return None
-
-    async def _call_llm_json(self, messages: List[Dict], system_prompt: str) -> str:
-        """Single LLM call for JSON response. Tries Claude first, falls back to GPT-4o-mini."""
-        anthropic_client = get_async_anthropic_client()
-
-        # Try Claude first for non-tool queries (faster for text generation)
-        if anthropic_client:
-            try:
-                # Convert messages to Anthropic format: extract system, keep user/assistant
-                anthropic_messages = [m for m in messages if m["role"] in ("user", "assistant")]
-                claude_system = system_prompt + "\n\nRespond with valid JSON only."
-
-                response = await asyncio.wait_for(
-                    anthropic_client.messages.create(
-                        model=self.CLAUDE_MODEL,
-                        max_tokens=500,
-                        temperature=0.5,
-                        system=claude_system,
-                        messages=anthropic_messages,
-                    ),
-                    timeout=10.0,
-                )
-                content = response.content[0].text
-                # Validate it's parseable JSON
-                json.loads(content)
-                return content
-            except Exception as e:
-                print(f"[ScoutAssistant] Claude failed, falling back to GPT: {type(e).__name__}: {e}")
-
-        # Fallback to GPT-4o-mini
-        try:
+        for step in range(MAX_STEPS):
+            final_step = step == MAX_STEPS - 1
             response = await asyncio.wait_for(
-                self._get_openai().chat.completions.create(
+                client.chat.completions.create(
                     model=self.DEFAULT_MODEL,
-                    messages=messages,
-                    temperature=0.5,
-                    max_tokens=500,
-                    response_format={"type": "json_object"},
+                    messages=convo,
+                    temperature=0.3,
+                    max_tokens=600,
+                    tools=to_openai_tools(terminal_only=final_step),
+                    tool_choice="required",
+                    parallel_tool_calls=False,
                 ),
-                timeout=15.0,
+                timeout=25.0,
             )
-            return response.choices[0].message.content
-        except asyncio.TimeoutError:
-            return json.dumps({
-                "message": f"I'm taking too long to think! {random.choice(_ERROR_RECOVERY_LINES)}",
-                "navigate_to": None,
-                "action_buttons": [],
-                "auto_populate": None,
-            })
+            self._log_token_usage(f"handle_chat[step={step}]", getattr(response, "usage", None))
 
-    async def _call_with_tools(
-        self,
-        messages: List[Dict],
-        system_prompt: str,
-        conversation_history: List[Dict[str, str]],
-        user_message: str,
-        tools: List[Dict],
-        uid: Optional[str],
-        user_context: Optional[Dict[str, Any]],
-    ) -> tuple:
-        """Two-pass LLM flow with tool calling. Returns (content, tool_used, contacts, email_preview).
-        Uses self._get_openai() which picks the right client for the event loop."""
-        tool_used = None
-        contacts_results = None
-        email_preview = None
+            message = response.choices[0].message
+            tool_calls = message.tool_calls or []
+            if not tool_calls:
+                # tool_choice="required" should make this unreachable.
+                return {"name": "answer", "args": {"text": "Could you say that another way?"}}
 
-        try:
-            response = await asyncio.wait_for(
-                self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
-                    messages=messages,
-                    temperature=0.5,
-                    max_tokens=500,
-                    tools=tools,
-                    tool_choice="auto",
-                ),
-                timeout=15.0,
-            )
-        except asyncio.TimeoutError:
-            return (
-                json.dumps({
-                    "message": f"I'm taking too long to think! {random.choice(_ERROR_RECOVERY_LINES)}",
-                    "navigate_to": None, "action_buttons": [], "auto_populate": None,
-                }),
-                None, None, None,
-            )
-
-        choice = response.choices[0]
-        tool_calls = choice.message.tool_calls
-
-        if not tool_calls or not uid:
-            return (choice.message.content, None, None, None)
-
-        # Execute tool calls
-        tool_messages = [choice.message]
-        for tc in tool_calls:
-            fn_name = tc.function.name
+            call = tool_calls[0]
             try:
-                fn_args = json.loads(tc.function.arguments)
+                args = json.loads(call.function.arguments or "{}")
             except json.JSONDecodeError:
-                fn_args = {}
+                args = {}
+            if not isinstance(args, dict):
+                args = {}
+            name = call.function.name
 
-            tool_result = await self._execute_tool(fn_name, fn_args, uid, user_context or {})
-            tool_used = fn_name
+            if name in TERMINAL_TOOL_NAMES:
+                return {"name": name, "args": args}
 
-            if fn_name == "search_saved_contacts":
-                try:
-                    parsed_contacts = json.loads(tool_result) if isinstance(tool_result, str) else tool_result
-                    if isinstance(parsed_contacts, list):
-                        contacts_results = parsed_contacts
-                except (json.JSONDecodeError, TypeError):
-                    pass
-            elif fn_name == "generate_email_preview":
-                try:
-                    parsed_email = json.loads(tool_result) if isinstance(tool_result, str) else tool_result
-                    if isinstance(parsed_email, dict) and "body" in parsed_email:
-                        email_preview = parsed_email
-                except (json.JSONDecodeError, TypeError):
-                    pass
+            if name in HELPER_TOOL_NAMES:
+                result = await run_helper_tool(name, args)
+                # Echo the model's tool call, then feed the result back so the
+                # next step can use it.
+                convo.append({
+                    "role": "assistant",
+                    "content": message.content or None,
+                    "tool_calls": [{
+                        "id": call.id,
+                        "type": "function",
+                        "function": {
+                            "name": name,
+                            "arguments": call.function.arguments or "{}",
+                        },
+                    }],
+                })
+                convo.append({
+                    "role": "tool",
+                    "tool_call_id": call.id,
+                    "content": json.dumps(result),
+                })
+                continue
 
-            tool_messages.append({
-                "role": "tool",
-                "tool_call_id": tc.id,
-                "content": tool_result if isinstance(tool_result, str) else json.dumps(tool_result),
-            })
+            # Unknown tool name: degrade to a safe answer.
+            return {"name": "answer", "args": {"text": "Could you say that another way?"}}
 
-        # Second LLM call with tool results
-        second_system = system_prompt + "\n\nIMPORTANT: You just called a tool and got results. Include those results naturally in your response. Respond with valid JSON in the standard format."
-        second_messages = [{"role": "system", "content": second_system}]
-        for msg in conversation_history[-6:]:
-            role = msg.get("role", "user")
-            content = msg.get("content", "")
-            if role in ["user", "assistant"] and content:
-                second_messages.append({"role": role, "content": content})
-        second_messages.append({"role": "user", "content": user_message})
-        second_messages.extend(tool_messages)
+        # Steps exhausted without a terminal tool (the final step is
+        # terminal-only, so this should not happen). Degrade safely.
+        return {"name": "answer", "args": {"text": "Could you say that another way?"}}
 
+    def _build_tool_response(self, tool_call: Dict[str, Any], current_page: str) -> Dict[str, Any]:
+        """Turn the model's tool call into the response the frontend consumes.
+
+        Shape:
+          { "tool": "navigate"|"answer"|"clarify", "message": str, "navigate": {...}|None }
+        For navigate, the nested object also carries everything the frontend
+        approve-flow rules need (credit_spending, already_on_page,
+        missing_required) so the frontend does not need the registry.
+        """
+        name = tool_call.get("name", "answer")
+        args = tool_call.get("args", {}) or {}
+
+        # Strip em dashes from every model-authored string before it reaches the
+        # user. House style bans U+2014; a prompt instruction is not a guarantee.
+        for _key in ("reasoning", "text", "question"):
+            if isinstance(args.get(_key), str):
+                args[_key] = _strip_em_dashes(args[_key])
+
+        if name == "navigate":
+            route = (args.get("route") or "").strip()
+            page = get_page(route)
+            if not page:
+                # Model picked a route outside the registry: degrade to answer.
+                return {
+                    "tool": "answer",
+                    "message": args.get("reasoning")
+                    or "I'm not sure where to take you for that. Can you say more?",
+                    "navigate": None,
+                }
+            allowed = set(page.get("inputs") or [])
+            prefill = {
+                k: str(v).strip()
+                for k, v in (args.get("prefill") or {}).items()
+                if k in allowed and str(v).strip()
+            }
+            missing_required = [
+                f for f in (page.get("required_inputs") or []) if f not in prefill
+            ]
+            imperative = bool(args.get("user_was_imperative", False))
+
+            # If the model proposed a navigate but a required field is missing
+            # and the user did not explicitly command the navigation, ask for
+            # the missing detail instead of dropping them on an empty page.
+            if missing_required and not imperative:
+                return {
+                    "tool": "clarify",
+                    "message": self._clarify_for_missing(missing_required),
+                    "navigate": None,
+                }
+
+            try:
+                confidence = max(0.0, min(1.0, float(args.get("confidence", 0.5))))
+            except (TypeError, ValueError):
+                confidence = 0.5
+            return {
+                "tool": "navigate",
+                "message": args.get("reasoning") or "",
+                "navigate": {
+                    "route": page["route"],
+                    "prefill": prefill,
+                    "reasoning": args.get("reasoning") or "",
+                    "confidence": confidence,
+                    "user_was_imperative": imperative,
+                    "credit_spending": page.get("credit_cost") is not None,
+                    "credit_cost": page.get("credit_cost"),
+                    "missing_required": missing_required,
+                    "already_on_page": current_page.split("?")[0].rstrip("/") == page["route"],
+                },
+            }
+
+        if name == "clarify":
+            return {
+                "tool": "clarify",
+                "message": args.get("question")
+                or "Could you tell me a bit more about what you need?",
+                "navigate": None,
+            }
+
+        # answer (default / fallback)
+        return {
+            "tool": "answer",
+            "message": args.get("text")
+            or "I'm not sure how to help with that. Could you rephrase?",
+            "navigate": None,
+        }
+
+    def _clarify_for_missing(self, missing: List[str]) -> str:
+        """Phrase a natural-language clarify question for missing required fields.
+
+        References the field in plain language, never the raw field name.
+        """
+        phrasing = {
+            "linkedin_url": "the LinkedIn URL for the person you're meeting with",
+            "company": "which company you have in mind",
+            "job_title": "which role you're looking for",
+            "location": "which location you're focused on",
+        }
+        phrases = [phrasing.get(f, f.replace("_", " ")) for f in missing]
+        if len(phrases) == 1:
+            return f"Can you share {phrases[0]}?"
+        joined = ", ".join(phrases[:-1]) + f" and {phrases[-1]}"
+        return f"Can you share {joined}?"
+
+    def _log_token_usage(self, label: str, usage: Any) -> None:
+        """Log OpenAI token counts, including automatic prefix-cache hits."""
         try:
-            second_response = await asyncio.wait_for(
-                self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
-                    messages=second_messages,
-                    temperature=0.5,
-                    max_tokens=500,
-                    response_format={"type": "json_object"},
-                ),
-                timeout=15.0,
+            if usage is None:
+                return
+            prompt = getattr(usage, "prompt_tokens", 0) or 0
+            completion = getattr(usage, "completion_tokens", 0) or 0
+            details = getattr(usage, "prompt_tokens_details", None)
+            cached = getattr(details, "cached_tokens", 0) or 0
+            hit = (cached / prompt * 100) if prompt else 0.0
+            print(
+                f"[ScoutCache] {label}: prompt={prompt} cached={cached} "
+                f"completion={completion} hit_rate={hit:.0f}%"
             )
-            content = second_response.choices[0].message.content
-        except (asyncio.TimeoutError, Exception) as e:
-            print(f"[ScoutAssistant] Second pass failed: {e}")
-            content = json.dumps({
-                "message": "I found some results but had trouble formatting them. Check the data below!",
-                "navigate_to": None, "action_buttons": [], "auto_populate": None,
-            })
+        except Exception as e:
+            print(f"[ScoutCache] {label}: usage log failed: {e}")
 
-        return (content, tool_used, contacts_results, email_preview)
 
     # ========================================================================
     # STREAMING
@@ -1180,523 +933,37 @@ class ScoutAssistantService:
         uid: Optional[str] = None,
         queue: "asyncio.Queue[Optional[Dict[str, Any]]]" = None,
     ) -> None:
-        """Stream a chat response, pushing SSE events to the provided queue.
+        """SSE shim for the /chat/stream route.
 
-        IMPORTANT: This runs in a NEW event loop (background thread). We must
-        create fresh async HTTP clients here - the ones from __init__ are bound
-        to the main event loop and will hang/fail in this context.
+        Scout's tool-call response is structured, not a token stream, so this
+        runs handle_chat and emits the result as a single 'done' event. It runs
+        in a background thread with its own event loop, so it creates a fresh
+        OpenAI client that handle_chat picks up via _get_openai().
 
-        Events pushed:
-          {"event": "intent", "data": {"intent": "..."}}
-          {"event": "token", "data": {"text": "..."}}
-          {"event": "done", "data": {full response dict}}
-          {"event": "error", "data": {"message": "..."}}
+        The /chat/stream route and this shim are retired once the frontend
+        moves to the plain /chat endpoint (Phase 3).
         """
-        # Create fresh async clients for this event loop
+        # Fresh client bound to this thread's event loop.
         self._stream_openai = create_async_openai_client()
         try:
-            import anthropic as _anthropic
-            from app.config import CLAUDE_API_KEY
-            self._stream_anthropic = _anthropic.AsyncAnthropic(api_key=CLAUDE_API_KEY) if CLAUDE_API_KEY else None
-        except (ImportError, Exception):
-            self._stream_anthropic = None
-
-        message = (message or "").strip()
-        conversation_history = conversation_history or []
-
-        if not message:
-            greeting = f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout - I know the platform inside and out. What are you trying to do right now?"
-            await queue.put({"event": "done", "data": {
-                "message": greeting, "navigate_to": None, "action_buttons": [], "auto_populate": None,
-            }})
-            await queue.put(None)  # Signal end
-            return
-
-        intent = _detect_intent(message)
-        await queue.put({"event": "intent", "data": {"intent": intent}})
-
-        system_prompt = _build_system_prompt(
-            user_name=user_name, tier=tier, credits=credits,
-            max_credits=max_credits, current_page=current_page, user_context=user_context,
-            user_memory=user_memory,
-        )
-
-        messages = [{"role": "system", "content": system_prompt}]
-        for msg in conversation_history[-6:]:
-            role = msg.get("role", "user")
-            content = msg.get("content", "")
-            if role in ["user", "assistant"] and content:
-                messages.append({"role": role, "content": content})
-
-        contacts_results = None
-        email_preview = None
-        tool_used = None
-
-        # Pre-load contacts for contacts intent
-        if intent == "contacts" and uid:
-            pre_loaded = await self._preload_contacts(uid, message)
-            if pre_loaded:
-                contacts_results = pre_loaded.get("contacts", [])
-                tool_used = "search_saved_contacts"
-                contacts_info = json.dumps(pre_loaded, indent=None)
-                messages.append({
-                    "role": "user",
-                    "content": f"{message}\n\n[SAVED OFFERLOOP CONTACTS - these are the user's saved networking contacts. Summarize them in your response. Do NOT confuse with Google/Gmail contacts.]\n{contacts_info}",
-                })
-            else:
-                messages.append({"role": "user", "content": message})
-        elif intent == "research":
-            # Fetch real-time data via Perplexity for research queries
-            research_context = await self._fetch_research_context(message)
-            if research_context:
-                messages.append({
-                    "role": "user",
-                    "content": f"{message}\n\n[REAL-TIME RESEARCH DATA - use this to give a detailed, specific answer. Cite sources when relevant.]\n{research_context}",
-                })
-            else:
-                messages.append({"role": "user", "content": message})
-        else:
-            messages.append({"role": "user", "content": message})
-
-        tools_for_intent = self._get_tools_for_intent(intent, uid)
-
-        try:
-            if tools_for_intent:
-                # Tool flow: execute tools first, then stream synthesis
-                content, tool_used_fc, contacts_fc, email_fc = await self._call_with_tools(
-                    messages, system_prompt, conversation_history, message,
-                    tools_for_intent, uid, user_context,
-                )
-                tool_used = tool_used or tool_used_fc
-                contacts_results = contacts_results or contacts_fc
-                email_preview = email_preview or email_fc
-
-                # Stream the already-generated content token by token (simulate streaming for tool results)
-                parsed = self._parse_json_response(content)
-                text = parsed.get("message", "")
-                # Send text in chunks for a streaming feel
-                chunk_size = 8
-                words = text.split(" ")
-                for i in range(0, len(words), chunk_size):
-                    chunk = " ".join(words[i:i + chunk_size])
-                    if i > 0:
-                        chunk = " " + chunk
-                    await queue.put({"event": "token", "data": {"text": chunk}})
-
-                await queue.put({"event": "done", "data": {
-                    "message": text,
-                    "navigate_to": self._validate_route(parsed.get("navigate_to")),
-                    "action_buttons": self._validate_buttons(parsed.get("action_buttons", [])),
-                    "auto_populate": self._validate_auto_populate(parsed.get("auto_populate")),
-                    "contacts_results": contacts_results,
-                    "email_preview": email_preview,
-                    "tool_used": tool_used,
-                }})
-            else:
-                # No tools - stream directly
-                full_text = await self._stream_llm(messages, system_prompt, queue)
-
-                # Check if the model accidentally returned JSON instead of plain text
-                clean_text = full_text.strip()
-                if clean_text.startswith("{") and clean_text.endswith("}"):
-                    try:
-                        parsed_json = json.loads(clean_text)
-                        if "message" in parsed_json:
-                            # Model returned JSON - extract the message and metadata directly
-                            msg_text = parsed_json["message"]
-                            metadata = {
-                                "message": msg_text,
-                                "navigate_to": self._validate_route(parsed_json.get("navigate_to")),
-                                "action_buttons": self._validate_buttons(parsed_json.get("action_buttons", [])),
-                                "auto_populate": self._validate_auto_populate(parsed_json.get("auto_populate")),
-                                "contacts_results": contacts_results,
-                                "email_preview": email_preview,
-                                "tool_used": tool_used,
-                            }
-                            await queue.put({"event": "done", "data": metadata})
-                            return  # _stream_llm already pushed None-triggering return
-                    except (json.JSONDecodeError, KeyError):
-                        pass  # Not valid JSON, continue with normal flow
-
-                # Phase 2: classify metadata from the full text
-                metadata = await self._classify_metadata(full_text, system_prompt)
-                metadata["message"] = full_text
-                metadata["contacts_results"] = contacts_results
-                metadata["email_preview"] = email_preview
-                metadata["tool_used"] = tool_used
-                await queue.put({"event": "done", "data": metadata})
-
+            result = await self.handle_chat(
+                message=message,
+                conversation_history=conversation_history,
+                current_page=current_page,
+                user_name=user_name,
+                tier=tier,
+                credits=credits,
+                max_credits=max_credits,
+                user_context=user_context,
+                user_memory=user_memory,
+                uid=uid,
+            )
+            await queue.put({"event": "done", "data": result})
         except Exception as e:
             print(f"[ScoutAssistant] Stream error: {type(e).__name__}: {e}")
-            import traceback
-            traceback.print_exc()
             await queue.put({"event": "error", "data": {"message": "Something went wrong. Try again!"}})
-
-        await queue.put(None)  # Signal end
-
-    async def _stream_llm(self, messages: List[Dict], system_prompt: str, queue) -> str:
-        """Stream text tokens from LLM. Tries Claude first, falls back to GPT-4o-mini.
-        Returns the full accumulated text.
-        Uses fresh clients via self._get_openai() and self._stream_anthropic."""
-        anthropic_client = getattr(self, "_stream_anthropic", None)
-        full_text = ""
-
-        if anthropic_client:
-            try:
-                anthropic_messages = [m for m in messages if m["role"] in ("user", "assistant")]
-                claude_system = system_prompt + "\n\nRespond with ONLY your message text (no JSON). Be direct and helpful."
-
-                async with anthropic_client.messages.stream(
-                    model=self.CLAUDE_MODEL,
-                    max_tokens=500,
-                    temperature=0.5,
-                    system=claude_system,
-                    messages=anthropic_messages,
-                ) as stream:
-                    async for event in stream:
-                        # Handle ContentBlockDeltaEvent with TextDelta
-                        if hasattr(event, "type") and event.type == "content_block_delta":
-                            delta = getattr(event, "delta", None)
-                            if delta and hasattr(delta, "text"):
-                                full_text += delta.text
-                                await queue.put({"event": "token", "data": {"text": delta.text}})
-                return full_text
-            except Exception as e:
-                print(f"[ScoutAssistant] Claude streaming failed, falling back to GPT: {type(e).__name__}: {e}")
-                full_text = ""
-
-        # Fallback: GPT-4o-mini streaming
-        try:
-            stream = await asyncio.wait_for(
-                self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
-                    messages=messages,
-                    temperature=0.5,
-                    max_tokens=500,
-                    stream=True,
-                ),
-                timeout=15.0,
-            )
-            async for chunk in stream:
-                delta = chunk.choices[0].delta if chunk.choices else None
-                if delta and delta.content:
-                    full_text += delta.content
-                    await queue.put({"event": "token", "data": {"text": delta.content}})
-        except asyncio.TimeoutError:
-            if not full_text:
-                full_text = f"I'm taking too long to think! {random.choice(_ERROR_RECOVERY_LINES)}"
-                await queue.put({"event": "token", "data": {"text": full_text}})
-
-        return full_text
-
-    async def _classify_metadata(self, text: str, system_prompt: str) -> Dict[str, Any]:
-        """Fast classification call to extract navigate_to, action_buttons, auto_populate from text.
-        Uses the fresh streaming client if available."""
-
-        classify_prompt = f"""Based on this Scout assistant response, extract structured metadata.
-
-RESPONSE TEXT:
-{text}
-
-Return JSON:
-{{"navigate_to": "/route" or null, "action_buttons": [{{"label": "...", "route": "/..."}}] or [], "auto_populate": {{"search_type": "contact" or "firm", ...}} or null}}
-
-Only set navigate_to if the response suggests navigation. Only set auto_populate if the response contains search criteria for contact-search or firm-search."""
-
-        try:
-            response = await asyncio.wait_for(
-                self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
-                    messages=[
-                        {"role": "system", "content": "Extract structured metadata from the text. Return valid JSON only."},
-                        {"role": "user", "content": classify_prompt},
-                    ],
-                    temperature=0.0,
-                    max_tokens=200,
-                    response_format={"type": "json_object"},
-                ),
-                timeout=5.0,
-            )
-            parsed = json.loads(response.choices[0].message.content)
-            return {
-                "navigate_to": self._validate_route(parsed.get("navigate_to")),
-                "action_buttons": self._validate_buttons(parsed.get("action_buttons", [])),
-                "auto_populate": self._validate_auto_populate(parsed.get("auto_populate")),
-            }
-        except Exception as e:
-            print(f"[ScoutAssistant] Metadata classification failed: {e}")
-            # Fall back to simple route detection
-            route = _detect_route_from_query(text)
-            return {
-                "navigate_to": route,
-                "action_buttons": [],
-                "auto_populate": None,
-            }
-
-    def _parse_json_response(self, content: Optional[str]) -> Dict[str, Any]:
-        """Parse LLM response as JSON with fallbacks."""
-        if not content or not content.strip():
-            return {
-                "message": "I had trouble formatting my response. Could you try again?",
-                "navigate_to": None,
-                "action_buttons": [],
-                "auto_populate": None,
-            }
-        try:
-            return json.loads(content)
-        except json.JSONDecodeError:
-            return {"message": content, "navigate_to": None, "action_buttons": [], "auto_populate": None}
-
-    def _validate_route(self, navigate_to: Optional[str]) -> Optional[str]:
-        """Validate navigate_to is a known route."""
-        if not navigate_to:
-            return None
-        if any(navigate_to.startswith(route.split("?")[0]) for route in ROUTE_KEYWORDS.keys()):
-            return navigate_to
-        valid_routes = [
-            "/dashboard", "/contact-search", "/firm-search", "/recruiter-spreadsheet",
-            "/job-board", "/meeting-prep", "/interview-prep", "/application-lab",
-            "/write/resume", "/write/cover-letter", "/outbox", "/calendar",
-            "/contact-directory", "/hiring-manager-tracker", "/company-tracker",
-            "/pricing", "/account-settings",
-        ]
-        return navigate_to if navigate_to in valid_routes else None
-
-    def _validate_buttons(self, action_buttons: Any) -> List[Dict[str, str]]:
-        """Validate and sanitize action buttons."""
-        validated = []
-        if not isinstance(action_buttons, list):
-            return []
-        for btn in action_buttons[:3]:
-            if isinstance(btn, dict) and "label" in btn and "route" in btn:
-                validated.append({
-                    "label": str(btn["label"])[:50],
-                    "route": str(btn["route"]),
-                })
-        return validated
-
-    def _validate_auto_populate(self, auto_populate: Any) -> Optional[Dict[str, Any]]:
-        """Validate auto_populate data."""
-        if not auto_populate or not isinstance(auto_populate, dict):
-            return None
-        search_type = auto_populate.get("search_type")
-        if search_type == "contact":
-            return {
-                "search_type": "contact",
-                "job_title": str(auto_populate.get("job_title", ""))[:100],
-                "company": str(auto_populate.get("company", ""))[:100],
-                "location": str(auto_populate.get("location", ""))[:100],
-            }
-        elif search_type == "firm":
-            return {
-                "search_type": "firm",
-                "industry": str(auto_populate.get("industry", ""))[:100],
-                "location": str(auto_populate.get("location", ""))[:100],
-                "size": str(auto_populate.get("size", ""))[:50] if auto_populate.get("size") else "",
-            }
-        return None
-
-    # ========================================================================
-    # TOOL EXECUTION
-    # ========================================================================
-
-    async def _execute_tool(
-        self, tool_name: str, args: Dict[str, Any], uid: str, user_context: Dict[str, Any]
-    ) -> str:
-        """Execute a Scout tool and return the result as a string."""
-        try:
-            if tool_name == "search_saved_contacts":
-                return await self._tool_search_contacts(uid, args)
-            elif tool_name == "generate_email_preview":
-                return await self._tool_email_preview(uid, user_context, args)
-            elif tool_name == "suggest_networking_strategy":
-                return await self._tool_networking_strategy(user_context, args)
-            else:
-                return json.dumps({"error": f"Unknown tool: {tool_name}"})
-        except Exception as e:
-            print(f"[ScoutAssistant] Tool {tool_name} failed: {e}")
-            return json.dumps({"error": f"Tool failed: {str(e)}"})
-
-    async def _tool_search_contacts(self, uid: str, args: Dict[str, Any]) -> str:
-        """Search the user's saved contacts in Firestore."""
-        db = get_db()
-        contacts_ref = db.collection("users").document(uid).collection("contacts")
-
-        # Firestore doesn't support partial text search well, so fetch and filter in Python
-        docs = contacts_ref.limit(50).get()
-        contacts = []
-        for doc in docs:
-            if not doc.exists:
-                continue
-            c = doc.to_dict()
-            c["id"] = doc.id
-            contacts.append(c)
-
-        # Apply filters
-        company_filter = (args.get("company") or "").lower()
-        title_filter = (args.get("job_title") or "").lower()
-        name_filter = (args.get("name") or "").lower()
-        status_filter = (args.get("status") or "").lower()
-
-        filtered = []
-        for c in contacts:
-            company = (c.get("company") or c.get("job_company_name") or "").lower()
-            title = (c.get("job_title") or c.get("title") or "").lower()
-            name = (c.get("full_name") or c.get("name") or "").lower()
-            status = (c.get("status") or c.get("pipelineStatus") or "").lower()
-
-            if company_filter and company_filter not in company:
-                continue
-            if title_filter and title_filter not in title:
-                continue
-            if name_filter and name_filter not in name:
-                continue
-            if status_filter and status_filter not in status:
-                continue
-            filtered.append(c)
-
-        # Return up to 5 results (10 for pre-loading), compact format
-        results = []
-        for c in filtered[:5]:
-            results.append({
-                "name": c.get("full_name") or c.get("name") or "Unknown",
-                "job_title": c.get("job_title") or c.get("title") or "",
-                "company": c.get("company") or c.get("job_company_name") or "",
-                "email": c.get("work_email") or c.get("email") or "",
-                "linkedin_url": c.get("linkedin_url") or "",
-                "status": c.get("status") or c.get("pipelineStatus") or "",
-            })
-
-        if not results:
-            return json.dumps({"contacts": [], "message": f"No saved contacts found matching your criteria. You have {len(contacts)} total saved contacts."})
-
-        return json.dumps({"contacts": results, "total_matches": len(filtered), "total_saved": len(contacts)})
-
-    async def _tool_email_preview(self, uid: str, user_context: Dict[str, Any], args: Dict[str, Any]) -> str:
-        """Generate a draft email preview using the user's template settings."""
-        recipient_name = args.get("recipient_name", "the recipient")
-        recipient_company = args.get("recipient_company", "")
-        recipient_title = args.get("recipient_title", "")
-        purpose = args.get("purpose", "networking")
-
-        # Build context from user profile
-        user_name = ""
-        university = ""
-        resume_summary = ""
-
-        academics = user_context.get("academics", {})
-        if academics:
-            university = academics.get("university", "")
-            user_name = user_context.get("resume_summary", "").split("|")[0].replace("Name:", "").strip() if user_context.get("resume_summary") else ""
-
-        resume_summary = user_context.get("resume_summary", "")
-        personal_note = user_context.get("personal_note", "")
-
-        # Get template style from user preferences
-        email_tmpl = user_context.get("email_template", {})
-        style = email_tmpl.get("style_preset") or "professional"
-        custom_instr = email_tmpl.get("custom_instructions", "")
-
-        email_prompt = f"""Generate a short, personalized networking email.
-
-SENDER CONTEXT:
-- University: {university or 'Not specified'}
-- Resume summary: {resume_summary or 'Not available'}
-- Personal note: {personal_note or 'None'}
-- Preferred style: {style}
-{f'- Custom instructions: {custom_instr}' if custom_instr else ''}
-
-RECIPIENT:
-- Name: {recipient_name}
-- Company: {recipient_company}
-- Title: {recipient_title or 'Not specified'}
-- Purpose: {purpose}
-
-Write a concise email (3-5 sentences for the body). Include a subject line.
-Return JSON: {{"subject": "...", "body": "...", "recipient_name": "{recipient_name}", "recipient_company": "{recipient_company}"}}"""
-
-        try:
-            import time as _time
-            t0 = _time.monotonic()
-            response = await asyncio.wait_for(
-                self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
-                    messages=[
-                        {"role": "system", "content": "You are an expert networking email writer. Generate concise, warm, professional emails. Return valid JSON only."},
-                        {"role": "user", "content": email_prompt},
-                    ],
-                    temperature=0.7,
-                    max_tokens=400,
-                    response_format={"type": "json_object"},
-                ),
-                timeout=10.0,
-            )
-            print(f"[ScoutAssistant] Email preview generated in {_time.monotonic() - t0:.2f}s")
-            return response.choices[0].message.content
-        except Exception as e:
-            print(f"[ScoutAssistant] Email preview generation failed: {e}")
-            return json.dumps({
-                "subject": f"Reaching out - {purpose}",
-                "body": f"Hi {recipient_name},\n\nI'm reaching out because I'm very interested in {recipient_company}. I'd love to learn more about your experience. Would you be open to a brief conversation?\n\nBest regards",
-                "recipient_name": recipient_name,
-                "recipient_company": recipient_company,
-            })
-
-    async def _tool_networking_strategy(self, user_context: Dict[str, Any], args: Dict[str, Any]) -> str:
-        """Generate personalized networking strategy advice."""
-        focus = args.get("focus_area", "getting_started")
-        target_company = args.get("target_company", "")
-
-        goals = user_context.get("goals", {})
-        academics = user_context.get("academics", {})
-        contacts_summary = user_context.get("contacts_summary", {})
-        resume = user_context.get("resume_summary", "")
-
-        strategy_prompt = f"""Give personalized networking strategy advice.
-
-USER PROFILE:
-- University: {academics.get('university', 'Unknown')}
-- Major: {academics.get('major', 'Unknown')}
-- Target industries: {', '.join(goals.get('target_industries', [])) or 'Not specified'}
-- Target roles: {', '.join(goals.get('target_roles', [])) or 'Not specified'}
-- Dream companies: {', '.join(goals.get('dream_companies', [])) or 'Not specified'}
-- Recruiting for: {goals.get('recruiting_for', 'Not specified')}
-- Resume: {resume[:200] or 'Not available'}
-- Saved contacts: {contacts_summary.get('total', 0)} total
-- Top companies contacted: {', '.join([c['name'] for c in contacts_summary.get('top_companies', [])]) or 'None yet'}
-
-FOCUS: {focus}
-{f'TARGET COMPANY: {target_company}' if target_company else ''}
-
-Give 3-5 specific, actionable suggestions. Be concrete - mention specific companies, roles, or approaches based on their profile.
-Return JSON: {{"strategy": "A brief strategy summary", "suggestions": ["suggestion 1", "suggestion 2", ...]}}"""
-
-        try:
-            response = await asyncio.wait_for(
-                self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
-                    messages=[
-                        {"role": "system", "content": "You are an expert career networking strategist for college students. Be specific and actionable. Return valid JSON only."},
-                        {"role": "user", "content": strategy_prompt},
-                    ],
-                    temperature=0.7,
-                    max_tokens=500,
-                    response_format={"type": "json_object"},
-                ),
-                timeout=10.0,
-            )
-            return response.choices[0].message.content
-        except Exception as e:
-            print(f"[ScoutAssistant] Networking strategy failed: {e}")
-            return json.dumps({
-                "strategy": "Focus on building connections at your dream companies through alumni outreach.",
-                "suggestions": [
-                    "Start with alumni from your university at target companies",
-                    "Use meeting requests to learn about company culture",
-                    "Follow up within 48 hours of every conversation",
-                ],
-            })
-
+        finally:
+            await queue.put(None)  # Signal end
 
     async def handle_search_help(
         self,

@@ -24,6 +24,7 @@ import {
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { firebaseApi } from "@/services/firebaseApi";
 import { getCompanyLogoUrl } from "@/utils/suggestionChips";
+import { CompanyLogo } from "@/components/CompanyLogo";
 
 type TabId = "people" | "companies" | "managers";
 
@@ -235,7 +236,10 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
           <span className="text-ink-3"> - </span>
         )}
       </div>
-      <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>{row.company || " - "}</div>
+      <div className="flex items-center gap-2 text-[12px] text-ink-2" style={{ minWidth: 0 }}>
+        {row.company ? <CompanyLogo company={row.company} size={18} rounded={4} /> : null}
+        <span className="truncate">{row.company || " - "}</span>
+      </div>
       <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>{row.role || " - "}</div>
       <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
         {row.school || (row.location ? <span className="text-ink-3">{row.location}</span> : " - ")}
@@ -392,6 +396,9 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
                 ) : (
                   <ChevronDown className="h-3.5 w-3.5 text-ink-3" />
                 )}
+                {company !== "(no company)" && (
+                  <CompanyLogo company={company} size={18} rounded={4} />
+                )}
                 <span className="text-[13px] font-medium text-ink">{company}</span>
                 <span className="font-mono text-[10px] text-ink-3 ml-1">
                   {items.length}
@@ -428,12 +435,12 @@ const COMPANY_BLUE = "#64748B";
 const COMPANY_BLUE_TINT = "rgba(91,119,153,0.08)";
 const COMPANY_BLUE_TINT_HOVER = "rgba(91,119,153,0.12)";
 
-interface CompanyLogoProps {
+interface ContactAvatarProps {
   name: string;
   size: number;
 }
 
-const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, size }) => {
+const ContactAvatar: React.FC<ContactAvatarProps> = ({ name, size }) => {
   // Render the favicon if we can resolve one; otherwise show a soft-blue
   // initial badge so every card has something colorful in the leftmost slot
   // (matches the user's "icon adds color" intent).
@@ -598,7 +605,7 @@ const CompaniesTable: React.FC<{
                     i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white";
                 }}
               >
-                <CompanyLogo name={row.name} size={32} />
+                <ContactAvatar name={row.name} size={32} />
                 <div style={{ minWidth: 0 }}>
                   <div
                     style={{
@@ -712,7 +719,7 @@ const CompaniesTable: React.FC<{
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <CompanyLogo name={row.name} size={32} />
+                <ContactAvatar name={row.name} size={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div
                     style={{
@@ -918,8 +925,9 @@ const ManagersTable: React.FC<{ rows: ManagerRow[] }> = ({ rows }) => {
                 </span>
               )}
             </div>
-            <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
-              {row.company || " - "}
+            <div className="flex items-center gap-2 text-[12px] text-ink-2" style={{ minWidth: 0 }}>
+              {row.company ? <CompanyLogo company={row.company} size={18} rounded={4} /> : null}
+              <span className="truncate">{row.company || " - "}</span>
             </div>
             <div className="font-mono text-[10.5px] text-ink-3 text-right">
               {formatAdded(row.dateAdded)}

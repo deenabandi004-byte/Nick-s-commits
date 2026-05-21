@@ -77,6 +77,7 @@ const ResumeActions = React.lazy(() => import('@/components/ResumeActions'));
 const RecruiterSpreadsheet = React.lazy(() => import('@/components/RecruiterSpreadsheet'));
 import { downloadCoverLetterAsPDF } from "@/utils/pdfGenerator";
 import { getCompanyLogoUrl } from "@/utils/suggestionChips";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 // ============================================================================
 // TYPES
@@ -754,6 +755,23 @@ const JobBoardPage: React.FC = () => {
       setSearchParams(searchParams, { replace: true });
     }
   }, [user?.uid]);
+
+  // Scout prefill bridge: apply the job-search query carried from an approved
+  // Scout navigate. Runs on mount (after navigation) and on SCOUT_PREFILL_EVENT
+  // (the in-place case). The query box lives on the Jobs tab, so switch to it.
+  useEffect(() => {
+    const applyScoutPrefill = () => {
+      const prefill = readScoutPrefill("/job-board");
+      if (!prefill) return;
+      if (prefill.query) {
+        setSearchQuery(prefill.query);
+        setActiveTab("jobs");
+      }
+    };
+    applyScoutPrefill();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+  }, []);
 
   // Load saved jobs from Firestore (with localStorage fallback)
   useEffect(() => {

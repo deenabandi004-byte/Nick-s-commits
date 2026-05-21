@@ -27,6 +27,65 @@ scout_assistant_bp = Blueprint("scout_assistant", __name__, url_prefix="/api/sco
 _user_context_cache = TTLCache(maxsize=500, ttl=60)
 
 
+def _resume_to_text(user_data: dict) -> str:
+    """Best resume representation for Scout.
+
+    Prefers the full raw resume text (everything actually on the resume);
+    falls back to a readable summary assembled from the structured
+    resumeParsed fields (e.g. a LinkedIn-only profile with no uploaded
+    resume). Capped so it cannot blow the prompt budget.
+    """
+    rp = user_data.get("resumeParsed")
+    rp = rp if isinstance(rp, dict) else {}
+    raw = (
+        rp.get("rawText")
+        or user_data.get("originalResumeText")
+        or user_data.get("resumeText")
+        or user_data.get("rawText")
+        or (user_data.get("profile") or {}).get("resumeText")
+        or ""
+    )
+    if isinstance(raw, str) and raw.strip():
+        return raw.strip()[:6000]
+
+    # No raw text - assemble from the structured resumeParsed fields.
+    lines = []
+    if rp.get("name"):
+        lines.append(f"Name: {rp['name']}")
+    edu = rp.get("education")
+    if isinstance(edu, dict):
+        e = ", ".join(
+            str(edu[k])
+            for k in ("school", "university", "degree", "major", "graduationYear")
+            if edu.get(k)
+        )
+        if e:
+            lines.append(f"Education: {e}")
+    elif isinstance(edu, str) and edu.strip():
+        lines.append(f"Education: {edu.strip()}")
+    exp = rp.get("experience")
+    if isinstance(exp, list) and exp:
+        lines.append("Experience:")
+        for item in exp[:6]:
+            if isinstance(item, dict):
+                head = " ".join(
+                    p for p in [item.get("title"), "at" if item.get("company") else "", item.get("company")] if p
+                ).strip()
+                if head:
+                    lines.append(f"  - {head}")
+                desc = item.get("description") or item.get("summary") or ""
+                if isinstance(desc, str) and desc.strip():
+                    lines.append(f"    {desc.strip()[:300]}")
+            elif isinstance(item, str) and item.strip():
+                lines.append(f"  - {item.strip()[:200]}")
+    skills = rp.get("skills")
+    if isinstance(skills, list) and skills:
+        lines.append("Skills: " + ", ".join(str(s) for s in skills[:30]))
+    elif isinstance(skills, str) and skills.strip():
+        lines.append("Skills: " + skills.strip()[:400])
+    return "\n".join(lines)[:6000]
+
+
 def _fetch_user_context(uid: str) -> dict:
     """Fetch user profile + contacts summary from Firestore for Scout context.
     Results are cached per uid for 5 minutes."""
@@ -96,32 +155,11 @@ def _fetch_user_context(uid: str) -> dict:
     if personal_note:
         user_context["personal_note"] = personal_note[:300]
 
-    # Resume summary (compact)
-    resume_parsed = user_data.get("resumeParsed") or {}
-    if resume_parsed:
-        summary_parts = []
-        if resume_parsed.get("name"):
-            summary_parts.append(f"Name: {resume_parsed['name']}")
-        if resume_parsed.get("experience"):
-            exp_list = resume_parsed["experience"]
-            if isinstance(exp_list, list):
-                recent = exp_list[:3]
-                exp_strs = []
-                for exp in recent:
-                    if isinstance(exp, dict):
-                        exp_strs.append(f"{exp.get('title', '')} at {exp.get('company', '')}")
-                    elif isinstance(exp, str):
-                        exp_strs.append(exp[:80])
-                if exp_strs:
-                    summary_parts.append("Experience: " + "; ".join(exp_strs))
-        if resume_parsed.get("skills"):
-            skills = resume_parsed["skills"]
-            if isinstance(skills, list):
-                summary_parts.append("Skills: " + ", ".join(skills[:10]))
-            elif isinstance(skills, str):
-                summary_parts.append(f"Skills: {skills[:150]}")
-        if summary_parts:
-            user_context["resume_summary"] = " | ".join(summary_parts)
+    # Resume - the full resume text so Scout can tailor answers to the user's
+    # actual experience, skills, and education, not just a title one-liner.
+    resume_full = _resume_to_text(user_data)
+    if resume_full:
+        user_context["resume"] = resume_full
 
     # Contacts summary (count + top companies + 5 most recent for naming)
     try:

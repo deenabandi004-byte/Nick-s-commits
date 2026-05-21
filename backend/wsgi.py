@@ -21,7 +21,6 @@ from .app.routes.interview_prep import interview_prep_bp
 from .app.routes.billing import billing_bp
 from .app.routes.users import users_bp
 from .app.routes.outbox import outbox_bp
-from .app.routes.scout import scout_bp
 from .app.routes.firm_search import firm_search_bp
 from .app.routes.school_affinity import school_affinity_bp
 from .app.routes.dashboard import dashboard_bp
@@ -48,8 +47,9 @@ from .app.routes.search_suggestions import search_suggestions_bp
 from .app.routes.briefing import briefing_bp
 from .app.routes.agent import agent_bp
 from .app.routes.metrics import metrics_bp
-from .app.routes.events import events_bp
-from .app.routes.company_contexts import company_contexts_bp
+# events_bp and company_contexts_bp belong to the personalization feature
+# (WIP on feat/personalization-phase-1-2). Their route modules are not on this
+# branch; re-add these imports when that feature merges.
 from .app.routes.company_recommendations import company_recommendations_bp
 from .app.routes.recommendation_funnel import recommendation_funnel_bp
 from .app.extensions import init_app_extensions
@@ -195,7 +195,6 @@ def create_app() -> Flask:
     app.register_blueprint(billing_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(outbox_bp)
-    app.register_blueprint(scout_bp)
     app.register_blueprint(firm_search_bp)
     app.register_blueprint(school_affinity_bp)
     app.register_blueprint(dashboard_bp)
@@ -221,8 +220,6 @@ def create_app() -> Flask:
     app.register_blueprint(briefing_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(metrics_bp)
-    app.register_blueprint(events_bp)
-    app.register_blueprint(company_contexts_bp)
     app.register_blueprint(company_recommendations_bp)
     app.register_blueprint(recommendation_funnel_bp)
 

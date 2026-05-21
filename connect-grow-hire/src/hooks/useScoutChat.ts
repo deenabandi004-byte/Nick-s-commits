@@ -8,17 +8,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { BACKEND_URL } from '@/services/api';
-import {
-  loadActiveThread,
-  saveActiveThread,
-  clearActiveThread,
-  type PersistedChatMessage,
-} from '@/services/scoutConversations';
+import { clearActiveThread } from '@/services/scoutConversations';
 
-// Local-storage cache key (durable across tabs, reloads, and pre-auth boot).
-// Firestore is the source of truth - this cache exists so the panel hydrates
-// instantly on open before the Firestore round-trip resolves.
-const LOCAL_CACHE_KEY = 'scout_chat_messages_v2';
+// Key an earlier build used to persist the chat thread to localStorage. Scout
+// no longer saves chat history; this is referenced only to clear stale data.
+const LEGACY_LOCAL_CACHE_KEY = 'scout_chat_messages_v2';
 
 // Build a compact `user_memory` block to ship with every chat call so Scout
 // has session-scoped context (recent searches, prompts the user has tried
@@ -76,42 +70,40 @@ function readUserMemoryFromLocalStorage(): Record<string, unknown> {
 }
 
 // Types
-export interface ContactResult {
-  name: string;
-  job_title: string;
-  company: string;
-  email: string;
-  linkedin_url: string;
-  status: string;
-}
 
-export interface EmailPreview {
-  subject: string;
-  body: string;
-  recipient_name: string;
-  recipient_company: string;
+/** The navigate tool's payload - everything the approve flow needs, computed
+ *  by the backend so the frontend does not need the page registry. */
+export interface ScoutNavigate {
+  route: string;
+  prefill: Record<string, string>;
+  reasoning: string;
+  confidence: number;
+  user_was_imperative: boolean;
+  credit_spending: boolean;
+  credit_cost: number | null;
+  missing_required: string[];
+  already_on_page: boolean;
 }
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  navigate_to?: string | null;
-  action_buttons?: Array<{ label: string; route: string }>;
-  auto_populate?: {
-    search_type: 'contact' | 'firm';
-    job_title?: string;
-    company?: string;
-    location?: string;
-    industry?: string;
-    size?: string;
-  } | null;
-  contacts_results?: ContactResult[] | null;
-  email_preview?: EmailPreview | null;
-  tool_used?: string | null;
+  // Which tool Scout chose this turn. 'answer' and 'clarify' render as plain
+  // chat text; 'navigate' drives the approve flow via the `navigate` payload.
+  tool?: 'navigate' | 'answer' | 'clarify' | null;
+  navigate?: ScoutNavigate | null;
+  // Set once the user approves or skips a navigate, so the approve card renders
+  // collapsed and the auto-navigate effect does not re-fire.
+  approveResolved?: boolean;
   timestamp: Date;
   isStreaming?: boolean;
   intent?: string | null;
+  // Live-session-only message from a failed send (the user's message and/or an
+  // "unreachable" notice). Rendered in the thread but never persisted and never
+  // sent to the model as history, so a failed turn leaves no orphaned,
+  // reply-less message at the top of the thread on reload.
+  transient?: boolean;
 }
 
 export interface UseScoutChatReturn {
@@ -136,23 +128,10 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
   // Determine current page - use override if provided, otherwise use location
   const currentPage = currentPageOverride || location.pathname;
 
-  // Chat state - hydrated synchronously from localStorage so the panel never
-  // flashes empty on open; Firestore reconciles below once auth resolves.
-  const [messages, setMessages] = useState<ChatMessage[]>(() => {
-    try {
-      const saved = localStorage.getItem(LOCAL_CACHE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.map((msg: any) => ({
-          ...msg,
-          timestamp: new Date(msg.timestamp),
-        }));
-      }
-    } catch (e) {
-      console.error('[Scout] Failed to hydrate from local cache:', e);
-    }
-    return [];
-  });
+  // Chat state. Scout does not persist chat history: the thread lives only in
+  // memory for the current page session. Navigating between pages keeps it
+  // (the panel is mounted once, app-wide); a full reload starts fresh.
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -160,84 +139,29 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // One-shot Firestore reconcile on user resolution. We only adopt the remote
-  // thread if the local cache is empty (fresh device / private window) OR if
-  // the remote is strictly newer (different tab edited it). Otherwise we keep
-  // the local view to avoid clobbering an in-progress conversation.
-  const didReconcileRef = useRef(false);
-  useEffect(() => {
-    if (!user?.uid || didReconcileRef.current) return;
-    didReconcileRef.current = true;
-    (async () => {
-      try {
-        const remote: PersistedChatMessage[] = await loadActiveThread(user.uid);
-        if (!remote.length) return;
-        // Adopt remote when local is empty or remote is strictly larger.
-        // (Heuristic - full conflict resolution would need vector clocks; the
-        //  expected case is single-user, single-thread, so a length compare is
-        //  sufficient and avoids dropping messages users care about.)
-        const remoteAsChatMessages: ChatMessage[] = remote.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          timestamp: new Date(m.timestampMs),
-        }));
-        setMessages((prev) =>
-          prev.length === 0 || remote.length > prev.length
-            ? remoteAsChatMessages
-            : prev,
-        );
-      } catch (e) {
-        console.error('[Scout] Reconcile from Firestore failed:', e);
-      }
-    })();
-  }, [user?.uid]);
-
-  // Persist on every change. Two layers:
-  //  1. localStorage (synchronous, durable, survives reloads & tab close)
-  //  2. Firestore (async, debounced 600ms - not every keystroke during stream)
+  // One-time cleanup of chat history saved by an earlier build. Scout no longer
+  // persists conversations, so wipe the legacy local cache and the Firestore
+  // active-thread doc rather than ever reading them back.
+  const didCleanupRef = useRef(false);
   useEffect(() => {
     try {
-      const toSave = messages.map(({ isStreaming, intent, ...rest }) => rest);
-      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(toSave));
-    } catch (e) {
-      console.error('[Scout] Local cache write failed:', e);
-    }
-    if (!user?.uid) return;
-    // Skip while a streaming token is still landing - the next change will
-    // catch the final committed message. Saves bandwidth + Firestore writes.
-    if (messages.some((m) => m.isStreaming)) return;
-    const handle = setTimeout(() => {
-      const persisted: PersistedChatMessage[] = messages
-        .filter((m) => !m.isStreaming)
-        .map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          timestampMs: m.timestamp.getTime(),
-        }));
-      void saveActiveThread(user.uid, persisted);
-    }, 600);
-    return () => clearTimeout(handle);
-  }, [messages, user?.uid]);
+      localStorage.removeItem(LEGACY_LOCAL_CACHE_KEY);
+    } catch {}
+    if (!user?.uid || didCleanupRef.current) return;
+    didCleanupRef.current = true;
+    void clearActiveThread(user.uid);
+  }, [user?.uid]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Clear chat - wipes local state, local cache, and the durable Firestore
-  // thread so the user really starts over.
+  // Clear chat - the thread is in-memory only, so this just resets state.
   const clearChat = useCallback(() => {
     setMessages([]);
-    try {
-      localStorage.removeItem(LOCAL_CACHE_KEY);
-    } catch {}
-    if (user?.uid) {
-      void clearActiveThread(user.uid);
-    }
     inputRef.current?.focus();
-  }, [user?.uid]);
+  }, []);
 
   // Get Firebase token helper
   const getToken = async (): Promise<string | null> => {
@@ -253,10 +177,15 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
   // already failed at. This is the substrate that lets Scout "remember" the
   // user across sessions without retraining.
   const buildPayload = (text: string, currentMessages: ChatMessage[]) => {
-    const conversationHistory = currentMessages.slice(-6).map(msg => ({
-      role: msg.role,
-      content: msg.content
-    }));
+    // Exclude transient messages (a failed turn): they are not real
+    // conversation turns and must not be replayed to the model as history.
+    const conversationHistory = currentMessages
+      .filter(msg => !msg.transient)
+      .slice(-6)
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }));
 
     return {
       message: text,
@@ -308,6 +237,9 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       const decoder = new TextDecoder();
       let buffer = '';
       let accumulatedText = '';
+      // Set once the backend sends a terminal SSE event (done or error). A
+      // stream that connects but ends without one delivered nothing usable.
+      let receivedTerminal = false;
 
       while (true) {
         const { done, value } = await reader.read();
@@ -339,22 +271,23 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
                   m.id === assistantId ? { ...m, content: accumulatedText, isStreaming: true } : m
                 ));
               } else if (eventType === 'done') {
-                // Final update with all metadata
+                // Final update with the structured tool response.
+                receivedTerminal = true;
                 setMessages(prev => prev.map(m =>
                   m.id === assistantId ? {
                     ...m,
                     content: data.message || accumulatedText,
-                    navigate_to: data.navigate_to || null,
-                    action_buttons: data.action_buttons || [],
-                    auto_populate: data.auto_populate || null,
-                    contacts_results: data.contacts_results || null,
-                    email_preview: data.email_preview || null,
-                    tool_used: data.tool_used || null,
+                    tool: data.tool || 'answer',
+                    navigate: data.navigate || null,
                     isStreaming: false,
                     intent: null,
                   } : m
                 ));
               } else if (eventType === 'error') {
+                // The backend reached us and reported an error: that is a
+                // delivered response (we show its text), not a transport
+                // failure, so it does not trigger the fallback.
+                receivedTerminal = true;
                 setMessages(prev => prev.map(m =>
                   m.id === assistantId ? {
                     ...m,
@@ -377,7 +310,14 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
         m.id === assistantId && m.isStreaming ? { ...m, isStreaming: false, intent: null } : m
       ));
 
-      return true;
+      // A stream that connected but produced no terminal event and no text is
+      // not a real delivery (e.g. the connection dropped mid-flight). Drop the
+      // empty placeholder so the caller can fall back or surface an error.
+      const delivered = receivedTerminal || accumulatedText.trim().length > 0;
+      if (!delivered) {
+        setMessages(prev => prev.filter(m => m.id !== assistantId));
+      }
+      return delivered;
     } catch (error) {
       console.error('[Scout] Streaming error:', error);
       // Remove placeholder and signal fallback
@@ -386,43 +326,51 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     }
   };
 
-  // Non-streaming fallback
-  const sendMessageFallback = async (text: string, currentMessages: ChatMessage[]) => {
-    const token = await getToken();
-    const payload = buildPayload(text, currentMessages);
+  // Non-streaming fallback. Returns true only when a real response was
+  // rendered; on any transport or HTTP failure it returns false so the caller
+  // can surface an explicit error instead of failing silently.
+  const sendMessageFallback = async (text: string, currentMessages: ChatMessage[]): Promise<boolean> => {
+    try {
+      const token = await getToken();
+      const payload = buildPayload(text, currentMessages);
 
-    const response = await fetch(`${BACKEND_URL}/api/scout-assistant/chat`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify(payload),
-    });
+      const response = await fetch(`${BACKEND_URL}/api/scout-assistant/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(payload),
+      });
 
-    if (!response.ok) {
-      throw new Error(`API returned ${response.status}`);
+      if (!response.ok) {
+        console.error(`[Scout] Fallback API returned ${response.status}`);
+        return false;
+      }
+
+      const data = await response.json();
+
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: data.message || "I'm not sure how to help with that. Could you rephrase?",
+        tool: data.tool || 'answer',
+        navigate: data.navigate || null,
+        timestamp: new Date(),
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      return true;
+    } catch (error) {
+      console.error('[Scout] Fallback error:', error);
+      return false;
     }
-
-    const data = await response.json();
-
-    const assistantMessage: ChatMessage = {
-      id: `assistant-${Date.now()}`,
-      role: 'assistant',
-      content: data.message || "I'm not sure how to help with that. Could you rephrase?",
-      navigate_to: data.navigate_to,
-      action_buttons: data.action_buttons || [],
-      auto_populate: data.auto_populate || null,
-      contacts_results: data.contacts_results || null,
-      email_preview: data.email_preview || null,
-      tool_used: data.tool_used || null,
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, assistantMessage]);
   };
 
-  // Send message - tries streaming first, falls back to non-streaming
+  // Send message - tries streaming first, falls back to non-streaming. When
+  // BOTH transport paths fail (e.g. the backend is unreachable), the user must
+  // see an explicit error: never leave them looking at stale thread content as
+  // if it were a fresh reply.
   const sendMessage = useCallback(async (messageText?: string) => {
     const text = (messageText || input).trim();
     if (!text || isLoading) return;
@@ -441,29 +389,41 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
+    let delivered = false;
     try {
       const currentMessages = [...messages, userMessage];
 
-      // Try streaming first
-      const streamSuccess = await sendMessageStreaming(text, userMessage, currentMessages);
-
-      if (!streamSuccess) {
-        // Fall back to non-streaming
+      // Try streaming first, then the non-streaming endpoint.
+      delivered = await sendMessageStreaming(text, userMessage, currentMessages);
+      if (!delivered) {
         console.log('[Scout] Streaming failed, falling back to non-streaming');
-        await sendMessageFallback(text, currentMessages);
+        delivered = await sendMessageFallback(text, currentMessages);
       }
     } catch (error) {
       console.error('[Scout] Error:', error);
-
-      const errorMessage: ChatMessage = {
-        id: `error-${Date.now()}`,
-        role: 'assistant',
-        content: "I ran into an issue, but I'm here to help! What would you like to know about Offerloop?",
-        timestamp: new Date(),
-      };
-
-      setMessages(prev => [...prev, errorMessage]);
+      delivered = false;
     } finally {
+      if (!delivered) {
+        // Both paths failed (e.g. backend unreachable). The whole turn is
+        // transient: keep the user's message and an explicit error visible for
+        // this session, but persist neither, so a failed turn never leaves an
+        // orphaned, reply-less message at the top of the thread on reload. Also
+        // drop any optimistic assistant placeholder the stream left behind.
+        setMessages(prev => [
+          ...prev
+            .filter(
+              m => !(m.role === 'assistant' && (m.isStreaming || m.content.trim() === '')),
+            )
+            .map(m => (m.id === userMessage.id ? { ...m, transient: true } : m)),
+          {
+            id: `error-${Date.now()}`,
+            role: 'assistant',
+            content: 'Scout is unreachable right now. Try again in a moment.',
+            timestamp: new Date(),
+            transient: true,
+          },
+        ]);
+      }
       setIsLoading(false);
       inputRef.current?.focus();
     }

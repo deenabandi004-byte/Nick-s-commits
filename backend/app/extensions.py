@@ -391,13 +391,15 @@ def init_app_extensions(app: Flask):
         print(f"[Extensions] Firestore rate limiter unavailable, using in-memory: {e}")
     app.limiter = limiter
     
-    # Check if we're in development mode
-    is_dev = (
-        os.getenv("FLASK_ENV") == "development" or 
-        os.getenv("ENVIRONMENT") == "development" or
-        os.getenv("FLASK_DEBUG") == "1" or
-        app.debug
+    # Production is the only explicitly-detectable state: FLASK_ENV=production,
+    # or Render setting its own RENDER env var. Everything else - including a
+    # bare `python wsgi.py` run locally with nothing set - is development.
+    # Keying off "is this production" (instead of "was a dev flag set") is what
+    # lets the local Vite dev server origin work without extra env setup.
+    is_production = (
+        os.getenv("FLASK_ENV") == "production" or bool(os.getenv("RENDER"))
     )
+    is_dev = not is_production
     
     # Get allowed origins from environment or use defaults
     allowed_origins_env = os.getenv("CORS_ORIGINS", "")
@@ -449,7 +451,6 @@ def init_app_extensions(app: Flask):
          automatic_options=True,  # Explicitly enable automatic OPTIONS handling
          supports_credentials=True)
     flask_secret = os.getenv("FLASK_SECRET")
-    is_production = os.getenv("FLASK_ENV") == "production" or os.getenv("RENDER")
     if is_production and (not flask_secret or flask_secret == "dev"):
         raise RuntimeError(
             "FLASK_SECRET must be set to a secure random value in production. "

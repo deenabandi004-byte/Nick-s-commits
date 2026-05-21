@@ -26,6 +26,7 @@ import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CompanyLogo } from "@/components/CompanyLogo";
 
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useScout } from "@/contexts/ScoutContext";
@@ -268,9 +269,10 @@ function ZoneHeader({
 /* ---- DoorDash / Uber-Eats-style discovery carousel ---- */
 
 function DiscoveryCard({
-  catKey, title, subtitle, monogram, onClick,
+  catKey, title, subtitle, monogram, logoCompany, onClick,
 }: {
-  catKey: CatKey; title: string; subtitle: string; monogram?: string; onClick: () => void;
+  catKey: CatKey; title: string; subtitle: string;
+  monogram?: string; logoCompany?: string; onClick: () => void;
 }) {
   const c = CATS[catKey];
   const Icon = c.Icon;
@@ -280,14 +282,18 @@ function DiscoveryCard({
       className="snap-start shrink-0 w-[230px] rounded-[14px] border border-[#E2E8F0] bg-white text-left shadow-[0_1px_3px_rgba(15,23,42,0.06)] transition-all duration-150 hover:-translate-y-1 hover:border-[#CBD5E1] hover:shadow-[0_12px_28px_rgba(15,23,42,0.12)]"
     >
       <div className="p-3.5">
-        {/* category row: small tinted icon tile + neutral label */}
+        {/* category row: company logo (or icon tile) + neutral label */}
         <div className="flex items-center justify-between">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-[9px] text-[14px] font-bold"
-            style={{ background: `${c.color}14`, color: c.color }}
-          >
-            {monogram ? monogram : <Icon className="h-[18px] w-[18px]" />}
-          </span>
+          {logoCompany ? (
+            <CompanyLogo company={logoCompany} size={36} rounded={9} />
+          ) : (
+            <span
+              className="flex h-9 w-9 items-center justify-center rounded-[9px] text-[14px] font-bold"
+              style={{ background: `${c.color}14`, color: c.color }}
+            >
+              {monogram ? monogram : <Icon className="h-[18px] w-[18px]" />}
+            </span>
+          )}
           <span className="text-[10px] font-semibold uppercase tracking-wide text-[#94A3B8]">
             {c.label}
           </span>
@@ -415,8 +421,6 @@ export default function DashboardPage() {
 
   const dataLoading =
     recsQuery.isLoading || nudgesQuery.isLoading || statsQuery.isLoading || eventsQuery.isLoading;
-  // New user - no outreach pipeline yet. Drives the adaptive hero tile.
-  const isNewUser = !statsQuery.isLoading && (outbox?.total ?? 0) === 0;
 
   /* ---- recent-activity metrics (shown inside the blue band) ---- */
   const sent = outbox?.thisWeekSent ?? 0;
@@ -554,21 +558,22 @@ export default function DashboardPage() {
      does the organizing, so no tabs and nothing buried at the bottom. */
   type MixedCard = {
     id: string; catKey: CatKey; title: string; subtitle: string;
-    monogram?: string; onClick: () => void;
+    monogram?: string; logoCompany?: string; onClick: () => void;
   };
   const mixed: MixedCard[] = (() => {
     const peopleM: MixedCard[] = discovery.people.map((c) => ({
-      id: `mx-${c.id}`, catKey: "people", monogram: c.company.charAt(0).toUpperCase(),
+      id: `mx-${c.id}`, catKey: "people", logoCompany: c.company,
       title: c.company, subtitle: `${c.role}${c.location ? ` · ${c.location}` : ""}`,
       onClick: () => runPeople(c),
     }));
+    // Company cards represent an industry, not a firm - no logo, show the icon.
     const companyM: MixedCard[] = discovery.companies.map((c) => ({
-      id: `mx-${c.id}`, catKey: "companies", monogram: c.industry.charAt(0).toUpperCase(),
+      id: `mx-${c.id}`, catKey: "companies",
       title: c.industry, subtitle: c.location ? `Roles in ${c.location}` : "Roles across all markets",
       onClick: () => runCompany(c),
     }));
     const hmM: MixedCard[] = discovery.hms.map((c) => ({
-      id: `mx-${c.id}`, catKey: "hm", monogram: c.company.charAt(0).toUpperCase(),
+      id: `mx-${c.id}`, catKey: "hm", logoCompany: c.company,
       title: c.company, subtitle: "Open hiring manager roles",
       onClick: () => runHm(c),
     }));
@@ -659,23 +664,21 @@ export default function DashboardPage() {
                     </nav>
                   </div>
 
-                  {/* new users get a get-started nudge above the metrics */}
-                  {isNewUser && (
-                    <div className="mt-3.5 flex flex-col gap-3 rounded-[10px] border border-white/20 bg-white/10 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-[13.5px] font-semibold text-white">Get started</p>
-                        <p className="mt-0.5 text-[13px] text-white/75">
-                          Put tasks on autopilot, walk away and get a text when the work's done.
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() => navigate("/agent/setup")}
-                        className="h-9 shrink-0 gap-1.5 bg-white px-4 text-[13px] font-semibold text-[#2563EB] hover:bg-white/90"
-                      >
-                        Start a loop <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
+                  {/* get-started nudge above the metrics */}
+                  <div className="mt-3.5 flex flex-col gap-3 rounded-[10px] border border-white/20 bg-white/10 px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-[13.5px] font-semibold text-white">Get started</p>
+                      <p className="mt-0.5 text-[13px] text-white/75">
+                        Put tasks on autopilot, walk away and get a text when the work's done.
+                      </p>
                     </div>
-                  )}
+                    <Button
+                      onClick={() => navigate("/agent/setup")}
+                      className="h-9 shrink-0 gap-1.5 bg-white px-4 text-[13px] font-semibold text-[#2563EB] hover:bg-white/90"
+                    >
+                      Start a loop <ArrowRight className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
 
                   {/* recent-activity metrics - always visible */}
                   <div className="mt-3.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -772,6 +775,7 @@ export default function DashboardPage() {
                       title={m.title}
                       subtitle={m.subtitle}
                       monogram={m.monogram}
+                      logoCompany={m.logoCompany}
                       onClick={m.onClick}
                     />
                   ))}

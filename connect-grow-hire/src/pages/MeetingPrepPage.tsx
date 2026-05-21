@@ -42,6 +42,7 @@ import { IS_DEV_PREVIEW } from "@/lib/devPreview";
 import { useSubscription } from "@/hooks/useSubscription";
 import { canUseFeature, getFeatureLimit } from "@/utils/featureAccess";
 import { trackFeatureActionCompleted, trackContentViewed, trackError } from "../lib/analytics";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 const MeetingPrepPage: React.FC = () => {
   const { user: firebaseUser, checkCredits } = useFirebaseAuth();
@@ -122,6 +123,21 @@ const MeetingPrepPage: React.FC = () => {
 
   // Tab state
   const [activeTab, setActiveTab] = useState<string>("meeting-prep");
+
+  // Scout prefill bridge: apply the LinkedIn URL carried from an approved Scout
+  // navigate. Runs on mount (after navigation) and on SCOUT_PREFILL_EVENT (the
+  // in-place case, when the user was already on this page).
+  useEffect(() => {
+    const applyScoutPrefill = () => {
+      const prefill = readScoutPrefill("/meeting-prep");
+      if (!prefill) return;
+      if (prefill.linkedin_url) setLinkedinUrl(prefill.linkedin_url);
+      setActiveTab("meeting-prep");
+    };
+    applyScoutPrefill();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+  }, []);
 
   // LinkedIn URL validation
   const isValidLinkedInUrl = (url: string) => {

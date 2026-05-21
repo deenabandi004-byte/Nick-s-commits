@@ -27,6 +27,7 @@ import {
   type RecommendedCompany, type UserContext, isContextEmpty,
 } from "@/utils/suggestionChips";
 import { DEV_MOCK_USER } from "@/lib/devPreview";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: boolean }> = ({ embedded = false, isDevPreview = false }) => {
   const { user: authUser } = useFirebaseAuth();
@@ -124,6 +125,28 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
     if (c) setCompany(c);
     if (r) setJobTitle(r);
   }, [searchParams]);
+
+  // Scout prefill bridge: apply job fields carried from an approved Scout
+  // navigate. Runs on mount (after navigation) and on SCOUT_PREFILL_EVENT (the
+  // in-place case). Company, title, and location live behind the manual-entry
+  // toggle, so reveal that section when any of them is prefilled.
+  useEffect(() => {
+    const applyScoutPrefill = () => {
+      const prefill = readScoutPrefill("/recruiter-spreadsheet");
+      if (!prefill) return;
+      if (prefill.job_url) setJobPostingUrl(prefill.job_url);
+      if (prefill.company) setCompany(prefill.company);
+      if (prefill.job_title) setJobTitle(prefill.job_title);
+      if (prefill.location) setLocation(prefill.location);
+      if (prefill.company || prefill.job_title || prefill.location) {
+        setShowManualEntry(true);
+      }
+      setActiveTab('find-hiring-managers');
+    };
+    applyScoutPrefill();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+  }, []);
 
   // Fetch job feed for chips, fallback to profile-based recommendations
   useEffect(() => {

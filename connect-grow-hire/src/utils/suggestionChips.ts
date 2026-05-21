@@ -544,30 +544,27 @@ export const COMPANY_DOMAINS: Record<string, string> = {
   'NERA': 'nera.com',
 };
 
-// Google Favicon API - public, no key needed, 100% uptime.
+// Resolve a company name to a best-guess domain, or null for non-companies
+// (academic institutions, freeform terms) and unresolvable input.
 //
 // Lookup is case-insensitive against COMPANY_DOMAINS (Firestore stores names
 // lowercase). When we don't have a curated domain, we construct a plausible
-// one ("paul hastings" → "paulhastings.com") and let Google's favicon endpoint
-// resolve it. The endpoint serves a generic globe icon for unknown domains
-// rather than 404'ing, so the worst case is still a non-broken image.
-export function getCompanyLogoUrl(company: string): string | null {
+// one ("paul hastings" → "paulhastings.com", "J.P. Morgan" → "jpmorgan.com").
+export function getCompanyDomain(company: string): string | null {
   if (!company || !company.trim()) return null;
   const trimmed = company.trim();
   const lowered = trimmed.toLowerCase();
 
   // Case-insensitive match against the curated map.
   for (const [name, domain] of Object.entries(COMPANY_DOMAINS)) {
-    if (name.toLowerCase() === lowered) {
-      return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-    }
+    if (name.toLowerCase() === lowered) return domain;
   }
 
   // Skip obvious non-companies (academic institutions, freeform terms) so we
-  // don't request bogus favicons for things like "hurricane katrina" or
+  // don't request bogus logos for things like "hurricane katrina" or
   // "university of phoenix". Universities aren't real "companies" in this
   // context - they showed up because the user has saved professors as
-  // contacts, but a logo card wouldn't help.
+  // contacts, but a logo wouldn't help.
   const skipPatterns = [
     /\buniversity\b/i, /\bcollege\b/i, /\bschool\b/i, /\binstitute\b/i,
     /\bhurricane\b/i, /\bnot available\b/i,
@@ -575,11 +572,32 @@ export function getCompanyLogoUrl(company: string): string | null {
   if (skipPatterns.some((re) => re.test(trimmed))) return null;
 
   // Construct a fallback domain. Strip non-alphanumerics, append .com.
-  // Examples: "Paul Hastings" → "paulhastings.com", "J.P. Morgan" → "jpmorgan.com",
-  // "Capital Group" → "capitalgroup.com", "Ansus Technologies" → "ansustechnologies.com".
+  // Examples: "Capital Group" → "capitalgroup.com", "Ansus Technologies" → "ansustechnologies.com".
   const slug = lowered.replace(/&/g, "and").replace(/[^a-z0-9]+/g, "");
   if (slug.length < 2) return null;
-  return `https://www.google.com/s2/favicons?domain=${slug}.com&sz=128`;
+  return `${slug}.com`;
+}
+
+// Google Favicon API URL for a company - public, no key needed, 100% uptime.
+// The endpoint serves a generic globe icon for unknown domains rather than
+// 404'ing, so the worst case is still a non-broken image.
+export function getCompanyLogoUrl(company: string): string | null {
+  const domain = getCompanyDomain(company);
+  return domain ? `https://www.google.com/s2/favicons?domain=${domain}&sz=128` : null;
+}
+
+// Ordered list of logo URLs to try for a company, best quality first:
+// Clearbit's full-color logo, then the Google favicon. Clearbit returns a real
+// 404 for unknown domains (so an onError handler can advance to the favicon);
+// the favicon always resolves. Consumers should render the first that loads
+// and fall back to a monogram if every candidate fails. See <CompanyLogo />.
+export function getCompanyLogoCandidates(company: string): string[] {
+  const domain = getCompanyDomain(company);
+  if (!domain) return [];
+  return [
+    `https://logo.clearbit.com/${domain}`,
+    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
+  ];
 }
 
 // Accent colors by broad category - used for the card accent bar

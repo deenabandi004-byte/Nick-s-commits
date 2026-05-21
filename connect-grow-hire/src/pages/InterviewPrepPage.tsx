@@ -25,6 +25,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { canUseFeature, getFeatureLimit } from "@/utils/featureAccess";
 import { trackFeatureActionCompleted, trackContentViewed, trackError } from "../lib/analytics";
 import { StickyCTA } from "@/components/StickyCTA";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 const InterviewPrepPage: React.FC = () => {
   const { user, checkCredits } = useFirebaseAuth();
@@ -102,6 +103,23 @@ const InterviewPrepPage: React.FC = () => {
 
   // Can generate check
   const canGenerate = jobPostingUrl.trim() || (manualCompanyName.trim() && manualJobTitle.trim());
+
+  // Scout prefill bridge: apply job fields carried from an approved Scout
+  // navigate. Runs on mount (after navigation) and on SCOUT_PREFILL_EVENT (the
+  // in-place case). The manual company and title inputs are visible by default.
+  useEffect(() => {
+    const applyScoutPrefill = () => {
+      const prefill = readScoutPrefill("/interview-prep");
+      if (!prefill) return;
+      if (prefill.job_url) setJobPostingUrl(prefill.job_url);
+      if (prefill.company) setManualCompanyName(prefill.company);
+      if (prefill.job_title) setManualJobTitle(prefill.job_title);
+      setActiveTab("interview-prep");
+    };
+    applyScoutPrefill();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+  }, []);
 
   // Load interview preps
   useEffect(() => {

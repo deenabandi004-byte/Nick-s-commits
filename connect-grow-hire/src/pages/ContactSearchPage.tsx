@@ -38,6 +38,7 @@ import { TemplateButton } from "@/components/TemplateButton";
 
 import { DEV_MOCK_USER } from "@/lib/devPreview";
 import { getUniversityShortName } from "@/lib/universityUtils";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
@@ -644,10 +645,29 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       }
     };
 
+    // New Scout bridge: route-keyed prefill from a Scout navigate the user
+    // approved. The legacy handleAutoPopulate above stays for failed-search
+    // recovery, which still uses the scout_auto_populate channel.
+    const handleScoutPrefill = () => {
+      const prefill = readScoutPrefill('/contact-search');
+      if (prefill) {
+        applyPopulate({
+          job_title: prefill.job_title,
+          company: prefill.company,
+          location: prefill.location,
+        });
+      }
+    };
+
     handleAutoPopulate();
+    handleScoutPrefill();
 
     window.addEventListener('scout-auto-populate', handleAutoPopulate);
-    return () => window.removeEventListener('scout-auto-populate', handleAutoPopulate);
+    window.addEventListener(SCOUT_PREFILL_EVENT, handleScoutPrefill);
+    return () => {
+      window.removeEventListener('scout-auto-populate', handleAutoPopulate);
+      window.removeEventListener(SCOUT_PREFILL_EVENT, handleScoutPrefill);
+    };
   }, [routerLocation.state, routerLocation.pathname, navigate]);
 
   // Helper function to trigger Scout on 0 results. Forwards the parsed query +

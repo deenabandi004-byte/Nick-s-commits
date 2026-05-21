@@ -9,6 +9,7 @@ import {
   Download,
 } from "lucide-react";
 import { LoadingSkeleton } from "./LoadingSkeleton";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from '../contexts/FirebaseAuthContext';
 import {
@@ -784,7 +785,12 @@ const RecruiterSpreadsheet: React.FC = () => {
                         {editingCell?.row === index && editingCell?.col === 'company' ? (
                           <Input value={recruiter.company} onChange={(e) => handleCellEdit(recruiter.id!, 'company', e.target.value)} onBlur={handleCellBlur} className="text-sm h-6 border-gray-300" style={{ fontFamily: mono }} autoFocus />
                         ) : (
-                          <span style={{ fontSize: 12, color: '#555', cursor: 'default' }}>{recruiter.company || ' - '}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, color: '#555', cursor: 'default' }}>
+                            {recruiter.company ? <CompanyLogo company={recruiter.company} size={18} rounded={4} /> : null}
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {recruiter.company || ' - '}
+                            </span>
+                          </span>
                         )}
                       </td>
 

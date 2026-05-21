@@ -17,6 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { DONE_STAGES } from "@/lib/outboxConstants";
 import { daysBetween } from "@/lib/formatters";
 import { trackContentViewed } from "@/lib/analytics";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 // --- bucket sorting helpers ---
 
@@ -53,6 +54,25 @@ export default function NetworkTracker() {
   // Track page view for flywheel baseline measurement
   useEffect(() => {
     trackContentViewed("network_tracker", "page_view");
+  }, []);
+
+  // Scout prefill bridge: apply the contact-filter query carried from an
+  // approved Scout navigate. Scout navigates to the legacy /outbox route (which
+  // redirects here), so the bridge envelope is keyed to /outbox. Runs on mount
+  // and on SCOUT_PREFILL_EVENT (the in-place case). The search box is on the
+  // Pipeline tab, so switch to it.
+  useEffect(() => {
+    const applyScoutPrefill = () => {
+      const prefill = readScoutPrefill("/outbox");
+      if (!prefill) return;
+      if (prefill.query) {
+        setSearchQuery(prefill.query);
+        setActiveTab("pipeline");
+      }
+    };
+    applyScoutPrefill();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
   }, []);
 
   // Pre-select contact from notification click

@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { toast } from '@/hooks/use-toast';
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from '@/lib/scoutBridge';
 import { 
   generateCoverLetter, 
   getCoverLetterLibrary,
@@ -142,6 +143,24 @@ export default function CoverLetterPage() {
       setIsLoadingLibrary(false);
     }
   }, [user?.uid]);
+
+  // Scout prefill bridge: apply job fields carried from an approved Scout
+  // navigate. Runs on mount (after navigation) and on SCOUT_PREFILL_EVENT (the
+  // in-place case). Company and title live behind the manual-inputs toggle, so
+  // reveal that section when either is prefilled.
+  useEffect(() => {
+    const applyScoutPrefill = () => {
+      const prefill = readScoutPrefill('/write/cover-letter');
+      if (!prefill) return;
+      if (prefill.job_url) setJobUrl(prefill.job_url);
+      if (prefill.company) setCompany(prefill.company);
+      if (prefill.job_title) setJobTitle(prefill.job_title);
+      if (prefill.company || prefill.job_title) setShowManualInputs(true);
+    };
+    applyScoutPrefill();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyScoutPrefill);
+  }, []);
 
   // Load library when tab changes
   useEffect(() => {

@@ -35,6 +35,7 @@ import { getUniversityShortName } from "@/lib/universityUtils";
 import { PromptCard } from "@/components/find/PromptCard";
 import { generateFirmDiscoveryPrompts, getGenericFirmPrompts, isContextEmpty, type UserContext, type PromptChip } from "@/utils/suggestionChips";
 import { firebaseApi } from "@/services/firebaseApi";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
@@ -246,9 +247,28 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
       }
     };
 
+    // New Scout bridge: route-keyed prefill from a Scout navigate the user
+    // approved. The legacy handleAutoPopulate above stays for failed-search
+    // recovery, which still uses the scout_auto_populate channel.
+    const handleScoutPrefill = () => {
+      const prefill = readScoutPrefill('/firm-search');
+      if (prefill) {
+        applyPopulate({
+          industry: prefill.industry,
+          location: prefill.location,
+          size: prefill.size,
+        });
+      }
+    };
+
     handleAutoPopulate();
+    handleScoutPrefill();
     window.addEventListener('scout-auto-populate', handleAutoPopulate);
-    return () => window.removeEventListener('scout-auto-populate', handleAutoPopulate);
+    window.addEventListener(SCOUT_PREFILL_EVENT, handleScoutPrefill);
+    return () => {
+      window.removeEventListener('scout-auto-populate', handleAutoPopulate);
+      window.removeEventListener(SCOUT_PREFILL_EVENT, handleScoutPrefill);
+    };
   }, [routerLocation.state, routerLocation.pathname, navigate]);
 
   // Track recently deleted firm IDs to filter them out during reload
