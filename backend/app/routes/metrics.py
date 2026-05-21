@@ -1,7 +1,7 @@
 """
 Frontend metrics event ingestion.
 
-POST /api/metrics/events — log a whitelisted event type to Firestore.
+POST /api/metrics/events - log a whitelisted event type to Firestore.
 """
 from flask import Blueprint, jsonify, request
 

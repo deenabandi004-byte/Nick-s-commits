@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a Flask-based REST API backend for the Offerloop platform. The backend provides endpoints for contact search, email generation, Gmail integration, billing, user management, and coffee chat preparation features.
+This is a Flask-based REST API backend for the Offerloop platform. The backend provides endpoints for contact search, email generation, Gmail integration, billing, user management, and meeting preparation features.
 
 ## Architecture
 
@@ -132,13 +132,13 @@ Each route file is a Flask Blueprint that handles specific API endpoints:
 - `GET /api/google/oauth/callback` - OAuth callback handler
 - `GET /api/google/gmail/status` - Check Gmail connection status
 
-#### Coffee Chat Prep Routes (`coffee_chat_prep.py`)
-- `POST /api/coffee-chat-prep` - Create new coffee chat preparation
-- `GET /api/coffee-chat-prep/history` - Get coffee chat history
-- `GET /api/coffee-chat-prep/all` - Get all coffee chat preps
-- `GET /api/coffee-chat-prep/<id>` - Get specific prep status
-- `GET /api/coffee-chat-prep/<id>/download` - Download PDF
-- `DELETE /api/coffee-chat-prep/<id>` - Delete a prep
+#### Meeting Prep Routes (`meeting_prep.py`)
+- `POST /api/meeting-prep` - Create new meeting preparation
+- `GET /api/meeting-prep/history` - Get meeting history
+- `GET /api/meeting-prep/all` - Get all meeting preps
+- `GET /api/meeting-prep/<id>` - Get specific prep status
+- `GET /api/meeting-prep/<id>/download` - Download PDF
+- `DELETE /api/meeting-prep/<id>` - Delete a prep
 
 #### Billing Routes (`billing.py`)
 - `GET /api/check-credits` - Check user credits
@@ -177,7 +177,7 @@ Business logic and external API integrations:
 #### `openai_client.py`
 - OpenAI API client initialization
 - Email generation
-- Coffee chat content generation
+- Meeting content generation
 
 #### `pdl_client.py`
 - People Data Labs API integration
@@ -194,7 +194,7 @@ Business logic and external API integrations:
 - Text extraction and processing
 
 #### `pdf_builder.py`
-- Coffee chat PDF generation
+- Meeting PDF generation
 
 #### `stripe_client.py`
 - Stripe payment processing
@@ -217,8 +217,8 @@ Data models and schemas:
 - User model definitions
 - User tier management
 
-#### `coffee_chat_prep.py`
-- Coffee chat prep data structures
+#### `meeting_prep.py`
+- Meeting prep data structures
 
 #### `enums.py`
 - Enum definitions (ContactStatus, UserTier, SearchType)
@@ -234,8 +234,8 @@ Utility functions:
 - User data parsing (from resume)
 - User profile utilities
 
-#### `coffee_chat_prep.py`
-- Coffee chat similarity generation
+#### `meeting_prep.py`
+- Meeting similarity generation
 - Question generation
 
 ## Authentication
@@ -268,7 +268,7 @@ CORS is configured in `app/extensions.py` to allow requests from:
 ## Database
 
 ### Firestore (Primary)
-- User data, contacts, coffee chat preps
+- User data, contacts, meeting preps
 - Gmail OAuth credentials
 - Subscription and billing data
 
@@ -289,7 +289,7 @@ CORS is configured in `app/extensions.py` to allow requests from:
 - 1800 credits
 - Enhanced fields
 - Resume-based personalization
-- Coffee chat prep features
+- Meeting prep features
 
 ## Error Handling
 

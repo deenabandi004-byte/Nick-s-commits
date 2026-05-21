@@ -17,7 +17,7 @@ function assertEq(actual: string, expected: string, label: string) {
 }
 
 function assertContains(actual: string, substring: string, label: string) {
-  assert(actual.includes(substring), `${label} — expected to contain "${substring}", got: ${actual}`);
+  assert(actual.includes(substring), `${label} - expected to contain "${substring}", got: ${actual}`);
 }
 
 const YEAR = new Date().getFullYear();
@@ -43,15 +43,15 @@ const compareEmpty = generateMeta('compare', { slug: 'unknown-vs-other' });
 assertContains(compareEmpty.title, 'vs', 'compare with missing fields still has vs');
 assertContains(compareEmpty.title, String(YEAR), 'compare with missing fields has year');
 
-// --- coffee-chat: full data ---
-const coffee = generateMeta('coffee-chat', { company: 'McKinsey' });
-assertContains(coffee.title, 'McKinsey', 'coffee-chat title contains company');
-assertContains(coffee.title, 'Coffee Chat', 'coffee-chat title contains Coffee Chat');
-assertContains(coffee.description, 'McKinsey', 'coffee-chat description contains company');
+// --- meeting: full data ---
+const coffee = generateMeta('meeting', { company: 'McKinsey' });
+assertContains(coffee.title, 'McKinsey', 'meeting title contains company');
+assertContains(coffee.title, 'Meeting', 'meeting title contains Meeting');
+assertContains(coffee.description, 'McKinsey', 'meeting description contains company');
 
-// --- coffee-chat: missing field ---
-const coffeeFallback = generateMeta('coffee-chat', {});
-assert(coffeeFallback.title.length > 0, 'coffee-chat with empty data returns non-empty title');
+// --- meeting: missing field ---
+const coffeeFallback = generateMeta('meeting', {});
+assert(coffeeFallback.title.length > 0, 'meeting with empty data returns non-empty title');
 
 // --- cold-email: full data ---
 const coldEmail = generateMeta('cold-email', { industry: 'Investment Banking' });

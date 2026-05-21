@@ -18,7 +18,7 @@ interface EmailThread {
 const emailThreads: EmailThread[] = [
   {
     id: 1,
-    subject: 'Coffee Chat Request - Investment Banking',
+    subject: 'Meeting Request - Investment Banking',
     firmName: 'Goldman Sachs',
     contactName: 'Sarah Chen',
     status: 'replied',
@@ -58,7 +58,7 @@ const conversationMessages = [
   {
     from: 'me',
     time: '5 days ago',
-    content: 'Hi Jane,\n\nI came across your profile and was really impressed by your career trajectory at Bain. I\'m currently exploring consulting opportunities and would love to learn more about your experience.\n\nWould you be open to a brief 15-minute coffee chat?\n\nBest regards,\nNicholas'
+    content: 'Hi Jane,\n\nI came across your profile and was really impressed by your career trajectory at Bain. I\'m currently exploring consulting opportunities and would love to learn more about your experience.\n\nWould you be open to a brief 15-minute meeting?\n\nBest regards,\nNicholas'
   },
 ];
 
@@ -235,7 +235,7 @@ export function Outbox() {
             <h3 className="text-sm mb-3">Suggested Next Steps</h3>
             <div className="space-y-2">
               <button className="w-full text-left p-3 rounded-[3px] bg-background hover:bg-purple-soft transition-colors text-sm">
-                Schedule coffee chat
+                Schedule meeting
               </button>
               <button className="w-full text-left p-3 rounded-[3px] bg-background hover:bg-purple-soft transition-colors text-sm">
                 View firm research

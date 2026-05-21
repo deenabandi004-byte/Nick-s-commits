@@ -16,7 +16,7 @@ Transform the Dashboard from an analytics-heavy page into a focused, action-orie
     - "You have X messages to respond to"
     - Button: "View Outbox" → navigates to `/home?tab=outbox`
   - If no replies yet:
-    - "No replies yet — follow up with your last 3 contacts"
+    - "No replies yet - follow up with your last 3 contacts"
     - Button: "Send Follow-ups" → navigates to `/home?tab=outbox`
 - **One-line motivation copy:**
   - "Replies typically come 7–14 days after outreach"
@@ -47,7 +47,7 @@ Transform the Dashboard from an analytics-heavy page into a focused, action-orie
 - Metrics to include (in order):
   1. **Outreach sent** (this week or month) - from `weeklySummary` or `replyStats.totalSent`
   2. **Replies received** - `replyStats.totalReplies`
-  3. **Coffee chats booked** - `coffeeChatCount` or `weeklySummary.coffeeChatsCreated`
+  3. **Meetings booked** - `meetingCount` or `weeklySummary.meetingsCreated`
   4. **Time saved** - `timeSavedHours`
   5. **Streak** (optional, smaller) - `streakData.currentStreak`
 
@@ -92,7 +92,7 @@ Transform the Dashboard from an analytics-heavy page into a focused, action-orie
 **Changes:**
 - If `replyStats.totalReplies === 0`:
   - Replace with encouraging message:
-    - "No replies yet — most users see replies after X outreaches"
+    - "No replies yet - most users see replies after X outreaches"
     - Show `replyStats.totalSent` if available
     - Make it feel like progress, not failure
 - If replies exist:

@@ -16,7 +16,7 @@
   - `AccountSettings` (1211 lines)
   - `Dashboard` (1094 lines)
   - `ContactSearchPage` (952 lines)
-  - `CoffeeChatPrepPage` (970 lines)
+  - `MeetingPrepPage` (970 lines)
   - And all other feature pages
 
 - Added `Suspense` boundaries with loading fallbacks

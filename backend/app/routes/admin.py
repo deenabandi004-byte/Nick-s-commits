@@ -101,7 +101,7 @@ def renew_watches():
         from firebase_admin import auth as fb_auth
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Unauthorized — provide Firebase auth or X-Cron-Secret"}), 401
+            return jsonify({"error": "Unauthorized - provide Firebase auth or X-Cron-Secret"}), 401
         token = auth_header.split("Bearer ", 1)[1]
         try:
             fb_auth.verify_id_token(token, clock_skew_seconds=5)
@@ -162,7 +162,7 @@ def compute_baseline():
         from firebase_admin import auth as fb_auth
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Unauthorized — provide Firebase auth or X-Cron-Secret"}), 401
+            return jsonify({"error": "Unauthorized - provide Firebase auth or X-Cron-Secret"}), 401
         token = auth_header.split("Bearer ", 1)[1]
         try:
             fb_auth.verify_id_token(token, clock_skew_seconds=5)
@@ -181,7 +181,7 @@ def compute_baseline():
 def report_client_error():
     """
     Receive frontend error reports from ErrorBoundary.
-    No auth required — error reporting must work even when auth is broken.
+    No auth required - error reporting must work even when auth is broken.
     Rate-limited by IP to prevent abuse.
     """
     data = request.get_json(silent=True) or {}

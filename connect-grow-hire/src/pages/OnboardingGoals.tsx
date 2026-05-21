@@ -127,7 +127,7 @@ export const OnboardingGoals = ({
           <label className="text-sm font-medium text-[#0F172A] mb-1.5 block">
             Dream companies
             <span className="text-[#94A3B8] font-normal ml-1">
-              (optional — type and press Enter)
+              (optional - type and press Enter)
             </span>
           </label>
 

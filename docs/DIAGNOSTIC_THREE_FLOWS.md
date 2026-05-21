@@ -1,6 +1,6 @@
 # Diagnostic: Current Implementation of 3 Flows
 
-Full code paths for template save, contact dedup (prompt-search), and signoff/duplicate signoff. No changes — current state only.
+Full code paths for template save, contact dedup (prompt-search), and signoff/duplicate signoff. No changes - current state only.
 
 ---
 
@@ -318,7 +318,7 @@ So: **there is no dedup before `batch_generate_emails`**. Dedup is only at Fires
 
 ---
 
-### 2.2 `search_contacts_from_prompt` — signature and `size`
+### 2.2 `search_contacts_from_prompt` - signature and `size`
 
 **File:** `backend/app/services/pdl_client.py`
 
@@ -385,7 +385,7 @@ For prompt-search, caller passes `desired_limit=fetch_limit` (max_contacts * 2 c
 
 ## 3. Signoff / Duplicate Signoff Flow
 
-### 3.1 `batch_generate_emails` — signoff_config usage, custom vs non-custom prompt, post-processing
+### 3.1 `batch_generate_emails` - signoff_config usage, custom vs non-custom prompt, post-processing
 
 **File:** `backend/app/services/reply_generation.py`
 

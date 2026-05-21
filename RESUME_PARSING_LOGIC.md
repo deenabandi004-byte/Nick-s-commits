@@ -96,12 +96,12 @@ def parse_resume_info(resume_text):
 
 ## CRITICAL RULES
 
-1. **EXTRACT EVERYTHING** — Do not summarize or condense. Keep all details.
-2. **PRESERVE EXACT TEXT** — Company names, job titles, dates, and degrees must be copied exactly as written.
-3. **KEEP ALL BULLETS** — Every bullet point in experience and projects must be preserved.
-4. **KEEP ALL SKILLS** — Extract every skill mentioned, organized by category.
-5. **KEEP COURSEWORK** — Extract all courses listed.
-6. **KEEP PROJECTS** — Extract all projects with full descriptions.
+1. **EXTRACT EVERYTHING** - Do not summarize or condense. Keep all details.
+2. **PRESERVE EXACT TEXT** - Company names, job titles, dates, and degrees must be copied exactly as written.
+3. **KEEP ALL BULLETS** - Every bullet point in experience and projects must be preserved.
+4. **KEEP ALL SKILLS** - Extract every skill mentioned, organized by category.
+5. **KEEP COURSEWORK** - Extract all courses listed.
+6. **KEEP PROJECTS** - Extract all projects with full descriptions.
 
 ## RESUME TEXT
 
@@ -197,7 +197,7 @@ Return ONLY valid JSON in this exact structure:
 
 - If a section doesn't exist in the resume, use an empty array [] or null
 - Do NOT invent or infer information that isn't explicitly stated
-- Do NOT summarize bullet points — copy them exactly
+- Do NOT summarize bullet points - copy them exactly
 - Do NOT merge multiple experiences into one
 - Do NOT skip any experiences, projects, or skills
 - Dates should be copied exactly as formatted in the resume

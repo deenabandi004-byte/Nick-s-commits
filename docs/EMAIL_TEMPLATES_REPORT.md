@@ -1,4 +1,4 @@
-# Email Templates — Full System Report
+# Email Templates - Full System Report
 
 This document describes how Offerloop’s email template system works end-to-end: UI, API, storage, and how templates affect email generation and drafts.
 
@@ -8,10 +8,10 @@ This document describes how Offerloop’s email template system works end-to-end
 
 The email template system lets users configure:
 
-1. **Purpose** — What the email is for (networking, referral, follow-up, sales, or custom).
-2. **Style preset** — Optional tone (casual, professional, short & direct, etc.); used in the **modal** and in preset definitions, not on the full **templates page**.
-3. **Custom instructions** — Free-form text (up to 4,000 characters) that is injected into the LLM prompt.
-4. **Sign-off** — Closing phrase (e.g. “Best,” “Thanks,” or custom) and an optional **signature block** (name, university, email, LinkedIn, etc.).
+1. **Purpose** - What the email is for (networking, referral, follow-up, sales, or custom).
+2. **Style preset** - Optional tone (casual, professional, short & direct, etc.); used in the **modal** and in preset definitions, not on the full **templates page**.
+3. **Custom instructions** - Free-form text (up to 4,000 characters) that is injected into the LLM prompt.
+4. **Sign-off** - Closing phrase (e.g. “Best,” “Thanks,” or custom) and an optional **signature block** (name, university, email, LinkedIn, etc.).
 
 Templates are stored per user in Firestore and are used when generating outreach emails (Discover Contacts, Pro/Free runs, prompt search) and when creating Gmail drafts.
 
@@ -26,8 +26,8 @@ export interface EmailTemplate {
   purpose?: string | null;           // "networking" | "referral" | "follow_up" | "sales" | "custom"
   stylePreset?: string | null;        // "casual" | "professional" | "short_direct" | "warm_enthusiastic" | "bold_confident"
   customInstructions?: string;       // max 4000 chars
-  signoffPhrase?: string;            // e.g. "Best," — max 50 chars
-  signatureBlock?: string;           // freeform lines — max 500 chars
+  signoffPhrase?: string;            // e.g. "Best," - max 50 chars
+  signatureBlock?: string;           // freeform lines - max 500 chars
 }
 ```
 
@@ -53,7 +53,7 @@ Valid style presets: from `email_templates.EMAIL_STYLE_PRESETS`.
 
 ---
 
-## 3. Frontend — Where Templates Are Managed
+## 3. Frontend - Where Templates Are Managed
 
 ### 3.1 Full-page: Email Templates Page
 
@@ -63,18 +63,18 @@ Valid style presets: from `email_templates.EMAIL_STYLE_PRESETS`.
 
 **Sections:**
 
-1. **What kind of email?** — Purpose pills: **Networking** (default), **Referral Request**, **Follow-Up**. No style dropdown here.
-2. **Create Your Own Template** — Expandable card; when expanded, shows a textarea for **custom instructions** (plain English; max 4,000 chars). Choosing “Create Your Own” sets purpose to `"custom"` and uses that text as the custom instructions.
-3. **Sign-off & signature** — Always visible card:
+1. **What kind of email?** - Purpose pills: **Networking** (default), **Referral Request**, **Follow-Up**. No style dropdown here.
+2. **Create Your Own Template** - Expandable card; when expanded, shows a textarea for **custom instructions** (plain English; max 4,000 chars). Choosing “Create Your Own” sets purpose to `"custom"` and uses that text as the custom instructions.
+3. **Sign-off & signature** - Always visible card:
    - **Closing phrase:** Presets (Best,, Thanks,, Warm regards,, Sincerely,, Cheers,, **Custom**). If Custom, a short input (max 50 chars).
    - **Signature:** Textarea for full signature (name, university, email, LinkedIn, etc.; max 500 chars).
    - **Preview:** Shows `signoffPhrase` + `signatureBlock` (or first name if block empty).
 
 **Actions:**
 
-- **Reset** — Resets to networking, no custom instructions, “Best,” sign-off, empty signature.
-- **Apply to this search** — Writes template to `sessionStorage` as `offerloop_applied_email_template` and navigates to `/contact-search` with `state.appliedEmailTemplate`. Contact search then uses this as the “session” template until cleared or overridden.
-- **Save as default** — Calls `apiService.saveEmailTemplate(buildTemplate())`; backend persists to Firestore `users/{uid}.emailTemplate`.
+- **Reset** - Resets to networking, no custom instructions, “Best,” sign-off, empty signature.
+- **Apply to this search** - Writes template to `sessionStorage` as `offerloop_applied_email_template` and navigates to `/contact-search` with `state.appliedEmailTemplate`. Contact search then uses this as the “session” template until cleared or overridden.
+- **Save as default** - Calls `apiService.saveEmailTemplate(buildTemplate())`; backend persists to Firestore `users/{uid}.emailTemplate`.
 
 **Note:** This page does **not** expose **style preset**; it only sets `stylePreset: null` in `buildTemplate()`. Style is used in the modal and in backend preset definitions.
 
@@ -101,7 +101,7 @@ When starting a **run** or **generate-and-draft**, the frontend may send `emailT
 
 ---
 
-## 4. Backend — Template API & Validation
+## 4. Backend - Template API & Validation
 
 - **File:** `backend/app/routes/email_template.py`
 - **Blueprint:** `email_template_bp`, prefix `/api/email-template`.
@@ -126,18 +126,18 @@ Saved document shape: `purpose`, `stylePreset`, `customInstructions`, `signoffPh
 
 ---
 
-## 5. Backend — Preset Definitions (Prompt Building)
+## 5. Backend - Preset Definitions (Prompt Building)
 
 - **File:** `backend/email_templates.py` (no Flask; used by routes and services).
 
-**EMAIL_PURPOSE_PRESETS** — e.g.:
+**EMAIL_PURPOSE_PRESETS** - e.g.:
 
-- `networking`: coffee chats, informational interviews; mentions resume, 15–20 min ask, “Thank you,” then name and contact.
+- `networking`: meetings, informational interviews; mentions resume, 15–20 min ask, “Thank you,” then name and contact.
 - `referral`: ask for referral; specific role, fit, resume.
 - `follow_up`: short 2–3 sentences; reference previous contact; “Thanks,” then name.
 - `sales`: sales/partnership; pain point, one-sentence product, proof, low-friction ask; no resume line.
 
-**EMAIL_STYLE_PRESETS** — e.g.:
+**EMAIL_STYLE_PRESETS** - e.g.:
 
 - `casual`: relaxed, contractions, short sentences; sign off “Thanks,” or “Cheers,” then name.
 - `professional`: polished; “Best regards,” or “Thank you,” then full name.
@@ -191,7 +191,7 @@ So **runs** support both request override and stored default; signoff is never �
 
 ---
 
-## 7. Email Generation — How the Template and Sign-off Are Used
+## 7. Email Generation - How the Template and Sign-off Are Used
 
 - **File:** `backend/app/services/reply_generation.py` → `batch_generate_emails(...)`.
 
@@ -247,7 +247,7 @@ So drafts always get a consistent sign-off: either from the template’s signoff
 |------------|------------------|------------------------|----------------|
 | **Discover Contacts** (generate-and-draft) | Firestore `users/{uid}.emailTemplate` only | From stored purpose/style/custom | From stored signoffPhrase/signatureBlock |
 | **Free / Pro / Prompt runs** | Request body override → else Firestore | From resolved purpose/style/custom | Override if has signoff fields → else Firestore |
-| **Contact import / LinkedIn import / Hunter** | Not using template (or signoff_config=None in current code paths) | — | — |
+| **Contact import / LinkedIn import / Hunter** | Not using template (or signoff_config=None in current code paths) | - | - |
 
 ---
 

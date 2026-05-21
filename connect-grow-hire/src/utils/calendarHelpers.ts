@@ -23,7 +23,7 @@ export function generateGoogleCalendarLink(event: CalendarEvent): string {
   const endDateStr = formatGoogleDate(endDate);
   
   // Build description
-  const description = `Coffee chat with ${event.contactName} at ${event.firm}${event.notes ? `\n\nNotes: ${event.notes}` : ''}`;
+  const description = `Meeting with ${event.contactName} at ${event.firm}${event.notes ? `\n\nNotes: ${event.notes}` : ''}`;
   
   // Create URL with params
   const params = new URLSearchParams({
@@ -67,7 +67,7 @@ export function downloadICS(event: CalendarEvent): void {
   const nowStr = formatICSDate(new Date());
   
   // Build description
-  const description = `Coffee chat with ${event.contactName} at ${event.firm}${event.notes ? `\\n\\nNotes: ${event.notes}` : ''}`;
+  const description = `Meeting with ${event.contactName} at ${event.firm}${event.notes ? `\\n\\nNotes: ${event.notes}` : ''}`;
   
   // Create ICS content
   const icsContent = [

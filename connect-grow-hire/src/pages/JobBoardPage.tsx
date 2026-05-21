@@ -244,7 +244,7 @@ function feedJobToLegacy(fj: FeedJob): Job {
 
 /** Extract the core role from a job title (e.g. "Senior Data Analyst, Talent Acquisition" → "Data Analyst") */
 function simplifyTitle(title: string): string {
-  // Known core roles — match longest first
+  // Known core roles - match longest first
   const CORE_ROLES = [
     "software development engineer", "software engineer", "data scientist",
     "data analyst", "data engineer", "product manager", "product designer",
@@ -268,7 +268,7 @@ function simplifyTitle(title: string): string {
     }
   }
   // Fallback: take first segment before comma/dash/pipe, strip seniority
-  const segment = title.split(/[,\-–—|/]/)[0].trim();
+  const segment = title.split(/[,\-– - |/]/)[0].trim();
   return segment
     .replace(/\b(senior|sr\.?|junior|jr\.?|lead|principal|staff|head of|associate|intern|entry[- ]level|mid[- ]level|people|team|global|regional)\b/gi, '')
     .replace(/\s{2,}/g, ' ')
@@ -332,7 +332,7 @@ const MatchScoreBadge: React.FC<{ score?: number }> = ({ score }) => {
   );
 };
 
-// Logo component — tries SerpAPI's `employer_logo` first, falls back to our
+// Logo component - tries SerpAPI's `employer_logo` first, falls back to our
 // curated/Google-favicons resolver, then to a soft-blue initials badge so
 // every card has *something* visually distinct in the leftmost slot.
 const JobCardLogo: React.FC<{ job: Job }> = ({ job }) => {
@@ -669,7 +669,7 @@ const JobBoardPage: React.FC = () => {
   const [detailDescription, setDetailDescription] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
 
-  // Jobs Tab State — fed from /api/jobs/feed
+  // Jobs Tab State - fed from /api/jobs/feed
   const [feedData, setFeedData] = useState<JobFeedResponse | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
@@ -743,7 +743,7 @@ const JobBoardPage: React.FC = () => {
     }
   }, [user?.uid]);
 
-  // Load job feed on mount — honour ?refresh=true URL param
+  // Load job feed on mount - honour ?refresh=true URL param
   useEffect(() => {
     if (!user?.uid) return;
     const shouldRefresh = searchParams.get("refresh") === "true";
@@ -959,7 +959,7 @@ const JobBoardPage: React.FC = () => {
     }
   }, []);
 
-  // Search is now client-side filtering — no API call needed
+  // Search is now client-side filtering - no API call needed
   const handleSearch = useCallback(() => {
     // searchQuery state drives filteredFeedJobs via useMemo, nothing else to do
     setCurrentPage(1);
@@ -1052,7 +1052,7 @@ const JobBoardPage: React.FC = () => {
       description = jobDescription || selectedJob.description || '';
     }
     
-    // Priority 2: Parse job URL only if we're missing key fields — skip the
+    // Priority 2: Parse job URL only if we're missing key fields - skip the
     // expensive backend scrape when selectedJob already has everything we need.
     const needsUrlParse = !company || !jobTitle;
     if (needsUrlParse && jobUrl && jobUrl.trim()) {
@@ -1193,7 +1193,7 @@ const JobBoardPage: React.FC = () => {
           : '';
         toast({
           title: "Found Fewer Than Requested",
-          description: `Found ${foundCount} of ${requestedCount} requested recruiters (${response.creditsCharged} credits used). We couldn't find more matches for this job — try broadening the job title or company criteria.${draftMessage}`,
+          description: `Found ${foundCount} of ${requestedCount} requested recruiters (${response.creditsCharged} credits used). We couldn't find more matches for this job - try broadening the job title or company criteria.${draftMessage}`,
           variant: "default"
         });
         // Switch to recruiters tab to show results (only if not in Recruiter Search)
@@ -1879,7 +1879,7 @@ const JobBoardPage: React.FC = () => {
                     </div>
                   </GlassCard>
 
-                  {/* New Matches — compact horizontal scroll rail */}
+                  {/* New Matches - compact horizontal scroll rail */}
                   {filteredNewMatches.length > 0 && (
                     <div>
                       <h2 className="text-lg font-semibold text-foreground mb-3">New Matches</h2>
@@ -2561,7 +2561,7 @@ const JobBoardPage: React.FC = () => {
         job={findHumansJob}
       />
 
-      {/* Job Detail Modal — full-screen takeover */}
+      {/* Job Detail Modal - full-screen takeover */}
       {detailSheetOpen && detailSheetJob && (() => {
         const job = detailSheetJob;
         const legacyJob = feedJobToLegacy(job);

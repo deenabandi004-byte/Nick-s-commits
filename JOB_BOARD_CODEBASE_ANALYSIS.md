@@ -147,9 +147,9 @@ const ContactSearchPage: React.FC = () => {
 };
 ```
 
-### Example: CoffeeChatPrepPage
+### Example: MeetingPrepPage
 
-**Location:** `/Users/karthik/work/Offerloop/connect-grow-hire/src/pages/CoffeeChatPrepPage.tsx`
+**Location:** `/Users/karthik/work/Offerloop/connect-grow-hire/src/pages/MeetingPrepPage.tsx`
 
 **Key Patterns:**
 - Uses `SidebarProvider` + `AppSidebar` for navigation
@@ -172,7 +172,7 @@ const navigationItems = [
   { title: "Home", url: "/home", icon: Home },
   { title: "Contact Search", url: "/contact-search", icon: Search },
   { title: "Firm Search", url: "/firm-search", icon: Building2 },
-  { title: "Coffee Chat Prep", url: "/coffee-chat-prep", icon: Coffee },
+  { title: "Meeting Prep", url: "/meeting-prep", icon: Coffee },
   { title: "Interview Prep", url: "/interview-prep", icon: Briefcase },
   { title: "Pricing", url: "/pricing", icon: CreditCard },
 ];
@@ -280,8 +280,8 @@ const result = await apiService.runFreeSearch({
   }
 });
 
-// Example: Coffee Chat Prep
-const prep = await apiService.createCoffeeChatPrep({
+// Example: Meeting Prep
+const prep = await apiService.createMeetingPrep({
   linkedinUrl: "https://linkedin.com/in/..."
 });
 
@@ -390,7 +390,7 @@ def search_contacts():
   <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
   <Route path="/contact-search" element={<ProtectedRoute><ContactSearchPage /></ProtectedRoute>} />
   <Route path="/firm-search" element={<ProtectedRoute><FirmSearchPage /></ProtectedRoute>} />
-  <Route path="/coffee-chat-prep" element={<ProtectedRoute><CoffeeChatPrepPage /></ProtectedRoute>} />
+  <Route path="/meeting-prep" element={<ProtectedRoute><MeetingPrepPage /></ProtectedRoute>} />
   <Route path="/interview-prep" element={<ProtectedRoute><InterviewPrepPage /></ProtectedRoute>} />
   <Route path="/pricing" element={<ProtectedRoute><Pricing /></ProtectedRoute>} />
   
@@ -467,7 +467,7 @@ connect-grow-hire/
 │   ├── pages/              # Page components
 │   │   ├── Home.tsx
 │   │   ├── ContactSearchPage.tsx
-│   │   ├── CoffeeChatPrepPage.tsx
+│   │   ├── MeetingPrepPage.tsx
 │   │   └── ... (31 files)
 │   ├── components/         # Reusable components
 │   │   ├── AppSidebar.tsx
@@ -497,7 +497,7 @@ backend/
 ├── app/
 │   ├── routes/            # Flask blueprints
 │   │   ├── contacts.py
-│   │   ├── coffee_chat_prep.py
+│   │   ├── meeting_prep.py
 │   │   ├── interview_prep.py
 │   │   └── ...
 │   ├── services/          # Business logic

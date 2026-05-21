@@ -1,16 +1,16 @@
-# Handoff — Offerloop · Stationery Aesthetic Refresh
+# Handoff - Offerloop · Stationery Aesthetic Refresh
 
 ## Overview
 
 This handoff covers a full visual-system refresh of the Offerloop frontend (`connect-grow-hire/`) plus one information-architecture change: consolidating the user's saved records into a single **My Network** surface with three spreadsheet tabs (People · Companies · Hiring Managers).
 
-The aesthetic direction is **Stationery** — personal letterhead, not another AI dashboard. Cream paper, ink navy, oxblood accent, Instrument Serif italics used sparingly as a signature gesture. The goal is a product that looks *human* in a category that all looks the same.
+The aesthetic direction is **Stationery** - personal letterhead, not another AI dashboard. Cream paper, ink navy, oxblood accent, Instrument Serif italics used sparingly as a signature gesture. The goal is a product that looks *human* in a category that all looks the same.
 
 ## About the Design Files
 
-The files in this bundle are **design references created in HTML** — prototypes showing intended look, copy, and interaction. They are **not production code to copy directly**. Your task is to **recreate these designs inside the existing `connect-grow-hire/` React + Vite + TypeScript + Tailwind codebase** using its established patterns (shadcn/ui primitives, Tailwind classes, existing route structure).
+The files in this bundle are **design references created in HTML** - prototypes showing intended look, copy, and interaction. They are **not production code to copy directly**. Your task is to **recreate these designs inside the existing `connect-grow-hire/` React + Vite + TypeScript + Tailwind codebase** using its established patterns (shadcn/ui primitives, Tailwind classes, existing route structure).
 
-All HTML in the bundle is a single-file prototype. It uses raw CSS variables and inline styles to demonstrate the aesthetic — you will port those values to `tailwind.config.ts` tokens and shadcn-style components.
+All HTML in the bundle is a single-file prototype. It uses raw CSS variables and inline styles to demonstrate the aesthetic - you will port those values to `tailwind.config.ts` tokens and shadcn-style components.
 
 ## Fidelity
 
@@ -22,28 +22,28 @@ All HTML in the bundle is a single-file prototype. It uses raw CSS variables and
 
 Execute phases in order. Do not start phase N+1 until phase N is merged.
 
-1. **Tokens** — replace CSS variables in `src/index.css`, update `tailwind.config.ts`. No visual change yet if flag is off.
-2. **Type** — install Inter + Instrument Serif + JetBrains Mono via `index.html`. Remove Lora, DM Sans, Libre Baskerville, IBM Plex Mono, VanquishBold.
-3. **Primitives** — rebuild shadcn components (Button, Input, Badge, Card, Tabs, Table Row) against new tokens. Add new `<PageTitle>` component.
-4. **Sidebar + My Network route** — add `My Network` nav item, build `/my-network/:tab` route with three tabs.
-5. **Page templates** — apply to Find, Coffee Chats, Tracker, Job Board screens.
-6. **Feature flag** — gate the entire new look behind `VITE_FLAG_NEW_AESTHETIC`. Default off.
-7. **Marketing** — landing page inherits the system (last).
+1. **Tokens** - replace CSS variables in `src/index.css`, update `tailwind.config.ts`. No visual change yet if flag is off.
+2. **Type** - install Inter + Instrument Serif + JetBrains Mono via `index.html`. Remove Lora, DM Sans, Libre Baskerville, IBM Plex Mono, VanquishBold.
+3. **Primitives** - rebuild shadcn components (Button, Input, Badge, Card, Tabs, Table Row) against new tokens. Add new `<PageTitle>` component.
+4. **Sidebar + My Network route** - add `My Network` nav item, build `/my-network/:tab` route with three tabs.
+5. **Page templates** - apply to Find, Meetings, Tracker, Job Board screens.
+6. **Feature flag** - gate the entire new look behind `VITE_FLAG_NEW_AESTHETIC`. Default off.
+7. **Marketing** - landing page inherits the system (last).
 
 ---
 
 ## Design Tokens
 
-### Colors (CSS variables — put in `src/styles/tokens.css`)
+### Colors (CSS variables - put in `src/styles/tokens.css`)
 
 ```css
 :root[data-theme="stationery"] {
-  /* Paper — page backgrounds */
+  /* Paper - page backgrounds */
   --paper:    #FDFDFD;  /* clean white, default. Cream option: #FDFBF7 */
   --paper-2:  #F4F4F4;  /* subtle surface (table header, note cards). Cream: #F7F3EA */
   --elev:     #FFFFFF;  /* elevated surfaces (cards, modals). Cream: #FFFEFB */
 
-  /* Ink — text, primary UI */
+  /* Ink - text, primary UI */
   --ink:      #1A1D23;  /* primary text, headings */
   --ink-2:    #4A5058;  /* secondary text, labels */
   --ink-3:    #8A8F96;  /* tertiary / mono captions */
@@ -52,11 +52,11 @@ Execute phases in order. Do not start phase N+1 until phase N is merged.
   --line:     #E8E8E8;  /* primary dividers. Cream: #E6DFCF */
   --line-2:   #F0F0F0;  /* row dividers. Cream: #EFE9DA */
 
-  /* Brand — stationery navy */
+  /* Brand - stationery navy */
   --brand:    #1F2B4E;  /* nav rail background, primary buttons */
   --brand-2:  #2A3862;  /* hover */
 
-  /* Accent — oxblood (signature) */
+  /* Accent - oxblood (signature) */
   --accent:   #8B2E1F;  /* italic underline, single callout, never fills */
 
   /* Signals */
@@ -66,7 +66,7 @@ Execute phases in order. Do not start phase N+1 until phase N is merged.
 }
 ```
 
-**Paper tone variants** — `cream`, `ivory`, `manila`, `clean` (default). User-tweakable in prototype; ship with `clean`.
+**Paper tone variants** - `cream`, `ivory`, `manila`, `clean` (default). User-tweakable in prototype; ship with `clean`.
 
 ### Typography
 
@@ -82,15 +82,15 @@ Execute phases in order. Do not start phase N+1 until phase N is merged.
 | Mono caption       | JetBrains Mono     | 400    | 10/14            | 0.12em (upper) |
 | Number             | JetBrains Mono     | 400    | varies           | 0.02em         |
 
-**Italic serif is a signature — use only for:**
+**Italic serif is a signature - use only for:**
 - One word inside a PageTitle (the accented noun)
 - Marketing headlines
 - Empty-state whisper copy
-- The `— with care` footer sign-off
+- The ` - with care` footer sign-off
 
 Never use italic serif for body, buttons, or chrome.
 
-**Google Fonts import** — put in `index.html`:
+**Google Fonts import** - put in `index.html`:
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -125,9 +125,9 @@ Never use italic serif for body, buttons, or chrome.
 --shadow-lg: 0 8px 24px rgba(26, 29, 35, 0.08), 0 2px 6px rgba(26, 29, 35, 0.04);
 ```
 
-Shadows are used sparingly — paper doesn't hover. Primary surfaces sit on the paper with a `1px solid var(--line)` border instead.
+Shadows are used sparingly - paper doesn't hover. Primary surfaces sit on the paper with a `1px solid var(--line)` border instead.
 
-### Signature gesture — scribble underline
+### Signature gesture - scribble underline
 
 A hand-drawn SVG underline under the accented word in PageTitles. Inline SVG, stroked with `var(--accent)`, 2px, rough path. Ships as a reusable component.
 
@@ -260,7 +260,7 @@ Kbd shortcut support: optional `<kbd>` child, right-aligned, `JetBrains Mono` 10
 ```tsx
 interface PageTitleProps {
   children: React.ReactNode;    // "Who do you want to"
-  accent?: React.ReactNode;     // "meet?" — gets italic + scribble
+  accent?: React.ReactNode;     // "meet?" - gets italic + scribble
   subtitle?: string;
 }
 
@@ -283,8 +283,8 @@ export const PageTitle = ({ children, accent, subtitle }: PageTitleProps) => (
 ```
 
 **Usage rules:**
-- Only on Find screen, Coffee Chats landing, marketing hero
-- **Never on My Network, Tracker, Job Board** — those are work surfaces and stay utilitarian (breadcrumb-only header)
+- Only on Find screen, Meetings landing, marketing hero
+- **Never on My Network, Tracker, Job Board** - those are work surfaces and stay utilitarian (breadcrumb-only header)
 
 ---
 
@@ -292,7 +292,7 @@ export const PageTitle = ({ children, accent, subtitle }: PageTitleProps) => (
 
 ### Purpose
 
-Single destination for the user's saved records — the Rolodex. Replaces what used to be scattered across the topbar and a "View Contacts" button. Contains three spreadsheets, each with distinct columns.
+Single destination for the user's saved records - the Rolodex. Replaces what used to be scattered across the topbar and a "View Contacts" button. Contains three spreadsheets, each with distinct columns.
 
 ### Routes
 
@@ -315,7 +315,7 @@ Tab switching updates the URL (not just state) so refresh + share-URL work.
 │                 │         [Import CSV] [Export] [Add {type}]    │
 │ ▫ Find          │ ────────────────────────────────────────────  │
 │ ■ My Network 183│ Tabs: People (124) · Companies (38) ·         │
-│ ▫ Coffee Chats  │        Hiring Managers (21)                   │
+│ ▫ Meetings  │        Hiring Managers (21)                   │
 │ ▫ Tracker       │ ────────────────────────────────────────────  │
 │ ▫ Job Board     │ Table: grid rows, sticky header               │
 │                 │                                                │
@@ -326,7 +326,7 @@ Tab switching updates the URL (not just state) so refresh + share-URL work.
 
 ### No greeting
 
-Unlike Find, My Network has **no italic PageTitle, no "Who do you want to meet?" copy, no scribble underline**. The breadcrumb (`Workspace / My Network / People`) is the label. This is intentional — Find is the front door (warm, inviting), My Network is the filing cabinet (utilitarian, dense).
+Unlike Find, My Network has **no italic PageTitle, no "Who do you want to meet?" copy, no scribble underline**. The breadcrumb (`Workspace / My Network / People`) is the label. This is intentional - Find is the front door (warm, inviting), My Network is the filing cabinet (utilitarian, dense).
 
 ### Topbar actions (per tab)
 
@@ -343,10 +343,10 @@ Columns: `[checkbox 32px] [Name 1.3fr] [Role · Company 1fr] [Location 1fr] [Sch
 - **Name**: 13px Inter 600 primary + 11px JetBrains Mono email secondary
 - **Role · Company**: 12px Inter, `--ink-2`
 - **Location**: 12px Inter, `--ink-2`
-- **School**: Badge component — `brand` variant if alumni match, default otherwise. Format: `USC · '22`
+- **School**: Badge component - `brand` variant if alumni match, default otherwise. Format: `USC · '22`
 - **Connection**: 10px JetBrains Mono uppercase, `--ink-3`. Values: `ALUMNI`, `PRIOR CO.`, `INTRO`, `MANUAL`, `LINKEDIN`
 
-No status column. No "Last" column. No avatars (use the checkbox gutter instead — cleaner, avoids fake initials).
+No status column. No "Last" column. No avatars (use the checkbox gutter instead - cleaner, avoids fake initials).
 
 ### Table: Companies
 
@@ -402,8 +402,8 @@ Filters live in URL search params so they survive refresh and are shareable.
 
 The Find screen is where the **PageTitle with scribble underline** lives. Keep its existing structure; update:
 
-1. Replace current title with `<PageTitle>Who do you want to <em>meet?</em></PageTitle>` (or whatever the product copy is — italic word should be the accented noun/verb).
-2. Remove the redundant "View Contacts · N" topbar button — that data now lives at `/my-network`.
+1. Replace current title with `<PageTitle>Who do you want to <em>meet?</em></PageTitle>` (or whatever the product copy is - italic word should be the accented noun/verb).
+2. Remove the redundant "View Contacts · N" topbar button - that data now lives at `/my-network`.
 3. Subtitle (if present): 15px Inter, `--ink-2`.
 4. Suggestion chips below title: 13px Inter, BG `--paper-2`, border `1px solid --line`, radius `rounded-lg`. Hover: BG lightens.
 
@@ -411,7 +411,7 @@ The Find screen is where the **PageTitle with scribble underline** lives. Keep i
 
 ## Sidebar (updated)
 
-Order: `Find`, `My Network`, `Coffee Chats`, `Tracker`, `Job Board`. Resources section below divider: `Documentation`.
+Order: `Find`, `My Network`, `Meetings`, `Tracker`, `Job Board`. Resources section below divider: `Documentation`.
 
 - Width 240px, BG `var(--brand)` (navy), text `rgba(255,255,255,0.78)`
 - Active item: text white, BG `rgba(255,255,255,0.08)`, `2px` left accent bar `var(--accent)`
@@ -436,7 +436,7 @@ Tokens live under `:root[data-theme="stationery"]`; legacy keeps existing vars u
 
 ---
 
-## Interactions & Behavior — Summary Table
+## Interactions & Behavior - Summary Table
 
 | Surface          | Interaction            | Behavior                                                    |
 |------------------|------------------------|-------------------------------------------------------------|
@@ -465,7 +465,7 @@ Animations: 150ms ease-out for most transitions. No spring bounces. Drawer slide
 
 ## Assets
 
-- **Fonts**: Google Fonts (Inter, Instrument Serif, JetBrains Mono) — no local font files needed. Remove `src/assets/fonts/` entries for Lora/DM Sans/Libre Baskerville/IBM Plex/Vanquish.
+- **Fonts**: Google Fonts (Inter, Instrument Serif, JetBrains Mono) - no local font files needed. Remove `src/assets/fonts/` entries for Lora/DM Sans/Libre Baskerville/IBM Plex/Vanquish.
 - **ScribbleUnderline**: inline SVG component (no asset file)
 - **Paper grain**: inline SVG noise `background-image`, generate with feTurbulence (provided below if needed)
 - **Logo seal**: existing "O" mark; recolor to `var(--paper)` on `var(--brand)` bg
@@ -474,8 +474,8 @@ Animations: 150ms ease-out for most transitions. No spring bounces. Drawer slide
 
 ## Files in This Bundle
 
-- `Aesthetic Audit v2.html` — the full aesthetic prototype (tokens, type, primitives, screens, My Network click-through flow). Open in a browser to reference the target look.
-- `Aesthetic Audit.html` — v1 audit (superseded; kept for context on what was rejected and why)
+- `Aesthetic Audit v2.html` - the full aesthetic prototype (tokens, type, primitives, screens, My Network click-through flow). Open in a browser to reference the target look.
+- `Aesthetic Audit.html` - v1 audit (superseded; kept for context on what was rejected and why)
 
 ---
 
@@ -488,7 +488,7 @@ Implementation is done when:
 3. `/my-network/people` `/my-network/companies` `/my-network/managers` all render with correct columns, tab highlighting, and breadcrumb.
 4. The Find screen title renders Instrument Serif with a scribble underline under the accented word. No other screen uses the italic-underline gesture.
 5. Button, Input, Badge, Card, Tabs, Table Row primitives pass Storybook/visual-regression against the HTML prototype.
-6. All color values in the rendered app match the `--ink`, `--paper`, `--accent`, `--brand` CSS variables exactly — no hardcoded hexes in component code.
+6. All color values in the rendered app match the `--ink`, `--paper`, `--accent`, `--brand` CSS variables exactly - no hardcoded hexes in component code.
 7. Keyboard shortcuts `/`, `F`, `N`, `Esc` work on `/my-network`.
 
 ---
@@ -497,14 +497,14 @@ Implementation is done when:
 
 Paste this into Claude Code at the repo root:
 
-> I'm implementing a design-system refresh in `connect-grow-hire/`. The full spec is in `design_handoff_stationery_aesthetic/README.md` — read it end to end before doing anything.
+> I'm implementing a design-system refresh in `connect-grow-hire/`. The full spec is in `design_handoff_stationery_aesthetic/README.md` - read it end to end before doing anything.
 >
 > Work in phases, committing after each:
 > 1. Add Google Fonts to `index.html` + create `src/styles/tokens.css` with the new CSS variables under `[data-theme="stationery"]` + update `tailwind.config.ts`. Wrap the entire app in `<body data-theme={flag?'stationery':'legacy'}>`. Add `VITE_FLAG_NEW_AESTHETIC` env var (default false).
 > 2. Remove unused font families (Lora, DM Sans, Libre Baskerville, IBM Plex Mono, VanquishBold) from `index.html`, `src/index.css`, and `src/assets/fonts/`.
-> 3. Rebuild shadcn primitives: Button, Input, Badge, Card, Tabs, Table Row — matching the specs in the README. Keep existing APIs.
+> 3. Rebuild shadcn primitives: Button, Input, Badge, Card, Tabs, Table Row - matching the specs in the README. Keep existing APIs.
 > 4. Add `PageTitle` + `ScribbleUnderline` components. Wire them into the Find screen only.
 > 5. Add "My Network" sidebar nav item and the `/my-network/:tab` route with People/Companies/Hiring Managers tables. Each tab has the columns listed in the README.
-> 6. Stop. Ask me to review before you touch Tracker, Coffee Chats, Job Board, or marketing.
+> 6. Stop. Ask me to review before you touch Tracker, Meetings, Job Board, or marketing.
 >
 > Don't skip phases. Don't touch anything outside each phase's scope. After each phase, run the existing tests, show me a diff summary, and wait for approval before the next phase.

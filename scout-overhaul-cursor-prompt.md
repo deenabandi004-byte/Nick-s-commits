@@ -775,8 +775,8 @@ If a field cannot be determined, use null.
         # Common patterns in job listing titles
         # "Software Engineer - Google" or "Software Engineer at Google"
         patterns = [
-            r'^(.+?)\s*[-–—]\s*(.+?)(?:\s*[-–—]\s*(.+))?$',  # Title - Company - Location
-            r'^(.+?)\s+at\s+(.+?)(?:\s*[-–—,]\s*(.+))?$',   # Title at Company - Location
+            r'^(.+?)\s*[-– - ]\s*(.+?)(?:\s*[-– - ]\s*(.+))?$',  # Title - Company - Location
+            r'^(.+?)\s+at\s+(.+?)(?:\s*[-– - ,]\s*(.+))?$',   # Title at Company - Location
             r'^(.+?)\s*\|\s*(.+?)(?:\s*\|\s*(.+))?$',       # Title | Company | Location
         ]
         

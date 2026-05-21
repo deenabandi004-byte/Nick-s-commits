@@ -1,4 +1,4 @@
-# Implementation Plan v2 — Find Companies B+ Layout + Scout Intro Sentence
+# Implementation Plan v2 - Find Companies B+ Layout + Scout Intro Sentence
 
 ---
 
@@ -25,9 +25,9 @@ All core tokens are **already declared** at `:root`:
 
 **Tailwind wiring** (`tailwind.config.ts` lines 70-82): Already configured to consume all tokens via `var(--xxx)`. Classes like `text-ink`, `bg-paper`, `border-line` all work.
 
-**Decision**: Update `tokens.css` `:root` values to match the B+ spec exactly. The `--accent` change from navy to oxblood is the most visible — it affects `ScribbleUnderline` (which uses `var(--accent)` for stroke color). This is intentional per the spec: "USC oxblood — underline scribble, eyebrow accent."
+**Decision**: Update `tokens.css` `:root` values to match the B+ spec exactly. The `--accent` change from navy to oxblood is the most visible - it affects `ScribbleUnderline` (which uses `var(--accent)` for stroke color). This is intentional per the spec: "USC oxblood - underline scribble, eyebrow accent."
 
-**Risk**: `--accent` is also used by shadcn/ui in `index.css` as an HSL value (`--accent: 220 60% 98%`). These are different variable systems — shadcn uses HSL in `hsl(var(--accent))`, our tokens use hex in `var(--accent)`. They won't conflict because they're consumed differently, but we should verify no shadcn component accidentally uses the raw `var(--accent)`.
+**Risk**: `--accent` is also used by shadcn/ui in `index.css` as an HSL value (`--accent: 220 60% 98%`). These are different variable systems - shadcn uses HSL in `hsl(var(--accent))`, our tokens use hex in `var(--accent)`. They won't conflict because they're consumed differently, but we should verify no shadcn component accidentally uses the raw `var(--accent)`.
 
 ---
 
@@ -38,7 +38,7 @@ The B+ spec (§06) and Scout spec (§05) use different output shapes:
 | B+ spec `company.scout` | Scout spec LLM output |
 |---|---|
 | `rung: "R1"` | `rung_used: "R1"` |
-| `headline: "..."` | _(not present — this is the R4-tier aggregate sentence)_ |
+| `headline: "..."` | _(not present - this is the R4-tier aggregate sentence)_ |
 | `detail: "..."` | `paragraph: "..."` |
 | `short: "..."` | _(not present)_ |
 | _(not present)_ | `facts_used: [...]` |
@@ -66,7 +66,7 @@ interface ScoutSentence {
 
 ---
 
-## Phase 1 — Backend: Scout Sentence Service + API Endpoint (deterministic R4/R5 only)
+## Phase 1 - Backend: Scout Sentence Service + API Endpoint (deterministic R4/R5 only)
 
 **Goal**: Ship the backend that produces the full data contract. No LLM calls. Deterministic templates only.
 
@@ -140,20 +140,20 @@ Fallback: `{"letters": name[0].upper(), "color": "#1B2A44"}`
 
 def run_scout_ladder(company, user, alumni_signal) -> ScoutSentence:
     """
-    R1-R3: return None (no alumni-level data yet — stubs for future)
+    R1-R3: return None (no alumni-level data yet - stubs for future)
     R4: cohort stat available (alumni_count >= 3)
     R5: sector-only fallback
     """
 ```
 
 **R4 templates** (deterministic, no LLM):
-- headline: `"{count} {school} alumni work here in {field} roles — {recent} started this fall."`
-- detail: `"A deep pipeline for {school} {field} students. No single warmest intro yet — but the numbers are strong."`
+- headline: `"{count} {school} alumni work here in {field} roles - {recent} started this fall."`
+- detail: `"A deep pipeline for {school} {field} students. No single warmest intro yet - but the numbers are strong."`
 - short: `"{count} {school} alumni in {field} roles."`
 
 **R5 templates** (deterministic, no LLM):
-- headline: `"A {sector} company on your radar — tight fit for your {major} coursework."`
-- detail: `"No tracked {school} alumni here yet — but the sector and location match your profile."`
+- headline: `"A {sector} company on your radar - tight fit for your {major} coursework."`
+- detail: `"No tracked {school} alumni here yet - but the sector and location match your profile."`
 - short: `"Tight fit for your {major} coursework."`
 
 ### 1.4 Recommendation scoring
@@ -187,7 +187,7 @@ Register blueprint in `wsgi.py`.
 
 ---
 
-## Phase 2 — CSS Token Update + Frontend API Wiring + Types
+## Phase 2 - CSS Token Update + Frontend API Wiring + Types
 
 **Goal**: Align tokens with B+ spec, wire the API, define the shared TS contract.
 
@@ -204,12 +204,12 @@ Update `connect-grow-hire/src/styles/tokens.css` `:root` values to match B+ spec
 --line:    #E5E3DE;    /* was #E5E5E0 */
 --line-2:  #EFEDE8;    /* was #F0F0ED */
 --brand-2: #2A3D5C;    /* was #243656 */
---accent:  #8B2E1F;    /* was #1B2A44 — oxblood replaces navy */
+--accent:  #8B2E1F;    /* was #1B2A44 - oxblood replaces navy */
 ```
 
-Also update the `legacy`, `stationery`, and `stationery-cream` theme blocks to stay consistent (or remove them if unused — check first).
+Also update the `legacy`, `stationery`, and `stationery-cream` theme blocks to stay consistent (or remove them if unused - check first).
 
-**Verify**: No shadcn component breaks from the `--accent` change. shadcn uses `hsl(var(--accent))` where `--accent` is defined as HSL values in `index.css` (line 42: `--accent: 220 60% 98%`). Our tokens.css `--accent` is a hex value consumed via `var(--accent)` directly. These are two different `--accent` declarations — tokens.css `:root` will win over the `index.css` `:root`. Need to verify this doesn't break shadcn Accent colors. If it does, rename our token to `--st-accent` and update all references.
+**Verify**: No shadcn component breaks from the `--accent` change. shadcn uses `hsl(var(--accent))` where `--accent` is defined as HSL values in `index.css` (line 42: `--accent: 220 60% 98%`). Our tokens.css `--accent` is a hex value consumed via `var(--accent)` directly. These are two different `--accent` declarations - tokens.css `:root` will win over the `index.css` `:root`. Need to verify this doesn't break shadcn Accent colors. If it does, rename our token to `--st-accent` and update all references.
 
 ### 2.2 Shared TypeScript contract
 
@@ -276,7 +276,7 @@ async getCompanyRecommendations(): Promise<CompanyRecommendationsResponse>
 
 ---
 
-## Phase 3 — HeroCard + ListRow Components
+## Phase 3 - HeroCard + ListRow Components
 
 **Goal**: Build the two core visual components per B+ spec §04 and §05.
 
@@ -287,11 +287,11 @@ async getCompanyRecommendations(): Promise<CompanyRecommendationsResponse>
 Props: `{ company: CompanyRecommendation }`
 
 Layout per B+ spec §04 measurements:
-- Eyebrow: `01 · START HERE` — mono 10px, 0.16em tracking, `--accent`, mb 14px
+- Eyebrow: `01 · START HERE` - mono 10px, 0.16em tracking, `--accent`, mb 14px
 - Mark: 28px circle, company `mark.color` fill, serif italic letter 14px white, gap 12px to name
 - Name: serif 28px, `--ink`, mb 16px
-- Headline: serif italic 20px, `--ink`, lh 1.4, mb 12px — renders `scout.headline`
-- Detail: sans 13px, `--ink-2`, lh 1.6, mb 18px — renders `scout.detail` with digit emphasis
+- Headline: serif italic 20px, `--ink`, lh 1.4, mb 12px - renders `scout.headline`
+- Detail: sans 13px, `--ink-2`, lh 1.6, mb 18px - renders `scout.detail` with digit emphasis
 - Meta: mono 9px, `--ink-3`, uppercase, city in `--brand` 500, mb 10px
 - CTA: sans 12px, `--brand` 500, "Find contacts →"
 
@@ -334,7 +334,7 @@ function renderScoutSentence(text: string): ReactNode
 
 ---
 
-## Phase 4 — Page Assembly + States + Responsive
+## Phase 4 - Page Assembly + States + Responsive
 
 **Goal**: Wire everything into FirmSearchPage landing state. Do NOT touch the search results view.
 
@@ -346,11 +346,11 @@ When the user lands on Companies tab with no active search, render:
 <ResultsGrid>  {/* grid: 1.15fr 1fr, gap 48px, border-top 1px solid var(--line) */}
   <HeroCard company={companies[0]} />
   <ListColumn>
-    <ListHeader />  {/* "Four more, ranked by fit" — mono 9px uppercase --ink-3 */}
+    <ListHeader />  {/* "Four more, ranked by fit" - mono 9px uppercase --ink-3 */}
     {companies.slice(1).map(c => <ListRow key={c.id} company={c} />)}
   </ListColumn>
 </ResultsGrid>
-<FooterSearch />  {/* existing component — text link "Search for a specific company →", expands on click */}
+<FooterSearch />  {/* existing component - text link "Search for a specific company →", expands on click */}
 ```
 
 Data fetch: React Query calling `apiService.getCompanyRecommendations()`, stale 5min, cache 10min.
@@ -361,8 +361,8 @@ Data fetch: React Query calling `apiService.getCompanyRecommendations()`, stale 
 |-------|--------|
 | **Default** | Hero + 4 list rows + footer link (collapsed) |
 | **Loading** | Skeleton blocks in `--paper-2` matching text heights. No spinner. |
-| **No companies** | Italic serif centered: "Scout is still reading your resume — check back in a minute." |
-| **Error** | Same copy as no-companies: "Scout is still reading your resume — check back in a minute." No stack trace, no blank page. |
+| **No companies** | Italic serif centered: "Scout is still reading your resume - check back in a minute." |
+| **Error** | Same copy as no-companies: "Scout is still reading your resume - check back in a minute." No stack trace, no blank page. |
 | **Hero only (1 company)** | Single column, hero spans full width, max-width 720px |
 | **Search expanded** | Footer link replaced by input with bottom border, autofocus |
 | **Row hover** | Name color → `--brand`, 120ms. No background change, no scale. |
@@ -393,7 +393,7 @@ The two-column layout is the **landing state only**. Once a search is triggered 
 
 ---
 
-## Phase 5 — LLM Variation for Hero Detail (post-UI ship)
+## Phase 5 - LLM Variation for Hero Detail (post-UI ship)
 
 **Goal**: Add LLM-assisted phrasing variation to the hero detail paragraph. Ship after the deterministic UI is live and rendering real data.
 
@@ -409,7 +409,7 @@ Use the prompt from Scout Spec §05, adapted for R4/R5:
 
 ### 5.2 Cache key
 
-Key: `{company_id}_{school}_{major}_{rung}` — **not per-user**. R4/R5 output doesn't vary per user, only per school+major+company. This gives cross-user cache hits at scale.
+Key: `{company_id}_{school}_{major}_{rung}` - **not per-user**. R4/R5 output doesn't vary per user, only per school+major+company. This gives cross-user cache hits at scale.
 
 TTL: 7 days. Store in Firestore `scoutSentenceCache` collection.
 
@@ -430,7 +430,7 @@ If a fact comes from a record with `verified_at > 90 days`, append "(verified in
 
 ---
 
-## Phase 6 — Observability + Polish
+## Phase 6 - Observability + Polish
 
 **Goal**: Metrics from Scout Spec §07, analytics, final QA.
 
@@ -438,17 +438,17 @@ If a fact comes from a record with `verified_at > 90 days`, append "(verified in
 
 | Metric | Target | Alert |
 |--------|--------|-------|
-| R4 fire rate | 60-80% (expected for v1) | < 40% — school affinity broken |
-| R5 fire rate | 20-40% (expected for v1) | > 60% — thin user profiles |
-| LLM call latency (Phase 5) | < 2s | > 5s — model/prompt issue |
-| Cache hit rate (Phase 5) | > 70% | < 40% — TTL too short or key too specific |
-| Guardrail rejection (Phase 5) | < 2% | > 5% — prompt drifting |
+| R4 fire rate | 60-80% (expected for v1) | < 40% - school affinity broken |
+| R5 fire rate | 20-40% (expected for v1) | > 60% - thin user profiles |
+| LLM call latency (Phase 5) | < 2s | > 5s - model/prompt issue |
+| Cache hit rate (Phase 5) | > 70% | < 40% - TTL too short or key too specific |
+| Guardrail rejection (Phase 5) | < 2% | > 5% - prompt drifting |
 
 ### 6.2 Frontend PostHog events
 
-- `companies_recommendations_loaded` — `{ company_count, rung_distribution: {R4: n, R5: n} }`
-- `companies_hero_cta_clicked` — `{ company_id, rung }`
-- `companies_list_row_clicked` — `{ company_id, rank, rung }`
+- `companies_recommendations_loaded` - `{ company_count, rung_distribution: {R4: n, R5: n} }`
+- `companies_hero_cta_clicked` - `{ company_id, rung }`
+- `companies_list_row_clicked` - `{ company_id, rank, rung }`
 - `companies_footer_search_expanded`
 
 ### 6.3 Visual QA matrix
@@ -458,8 +458,8 @@ If a fact comes from a record with `verified_at > 90 days`, append "(verified in
 | Deena | USC | Where Trojans have *landed.* | R4 (school affinity data) |
 | Marcus | Michigan | Where Wolverines have *landed.* | R4 |
 | Jordan | Redlands | Where your Redlands network *went.* | R5 (thin affinity) |
-| — | Reed | Where your Reed network *went.* | R5 |
-| — | (no school) | NoSchoolEmptyState | — |
+| - | Reed | Where your Reed network *went.* | R5 |
+| - | (no school) | NoSchoolEmptyState | - |
 
 For each: seal color, hero headline text, list row sentences, digit emphasis, responsive at 3 breakpoints. Screenshots attached to PR.
 
@@ -472,11 +472,11 @@ For each: seal color, hero headline text, list row sentences, digit emphasis, re
 ## Explicitly Out of Scope
 
 - R1-R3 of the scout ladder (requires alumni-level data: team, responsiveness, privacy consent)
-- Demonym admin review UI / seeder script (from previous implementation plan — deferred)
-- Search results view changes — if something needs to change there, flag and stop
+- Demonym admin review UI / seeder script (from previous implementation plan - deferred)
+- Search results view changes - if something needs to change there, flag and stop
 - Re-skinning other tabs (People, Hiring Managers)
-- PersonalizationStrip, AngleEditor, ScoutNote components (from previous plan — deferred)
-- Feature flag gating — ship directly, no flag wrapper
+- PersonalizationStrip, AngleEditor, ScoutNote components (from previous plan - deferred)
+- Feature flag gating - ship directly, no flag wrapper
 
 ---
 

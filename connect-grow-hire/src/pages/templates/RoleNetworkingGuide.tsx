@@ -69,7 +69,7 @@ function getWhoToNetwork(role: Role) {
 function getTimeline(role: Role) {
   if (role.industry === 'investment-banking') {
     return [
-      { period: 'January to March (Sophomore Year)', activity: 'Begin exploratory networking. Reach out to alumni and junior bankers at target firms. No ask beyond coffee chats at this stage.' },
+      { period: 'January to March (Sophomore Year)', activity: 'Begin exploratory networking. Reach out to alumni and junior bankers at target firms. No ask beyond meetings at this stage.' },
       { period: 'April to May', activity: 'Deepen relationships with 3 to 5 key contacts. Attend any bank-sponsored events on campus. Start preparing for technicals.' },
       { period: 'June to July', activity: 'Applications open for most summer analyst programs. Reach out to contacts for referrals. Finalize your resume and cover letters.' },
       { period: 'August to September', activity: 'Superdays and final interviews at most banks. Leverage your network for last-minute prep and insider tips on the interview process.' },
@@ -77,7 +77,7 @@ function getTimeline(role: Role) {
   } else if (role.industry === 'consulting') {
     return [
       { period: 'March to May (Sophomore Year)', activity: 'Start exploratory networking with consultants at target firms. Focus on understanding different practice areas and offices.' },
-      { period: 'June to July', activity: 'Deepen relationships. Begin case prep. Attend any summer networking events or coffee chats organized by firms.' },
+      { period: 'June to July', activity: 'Deepen relationships. Begin case prep. Attend any summer networking events or meetings organized by firms.' },
       { period: 'August to September', activity: 'Applications open for most consulting firms. Request referrals from contacts you have built relationships with. Submit applications.' },
       { period: 'October to November', activity: 'First-round and final-round interviews. Leverage contacts for firm-specific case prep tips and behavioral interview advice.' },
     ];
@@ -90,7 +90,7 @@ function getTimeline(role: Role) {
     ];
   }
   return [
-    { period: '6 months before recruiting season', activity: 'Begin exploratory networking. Reach out to alumni and professionals at target firms for coffee chats.' },
+    { period: '6 months before recruiting season', activity: 'Begin exploratory networking. Reach out to alumni and professionals at target firms for meetings.' },
     { period: '3 to 4 months before', activity: 'Deepen relationships with key contacts. Begin preparing for interviews specific to your target role.' },
     { period: '1 to 2 months before applications open', activity: 'Request referrals from contacts. Finalize application materials. Attend firm-sponsored events.' },
     { period: 'During recruiting season', activity: 'Leverage your network for interview prep, insider tips, and last-minute referrals. Send updates to contacts about your progress.' },
@@ -106,7 +106,7 @@ function getFaqData(role: Role) {
     },
     {
       question: `What should I know about the ${role.name} interview process?`,
-      answer: `${role.name} interviews typically involve ${role.interview_type.toLowerCase()}. Your networking contacts can provide invaluable, firm-specific insights about what interviewers look for, common questions, and how to prepare. Many students credit their coffee chat contacts with giving them the specific preparation tips that helped them succeed.`,
+      answer: `${role.name} interviews typically involve ${role.interview_type.toLowerCase()}. Your networking contacts can provide invaluable, firm-specific insights about what interviewers look for, common questions, and how to prepare. Many students credit their meeting contacts with giving them the specific preparation tips that helped them succeed.`,
     },
     {
       question: `How many people should I network with for ${role.name} recruiting?`,
@@ -131,8 +131,8 @@ const RoleNetworkingGuide = ({ role }: Props) => {
 
   const howToSteps = [
     { name: `Find ${role.name} professionals`, text: `Search for current and former ${role.name.toLowerCase()}s at ${role.top_employers.slice(0, 3).join(', ')} who share a connection with you. Prioritize alumni and people with 1 to 3 years of experience.` },
-    { name: 'Send personalized outreach', text: `Write a concise email that references the recipient's specific role and experience. Ask for a 15-minute coffee chat to learn about the ${role.name.toLowerCase()} path.` },
-    { name: 'Prepare for and conduct coffee chats', text: `Come prepared with thoughtful questions about the ${role.name.toLowerCase()} experience, the recruiting process, and firm-specific culture. Listen actively and take notes.` },
+    { name: 'Send personalized outreach', text: `Write a concise email that references the recipient's specific role and experience. Ask for a 15-minute meeting to learn about the ${role.name.toLowerCase()} path.` },
+    { name: 'Prepare for and conduct meetings', text: `Come prepared with thoughtful questions about the ${role.name.toLowerCase()} experience, the recruiting process, and firm-specific culture. Listen actively and take notes.` },
     { name: 'Build relationships and request referrals', text: 'Follow up within 24 hours with a thank-you note. Stay in touch over weeks and months. When applications open, reach out to ask for referrals from contacts you have built genuine relationships with.' },
   ];
 
@@ -326,9 +326,9 @@ const RoleNetworkingGuide = ({ role }: Props) => {
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>{industryLabels[role.industry] || role.industry} Cold Email Guide</p>
             <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Email templates and tips for {industryLabels[role.industry]?.toLowerCase() || role.industry} outreach.</p>
           </Link>
-          <Link to={`/coffee-chat/${role.top_employers[0]?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'mckinsey'}`} style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
-            <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>{role.top_employers[0]} Coffee Chat Guide</p>
-            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Prep questions and follow-up strategies for coffee chats.</p>
+          <Link to={`/meeting/${role.top_employers[0]?.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'mckinsey'}`} style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>{role.top_employers[0]} Meeting Guide</p>
+            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Prep questions and follow-up strategies for meetings.</p>
           </Link>
           <Link to="/blog" style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>Offerloop Blog</p>

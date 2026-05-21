@@ -9,7 +9,7 @@
 ### Backend Architecture
 
 **Strengths:**
-- ✅ **Modular Blueprint Structure**: Clean separation with routes organized by feature (`contacts`, `outbox`, `coffee_chat_prep`, `interview_prep`, `billing`, `firm_search`)
+- ✅ **Modular Blueprint Structure**: Clean separation with routes organized by feature (`contacts`, `outbox`, `meeting_prep`, `interview_prep`, `billing`, `firm_search`)
 - ✅ **Service Layer Pattern**: Business logic separated into `services/` (PDL, Hunter, Gmail, OpenAI, Stripe)
 - ✅ **Configuration Management**: Centralized in `config.py` with environment variable handling
 - ✅ **Firebase Integration**: Proper initialization in `extensions.py` with error handling
@@ -99,7 +99,7 @@
 - ❌ Firm comparison feature
 - ❌ Industry/location filters UI (exists in backend but not exposed in frontend)
 
-### Coffee Chat Prep
+### Meeting Prep
 
 **What Works:**
 - ✅ LinkedIn profile enrichment via PDL
@@ -273,7 +273,7 @@
 
 **Medium Friction:**
 1. **Onboarding**: Multi-step onboarding may feel lengthy
-2. **Coffee Chat Prep**: No preview before generating PDF - user commits credits without seeing output
+2. **Meeting Prep**: No preview before generating PDF - user commits credits without seeing output
 3. **Outbox**: Thread status can be confusing (draft vs sent vs waiting)
 
 ### AI-Generated Feel
@@ -294,7 +294,7 @@
 ```
 users/{userId}/
   ├── contacts/{contactId}          # Contact subcollection
-  ├── coffee-chat-preps/{prepId}    # Coffee chat preps
+  ├── coffee-chat-preps/{prepId}    # Meeting preps
   ├── interview-preps/{prepId}      # Interview preps
   ├── firmSearches/{searchId}       # Firm search history
   └── integrations/gmail             # Gmail OAuth credentials
@@ -374,7 +374,7 @@ users/{userId}/
 ### SerpAPI Integration
 
 **Weaknesses:**
-- ❌ **No Error Handling**: If SerpAPI fails, coffee chat prep fails entirely
+- ❌ **No Error Handling**: If SerpAPI fails, meeting prep fails entirely
 - ❌ **No Result Caching**: Same company/division queries hit API every time
 - ❌ **No Cost Tracking**: SerpAPI usage not tracked
 
@@ -463,7 +463,7 @@ users/{userId}/
 ## 6. Strengths (What Offerloop Is Doing Right)
 
 ### Product Strengths
-- ✅ **Comprehensive Feature Set**: Contact search, firm search, coffee chat prep, interview prep, outbox - covers full recruiting workflow
+- ✅ **Comprehensive Feature Set**: Contact search, firm search, meeting prep, interview prep, outbox - covers full recruiting workflow
 - ✅ **AI-Powered Personalization**: OpenAI integration for personalized emails and prep content
 - ✅ **Multi-Tier System**: Free and Pro tiers with clear value proposition
 - ✅ **Credit System**: Flexible credit-based pricing model
@@ -771,7 +771,7 @@ Strong feature set with clear value prop, but UX inconsistencies and missing pol
 
 32. **Collaboration Features**
     - Share contacts with team
-    - Share coffee chat preps
+    - Share meeting preps
     - Team workspaces
     - Role-based access control
 
@@ -783,7 +783,7 @@ Strong feature set with clear value prop, but UX inconsistencies and missing pol
 
 **Current State: 7.0/10 - Solid MVP with Critical Gaps**
 
-Offerloop has built a **comprehensive recruiting platform** with strong features (contact search, firm search, coffee chat prep, interview prep, outbox) and a **modern tech stack**. The architecture is **well-structured** with clear separation of concerns, and the **product vision is clear** with a solid free/pro tier model.
+Offerloop has built a **comprehensive recruiting platform** with strong features (contact search, firm search, meeting prep, interview prep, outbox) and a **modern tech stack**. The architecture is **well-structured** with clear separation of concerns, and the **product vision is clear** with a solid free/pro tier model.
 
 However, **critical security issues** (beta auth bypass, no rate limiting), **reliability gaps** (no retry logic, silent failures), and **technical debt** (large functions, no tests, inconsistent patterns) prevent it from being production-ready at scale.
 

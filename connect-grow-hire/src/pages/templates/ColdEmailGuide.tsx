@@ -70,7 +70,7 @@ function getFaqData(industry: Industry) {
     },
     {
       question: `How long should a cold email to a ${industry.name.toLowerCase()} professional be?`,
-      answer: `Keep your email under 150 words. ${industry.name} professionals are busy and often read emails on their phones. A concise message with a clear ask (15-minute coffee chat) gets far more responses than a long email explaining your career aspirations. Every sentence should earn its place.`,
+      answer: `Keep your email under 150 words. ${industry.name} professionals are busy and often read emails on their phones. A concise message with a clear ask (15-minute meeting) gets far more responses than a long email explaining your career aspirations. Every sentence should earn its place.`,
     },
     {
       question: `When is the best time to send cold emails for ${industry.name.toLowerCase()} networking?`,
@@ -91,9 +91,9 @@ const ColdEmailGuide = ({ industry }: Props) => {
 
   const howToSteps = [
     { name: `Identify your targets at ${industry.name.toLowerCase()} firms`, text: `Search for professionals at ${companiesText} who share a connection with you. Prioritize alumni from your university, people in your target role, and employees with 1 to 3 years of experience.` },
-    { name: 'Write a personalized cold email', text: `Craft a concise email (under 150 words) that references the recipient's specific role, company, and background. Include a clear ask for a 15-minute coffee chat. Avoid generic templates.` },
+    { name: 'Write a personalized cold email', text: `Craft a concise email (under 150 words) that references the recipient's specific role, company, and background. Include a clear ask for a 15-minute meeting. Avoid generic templates.` },
     { name: 'Send at the right time', text: 'Send your emails Tuesday through Thursday between 8 AM and 10 AM in the recipient\'s time zone. Plan a follow-up 5 to 7 days later if you do not hear back.' },
-    { name: 'Track and manage your pipeline', text: 'Keep track of every email you send, every response you receive, and every coffee chat you schedule. A well-organized pipeline ensures you never lose track of a promising connection.' },
+    { name: 'Track and manage your pipeline', text: 'Keep track of every email you send, every response you receive, and every meeting you schedule. A well-organized pipeline ensures you never lose track of a promising connection.' },
   ];
 
   return (
@@ -179,9 +179,9 @@ const ColdEmailGuide = ({ industry }: Props) => {
           5 Cold Email Templates for {industry.name}
         </h2>
 
-        {/* Template 1: Coffee Chat */}
+        {/* Template 1: Meeting */}
         <div className="rounded-[3px] p-6 mb-5" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 1: Coffee Chat Request</p>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 1: Meeting Request</p>
           <div style={{ fontSize: '14px', lineHeight: 1.8, color: '#334155' }}>
             <p style={{ marginBottom: '4px' }}><strong>Subject:</strong> [University] student, question about your experience at [Company]</p>
             <p style={{ marginBottom: '12px', color: '#94A3B8', fontSize: '13px' }}>___</p>
@@ -233,7 +233,7 @@ const ColdEmailGuide = ({ industry }: Props) => {
 
         {/* Template 5: Referral Ask */}
         <div className="rounded-[3px] p-6" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 5: Referral Ask (After a Coffee Chat)</p>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 5: Referral Ask (After a Meeting)</p>
           <div style={{ fontSize: '14px', lineHeight: 1.8, color: '#334155' }}>
             <p style={{ marginBottom: '4px' }}><strong>Subject:</strong> Thank you, [First Name], and a quick question</p>
             <p style={{ marginBottom: '12px', color: '#94A3B8', fontSize: '13px' }}>___</p>
@@ -322,7 +322,7 @@ const ColdEmailGuide = ({ industry }: Props) => {
           </Link>
           <Link to="/glossary" style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>Networking Glossary</p>
-            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Definitions for cold email, coffee chat, and recruiting terms.</p>
+            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Definitions for cold email, meeting, and recruiting terms.</p>
           </Link>
         </div>
       </section>

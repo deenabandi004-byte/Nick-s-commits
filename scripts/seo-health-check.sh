@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# seo-health-check.sh — verify Googlebot sees rendered content on programmatic pages
+# seo-health-check.sh - verify Googlebot sees rendered content on programmatic pages
 #
 # Curls 30 URLs across all route types with a Googlebot user-agent.
 # For each URL, checks: HTTP 200, body > 10KB (real render, not empty SPA shell),
@@ -24,12 +24,12 @@ URLS=(
   "/compare/mckinsey-vs-deloitte"
   "/compare/goldman-sachs-vs-jpmorgan"
 
-  # /coffee-chat/ (5)
-  "/coffee-chat/mckinsey"
-  "/coffee-chat/bcg"
-  "/coffee-chat/goldman-sachs"
-  "/coffee-chat/citadel"
-  "/coffee-chat/google"
+  # /meeting/ (5)
+  "/meeting/mckinsey"
+  "/meeting/bcg"
+  "/meeting/goldman-sachs"
+  "/meeting/citadel"
+  "/meeting/google"
 
   # /cold-email/ (5)
   "/cold-email/investment-banking"
@@ -64,7 +64,7 @@ passed=0
 failed=0
 failed_urls=()
 
-printf "\n  SEO Health Check — %d URLs\n" "${#URLS[@]}"
+printf "\n  SEO Health Check - %d URLs\n" "${#URLS[@]}"
 printf "  %-60s %s\n" "URL" "RESULT"
 printf "  %s\n" "$(printf '%.0s-' {1..80})"
 

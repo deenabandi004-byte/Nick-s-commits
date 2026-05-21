@@ -1,5 +1,5 @@
 /**
- * RefineSheet — 3-field override for manual queue generation.
+ * RefineSheet - 3-field override for manual queue generation.
  *
  * Opens when the user clicks "Refine" on the Suggested For You tab, or
  * automatically when backend returns `needsRefine: true` (i.e. the user's

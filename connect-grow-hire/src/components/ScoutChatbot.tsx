@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, ExternalLink, Sparkles } from 'lucide-react';
+import { Send, ExternalLink, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LoadingBar, InlineLoadingBar } from '@/components/ui/LoadingBar';
@@ -136,7 +136,7 @@ const simplifyJobTitle = (title: string): string => {
   if (!matchedRole) {
     // If title is very long (>40 chars), try to extract last meaningful part
     if (title.length > 40) {
-      const parts = title.split(/[-–—,&]/);
+      const parts = title.split(/[-– - ,&]/);
       const lastPart = parts[parts.length - 1].trim();
       if (lastPart.length > 3) {
         return lastPart;
@@ -557,7 +557,7 @@ const ScoutChatbot: React.FC<ScoutChatbotProps> = ({ onJobTitleSuggestion, userR
                   <div className="mt-3 p-2 bg-[#FAFBFF] border border-[#E2E8F0] rounded-lg">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-1 text-[#0F172A] text-xs font-medium">
-                        <Sparkles className="h-3 w-3" />
+                        <Bot className="h-3 w-3" />
                         Search fields updated!
                       </div>
                       <div className="text-xs text-[#3B82F6] bg-[rgba(59,130,246,0.10)] px-2 py-0.5 rounded" title="Fields optimized for better search results">
@@ -752,7 +752,7 @@ const ScoutChatbot: React.FC<ScoutChatbotProps> = ({ onJobTitleSuggestion, userR
                                         <span className="text-green-500 mt-0.5">✓</span>
                                         <div>
                                           <span className="text-sm text-slate-800">{s.point}</span>
-                                          <span className="text-xs text-slate-500 ml-1">— {s.evidence}</span>
+                                          <span className="text-xs text-slate-500 ml-1"> - {s.evidence}</span>
                                         </div>
                                       </div>
                                     ))}

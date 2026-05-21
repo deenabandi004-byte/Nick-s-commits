@@ -4,7 +4,7 @@
  * Can link users to Application Lab.
  */
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, ExternalLink, Sparkles, Menu } from 'lucide-react';
+import { Send, Loader2, ExternalLink, Bot, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
@@ -122,7 +122,7 @@ const simplifyJobTitle = (title: string): string => {
   
   if (!matchedRole) {
     if (title.length > 40) {
-      const parts = title.split(/[-–—,&]/);
+      const parts = title.split(/[-– - ,&]/);
       const lastPart = parts[parts.length - 1].trim();
       if (lastPart.length > 3) {
         return lastPart;
@@ -370,7 +370,7 @@ const ScoutHelperChatbot: React.FC<ScoutHelperChatbotProps> = ({
             <Menu size={20} />
           </button>
           <div className="flex items-center gap-2">
-            <Sparkles className="text-[#3B82F6]" size={20} />
+            <Bot className="text-[#3B82F6]" size={20} />
             <span className="font-semibold text-gray-900">Scout</span>
           </div>
           {currentConversation && (
@@ -425,7 +425,7 @@ const ScoutHelperChatbot: React.FC<ScoutHelperChatbotProps> = ({
                     <div className="mt-4 p-3 bg-[#FAFBFF] border border-[#E2E8F0] rounded-[3px]">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 text-[#0F172A] text-sm font-medium">
-                          <Sparkles className="h-4 w-4" />
+                          <Bot className="h-4 w-4" />
                           Search fields updated!
                         </div>
                       </div>

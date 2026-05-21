@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a React-based single-page application (SPA) built with Vite, TypeScript, and Tailwind CSS. The frontend provides a user interface for the Offerloop platform, including contact search, email management, coffee chat preparation, billing, and user account management.
+This is a React-based single-page application (SPA) built with Vite, TypeScript, and Tailwind CSS. The frontend provides a user interface for the Offerloop platform, including contact search, email management, meeting preparation, billing, and user account management.
 
 ## Technology Stack
 
@@ -119,7 +119,7 @@ React Router handles client-side routing:
 **Protected Routes** (require authentication):
 - `/home` - Main dashboard
 - `/contact-directory` - Contact management
-- `/coffee-chat-library` - Coffee chat preps
+- `/meeting-library` - Meeting preps
 - `/account-settings` - User settings
 - `/dashboard` - Analytics dashboard
 - `/onboarding` - User onboarding flow
@@ -132,7 +132,7 @@ React Router handles client-side routing:
 - Main dashboard after login
 - Contact search functionality
 - Quick actions
-- Coffee chat history
+- Meeting history
 
 #### Contact Directory (`pages/ContactDirectory.tsx`)
 - View all contacts
@@ -140,8 +140,8 @@ React Router handles client-side routing:
 - Email tracking
 - Contact statistics
 
-#### Coffee Chat Library (`pages/CoffeeChatLibrary.tsx`)
-- View coffee chat preparations
+#### Meeting Library (`pages/MeetingLibrary.tsx`)
+- View meeting preparations
 - Download PDFs
 - Create new preps
 
@@ -203,7 +203,7 @@ Centralized API client with:
 - `getContacts()` - Fetch user contacts
 - `createContact()` - Create new contact
 - `generateAndDraftEmails()` - Email generation
-- `createCoffeeChatPrep()` - Coffee chat prep
+- `createMeetingPrep()` - Meeting prep
 - `uploadResume()` - Resume upload
 - `checkCredits()` - Credit checking
 - `createCheckoutSession()` - Stripe checkout
@@ -318,7 +318,7 @@ The Vite config (`vite.config.ts`) includes:
 - Reply tracking
 - Email templates
 
-### Coffee Chat Preparation
+### Meeting Preparation
 
 - LinkedIn profile analysis
 - Similarity detection

@@ -79,7 +79,7 @@ class TestWatchdogStaleness:
 
 
 # ---------------------------------------------------------------------------
-# Tracker daemon loop wiring — C2 coordination PR
+# Tracker daemon loop wiring - C2 coordination PR
 # ---------------------------------------------------------------------------
 #
 # These tests are source-level: they read wsgi.py and assert that the

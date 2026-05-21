@@ -106,7 +106,7 @@ COUNTRY_CODE_MAP = {
 # OPENAI PROMPT PARSING - Extract structured fields from natural language
 # =============================================================================
 
-# Manual TTL cache for parsed prompts — never caches errors permanently
+# Manual TTL cache for parsed prompts - never caches errors permanently
 _parse_cache: dict[str, tuple[float, str]] = {}
 _parse_cache_lock = threading.Lock()
 _PARSE_CACHE_TTL_SUCCESS = 3600  # 1 hour for successful parses
@@ -215,11 +215,11 @@ IMPORTANT: Be as lenient as possible. If the query mentions any industry-related
             # Validate parsed fields. Discovery-first behavior: a query with
             # just a company name ("Apple") or just an industry ("fintech") or
             # just a location ("NYC") should still return useful results.
-            # Industry/location are nice-to-have signals but never required —
+            # Industry/location are nice-to-have signals but never required - 
             # the downstream search will fall back to looser SerpAPI queries
             # when fields are missing.
             if not parsed.get("industry") and not parsed.get("location") and not parsed.get("keywords"):
-                # No structured signal at all — pass through the raw query as
+                # No structured signal at all - pass through the raw query as
                 # a keyword so downstream search has SOMETHING to work with.
                 parsed["keywords"] = [prompt.strip()] if prompt and prompt.strip() else []
             
@@ -304,7 +304,7 @@ def parse_firm_search_prompt(prompt: str, use_cache: bool = True) -> Dict[str, A
             ts, cached_json = entry
             if _time.time() - ts < _PARSE_CACHE_TTL_SUCCESS:
                 cached_result = json.loads(cached_json)
-                # Don't serve cached errors — let them retry
+                # Don't serve cached errors - let them retry
                 if cached_result.get("success"):
                     print(f"✅ Cache hit for query parsing: '{prompt[:50]}...'")
                     return cached_result
@@ -732,10 +732,10 @@ def firm_location_matches(firm_location: Dict[str, Any], requested_location: Dic
         True if firm location matches requested location, False otherwise
     """
     if not requested_location:
-        # No location filter requested — everything matches
+        # No location filter requested - everything matches
         return True
     if not firm_location:
-        # Firm has no location data but user requested a specific location — reject
+        # Firm has no location data but user requested a specific location - reject
         logger.debug("company_search_no_firm_location", extra={
             "search_id": search_id,
             "action": "rejecting_firm_no_location_data"
@@ -847,7 +847,7 @@ def firm_location_matches(firm_location: Dict[str, Any], requested_location: Dic
                 return True
             # If city is also requested, fall through to the city check below
         else:
-            # Region didn't match — fail unless city can override
+            # Region didn't match - fail unless city can override
             if not requested_location.get("locality"):
                 return False
     

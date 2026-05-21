@@ -59,7 +59,7 @@ Alumni are your single highest-ROI networking channel. They share your school af
 
 ### Alumni Outreach Email Template
 
-> Subject: [Your University] [year] — interested in [their team] at [Company]
+> Subject: [Your University] [year] - interested in [their team] at [Company]
 >
 > Hi [First Name],
 >
@@ -128,7 +128,7 @@ The hardest part of cold email is finding verified email addresses. Here are you
 
 ### Cold Email Template for Non-Alumni
 
-> Subject: [Your University] student — question about [their specific role/team]
+> Subject: [Your University] student - question about [their specific role/team]
 >
 > Hi [First Name],
 >
@@ -233,7 +233,7 @@ Networking is not something you cram into one semester. Here is what to do each 
 - Begin alumni outreach: send 3 to 5 emails per week to alumni in your target fields.
 - Attend career fairs with a prepared list of target companies and questions.
 - Take a leadership role in one relevant club.
-- Start having coffee chats. Aim for 2 to 3 per month.
+- Start having meetings. Aim for 2 to 3 per month.
 - Goal: build a base of 10 to 15 professional contacts you have spoken with.
 
 ### Junior Year: Execute at Scale
@@ -245,7 +245,7 @@ This is the critical year. Most internship recruiting happens in the fall of jun
 - Use every channel: alumni, LinkedIn, cold email, career fairs, professors, and clubs.
 - Use tools to increase your throughput. Platforms like [Offerloop](https://offerloop.ai) let you find verified contacts and generate personalized outreach emails in seconds, so you can focus your energy on the conversations themselves rather than the logistics of finding people and writing messages. The Chrome extension also lets you trigger outreach directly from LinkedIn profiles.
 - Ask for referrals from contacts you have built relationships with over the past year.
-- Prepare for coffee chats and interviews with company-specific research.
+- Prepare for meetings and interviews with company-specific research.
 - Goal: secure an internship through a combination of networking-driven referrals and strong applications.
 
 ### Senior Year: Convert and Give Back
@@ -268,7 +268,7 @@ Building a network is not just about the initial outreach. The real value comes 
 
 ### What These Follow-Ups Look Like
 
-> Subject: Quick update — and thank you
+> Subject: Quick update - and thank you
 >
 > Hi [Name],
 >

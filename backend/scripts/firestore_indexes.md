@@ -19,7 +19,7 @@ In `firestore.indexes.json`, subcollection indexes use `collectionGroup: "contac
 
 ### 1. Main outbox listing (replaces full collection scan)
 
-**Purpose:** `list_threads()` — fetch only outbox contacts, filtered by stage, sorted by activity.
+**Purpose:** `list_threads()` - fetch only outbox contacts, filtered by stage, sorted by activity.
 
 Fields:
 - `inOutbox` ASC

@@ -100,7 +100,7 @@ class TestMaybeTriggerAutoPrep:
 
     @patch("app.services.outbox_service.get_db")
     def test_skips_if_existing_prep(self, mock_get_db):
-        """Should not trigger if a coffee chat prep already exists for this contact."""
+        """Should not trigger if a meeting prep already exists for this contact."""
         db = _mock_db_for_auto_prep(tier="pro", has_existing_prep=True)
         mock_get_db.return_value = db
 

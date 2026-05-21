@@ -496,7 +496,7 @@ const ResumePDF: React.FC<ResumePDFProps> = ({ resume }) => {
                 <Text style={styles.extraBullet}>•</Text>
                 <Text style={styles.extraText}>
                   <Text style={styles.extraActivity}>{extra.activity}</Text>
-                  {extra.role && ` — ${extra.role}`}
+                  {extra.role && ` - ${extra.role}`}
                   {extra.description && `: ${extra.description}`}
                 </Text>
               </View>

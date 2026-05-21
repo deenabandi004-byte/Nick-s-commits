@@ -53,7 +53,7 @@ class TestCSVParsing:
 
     def test_bom_utf8(self):
         headers, rows = _read_csv('bom_utf8.csv')
-        # BOM should be stripped — first header should be clean
+        # BOM should be stripped - first header should be clean
         assert headers[0] == 'First Name', f"Got: {headers[0]!r}"
         assert len(rows) == 2
         # Unicode characters preserved

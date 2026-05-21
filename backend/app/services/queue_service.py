@@ -1,15 +1,15 @@
 """
-Agentic Networking Queue service (Phase 1 — "Progressive Coach").
+Agentic Networking Queue service (Phase 1 - "Progressive Coach").
 
 Generates a weekly batch of 5 AI-picked, pre-drafted contacts for a user.
-Runs as a background thread following the coffee_chat_prep async job pattern:
+Runs as a background thread following the meeting_prep async job pattern:
 
     POST /api/queue/generate -> spawn background thread, return job_id
     GET  /api/queue/status/<job_id> -> poll status doc
     GET  /api/queue/current -> fetch most recent queue
 
 Credit cost:
-- Free tier: static teaser (no credits, no backend call — handled in the route layer).
+- Free tier: static teaser (no credits, no backend call - handled in the route layer).
 - Pro/Elite: one free queue per ISO week (the automatic Monday queue) plus
   15 credits for any additional manual generation (Extend / Refine after the
   first free refine).
@@ -35,14 +35,14 @@ Data model (Firestore):
 
 Architecture notes (from CEO + eng + design reviews, 2026-04-08/09):
 - Dedup query: Firestore `where pdlId in [...]` AND `where email in [...]`
-  (batched in 10s — Firestore `in` query cap). Email fallback handles the
+  (batched in 10s - Firestore `in` query cap). Email fallback handles the
   historical contacts that were saved before pdlId plumbing shipped.
 - Blocklist is exact-match-on-normalized (lower + strip + collapse
   whitespace) NOT substring match (per outside-voice §OV.2).
-- Credit deduction is AFTER PDL returns and BEFORE email generation — so
+- Credit deduction is AFTER PDL returns and BEFORE email generation - so
   zero-result searches are not charged and failed batches are refunded.
 - `batch_generate_emails` is called with named kwargs (call site #7 of
-  this 15-param function — see CLAUDE.md "known fragility").
+  this 15-param function - see CLAUDE.md "known fragility").
 - TTL: queues older than 14 days are deleted at generation time (cheap
   single-query cleanup, piggyback on every generate call).
 """
@@ -120,7 +120,7 @@ def _normalize_email(value: Any) -> str:
 
 
 def _iso_week_key(dt: Optional[datetime] = None) -> str:
-    """Return a YYYY-Www ISO week key — stable across refine count resets."""
+    """Return a YYYY-Www ISO week key - stable across refine count resets."""
     dt = dt or datetime.now(timezone.utc)
     iso = dt.isocalendar()
     return f"{iso[0]}-W{iso[1]:02d}"
@@ -215,7 +215,7 @@ def _fetch_existing_contact_keys(db, uid: str) -> tuple[set[str], set[str]]:
     Return (set of pdlIds, set of normalized emails) for every contact already
     saved under `users/{uid}/contacts/`.
 
-    We fetch once per generation rather than running per-candidate queries —
+    We fetch once per generation rather than running per-candidate queries - 
     typical contact counts (< 500) fit comfortably in memory, and this avoids
     5+ Firestore reads in the hot path.
     """
@@ -337,14 +337,14 @@ def generate_queue_background(
     """
     Background worker that runs the full queue generation pipeline.
 
-    Pipeline stages (mirrors coffee_chat_prep async pattern):
+    Pipeline stages (mirrors meeting_prep async pattern):
       1. Load queue preferences (blocklist, pause state)
-      2. PDL search — up to 3x the target count to survive dedup+blocklist
+      2. PDL search - up to 3x the target count to survive dedup+blocklist
       3. Dedup + blocklist filter
       4. Deduct 15 credits IF NOT ALREADY DEDUCTED (free weekly queue is
          pre-deducted as 0 by the route layer)
       5. Warmth score + sort
-      6. batch_generate_emails (named kwargs — call site #7)
+      6. batch_generate_emails (named kwargs - call site #7)
       7. Write queue doc + contacts subcollection
       8. Mark status = pending_review or completed_partial
     """
@@ -380,15 +380,15 @@ def generate_queue_background(
             logger.error("queue_service: failed to mark queue failed: %s", update_exc)
 
     try:
-        # Stage 1 — load prefs
+        # Stage 1 - load prefs
         prefs = get_queue_preferences(db, uid)
         blocklist = prefs.get("blocklist", {})
 
-        # Stage 2 — PDL search. Overshoot by 3x to survive dedup+blocklist.
+        # Stage 2 - PDL search. Overshoot by 3x to survive dedup+blocklist.
         company = (filters.get("company") or "").strip()
         title_keywords = (filters.get("titleKeywords") or filters.get("title") or "").strip()
         university = (filters.get("university") or "").strip()
-        # Queue is US-only for Phase 1 — the PDL search adds a
+        # Queue is US-only for Phase 1 - the PDL search adds a
         # `location_country: united states` term when location is "United States",
         # and we also post-filter on the normalized `country` field below as a
         # belt-and-suspenders check against stale PDL records.
@@ -468,7 +468,7 @@ def generate_queue_background(
             )
             return
 
-        # Stage 3 — dedup + blocklist filter
+        # Stage 3 - dedup + blocklist filter
         existing_pdl_ids, existing_emails = _fetch_existing_contact_keys(db, uid)
         filtered, filter_stats = _filter_candidates(
             raw_candidates, existing_pdl_ids, existing_emails, blocklist
@@ -494,11 +494,11 @@ def generate_queue_background(
             )
             return
 
-        # Stage 4 — warmth score + sort + cap to QUEUE_CONTACT_COUNT
+        # Stage 4 - warmth score + sort + cap to QUEUE_CONTACT_COUNT
         queue_ref.update({"stage": "scoring", "updatedAt": _now_iso()})
         try:
             scored = score_contacts_for_email(user_profile, filtered)
-            # score_contacts_for_email returns a dict keyed by index — sort `filtered` in place
+            # score_contacts_for_email returns a dict keyed by index - sort `filtered` in place
             # by (warmth tier rank, score desc)
             _tier_rank = {"warm": 0, "neutral": 1, "cold": 2}
             def _sort_key(idx_contact):
@@ -516,7 +516,7 @@ def generate_queue_background(
             top_contacts = filtered[:QUEUE_CONTACT_COUNT]
             warmth_data = {}
 
-        # Stage 5 — generate emails (call site #7 — named kwargs required)
+        # Stage 5 - generate emails (call site #7 - named kwargs required)
         queue_ref.update({"stage": "drafting", "updatedAt": _now_iso()})
         try:
             email_results = batch_generate_emails(
@@ -527,7 +527,7 @@ def generate_queue_background(
                 fit_context=None,
                 pre_parsed_user_info=user_profile.get("resumeParsed"),
                 template_instructions="",
-                email_template_purpose="coffee_chat",
+                email_template_purpose="meeting",
                 resume_filename=None,
                 subject_line=None,
                 signoff_config=None,
@@ -541,7 +541,7 @@ def generate_queue_background(
             _fail(STATUS_FAILED_EMAILS, f"Email generation failed: {email_exc}")
             return
 
-        # Stage 6 — write queue contacts subcollection
+        # Stage 6 - write queue contacts subcollection
         queue_ref.update({"stage": "saving", "updatedAt": _now_iso()})
         try:
             contacts_sub = queue_ref.collection("contacts")
@@ -644,7 +644,7 @@ def start_queue_generation(
     background worker. Returns (queue_id, credits_charged).
 
     Raises `InsufficientCreditsError` via the deduction helper if the user
-    doesn't have enough credits — caller translates that to a 402.
+    doesn't have enough credits - caller translates that to a 402.
     """
     db = get_db()
 
@@ -659,9 +659,9 @@ def start_queue_generation(
     now_iso = _now_iso()
 
     # Credit deduction BEFORE spawning the thread (but AFTER we know the filters
-    # are valid — the route layer enforces that).
+    # are valid - the route layer enforces that).
     # NOTE: design doc said "deduct after PDL returns" to refund on zero
-    # results — we implement that by deducting here and refunding inside the
+    # results - we implement that by deducting here and refunding inside the
     # background worker on zero-result / all-filtered / failure cases.
     credits_charged = 0
     if not is_free_weekly:
@@ -775,7 +775,7 @@ def get_queue_status(db, uid: str, queue_id: str) -> Optional[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Approve / Dismiss — single contact mutations
+# Approve / Dismiss - single contact mutations
 # ---------------------------------------------------------------------------
 
 
@@ -792,7 +792,7 @@ def approve_queue_contact(
     Approve a queued contact:
       1. Create a Gmail draft (compose-URL fallback when OAuth unavailable)
       2. Copy contact into `users/{uid}/contacts/` using normalize_contact shape
-      3. Mark queue contact as approved (idempotent — second call returns
+      3. Mark queue contact as approved (idempotent - second call returns
          the existing state rather than double-writing)
 
     Returns a dict with { ok, draftId|null, composeUrl|null, contactId, already }.
@@ -1042,7 +1042,7 @@ def is_free_weekly_eligible(db, uid: str, tier: str) -> bool:
 # This is the function the shared tracker daemon calls every 6 hours.
 # Contract: docs/designs/tracker-daemon-contract.md
 #
-# Dispatch cadence: every 6 hours invocation, with an internal gate — returns
+# Dispatch cadence: every 6 hours invocation, with an internal gate - returns
 # early unless today is Tuesday UTC OR the last successful run was more than
 # 6d 20h ago. The outer loop gives us multiple chances to fire on the right
 # calendar Tuesday even if one iteration is briefly delayed.
@@ -1052,7 +1052,7 @@ def is_free_weekly_eligible(db, uid: str, tier: str) -> bool:
 # The watchdog at wsgi.py:378 reads this doc and alerts if lastSuccessAt is
 # older than 7 days.
 
-# Gate constants — exposed for tests so the window stays in sync with the doc.
+# Gate constants - exposed for tests so the window stays in sync with the doc.
 QUEUE_TUESDAY_WEEKDAY = 1  # datetime.weekday(): Mon=0, Tue=1, ..., Sun=6
 QUEUE_STALENESS_SECONDS = int((6 * 24 + 20) * 3600)  # 6d 20h
 
@@ -1062,7 +1062,7 @@ def _should_run_queue_scanner(db, now: Optional[datetime] = None) -> bool:
     Return True if the queue scanner should execute this 6-hour tick.
 
     Rule (per daemon contract): run if today is Tuesday OR the last successful
-    run was more than 6d 20h ago. Separate OR clauses — the staleness path is
+    run was more than 6d 20h ago. Separate OR clauses - the staleness path is
     the recovery mechanism when Tuesday dispatch was disabled or crashed.
     """
     now = now or datetime.now(timezone.utc)
@@ -1074,7 +1074,7 @@ def _should_run_queue_scanner(db, now: Optional[datetime] = None) -> bool:
         if not doc.exists:
             # First-ever run: fall through to the Tuesday gate (which is False
             # here if we're not Tuesday). Do NOT auto-run on non-Tuesday first
-            # boot — that would fire the Monday-after-deploy queue a day early.
+            # boot - that would fire the Monday-after-deploy queue a day early.
             return False
         data = doc.to_dict() or {}
         last_success = data.get("lastSuccessAt")
@@ -1116,15 +1116,15 @@ def scan_and_generate_queues() -> None:
     Scanner entry point invoked by the tracker daemon loop every 6 hours.
 
     Flow:
-      1. Check the Tuesday / staleness gate — return early otherwise.
+      1. Check the Tuesday / staleness gate - return early otherwise.
       2. Iterate users. For each Pro/Elite user with queue enabled and not
          paused, and who hasn't already consumed their free weekly queue,
          count them as an eligible candidate.
       3. Write the health doc.
 
     NOTE: The per-user queue *generation* step is intentionally left as a
-    hook (see the `# PHASE 2:` comment below). The scanner scaffold —
-    gating, user iteration, health doc, error isolation — is what the
+    hook (see the `# PHASE 2:` comment below). The scanner scaffold - 
+    gating, user iteration, health doc, error isolation - is what the
     daemon contract requires. Wiring the actual generation to `start_queue_generation`
     is Phase 2 feature work and should land in its own PR so the queue
     credit/refund flow is reviewed separately from the daemon wiring.
@@ -1179,7 +1179,7 @@ def scan_and_generate_queues() -> None:
                     "queue_scanner: per-user failure uid=%s: %s",
                     uid, per_user_exc,
                 )
-                # Do NOT re-raise — one bad user doc must not kill the scan.
+                # Do NOT re-raise - one bad user doc must not kill the scan.
     except Exception:
         error_count += 1
         logger.exception("queue_scanner: scan iteration failed")

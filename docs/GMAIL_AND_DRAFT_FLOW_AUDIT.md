@@ -1,4 +1,4 @@
-# Gmail Connect & Email Draft Creation — Full Audit
+# Gmail Connect & Email Draft Creation - Full Audit
 
 End-to-end audit of Gmail OAuth and draft creation with code references and file map.
 
@@ -12,7 +12,7 @@ End-to-end audit of Gmail OAuth and draft creation with code references and file
 |----------|------|----------------|
 | **Sign-in (implicit)** | `connect-grow-hire/src/pages/SignIn.tsx` | No visible "Connect Gmail" button. After user signs in with Google, `handleGoogleAuth` calls `checkNeedsGmailConnection()`; if Gmail is not connected, it calls `initiateGmailOAuth(false)` and redirects to Google consent. So Gmail OAuth is triggered automatically post sign-in when needed. |
 | **Account Settings** | `connect-grow-hire/src/pages/AccountSettings.tsx` | Gmail Integration section: "Connect Gmail" when not connected, "Reconnect" / "Disconnect" when connected. Buttons call `handleConnectGmail` / `handleDisconnectGmail`. |
-| **Contact Search** | `connect-grow-hire/src/pages/ContactSearchPage.tsx` | (1) Banner when `gmailConnected === false`: "Gmail not connected — drafts won't be created. **Connect Gmail**" (link calling `initiateGmailOAuth`). (2) Error toasts after failed search/draft with "Reconnect Gmail" (navigate to account-settings or `window.location.href = authUrl` when backend returns `authUrl`). |
+| **Contact Search** | `connect-grow-hire/src/pages/ContactSearchPage.tsx` | (1) Banner when `gmailConnected === false`: "Gmail not connected - drafts won't be created. **Connect Gmail**" (link calling `initiateGmailOAuth`). (2) Error toasts after failed search/draft with "Reconnect Gmail" (navigate to account-settings or `window.location.href = authUrl` when backend returns `authUrl`). |
 | **Outbox** | `connect-grow-hire/src/pages/Outbox.tsx` | No standalone button. When regenerate/sync fails with `gmail_not_connected`, toast shows with action **Connect Gmail** that navigates to `/account-settings`. |
 | **Onboarding** | N/A | No "Connect Gmail" on any onboarding page. Gmail is handled during sign-in. |
 
@@ -79,12 +79,12 @@ So: **Connect Gmail** appears in **Account Settings**, **Contact Search** (banne
 
 ### 1.3 Full OAuth redirect flow (frontend → backend → Google → callback → token storage)
 
-**Step 1 — Frontend starts OAuth**
+**Step 1 - Frontend starts OAuth**
 
 - Request: `GET /api/google/oauth/start` with `Authorization: Bearer <Firebase ID token>`.
 - Handler: `backend/app/routes/gmail_oauth.py` → `google_oauth_start()` (requires `@require_firebase_auth`).
 
-**Step 2 — Backend builds Google URL and returns it**
+**Step 2 - Backend builds Google URL and returns it**
 
 - Reads `uid` and user email (Firestore `users/{uid}` then Firebase token).
 - Generates state: `secrets.token_urlsafe(32)`.
@@ -113,12 +113,12 @@ So: **Connect Gmail** appears in **Account Settings**, **Contact Search** (banne
 
 - Returns JSON: `{ "authUrl": auth_url, "state": state, "debug": { ... } }` (no redirect; frontend does the redirect).
 
-**Step 3 — User on Google**
+**Step 3 - User on Google**
 
 - Frontend has set `window.location.href = authUrl` (or `replace`). User sees Google consent screen.
 - User approves → Google redirects to backend: `GET /api/google/oauth/callback?state=...&code=...`.
 
-**Step 4 — Backend callback** (`google_oauth_callback` in `gmail_oauth.py`)
+**Step 4 - Backend callback** (`google_oauth_callback` in `gmail_oauth.py`)
 
 - No `@require_firebase_auth` (user is coming from Google, no Bearer token).
 - Validates `state`: loads `oauth_state/{state}` from Firestore, gets `uid` and optional `email`. Deletes state doc after use.
@@ -147,7 +147,7 @@ So: **Connect Gmail** appears in **Account Settings**, **Contact Search** (banne
 - Optionally calls `start_gmail_watch(uid)` for push notifications.
 - Redirects to frontend: `redirect(get_frontend_redirect_uri() + "?connected=gmail")` → **always `/signin?connected=gmail`** (see `get_frontend_redirect_uri()` in config).
 
-**Step 5 — Frontend after redirect (SignIn only)**
+**Step 5 - Frontend after redirect (SignIn only)**
 
 - SignIn.tsx `useEffect` runs; sees `connected=gmail`.
 - Reads `localStorage.post_gmail_destination` (set only when SignIn started the flow) or defaults to `/home`.
@@ -235,23 +235,23 @@ GMAIL_SCOPES = [
 
 ## 2. Draft Creation Flow
 
-### 2.1 When user "generates email and saves as draft" — two main paths
+### 2.1 When user "generates email and saves as draft" - two main paths
 
-**Path A — Contact Search (prompt search)**
+**Path A - Contact Search (prompt search)**
 
 - User runs a search on Contact Search → `handleSearch()` → `apiService.runPromptSearch({ prompt, batchSize })` → `POST /api/prompt-search` (runs.py).
 - Backend: PDL search, email generation, then **draft creation in the same request** via `create_drafts_batch` or per-contact `create_gmail_draft_for_user` (runs.py / runs_hunter.py). Response includes `contacts` and `successful_drafts`. On Gmail token error, backend returns **401** with `authUrl` and `contacts`.
 
-**Path B — Emails API (generate-and-draft)**
+**Path B - Emails API (generate-and-draft)**
 
-- Used when the frontend explicitly calls the emails API (e.g. a "Generate and save drafts" action that sends contacts + profile). Frontend: `POST /api/emails/generate-and-draft` with `contacts`, `userProfile`, `careerInterests`, `fitContext`, etc. (e.g. from `generateAndDraftEmailsBatch` in ContactSearchPage; that function is defined but not currently referenced in the main search flow — the main flow uses prompt-search above.)
+- Used when the frontend explicitly calls the emails API (e.g. a "Generate and save drafts" action that sends contacts + profile). Frontend: `POST /api/emails/generate-and-draft` with `contacts`, `userProfile`, `careerInterests`, `fitContext`, etc. (e.g. from `generateAndDraftEmailsBatch` in ContactSearchPage; that function is defined but not currently referenced in the main search flow - the main flow uses prompt-search above.)
 - Backend: `backend/app/routes/emails.py` → `generate_and_draft()`. It gets Gmail via `get_gmail_service_for_user(user_email, user_id=uid)`. If that returns `None` or throws (e.g. invalid/expired token), the route returns **500** with a generic message and does **not** return `authUrl` or 401.
 
 ---
 
-### 2.2 Trace: Frontend action → API → backend → Gmail API (Path B — emails)
+### 2.2 Trace: Frontend action → API → backend → Gmail API (Path B - emails)
 
-**Frontend (ContactSearchPage — if/when used)**
+**Frontend (ContactSearchPage - if/when used)**
 
 - `generateAndDraftEmailsBatch(contacts)`:
   - `POST /api/emails/generate-and-draft`
@@ -382,8 +382,8 @@ So the resume comes from: **request body** (if sent), **user profile in request*
 ### Firebase / Firestore
 
 - **Collections/documents:**
-  - `users/{uid}/integrations/gmail` — Gmail tokens, refresh_token, expiry, gmailAddress, watch fields.
-  - `oauth_state/{state}` — temporary state for OAuth (uid, email, expires ~15 min).
+  - `users/{uid}/integrations/gmail` - Gmail tokens, refresh_token, expiry, gmailAddress, watch fields.
+  - `oauth_state/{state}` - temporary state for OAuth (uid, email, expires ~15 min).
 - **Frontend:** Uses Firebase Auth for ID token; no Gmail token storage on client.
 
 ---

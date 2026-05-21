@@ -6,29 +6,29 @@ import offerloopLogo from '../assets/offerloop_logo2.png';
 const faqData = [
   {
     question: "How do I find alumni from my university who work at a specific company?",
-    answer: "Most university alumni directories are outdated and limited. Offerloop lets you search 2.2 billion verified contacts filtered by university and company simultaneously — so you can find every USC alum at Goldman Sachs or every Michigan grad at Google in seconds. Results include verified professional email addresses ready for outreach."
+    answer: "Most university alumni directories are outdated and limited. Offerloop lets you search 2.2 billion verified contacts filtered by university and company simultaneously - so you can find every USC alum at Goldman Sachs or every Michigan grad at Google in seconds. Results include verified professional email addresses ready for outreach."
   },
   {
     question: "What should I say in an alumni outreach email?",
-    answer: "Lead with your shared university connection, then mention a specific reason you're reaching out to them — their career path, current role, or industry. Keep it under 100 words. Your ask should be a 15-minute phone call, not a job or referral. Example: 'As a fellow Trojan now exploring consulting, I'd love to hear how you made the transition from [previous role] to [current role] at [company].'"
+    answer: "Lead with your shared university connection, then mention a specific reason you're reaching out to them - their career path, current role, or industry. Keep it under 100 words. Your ask should be a 15-minute phone call, not a job or referral. Example: 'As a fellow Trojan now exploring consulting, I'd love to hear how you made the transition from [previous role] to [current role] at [company].'"
   },
   {
     question: "Is alumni outreach more effective than cold emailing strangers?",
-    answer: "Significantly. Shared alma mater increases response rates by 2-3x compared to cold emails with no connection point. Alumni feel an implicit obligation to help current students from their school — it's one of the strongest networking advantages you have. Offerloop's AI automatically detects shared university connections and highlights them in generated emails."
+    answer: "Significantly. Shared alma mater increases response rates by 2-3x compared to cold emails with no connection point. Alumni feel an implicit obligation to help current students from their school - it's one of the strongest networking advantages you have. Offerloop's AI automatically detects shared university connections and highlights them in generated emails."
   },
   {
     question: "How many alumni should I reach out to per week?",
-    answer: "10-15 personalized emails per week is a sustainable pace. Focus on quality over quantity — a well-researched email to an alum in your exact target role is worth more than 20 generic messages. Offerloop lets you batch-generate personalized emails while maintaining the quality of hand-written outreach."
+    answer: "10-15 personalized emails per week is a sustainable pace. Focus on quality over quantity - a well-researched email to an alum in your exact target role is worth more than 20 generic messages. Offerloop lets you batch-generate personalized emails while maintaining the quality of hand-written outreach."
   },
   {
     question: "What universities does Offerloop have alumni data for?",
-    answer: "Offerloop's database covers alumni from every university — not just top-20 schools. Whether you attend USC, UCLA, University of Michigan, NYU, Georgetown, UPenn, or any other school, you can search for alumni by university name and filter by company, role, location, and industry."
+    answer: "Offerloop's database covers alumni from every university - not just top-20 schools. Whether you attend USC, UCLA, University of Michigan, NYU, Georgetown, UPenn, or any other school, you can search for alumni by university name and filter by company, role, location, and industry."
   }
 ];
 
 const howToSteps = [
   { name: "Find", text: "Search Offerloop's 2.2 billion contacts by university name to find alumni at any company, role, or location. Filter by graduation year, industry, and seniority level." },
-  { name: "Understand", text: "Review each alum's career trajectory, current role, and shared connections beyond just your university — clubs, majors, hometowns, and mutual contacts." },
+  { name: "Understand", text: "Review each alum's career trajectory, current role, and shared connections beyond just your university - clubs, majors, hometowns, and mutual contacts." },
   { name: "Reach", text: "Generate a personalized alumni outreach email with Offerloop's AI that leads with your shared school connection and references specific details from their career path. Send through Gmail." },
   { name: "Track", text: "Monitor every alumni conversation in Offerloop's Network Tracker. See who responded, schedule follow-ups, and build a lasting professional network." }
 ];
@@ -82,7 +82,7 @@ const AlumniOutreach = () => {
           Find & Email <span style={{ color: '#3B82F6' }}>Alumni</span> at Any Company
         </h1>
         <p style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B', maxWidth: '620px' }}>
-          Your university network is your strongest recruiting asset. Offerloop helps you find alumni at target companies, generate personalized outreach, and track every conversation — all in one place.
+          Your university network is your strongest recruiting asset. Offerloop helps you find alumni at target companies, generate personalized outreach, and track every conversation - all in one place.
         </p>
       </section>
 
@@ -95,10 +95,10 @@ const AlumniOutreach = () => {
           Alumni outreach starts with finding the right people. Most university alumni directories are incomplete, outdated, and limited to people who opted in. The best approach combines your school's directory with external tools to build a comprehensive list of alumni in your target industry.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Your outreach email should immediately establish the school connection — it's the reason they'll open your email and the reason they'll respond. After that, demonstrate genuine curiosity about their specific career path. Avoid generic questions like "What's it like working at [company]?" Instead, ask about their transition from one role to another or what surprised them about their industry.
+          Your outreach email should immediately establish the school connection - it's the reason they'll open your email and the reason they'll respond. After that, demonstrate genuine curiosity about their specific career path. Avoid generic questions like "What's it like working at [company]?" Instead, ask about their transition from one role to another or what surprised them about their industry.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop lets you search 2.2 billion contacts by university to find alumni at any company in the world. The AI generates emails that lead with your shared school connection and reference specific details from each alum's career — making every email feel personal and thoughtful.
+          Offerloop lets you search 2.2 billion contacts by university to find alumni at any company in the world. The AI generates emails that lead with your shared school connection and reference specific details from each alum's career - making every email feel personal and thoughtful.
         </p>
       </section>
 
@@ -108,13 +108,13 @@ const AlumniOutreach = () => {
           Why is alumni networking more effective than cold outreach?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Shared alma mater is one of the strongest connection points in professional networking. Studies show that alumni are 2-3 times more likely to respond to a current student from their school compared to a stranger. There's an implicit social contract — they benefited from alumni help when they were students, and they want to pay it forward.
+          Shared alma mater is one of the strongest connection points in professional networking. Studies show that alumni are 2-3 times more likely to respond to a current student from their school compared to a stranger. There's an implicit social contract - they benefited from alumni help when they were students, and they want to pay it forward.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
           Beyond higher response rates, alumni conversations tend to be more candid and helpful. Alumni are more willing to share honest advice about their firm, introduce you to colleagues, and advocate for you during the hiring process. A single strong alumni connection can open doors that dozens of cold emails cannot.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop automatically identifies shared university connections and uses them as the primary personalization angle. The AI knows that an email from a "fellow Trojan" or "fellow Wolverine" will resonate differently than a generic networking request — and it writes accordingly.
+          Offerloop automatically identifies shared university connections and uses them as the primary personalization angle. The AI knows that an email from a "fellow Trojan" or "fellow Wolverine" will resonate differently than a generic networking request - and it writes accordingly.
         </p>
       </section>
 
@@ -130,7 +130,7 @@ const AlumniOutreach = () => {
           Send 10-15 personalized emails per week, track who responds, and schedule calls within a few days of their reply. After each call, send a thank-you email and add any referrals they mention to your pipeline. This systematic approach ensures you're always building momentum rather than scrambling at the last minute.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop was built for exactly this workflow. Search for alumni, generate personalized emails, send through Gmail, and track every conversation in one dashboard. The Network Tracker shows your entire pipeline — Sent, Replied, Scheduled, Completed — so you never miss a follow-up or lose track of a warm connection.
+          Offerloop was built for exactly this workflow. Search for alumni, generate personalized emails, send through Gmail, and track every conversation in one dashboard. The Network Tracker shows your entire pipeline - Sent, Replied, Scheduled, Completed - so you never miss a follow-up or lose track of a warm connection.
         </p>
       </section>
 
@@ -169,7 +169,7 @@ const AlumniOutreach = () => {
       <section className="px-6 py-20" style={{ background: '#FAFBFF' }}>
         <div className="text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.15, color: '#0F172A', marginBottom: '16px' }}>
-            Start networking with AI — try Offerloop free
+            Start networking with AI - try Offerloop free
           </h2>
           <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '28px' }}>
             Search 2.2B contacts. Generate personalized emails. Track every conversation.

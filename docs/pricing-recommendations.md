@@ -14,11 +14,11 @@ Anchor with a public list price ($29 / $69). Show `.edu`-verified students the r
 
 | Tier | Public list | **Student (.edu)** | Annual student | Trial |
 |---|---|---|---|---|
-| Free | $0 | $0 | — | — |
+| Free | $0 | $0 | - | - |
 | Pro | ~~$29/mo~~ | **$14.99/mo** | **$149/yr** (17% off) | 30d for `.edu` / 14d non-`.edu`, no credit card |
 | Elite | ~~$69/mo~~ | **$34.99/mo** | **$349/yr** (17% off) | 30d Pro for `.edu` / 14d non-`.edu`; upgrade to Elite anytime |
 
-**Lifetime student price lock**: once `.edu`-verified at signup, that user keeps the student price forever — including after graduation. Tag the customer in Stripe with `metadata.studentLockIn = 'true'` so future price changes route them to the locked-in student price.
+**Lifetime student price lock**: once `.edu`-verified at signup, that user keeps the student price forever - including after graduation. Tag the customer in Stripe with `metadata.studentLockIn = 'true'` so future price changes route them to the locked-in student price.
 
 ---
 
@@ -30,7 +30,7 @@ Anchor with a public list price ($29 / $69). Show `.edu`-verified students the r
 | Contacts per search | **5** | **15** | **30** |
 | Searches per day | 3 | unlimited | unlimited |
 | **Concurrent Agents** | **0** | **1** | **Up to 5** ← *headline Elite differentiator* |
-| Coffee chat preps | credit-gated (all tiers) | credit-gated | credit-gated |
+| Meeting preps | credit-gated (all tiers) | credit-gated | credit-gated |
 | Custom email templates | included | included | included |
 | Smart filters | included | included | included |
 | Alumni searches | within credit budget | within credit budget | within credit budget |
@@ -41,18 +41,18 @@ Anchor with a public list price ($29 / $69). Show `.edu`-verified students the r
 | Firm search | locked | included | included |
 | Bulk drafting | locked | included | included |
 | Export | locked | included | included |
-| Priority queue + support | — | — | included |
-| Weekly insights | — | — | included |
-| Early access | — | — | included |
+| Priority queue + support | - | - | included |
+| Weekly insights | - | - | included |
+| Early access | - | - | included |
 | **Time saved / month** | **~28 hrs** | **~210 hrs** | **~1,120 hrs** |
 
-**The Pro → Elite differentiator is multi-agent concurrency.** Pro gives you single agent use. Elite lets you run up to 5 simultaneously — for the student who wants to outreach across multiple companies in parallel during peak recruiting. Coffee chat, smart filters, and custom email templates are available on every tier (credit-gated where applicable); they're not differentiators.
+**The Pro → Elite differentiator is multi-agent concurrency.** Pro gives you single agent use. Elite lets you run up to 5 simultaneously - for the student who wants to outreach across multiple companies in parallel during peak recruiting. Meeting, smart filters, and custom email templates are available on every tier (credit-gated where applicable); they're not differentiators.
 
-**Features removed from the pricing surface:** Resume Builder, Cover Letter Generator, and the founder kickoff call. The resume/cover-letter routes may exist in the backend but are no longer surfaced as paid-tier value props. The founder kickoff call is dropped — not a sustainable bonus to deliver.
+**Features removed from the pricing surface:** Resume Builder, Cover Letter Generator, and the founder kickoff call. The resume/cover-letter routes may exist in the backend but are no longer surfaced as paid-tier value props. The founder kickoff call is dropped - not a sustainable bonus to deliver.
 
-**Interview prep is dropped for the public surface** — backend route stays wired but is not surfaced in the pricing UI. Re-introduce later if/when the feature ships back.
+**Interview prep is dropped for the public surface** - backend route stays wired but is not surfaced in the pricing UI. Re-introduce later if/when the feature ships back.
 
-**Time-saved math**: each contact ≈ 84 minutes of manual research (LinkedIn lookup + email find + personalized outreach + CRM log). Free typical 20/mo × 84 = 1,680 min ≈ 28 hrs. Pro typical 150/mo × 84 = 12,600 min ≈ 210 hrs. Elite max 800/mo × 84 = 67,200 min ≈ 1,120 hrs — framed as "at max usage" in copy.
+**Time-saved math**: each contact ≈ 84 minutes of manual research (LinkedIn lookup + email find + personalized outreach + CRM log). Free typical 20/mo × 84 = 1,680 min ≈ 28 hrs. Pro typical 150/mo × 84 = 12,600 min ≈ 210 hrs. Elite max 800/mo × 84 = 67,200 min ≈ 1,120 hrs - framed as "at max usage" in copy.
 
 ---
 
@@ -62,7 +62,7 @@ Unit cost: ~$0.02 per contact found (PDL + Hunter verification + enrichment).
 
 | Tier | Credits | Max contacts | Cost @ 100% util | Margin @ 100% | Margin @ ~30% (real) | Multiplier vs Free |
 |---|---|---|---|---|---|---|
-| Free | 500 | ~33 | $0.66 | — (loss) | — | 1x |
+| Free | 500 | ~33 | $0.66 | - (loss) | - | 1x |
 | Pro | 3,000 | ~200 | $4.00 | 73% | ~87% | **6x** |
 | Elite | 12,000 | ~800 | $16.00 | 54% | ~85% | **24x** (4x Pro) |
 
@@ -76,7 +76,7 @@ Unit cost: ~$0.02 per contact found (PDL + Hunter verification + enrichment).
 
 | Audience | Trial | Reasoning |
 |---|---|---|
-| `.edu` verified | **30 days Pro, no credit card** | Captures full recruiting-cycle (Sept IB, Jan consulting). 3-4 weeks to send emails → get replies → do coffee chats → feel the loop close. |
+| `.edu` verified | **30 days Pro, no credit card** | Captures full recruiting-cycle (Sept IB, Jan consulting). 3-4 weeks to send emails → get replies → do meetings → feel the loop close. |
 | Non-`.edu` | **14 days Pro, no credit card** | SaaS standard (62% of products). Day 7 = activation, day 14 = conversion cliff. |
 
 Both fall back to Free tier at expiration (soft landing, no surprise charge).
@@ -89,7 +89,7 @@ Both fall back to Free tier at expiration (soft landing, no surprise charge).
 - Ungate the `/pricing` page (it currently redirects to `/signin`)
 - Annual plans at 17% off (= "2 months free" framing)
 - No promo discounts, ever. Only allowed discount is the annual one. The student price is *the* price for students, not a coupon.
-- Build the Elite value stack: The Agent, unlimited coffee chat, priority response support, early access, founder kickoff call
+- Build the Elite value stack: The Agent, unlimited meeting, priority response support, early access, founder kickoff call
 
 ## What changed from the original plan
 
@@ -99,7 +99,7 @@ Both fall back to Free tier at expiration (soft landing, no surprise charge).
 - ➕ Added: list-price anchor strategy ($29/$69 crossed out)
 - ➕ Added: lifetime `.edu` price lock
 - ➕ Added: credit budget restructure (500 / 3,000 / 12,000)
-- ➕ Added: annual credit-refill cron (critical bug fix — see below)
+- ➕ Added: annual credit-refill cron (critical bug fix - see below)
 
 ---
 
@@ -108,7 +108,7 @@ Both fall back to Free tier at expiration (soft landing, no surprise charge).
 ### Code (this branch)
 
 - [x] Rewrite `docs/pricing-recommendations.md` with consolidated plan
-- [ ] Update `backend/app/config.py` TIER_CONFIGS (credits, contact caps, drop interview_preps, monthly coffee chat)
+- [ ] Update `backend/app/config.py` TIER_CONFIGS (credits, contact caps, drop interview_preps, monthly meeting)
 - [ ] Update `connect-grow-hire/src/lib/constants.ts` (mirror backend, fix all drift)
 - [ ] `.edu` verification at signup → set `isStudent: true` + `verifiedEduEmail` on user doc
 - [ ] `backend/app/services/stripe_client.py:75` → conditional `trial_period_days`: 30 if `isStudent` else 14
@@ -123,13 +123,13 @@ Both fall back to Free tier at expiration (soft landing, no surprise charge).
 ### Stripe dashboard (manual)
 
 - [ ] Create Price: **Pro Annual** $149/yr (recurring, interval = year)
-- [ ] Create Price: **Pro List** $29/mo (recurring, interval = month) — anchor only, not in checkout flow yet
+- [ ] Create Price: **Pro List** $29/mo (recurring, interval = month) - anchor only, not in checkout flow yet
 - [ ] Create Price: **Elite Annual** $349/yr (recurring, interval = year)
 - [ ] Create Price: **Elite List** $69/mo (recurring, interval = month)
 - [ ] Add env vars: `STRIPE_PRO_ANNUAL_PRICE_ID`, `STRIPE_ELITE_ANNUAL_PRICE_ID`
 - [ ] (Optional, defer) `STRIPE_PRO_LIST_PRICE_ID`, `STRIPE_ELITE_LIST_PRICE_ID`
 
-### Stripe — do NOT do
+### Stripe - do NOT do
 
 - ❌ Do not use Stripe Coupons for the student discount. Use separate Price objects. Coupons appear as "discount" on receipts and train customers to expect promos.
 - ❌ Do not enable Stripe Tax surcharge on the student price (it'd defeat the "this is the real price" framing).
@@ -138,7 +138,7 @@ Both fall back to Free tier at expiration (soft landing, no surprise charge).
 
 ## Critical bug to fix before annual ships
 
-`backend/app/services/stripe_client.py:332` refills credits on `invoice.payment_succeeded`. For monthly subs this fires monthly. **For annual subs it fires once a year** — meaning annual subscribers would get 3,000 (Pro) or 12,000 (Elite) credits *for a whole year* and starve mid-year.
+`backend/app/services/stripe_client.py:332` refills credits on `invoice.payment_succeeded`. For monthly subs this fires monthly. **For annual subs it fires once a year** - meaning annual subscribers would get 3,000 (Pro) or 12,000 (Elite) credits *for a whole year* and starve mid-year.
 
 Fix: add a separate scheduled job (daemon thread or external cron) that resets credits for active annual subscribers on the 1st of every month. Look at the Gmail watch renewal daemon thread in `wsgi.py` as a reference pattern.
 
@@ -149,8 +149,8 @@ Fix: add a separate scheduled job (daemon thread or external cron) that resets c
 Pricing is wrong if any of these hit after 60-90 days live:
 
 1. **Free → paid conversion drops below 18%** (currently 22%; 4-point drop means the list-price anchor or trial split is hurting more than helping)
-2. **Annual mix stays below 20% of new paid subs** (means the lifetime lock-in or 17% discount isn't compelling — pull the lock-in earlier in the upgrade flow)
-3. **Non-`.edu` signups exceed 5% of paid users** (verification gate is leaking — tighten)
+2. **Annual mix stays below 20% of new paid subs** (means the lifetime lock-in or 17% discount isn't compelling - pull the lock-in earlier in the upgrade flow)
+3. **Non-`.edu` signups exceed 5% of paid users** (verification gate is leaking - tighten)
 4. **Trial → paid drops below 25%** (current 30-day trial-to-paid baseline; if it drops, the trial-length split was wrong)
 
 If two hit, restructure. If one hits, isolate the lever and adjust that one.
@@ -159,18 +159,18 @@ If two hit, restructure. If one hits, isolate the lever and adjust that one.
 
 ## Sources
 
-- [SaaS Pricing Guide 2026 — Momentum Nexus](https://www.momentumnexus.com/blog/saas-pricing-strategy-guide-2026/)
-- [Patrick Campbell / ProfitWell on pricing — Intercom](https://www.intercom.com/blog/podcasts/profitwells-patrick-campbell-on-the-art-and-science-of-pricing/)
-- [Van Westendorp PSM — Wikipedia](https://en.wikipedia.org/wiki/Van_Westendorp's_Price_Sensitivity_Meter)
-- [Free trial conversion benchmarks — Userpilot](https://userpilot.com/blog/free-trial-conversion-rate/)
-- [Annual discount analysis of 100 SaaS — InnerTrends](https://www.innertrends.com/blog/saas-pricing-strategies)
-- [SaaS discount strategy 2026 — Medium](https://medium.com/@lesiapolivod/saas-discount-strategy-2026-when-discounts-work-and-when-they-dont-e33dac0014fb)
-- [Hormozi value equation — QuantumByte](https://quantumbyte.ai/articles/alex-hormozi-value-equation-app-monetization)
-- [Cursor Student Discount — Cursor Docs](https://cursor.com/help/account-and-billing/student-discount)
+- [SaaS Pricing Guide 2026 - Momentum Nexus](https://www.momentumnexus.com/blog/saas-pricing-strategy-guide-2026/)
+- [Patrick Campbell / ProfitWell on pricing - Intercom](https://www.intercom.com/blog/podcasts/profitwells-patrick-campbell-on-the-art-and-science-of-pricing/)
+- [Van Westendorp PSM - Wikipedia](https://en.wikipedia.org/wiki/Van_Westendorp's_Price_Sensitivity_Meter)
+- [Free trial conversion benchmarks - Userpilot](https://userpilot.com/blog/free-trial-conversion-rate/)
+- [Annual discount analysis of 100 SaaS - InnerTrends](https://www.innertrends.com/blog/saas-pricing-strategies)
+- [SaaS discount strategy 2026 - Medium](https://medium.com/@lesiapolivod/saas-discount-strategy-2026-when-discounts-work-and-when-they-dont-e33dac0014fb)
+- [Hormozi value equation - QuantumByte](https://quantumbyte.ai/articles/alex-hormozi-value-equation-app-monetization)
+- [Cursor Student Discount - Cursor Docs](https://cursor.com/help/account-and-billing/student-discount)
 - [Notion for Education](https://www.notion.com/help/notion-for-education)
-- [2026 Free-to-Paid Conversion Report — Growth Unhinged](https://www.growthunhinged.com/p/free-to-paid-conversion-report)
-- [Apollo.io Pricing 2026 — Saleshandy](https://www.saleshandy.com/blog/apolloio-pricing/)
-- [Lusha Pricing 2026 — Salesmotion](https://salesmotion.io/blog/lusha-pricing)
-- [Hunter.io Pricing 2026 — MarketBetter](https://marketbetter.ai/blog/hunter-io-pricing-breakdown-2026/)
-- [Perplexity Free vs Pro 2026 — Datastudios](https://www.datastudios.org/post/perplexity-ai-free-versus-paid-features-explained-usage-limits-model-availability-speed-and-work)
-- [Freemium Upgrade Triggers — Monetizely](https://www.getmonetizely.com/articles/crafting-freemium-to-premium-upgrade-journeys-that-actually-convert)
+- [2026 Free-to-Paid Conversion Report - Growth Unhinged](https://www.growthunhinged.com/p/free-to-paid-conversion-report)
+- [Apollo.io Pricing 2026 - Saleshandy](https://www.saleshandy.com/blog/apolloio-pricing/)
+- [Lusha Pricing 2026 - Salesmotion](https://salesmotion.io/blog/lusha-pricing)
+- [Hunter.io Pricing 2026 - MarketBetter](https://marketbetter.ai/blog/hunter-io-pricing-breakdown-2026/)
+- [Perplexity Free vs Pro 2026 - Datastudios](https://www.datastudios.org/post/perplexity-ai-free-versus-paid-features-explained-usage-limits-model-availability-speed-and-work)
+- [Freemium Upgrade Triggers - Monetizely](https://www.getmonetizely.com/articles/crafting-freemium-to-premium-upgrade-journeys-that-actually-convert)

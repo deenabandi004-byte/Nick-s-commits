@@ -1401,7 +1401,7 @@ export const EnhancedFitAnalysisPanel: React.FC<EnhancedFitAnalysisPanelProps> =
                     <li key={i} className="bg-green-50 rounded p-2 text-sm">
                       <span className="font-medium text-green-800">{s.point}</span>
                       {s.evidence && (
-                        <span className="text-green-600"> — {s.evidence}</span>
+                        <span className="text-green-600"> - {s.evidence}</span>
                       )}
                     </li>
                   ))}

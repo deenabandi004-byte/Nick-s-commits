@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-The ATS scoring system is **currently AI-generated** rather than programmatically calculated. GPT-4o generates all ATS scores (overall, keywords, formatting, relevance) as part of the resume optimization response. There is no deterministic algorithm or validation layer—scores are extracted directly from the AI's JSON response with fallback defaults.
+The ATS scoring system is **currently AI-generated** rather than programmatically calculated. GPT-4o generates all ATS scores (overall, keywords, formatting, relevance) as part of the resume optimization response. There is no deterministic algorithm or validation layer - scores are extracted directly from the AI's JSON response with fallback defaults.
 
 ---
 

@@ -33,7 +33,7 @@ def _call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 1000, label
             logger.info("[%s] ✅ Claude succeeded", label)
             return response.content[0].text.strip()
         except Exception as e:
-            logger.warning("[%s] ⚠️ Claude failed: %s — falling back to GPT", label, e)
+            logger.warning("[%s] ⚠️ Claude failed: %s - falling back to GPT", label, e)
 
     # Fall back to GPT
     client = get_openai_client()
@@ -97,7 +97,7 @@ def _search_linkedin_url(firm_name: str, location: Dict[str, Optional[str]] = No
     except Exception:
         logger.warning("Perplexity failed for LinkedIn URL search (%s), falling back to SerpAPI", firm_name, exc_info=True)
 
-    # DEPRECATED: remove in Phase 8 — existing SerpAPI code
+    # DEPRECATED: remove in Phase 8 - existing SerpAPI code
     if not SERPAPI_KEY:
         return None
 
@@ -204,7 +204,7 @@ def _fetch_serp_results_only(
     except Exception:
         logger.warning("Perplexity failed for _fetch_serp_results_only (%s), falling back to SerpAPI", firm_name, exc_info=True)
 
-    # DEPRECATED: remove in Phase 8 — existing SerpAPI code
+    # DEPRECATED: remove in Phase 8 - existing SerpAPI code
     if not SERPAPI_KEY:
         return None
 
@@ -678,7 +678,7 @@ def search_firm_details_with_serp(
                 loc_parts.append(location["region"])
         loc_hint = ", ".join(loc_parts) if loc_parts else ""
 
-        # Step 1 — ask Perplexity for a company website so we can Firecrawl it
+        # Step 1 - ask Perplexity for a company website so we can Firecrawl it
         website_url_for_firecrawl = None
         perplexity_result = _pro_search(
             f"{firm_name} company {loc_hint} official website LinkedIn employee count headquarters founded".strip()
@@ -695,7 +695,7 @@ def search_firm_details_with_serp(
             if url_match:
                 website_url_for_firecrawl = url_match.group(0)
 
-        # Step 2 — try Firecrawl on the website if we found one
+        # Step 2 - try Firecrawl on the website if we found one
         firecrawl_data = {}
         if website_url_for_firecrawl:
             try:
@@ -706,7 +706,7 @@ def search_firm_details_with_serp(
             except Exception:
                 logger.warning("Firecrawl failed for %s, continuing with Perplexity data", firm_name, exc_info=True)
 
-        # Step 3 — build result from combined Perplexity + Firecrawl data
+        # Step 3 - build result from combined Perplexity + Firecrawl data
         if perplexity_content or firecrawl_data:
             # Extract LinkedIn URL from Perplexity content or citations
             import re as _re
@@ -796,7 +796,7 @@ Return ONLY JSON:
     except Exception:
         logger.warning("Perplexity/Firecrawl failed for search_firm_details_with_serp (%s), falling back to SerpAPI", firm_name, exc_info=True)
 
-    # DEPRECATED: remove in Phase 8 — existing SerpAPI code
+    # DEPRECATED: remove in Phase 8 - existing SerpAPI code
     if not SERPAPI_KEY:
         return None
 

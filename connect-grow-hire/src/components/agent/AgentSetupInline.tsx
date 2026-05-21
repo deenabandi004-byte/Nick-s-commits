@@ -1,4 +1,4 @@
-// Inline agent setup wizard — 3-step flow with editorial headlines,
+// Inline agent setup wizard - 3-step flow with editorial headlines,
 // step rail, tag inputs, and a live preview rail sidebar.
 
 import { useState, useEffect, useMemo } from "react";
@@ -301,7 +301,7 @@ function Field({
         </Label>
         {hint && (
           <span className="text-xs italic" style={{ color: "var(--ink-3)" }}>
-            &mdash; {hint}
+             -  {hint}
           </span>
         )}
       </div>
@@ -676,7 +676,7 @@ function StepReview({ form }: { form: FormState }) {
             Scout will find contacts, watch for replies, and draft outreach.
           </div>
           <div className="text-xs leading-relaxed" style={{ color: "var(--ink-2)" }}>
-            You'll see new drafts in the Agent Mode dashboard. Pause or reconfigure any time &mdash;
+            You'll see new drafts in the Agent Mode dashboard. Pause or reconfigure any time  - 
             your settings save automatically.
           </div>
         </div>
@@ -692,14 +692,31 @@ export function AgentSetupInline({ onDeployed }: { onDeployed: () => void }) {
   const [stepIdx, setStepIdx] = useState(0);
   const [deploying, setDeploying] = useState(false);
 
-  const [form, setForm] = useState<FormState>({
-    companies: [],
-    industries: [],
-    roles: [],
-    preferAlumni: true,
-    weeklyTarget: 5,
-    creditBudget: 100,
-    approvalMode: "review_first",
+  const [form, setForm] = useState<FormState>(() => {
+    const base: FormState = {
+      companies: [],
+      industries: [],
+      roles: [],
+      preferAlumni: true,
+      weeklyTarget: 5,
+      creditBudget: 100,
+      approvalMode: "review_first",
+    };
+    // Pre-fill from a Home-page "start a loop" card.
+    try {
+      const raw = sessionStorage.getItem("loop_prefill");
+      if (raw) {
+        sessionStorage.removeItem("loop_prefill");
+        const p = JSON.parse(raw);
+        return {
+          ...base,
+          companies: Array.isArray(p.companies) ? p.companies.slice(0, 8) : [],
+          industries: Array.isArray(p.industries) ? p.industries.slice(0, 8) : [],
+          roles: Array.isArray(p.roles) ? p.roles.slice(0, 8) : [],
+        };
+      }
+    } catch { /* ignore */ }
+    return base;
   });
   const set = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
 

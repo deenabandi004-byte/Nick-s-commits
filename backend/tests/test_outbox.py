@@ -12,7 +12,7 @@ from unittest.mock import patch, MagicMock, PropertyMock
 
 
 # =============================================================================
-# outbox_service.py — _parse_iso
+# outbox_service.py - _parse_iso
 # =============================================================================
 
 class TestParseIso:
@@ -57,7 +57,7 @@ class TestParseIso:
 
 
 # =============================================================================
-# outbox_service.py — _now_iso
+# outbox_service.py - _now_iso
 # =============================================================================
 
 class TestNowIso:
@@ -83,7 +83,7 @@ class TestNowIso:
 
 
 # =============================================================================
-# outbox_service.py — Constants
+# outbox_service.py - Constants
 # =============================================================================
 
 class TestConstants:
@@ -114,7 +114,7 @@ class TestConstants:
 
 
 # =============================================================================
-# outbox_service.py — _contact_to_dict
+# outbox_service.py - _contact_to_dict
 # =============================================================================
 
 class TestContactToDict:
@@ -213,7 +213,7 @@ class TestContactToDict:
 
 
 # =============================================================================
-# outbox_service.py — update_contact_stage
+# outbox_service.py - update_contact_stage
 # =============================================================================
 
 class TestUpdateContactStage:
@@ -270,7 +270,7 @@ class TestUpdateContactStage:
 
 
 # =============================================================================
-# outbox_service.py — archive / unarchive
+# outbox_service.py - archive / unarchive
 # =============================================================================
 
 class TestArchiveUnarchive:
@@ -327,7 +327,7 @@ class TestArchiveUnarchive:
 
 
 # =============================================================================
-# outbox_service.py — snooze_contact (BUG 2 fix)
+# outbox_service.py - snooze_contact (BUG 2 fix)
 # =============================================================================
 
 class TestSnoozeContact:
@@ -359,7 +359,7 @@ class TestSnoozeContact:
 
 
 # =============================================================================
-# outbox_service.py — mark_contact_won / mark_contact_resolution
+# outbox_service.py - mark_contact_won / mark_contact_resolution
 # =============================================================================
 
 class TestResolutions:
@@ -426,7 +426,7 @@ class TestResolutions:
 
 
 # =============================================================================
-# outbox_service.py — get_outbox_stats (BUG 3 fix)
+# outbox_service.py - get_outbox_stats (BUG 3 fix)
 # =============================================================================
 
 class TestGetOutboxStats:
@@ -519,7 +519,7 @@ class TestGetOutboxStats:
 
 
 # =============================================================================
-# outbox_service.py — _check_draft_status
+# outbox_service.py - _check_draft_status
 # =============================================================================
 
 class TestCheckDraftStatus:
@@ -577,7 +577,7 @@ class TestCheckDraftStatus:
 
 
 # =============================================================================
-# outbox_service.py — _sync_thread_messages
+# outbox_service.py - _sync_thread_messages
 # =============================================================================
 
 class TestSyncThreadMessages:
@@ -621,7 +621,7 @@ class TestSyncThreadMessages:
 
 
 # =============================================================================
-# outbox_service.py — sync_contact_thread
+# outbox_service.py - sync_contact_thread
 # =============================================================================
 
 class TestSyncContactThread:
@@ -665,7 +665,7 @@ class TestSyncContactThread:
 
 
 # =============================================================================
-# outbox routes — source inspection
+# outbox routes - source inspection
 # =============================================================================
 
 class TestOutboxRoutes:
@@ -708,7 +708,7 @@ class TestOutboxRoutes:
 
 
 # =============================================================================
-# gmail_webhook.py — _extract_email_from_header
+# gmail_webhook.py - _extract_email_from_header
 # =============================================================================
 
 class TestExtractEmailFromHeader:
@@ -735,7 +735,7 @@ class TestExtractEmailFromHeader:
 
 
 # =============================================================================
-# gmail_webhook.py — security fix
+# gmail_webhook.py - security fix
 # =============================================================================
 
 class TestWebhookSecurity:
@@ -753,7 +753,7 @@ class TestWebhookSecurity:
 
 
 # =============================================================================
-# gmail_webhook.py — reply detection fix (BUG 4)
+# gmail_webhook.py - reply detection fix (BUG 4)
 # =============================================================================
 
 class TestWebhookReplyDetection:
@@ -819,7 +819,7 @@ class TestBackgroundSync:
 
 
 # =============================================================================
-# emails.py — draft creation
+# emails.py - draft creation
 # =============================================================================
 
 class TestEmailsDraftCreation:
@@ -883,7 +883,7 @@ class TestNoDeprecatedUtcnow:
 
 
 # =============================================================================
-# outbox_service.py — post-send draft URL fallback (M3 fix)
+# outbox_service.py - post-send draft URL fallback (M3 fix)
 # =============================================================================
 
 class TestContactDictPostSendDraftUrl:
@@ -938,7 +938,7 @@ class TestContactDictPostSendDraftUrl:
         assert "#inbox/thread456" in result["gmailDraftUrl"]
 
     def test_draft_created_still_uses_compose_url(self):
-        """Pre-send stage should still build the compose URL — draft is live."""
+        """Pre-send stage should still build the compose URL - draft is live."""
         from app.services.outbox_service import _contact_to_dict
         data = {
             "pipelineStage": "draft_created",
@@ -971,7 +971,7 @@ class TestContactDictPostSendDraftUrl:
 
 
 # =============================================================================
-# outbox_service.py — needsManualSync flag (H4 fix)
+# outbox_service.py - needsManualSync flag (H4 fix)
 # =============================================================================
 
 class TestContactDictNeedsManualSync:
@@ -989,7 +989,7 @@ class TestContactDictNeedsManualSync:
         data = {
             "pipelineStage": "draft_created",
             "draftCreatedAt": old,
-            # no gmailThreadId — never matched to a sent message
+            # no gmailThreadId - never matched to a sent message
         }
         result = _contact_to_dict("c1", data)
         assert result["needsManualSync"] is True
@@ -1026,7 +1026,7 @@ class TestContactDictNeedsManualSync:
             assert result["needsManualSync"] is False, f"stage={stage} should not flag"
 
     def test_missing_draft_created_at_no_flag(self):
-        """Can't compute age without a timestamp — don't false-positive."""
+        """Can't compute age without a timestamp - don't false-positive."""
         from app.services.outbox_service import _contact_to_dict
         data = {"pipelineStage": "draft_created"}
         result = _contact_to_dict("c1", data)
@@ -1038,7 +1038,7 @@ class TestContactDictNeedsManualSync:
 
 
 # =============================================================================
-# outbox_service.py — _is_gmail_auth_error (M5 fix)
+# outbox_service.py - _is_gmail_auth_error (M5 fix)
 # =============================================================================
 
 class TestIsGmailAuthError:
@@ -1072,7 +1072,7 @@ class TestIsGmailAuthError:
         assert _is_gmail_auth_error(err) is True
 
     def test_http_error_500_not_auth(self):
-        """Server errors are transient — must not trigger 'reconnect Gmail'."""
+        """Server errors are transient - must not trigger 'reconnect Gmail'."""
         from app.services.outbox_service import _is_gmail_auth_error
         from googleapiclient.errors import HttpError
         resp = MagicMock()
@@ -1107,7 +1107,7 @@ class TestIsGmailAuthError:
 
 
 # =============================================================================
-# outbox_service.py — transactional sync lock (H2 fix)
+# outbox_service.py - transactional sync lock (H2 fix)
 # =============================================================================
 
 class TestTryAcquireSyncLock:
@@ -1154,7 +1154,7 @@ class TestTryAcquireSyncLock:
 
 
 # =============================================================================
-# gmail_webhook.py — historyId write ordering (H1 fix)
+# gmail_webhook.py - historyId write ordering (H1 fix)
 # =============================================================================
 
 class TestWebhookHistoryIdOrdering:
@@ -1185,7 +1185,7 @@ class TestWebhookHistoryIdOrdering:
             "watchHistoryId write must come AFTER the message processing loop"
 
     def test_mentions_crash_safety_rationale(self):
-        """The ordering is subtle — doc-comment should explain why."""
+        """The ordering is subtle - doc-comment should explain why."""
         from app.routes.gmail_webhook import _process_gmail_notification
         source = inspect.getsource(_process_gmail_notification)
         # Our fix included a comment explaining crash-safety / redelivery.
@@ -1200,7 +1200,7 @@ class TestWebhookHistoryIdOrdering:
 
 
 # =============================================================================
-# gmail_webhook.py — sent-message matching strategies
+# gmail_webhook.py - sent-message matching strategies
 # =============================================================================
 
 class TestWebhookMatchingStrategies:
@@ -1232,7 +1232,7 @@ class TestWebhookMatchingStrategies:
         assert 'where("draftToEmail"' in source
 
     def test_strategy_3_disappeared_draft(self):
-        """Strategy 3 checks if a known draft 404s — meaning it was sent."""
+        """Strategy 3 checks if a known draft 404s - meaning it was sent."""
         from app.routes.gmail_webhook import _process_gmail_notification
         source = inspect.getsource(_process_gmail_notification)
         # Look for the disappeared-draft detection pattern

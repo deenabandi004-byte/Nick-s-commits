@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import FirmSearchImage from '@/assets/Firm_Search.png';
 import ContactSearchImage from '@/assets/Contact_search.png';
-import CoffeeChatImage from '@/assets/Coffee_Chat.png';
+import MeetingImage from '@/assets/Meeting.png';
 import InterviewPrepImage from '@/assets/Interview_Prep.png';
 import DashboardImage from '@/assets/Dashboard.png';
 
@@ -39,14 +39,14 @@ const featureData: FeatureCard[] = [
   },
   {
     number: 3,
-    header: "Prepare for your coffee chat",
-    headerEmphasis: "coffee chat",
+    header: "Prepare for your meeting",
+    headerEmphasis: "meeting",
     bullets: [
       "Enter the LinkedIn URL of the person you're speaking with",
       "Get a 2-page PDF with background, company insights, talking points, and smart questions"
     ],
-    image: CoffeeChatImage,
-    stepLabel: "Step 3 · Prepare for coffee chats",
+    image: MeetingImage,
+    stepLabel: "Step 3 · Prepare for meetings",
   },
   {
     number: 4,

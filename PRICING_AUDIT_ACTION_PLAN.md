@@ -8,7 +8,7 @@ Based on `PRICING_AUDIT_REPORT.md`, here's what needs to be done, organized by p
 
 1. ✅ **Issue #1**: Frontend credit defaults - Fixed hardcoded 120/840 → 300/1500/3000
 2. ✅ **Issue #2**: Backend credit defaults - Fixed hardcoded 120/1800 → Using TIER_CONFIGS
-3. ✅ **Issue #9**: UI hardcoded values - Fixed AppSidebar, Outbox, CoffeeChatLibrary
+3. ✅ **Issue #9**: UI hardcoded values - Fixed AppSidebar, Outbox, MeetingLibrary
 
 ---
 
@@ -183,7 +183,7 @@ def export_contacts():
 **Tasks:**
 1. **Update user schema** to include structured usage tracking:
    ```python
-   'coffeeChatPrep': {
+   'meetingPrep': {
        'used': 0,
        'limit': 10,  # or 1 for free, 'unlimited' for elite
        'lastResetDate': timestamp
@@ -264,7 +264,7 @@ def export_contacts():
 
 **Tasks:**
 1. **Review terminology** across all components:
-   - "Coffee Chat Prep" (not "Coffee Chat")
+   - "Meeting Prep" (not "Meeting")
    - "Interview Prep" (not "Interview Preparation")
 2. **Verify** usage displays are accurate:
    - "X / 1 used" (Free)
@@ -313,9 +313,9 @@ After fixes, test:
    - Cancellation reverts to Free tier
 
 3. **Feature Tests:**
-   - Free: 1 Coffee Chat Prep (lifetime, no reset)
-   - Pro: 10 Coffee Chat Preps/month (resets)
-   - Elite: Unlimited Coffee Chat Preps
+   - Free: 1 Meeting Prep (lifetime, no reset)
+   - Pro: 10 Meeting Preps/month (resets)
+   - Elite: Unlimited Meeting Preps
    - Batch size limits enforced correctly
 
 4. **Edge Cases:**

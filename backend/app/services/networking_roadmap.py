@@ -1,5 +1,5 @@
 """
-Networking Roadmap Service — Phase 4.
+Networking Roadmap Service - Phase 4.
 
 Generates a personalized, time-bound networking action plan based on
 user goals, career track, graduation timeline, and recruiting calendars.
@@ -254,7 +254,7 @@ def _build_fallback_roadmap(ctx: dict, industry: str, calendar: dict, now: datet
             "weekNumber": 2,
             "theme": "Expand Your Net",
             "emailTarget": 8,
-            "targetDescription": "VPs and senior associates — aim for seniority diversity",
+            "targetDescription": "VPs and senior associates - aim for seniority diversity",
             "milestone": "Follow up on week 1 emails + 8 new contacts",
             "companies": dream[1:3] if len(dream) > 1 else dream[:1],
         },
@@ -263,7 +263,7 @@ def _build_fallback_roadmap(ctx: dict, industry: str, calendar: dict, now: datet
             "theme": "Deep Dive",
             "emailTarget": 8,
             "targetDescription": f"Alumni from your school at {industry.lower()} firms",
-            "milestone": "Schedule your first 2 coffee chats",
+            "milestone": "Schedule your first 2 meetings",
             "companies": [],
         },
         {
@@ -271,7 +271,7 @@ def _build_fallback_roadmap(ctx: dict, industry: str, calendar: dict, now: datet
             "theme": "Follow-Up Blitz",
             "emailTarget": 6,
             "targetDescription": "Follow up on all pending emails + 6 new targets",
-            "milestone": "Complete 3 coffee chats total",
+            "milestone": "Complete 3 meetings total",
             "companies": dream[2:4] if len(dream) > 2 else [],
         },
         {
@@ -287,14 +287,14 @@ def _build_fallback_roadmap(ctx: dict, industry: str, calendar: dict, now: datet
             "theme": "Interview Prep Transition",
             "emailTarget": 4,
             "targetDescription": "Final outreach + shift to interview prep materials",
-            "milestone": "Network complete — begin focused interview preparation",
+            "milestone": "Network complete - begin focused interview preparation",
             "companies": [],
         },
     ]
 
     return {
         "summary": f"A 6-week plan to build your {industry.lower()} network. "
-                   f"You've already reached {contact_count} contacts — this plan adds ~38 more targeted connections.",
+                   f"You've already reached {contact_count} contacts - this plan adds ~38 more targeted connections.",
         "weeks": weeks,
         "keyDates": [],
         "totalEmailTarget": sum(w["emailTarget"] for w in weeks),

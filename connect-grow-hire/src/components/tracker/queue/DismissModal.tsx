@@ -1,5 +1,5 @@
 /**
- * DismissModal — reason picker for dismissing a queued contact.
+ * DismissModal - reason picker for dismissing a queued contact.
  *
  * Reasons map 1:1 to backend VALID_DISMISS_REASONS:
  *   wrong_company → adds company to blocklist.companies
@@ -61,7 +61,7 @@ export function DismissModal({
         <div className="px-5 pt-4 pb-3 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-900">Dismiss {contactName}?</h3>
           <p className="text-xs text-gray-500 mt-1">
-            Help us tune future suggestions — pick a reason.
+            Help us tune future suggestions - pick a reason.
           </p>
         </div>
 

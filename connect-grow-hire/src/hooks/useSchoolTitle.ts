@@ -28,7 +28,7 @@ export function useSchoolTitle(
     };
   }
 
-  // No school — return existing generic title
+  // No school - return existing generic title
   return {
     lead: "Who do you want to",
     accent: "meet?",

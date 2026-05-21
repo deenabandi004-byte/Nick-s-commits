@@ -163,7 +163,7 @@ export function LibraryTab({
                   <div className="min-w-0">
                     <h4 className="font-medium text-gray-900 truncate">{entry.display_name}</h4>
                     <p className="text-sm text-gray-600">
-                      {[entry.job_title, entry.company].filter(Boolean).join(' at ') || '—'}
+                      {[entry.job_title, entry.company].filter(Boolean).join(' at ') || ' - '}
                     </p>
                     <div className="flex items-center gap-3 mt-2">
                       <span className="text-xs text-gray-400">{new Date(entry.created_at).toLocaleDateString()}</span>

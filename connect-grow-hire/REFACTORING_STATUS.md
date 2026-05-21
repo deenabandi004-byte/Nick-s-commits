@@ -4,16 +4,16 @@
 
 1. ✅ Created shared constants file (`src/lib/constants.ts`)
    - TIER_CONFIGS
-   - COFFEE_CHAT_CREDITS
+   - MEETING_CREDITS
    - INTERVIEW_PREP_CREDITS
-   - CoffeeChatHistoryItem type
+   - MeetingHistoryItem type
 
 2. ✅ Created shared components:
    - `BackToHomeButton.tsx`
    - `ComingSoonOverlay.tsx` (extracted from Home.tsx)
 
 3. ✅ Created feature pages:
-   - `CoffeeChatPrepPage.tsx` - Coffee Chat Prep + Coffee Library tabs (FULLY FUNCTIONAL)
+   - `MeetingPrepPage.tsx` - Meeting Prep + Coffee Library tabs (FULLY FUNCTIONAL)
    - `ContactSearchPage.tsx` - Placeholder (needs full extraction)
    - `InterviewPrepPage.tsx` - Placeholder with ComingSoonOverlay
    - `FirmSearchPage.tsx` - Placeholder with ComingSoonOverlay
@@ -52,7 +52,7 @@ Replace current monolithic Home.tsx with:
 - Simple dashboard/landing page
 - Cards linking to each feature page:
   - ContactSearchPage
-  - CoffeeChatPrepPage
+  - MeetingPrepPage
   - InterviewPrepPage
   - FirmSearchPage
   - Outbox (dashboard)
@@ -63,7 +63,7 @@ Replace current monolithic Home.tsx with:
 
 Update `App.tsx` routes:
 - `/contact-search` → ContactSearchPage
-- `/coffee-chat-prep` → CoffeeChatPrepPage
+- `/meeting-prep` → MeetingPrepPage
 - `/interview-prep` → InterviewPrepPage
 - `/firm-search` → FirmSearchPage
 

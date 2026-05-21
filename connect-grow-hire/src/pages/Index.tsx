@@ -8,7 +8,7 @@ import OfferloopLogo from '@/assets/offerloop_logo2.png';
 import FindCompanyImg from '@/assets/findcompanylandingpage.png';
 import FindHiringManagerImg from '@/assets/findhiringmanagerlandingpage.png';
 import EmailOutreachImg from '@/assets/emailoutreach.png.png';
-import CoffeeChatImg from '@/assets/coffeechatlandingpage.png';
+import MeetingImg from '@/assets/meetinglandingpage.png';
 import HeroSearchCTA from '@/components/HeroSearchCTA';
 import TimeComparison from '@/components/TimeComparison';
 import BulletinBoard from '@/components/BulletinBoard';
@@ -173,7 +173,7 @@ const Index = () => {
         </>
       )}
 
-      {/* NAVBAR — centered pill with running header */}
+      {/* NAVBAR - centered pill with running header */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center" style={{ padding: '12px 24px 8px' }}>
         <header
           className="flex items-center justify-between w-full h-12 px-5 md:px-6"
@@ -309,7 +309,7 @@ const Index = () => {
           overflow: 'hidden',
         }}
       >
-        {/* ─── Ambient depth layers — all non-interactive ─── */}
+        {/* ─── Ambient depth layers - all non-interactive ─── */}
 
         {/* Large slow-drifting blue blob behind the headline */}
         <div
@@ -376,7 +376,7 @@ const Index = () => {
           ))}
         </svg>
 
-        {/* Dot grid — very faint, just for texture */}
+        {/* Dot grid - very faint, just for texture */}
         <div
           aria-hidden
           style={{
@@ -394,7 +394,7 @@ const Index = () => {
           }}
         />
 
-        {/* Subtle top highlight line — catches the eye */}
+        {/* Subtle top highlight line - catches the eye */}
         <div
           aria-hidden
           style={{
@@ -410,7 +410,7 @@ const Index = () => {
           }}
         />
 
-        {/* Floating particles — slow-drifting blue dots for living background */}
+        {/* Floating particles - slow-drifting blue dots for living background */}
         {[
           { left: '8%',  top: '18%', size: 4, dur: 14, delay: 0 },
           { left: '22%', top: '68%', size: 3, dur: 11, delay: 1.4 },
@@ -448,7 +448,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══════════════ TESTIMONIALS (moved up — Hormozi: attack perceived likelihood under hero) ═══════════════ */}
+      {/* ═══════════════ TESTIMONIALS (moved up - Hormozi: attack perceived likelihood under hero) ═══════════════ */}
       <section
         id="testimonials"
         style={{
@@ -735,12 +735,12 @@ const Index = () => {
                   letterSpacing: '0.04em',
                 }}
               >
-                Demo video — coming soon
+                Demo video - coming soon
               </p>
             </div>
           </div>
 
-          {/* Demystifying line — single Agent mention on the page */}
+          {/* Demystifying line - single Agent mention on the page */}
           <p
             className="reveal"
             style={{
@@ -875,7 +875,7 @@ const Index = () => {
             {
               title: 'When the meeting gets booked, the prep is already done.',
               description: 'Research, talking points, and questions worth asking. Generated the moment they say yes.',
-              image: CoffeeChatImg,
+              image: MeetingImg,
             },
           ].map((feature) => (
             <div
@@ -918,7 +918,7 @@ const Index = () => {
                 {feature.description}
               </p>
 
-              {/* Inset media preview — swap to <video> when ready */}
+              {/* Inset media preview - swap to <video> when ready */}
               <div
                 style={{
                   marginTop: 24,
@@ -946,7 +946,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══════════════ TIME SAVINGS (moved down — was above features) ═══════════════ */}
+      {/* ═══════════════ TIME SAVINGS (moved down - was above features) ═══════════════ */}
       <section id="comparison" style={{ borderTop: '1px solid #EEF2F8', background: '#ffffff' }}>
         <TimeComparison />
       </section>
@@ -1185,7 +1185,7 @@ const Index = () => {
               <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 13, fontWeight: 700, color: '#0f2545', marginBottom: 16 }}>Features</p>
               {[
                 { label: 'Find People', path: '/find' },
-                { label: 'Coffee Chat Prep', path: '/coffee-chat-prep' },
+                { label: 'Meeting Prep', path: '/meeting-prep' },
                 { label: 'Interview Prep', path: '/interview-prep' },
                 { label: 'Chrome Extension', href: CHROME_EXTENSION_URL },
                 { label: 'Job Board', path: '/job-board' },
@@ -1203,7 +1203,7 @@ const Index = () => {
               <p style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 13, fontWeight: 700, color: '#0f2545', marginBottom: 16 }}>Resources</p>
               {[
                 { label: 'Networking Guides', path: '/networking/goldman-sachs' },
-                { label: 'Coffee Chat Prep', path: '/coffee-chat/bain' },
+                { label: 'Meeting Prep', path: '/meeting/bain' },
                 { label: 'Cold Email Guides', path: '/cold-email/investment-banking' },
                 { label: 'Alumni Directory', path: '/alumni/usc' },
                 { label: 'Compare Offerloop', path: '/compare/linkedin' },

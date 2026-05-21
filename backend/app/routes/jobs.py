@@ -1,5 +1,5 @@
 """
-Jobs API routes — feed, feedback, and filters.
+Jobs API routes - feed, feedback, and filters.
 """
 from flask import Blueprint, jsonify, request
 from backend.app.extensions import require_firebase_auth, get_db
@@ -101,7 +101,7 @@ def get_feed():
     else:
         cache_stale_ok = False
 
-    # Check new_matches cache (short TTL — 5 min)
+    # Check new_matches cache (short TTL - 5 min)
     nm_cache = cache.get("new_matches_cache") or {}
     nm_cached_at = nm_cache.get("cached_at")
     nm_valid = False
@@ -213,7 +213,7 @@ def get_feed():
             "stale": True,
         })
 
-    # No resume — return unranked jobs by recency
+    # No resume - return unranked jobs by recency
     has_resume = bool(profile.get("resumeParsed") or profile.get("resumeText"))
     if not has_resume:
         new_matches, nm_from_cache = _fetch_new_matches()
@@ -240,7 +240,7 @@ def get_feed():
             "cached": False,
         })
 
-    # Has resume but no cache — return unranked jobs immediately, rank in background
+    # Has resume but no cache - return unranked jobs immediately, rank in background
     top_query = (
         db.collection("jobs")
         .order_by("posted_at", direction="DESCENDING")

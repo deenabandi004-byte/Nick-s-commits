@@ -39,7 +39,7 @@ backend/
     │   ├── runs.py                  # Free/Pro tier searches
     │   ├── enrichment.py            # Autocomplete/enrichment
     │   ├── resume.py                 # Resume parsing
-    │   ├── coffee_chat_prep.py      # Coffee chat preps
+    │   ├── meeting_prep.py      # Meeting preps
     │   ├── billing.py                # Stripe/billing
     │   └── users.py                  # User management
     │
@@ -60,14 +60,14 @@ backend/
     │   ├── __init__.py
     │   ├── contact.py                # Contact utilities
     │   ├── users.py                  # User utilities
-    │   └── coffee_chat_prep.py       # Coffee chat utilities
+    │   └── meeting_prep.py       # Meeting utilities
     │
     └── models/                      # 4 model files
         ├── __init__.py
         ├── enums.py                  # Enum definitions
         ├── contact.py                 # Contact normalization
         ├── users.py                   # User models
-        └── coffee_chat_prep.py       # Coffee chat models
+        └── meeting_prep.py       # Meeting models
 
 app.py (root)                        # Shim delegating to backend.wsgi
 ```
@@ -87,7 +87,7 @@ app.py (root)                        # Shim delegating to backend.wsgi
 
 ### Route Breakdown
 - **billing:** 9 routes
-- **coffee_chat_prep:** 6 routes
+- **meeting_prep:** 6 routes
 - **contacts:** 10 routes
 - **directory:** 2 routes
 - **emails:** 1 route

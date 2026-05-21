@@ -227,7 +227,7 @@ def enrich_linkedin_for_onboarding():
                 'success': False,
                 'enriched': False,
                 'error': (
-                    'Could not extract profile data — LinkedIn may be blocking automated access '
+                    'Could not extract profile data - LinkedIn may be blocking automated access '
                     f'for this profile (tried: {tried}).'
                 ),
             }), 200
@@ -248,7 +248,7 @@ def enrich_linkedin_for_onboarding():
             merged = merge_linkedin_into_resume_parsed(existing_parsed, linkedin_parsed)
             enrichment_update['resumeParsed'] = merged
         else:
-            # No resume — LinkedIn becomes the resumeParsed
+            # No resume - LinkedIn becomes the resumeParsed
             enrichment_update['resumeParsed'] = linkedin_parsed
 
         try:
@@ -258,7 +258,7 @@ def enrich_linkedin_for_onboarding():
             return jsonify({
                 'success': False,
                 'enriched': False,
-                'error': 'Enrichment fetched but could not save — please retry.',
+                'error': 'Enrichment fetched but could not save - please retry.',
             }), 200
 
         # Extract profile + academics for frontend auto-fill
@@ -306,7 +306,7 @@ def _handle_merge_only(user_ref):
             return jsonify({'success': False, 'merged': False, 'error': 'No LinkedIn data to merge'}), 200
 
         if not existing_parsed or not isinstance(existing_parsed, dict):
-            # No resume yet — just write LinkedIn as resumeParsed
+            # No resume yet - just write LinkedIn as resumeParsed
             user_ref.set({'resumeParsed': linkedin_parsed}, merge=True)
             return jsonify({'success': True, 'merged': True})
 
@@ -323,9 +323,9 @@ def _handle_merge_only(user_ref):
 # ── School hometown lookup ──────────────────────────────────────────────────
 #
 # The frontend's static SCHOOL_HOMETOWN_LOCATION map only covers ~30 elite-tier
-# schools. For everything else — international schools (Bocconi, LSE, HEC),
+# schools. For everything else - international schools (Bocconi, LSE, HEC),
 # regional US schools (Louisville, Ball State, Adams State, etc.), community
-# colleges — we ask an LLM where the school's primary campus is and cache
+# colleges - we ask an LLM where the school's primary campus is and cache
 # the result in Firestore so it only costs us one OpenAI call ever.
 
 @enrichment_bp.route('/school/lookup', methods=['GET'])
@@ -449,7 +449,7 @@ def _state_abbr(state: str) -> str:
 # ── School detection from free-text prompt ──────────────────────────────────
 #
 # Frontend SCHOOL_ALIASES has elite tier (USC, NYU, MIT...). universities.ts
-# has 1019 US entries — missing University of Louisville, Bocconi, LSE, IE,
+# has 1019 US entries - missing University of Louisville, Bocconi, LSE, IE,
 # HEC, IIT Bombay, and ~thousands of others.
 #
 # This endpoint asks an LLM "did the user mention a school here?", handles
@@ -564,39 +564,39 @@ def detect_school():
 # industries, roles, firms, locations, and recruiting cycle. The chips become
 # the receipt the user sees and edits below the textarea on the Profile page.
 #
-# Conservative by design — better to leave a slot empty than hallucinate.
+# Conservative by design - better to leave a slot empty than hallucinate.
 
 DIRECTION_EXTRACTION_PROMPT = """You are a career-direction interpreter for college students recruiting for internships and full-time roles. Read their narrative and produce a complete, opinionated picture of where they're aimed.
 
 YOUR JOB IS TO INTERPRET, NOT JUST EXTRACT.
 
-The student is describing their strengths, interests, and preferences in plain English. Combine stated AND implied signals. Don't just match surface keywords — synthesize.
+The student is describing their strengths, interests, and preferences in plain English. Combine stated AND implied signals. Don't just match surface keywords - synthesize.
 
 EXAMPLES OF SYNTHESIS:
-- "Good with people" + "finance experience" + "startup vibe" → FinTech, Venture Capital, Sales / BD, Tech — Startup; roles: Growth Analyst, Business Development Analyst, Product Manager, VC Analyst, Customer Success Associate.
-- "Numbers but hate spreadsheets" + "talking to people" → Sales / BD, Tech — Startup, Marketing, Consulting (Strategy); roles: Account Executive, Sales Development Representative, Strategy Analyst, Customer Success Associate, Growth Analyst.
-- "Want to ship fast" + "small team" + "AI" → Tech — Startup, AI / ML, Developer Tools; roles: Product Engineer, Forward-Deployed Engineer, Software Engineer, ML Engineer, Founding Engineer.
+- "Good with people" + "finance experience" + "startup vibe" → FinTech, Venture Capital, Sales / BD, Tech - Startup; roles: Growth Analyst, Business Development Analyst, Product Manager, VC Analyst, Customer Success Associate.
+- "Numbers but hate spreadsheets" + "talking to people" → Sales / BD, Tech - Startup, Marketing, Consulting (Strategy); roles: Account Executive, Sales Development Representative, Strategy Analyst, Customer Success Associate, Growth Analyst.
+- "Want to ship fast" + "small team" + "AI" → Tech - Startup, AI / ML, Developer Tools; roles: Product Engineer, Forward-Deployed Engineer, Software Engineer, ML Engineer, Founding Engineer.
 - "Math major, intellectually rigorous, like markets" → Quant Trading, Hedge Funds, Investment Banking; roles: Quant Researcher, Trading Analyst, Equity Research Analyst, Investment Banking Analyst.
 
 OUTPUT QUALITY BAR:
-- 3–5 industries — broad enough to give the student a real picture, specific enough to be useful. Cover plausible adjacent fits, not just one literal match.
-- 4–6 specific entry-level / new-grad role titles — concrete job titles a student would search for, e.g., "Investment Banking Analyst" not "finance role". Mix conventional and adjacent roles.
+- 3–5 industries - broad enough to give the student a real picture, specific enough to be useful. Cover plausible adjacent fits, not just one literal match.
+- 4–6 specific entry-level / new-grad role titles - concrete job titles a student would search for, e.g., "Investment Banking Analyst" not "finance role". Mix conventional and adjacent roles.
 - An empty list is acceptable ONLY if the narrative truly contains no signal in that dimension (e.g., student didn't mention any firms by name → firms: []).
-- Bias toward expanding the student's view: if they say "BD at a tech company", also consider Account Executive, Customer Success Associate, Growth Analyst — the related roles they may not have named.
+- Bias toward expanding the student's view: if they say "BD at a tech company", also consider Account Executive, Customer Success Associate, Growth Analyst - the related roles they may not have named.
 
 CRITICAL RULES:
 1. Output ONLY valid JSON. No markdown, no preamble, no explanation.
 2. Industries MUST come from this list (use exact strings):
    ["Investment Banking", "Consulting (MBB)", "Consulting (Big 4)", "Consulting (Strategy)",
-    "Tech — Big", "Tech — Startup", "Private Equity", "Venture Capital", "Hedge Funds",
+    "Tech - Big", "Tech - Startup", "Private Equity", "Venture Capital", "Hedge Funds",
     "Quant Trading", "FinTech", "Healthcare", "AI / ML", "Developer Tools", "Marketing",
     "Sales / BD", "Product Management", "Real Estate", "Energy", "Media & Entertainment",
     "Government / Policy", "Nonprofit"]
 3. Roles can be free-form but should be STANDARD job-title strings a student would see on a posting. Don't make up creative titles.
-4. Firms — only company names the user explicitly mentioned by name. Don't invent.
-5. Locations — only cities/regions the user mentioned. Don't invent.
-6. recruitingCycle — one of "summer-sa", "fulltime", "off-cycle", "exploring", or null.
-7. cycleYear — number only if user mentions a year (e.g., "2027"). Else null.
+4. Firms - only company names the user explicitly mentioned by name. Don't invent.
+5. Locations - only cities/regions the user mentioned. Don't invent.
+6. recruitingCycle - one of "summer-sa", "fulltime", "off-cycle", "exploring", or null.
+7. cycleYear - number only if user mentions a year (e.g., "2027"). Else null.
 
 OUTPUT SCHEMA:
 {
@@ -628,7 +628,7 @@ def extract_direction():
         data = request.get_json() or {}
         narrative = (data.get('narrative') or '').strip()
         if len(narrative) < 8:
-            return jsonify({'success': False, 'error': 'Narrative too short — write at least a sentence.'}), 400
+            return jsonify({'success': False, 'error': 'Narrative too short - write at least a sentence.'}), 400
 
         response = openai_client.chat.completions.create(
             model="gpt-4o",
@@ -725,7 +725,7 @@ def parse_linkedin_pdf():
         except Exception as e:
             logger.warning(f"[LinkedIn PDF] Storage upload failed (continuing): {e}")
 
-        # Build update — LinkedIn-specific fields, resumeParsed merged if a resume already exists
+        # Build update - LinkedIn-specific fields, resumeParsed merged if a resume already exists
         update = {
             'linkedinResumeParsed': parsed,
             'linkedinEnrichmentSource': 'user_pdf',
@@ -764,7 +764,7 @@ def parse_linkedin_pdf():
             logger.error(f"[LinkedIn PDF] Firestore write failed: {write_err}")
             return jsonify({
                 'success': False,
-                'error': 'Parsed your PDF but could not save — please retry.',
+                'error': 'Parsed your PDF but could not save - please retry.',
             }), 200
 
         return jsonify({

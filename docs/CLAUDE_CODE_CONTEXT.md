@@ -8,8 +8,8 @@ Quick-reference context file for Claude Code sessions working on Offerloop.
 
 | Item | Value |
 |------|-------|
-| **Backend** | `backend/` — Python Flask, port 5001 |
-| **Frontend** | `connect-grow-hire/` — React 18 + Vite, port 8080 |
+| **Backend** | `backend/` - Python Flask, port 5001 |
+| **Frontend** | `connect-grow-hire/` - React 18 + Vite, port 8080 |
 | **Database** | Firestore (NoSQL) + legacy SQLite (`contacts.db`) |
 | **Auth** | Firebase Auth → ID tokens → `@require_firebase_auth` decorator |
 | **Payments** | Stripe (live keys in `.env`) |
@@ -51,11 +51,11 @@ Quick-reference context file for Claude Code sessions working on Offerloop.
 - Speed: batch generation of 3-15 emails per search needs low latency
 - Cost: high-volume generation (every search triggers email gen)
 - Quality: sufficient for short networking emails with heavy post-processing
-- GPT-4o used for more complex tasks (interview prep, coffee chat prep)
+- GPT-4o used for more complex tasks (interview prep, meeting prep)
 
 ### Why separate Gmail OAuth (not Firebase Auth scopes)?
 - Firebase Auth uses Google sign-in for authentication only
-- Gmail API requires compose/send/readonly scopes — separate consent flow
+- Gmail API requires compose/send/readonly scopes - separate consent flow
 - Credentials stored in Firestore subcollection `users/{uid}/integrations/gmail`
 - Users can use the app without connecting Gmail (emails shown as compose links)
 
@@ -144,13 +144,13 @@ Quick-reference context file for Claude Code sessions working on Offerloop.
 | **Firm search** | No | Yes | Yes |
 | **Export** | No | Yes | Yes |
 | **Alumni searches** | 10 lifetime | Unlimited/mo | Unlimited/mo |
-| **Coffee chat preps** | 3 lifetime | 10/mo | Unlimited |
+| **Meeting preps** | 3 lifetime | 10/mo | Unlimited |
 | **Interview preps** | 2 lifetime | 5/mo | Unlimited |
 | **Priority queue** | No | No | Yes |
 
-**Credit costs:** Search = 15, Coffee Chat Prep = 15, Interview Prep = 25
+**Credit costs:** Search = 15, Meeting Prep = 15, Interview Prep = 25
 
-**Monthly reset:** Calendar month boundary. Free tier limits are LIFETIME (never reset) for alumni searches, coffee chat preps, interview preps.
+**Monthly reset:** Calendar month boundary. Free tier limits are LIFETIME (never reset) for alumni searches, meeting preps, interview preps.
 
 ---
 
@@ -166,10 +166,10 @@ Quick-reference context file for Claude Code sessions working on Offerloop.
 | `services/reply_generation.py` | TEMPORARY DEBUG print statements left in production code |
 
 ### Architecture Debt
-- **In-memory caching:** PDL cache, Hunter cache, exclusion list cache, rate limiter — all use in-memory dicts. Resets on server restart. No Redis.
-- **Legacy SQLite:** `contacts.db` at project root used by contact directory feature. Parallel to Firestore — potential data inconsistency.
+- **In-memory caching:** PDL cache, Hunter cache, exclusion list cache, rate limiter - all use in-memory dicts. Resets on server restart. No Redis.
+- **Legacy SQLite:** `contacts.db` at project root used by contact directory feature. Parallel to Firestore - potential data inconsistency.
 - **Large service files:** `pdl_client.py` (37K+ tokens), `reply_generation.py` (67KB), `job_board.py` (6000+ lines). Should be split.
-- **Feature flag:** `CREATE_GMAIL_DRAFTS = False` in config — Gmail drafts disabled globally, returns compose links instead. Toggle carefully.
+- **Feature flag:** `CREATE_GMAIL_DRAFTS = False` in config - Gmail drafts disabled globally, returns compose links instead. Toggle carefully.
 - **No frontend tests:** No test framework configured for the React app.
 - **Debug prints:** Production code has `print()` debug statements (not logging).
 
@@ -187,7 +187,7 @@ Quick-reference context file for Claude Code sessions working on Offerloop.
 ```
 Offerloop/
 ├── backend/
-│   ├── wsgi.py                          # MAIN ENTRY POINT — registers 32+ blueprints
+│   ├── wsgi.py                          # MAIN ENTRY POINT - registers 32+ blueprints
 │   ├── app/
 │   │   ├── __init__.py                  # App factory (subset of routes)
 │   │   ├── config.py                    # All config, env vars, tier configs, metro areas
@@ -201,7 +201,7 @@ Offerloop/
 │   │   │   ├── outbox.py                # Email tracking
 │   │   │   ├── resume.py                # Resume upload, score, optimize, tailor
 │   │   │   ├── interview_prep.py        # Interview prep generation
-│   │   │   ├── coffee_chat_prep.py      # Coffee chat prep
+│   │   │   ├── meeting_prep.py      # Meeting prep
 │   │   │   ├── scout.py                 # Recruiter finder
 │   │   │   ├── scout_assistant.py       # AI chat assistant
 │   │   │   ├── timeline.py              # Recruiting timeline
@@ -222,7 +222,7 @@ Offerloop/
 │   │   └── utils/
 │   │       ├── contact.py               # Email text cleaning (clean_email_text)
 │   │       ├── users.py                 # User info extraction, university shorthand
-│   │       └── coffee_chat_prep.py      # Commonality detection
+│   │       └── meeting_prep.py      # Commonality detection
 │   ├── email_templates.py               # Style/purpose presets
 │   └── requirements.txt                 # 41 Python dependencies
 ├── connect-grow-hire/
@@ -245,7 +245,7 @@ Offerloop/
 │   ├── vite.config.ts                   # Chunk splitting config
 │   └── tailwind.config.ts               # Tailwind config
 ├── firestore.rules                      # Security rules (15 subcollections)
-├── .env                                 # Backend secrets (LIVE KEYS — DO NOT COMMIT)
+├── .env                                 # Backend secrets (LIVE KEYS - DO NOT COMMIT)
 └── docs/                                # This documentation directory
 ```
 
@@ -268,7 +268,7 @@ Offerloop/
 | `users/{uid}/notifications/{id}` | Notifications (special: `outbox` doc) |
 | `users/{uid}/scoutConversations/{id}` | Scout AI chat history |
 | `users/{uid}/professionalInfo/{id}` | Professional info |
-| `users/{uid}/coffee-chat-preps/{id}` | Coffee chat prep notes |
+| `users/{uid}/coffee-chat-preps/{id}` | Meeting prep notes |
 | `users/{uid}/interview-preps/{id}` | Interview prep notes |
 | `users/{uid}/resume_library/{id}` | Resume library |
 | `users/{uid}/resume_scores/{id}` | ATS score results |

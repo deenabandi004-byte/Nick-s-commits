@@ -1,1 +1,0 @@
-import{j as t,Y as a}from"./vendor-react-4vhOoxV2.js";import{u as r,L as n}from"./index-nGYglU4-.js";function u(){const{user:e,isLoading:s}=r();if(s)return t.jsx("div",{className:"min-h-screen flex items-center justify-center",children:t.jsx(n,{})});const i=(e==null?void 0:e.tier)==="elite";return t.jsx(a,{to:i?"/agent":"/find",replace:!0})}export{u as default};

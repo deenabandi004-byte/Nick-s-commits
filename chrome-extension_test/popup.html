@@ -81,38 +81,38 @@
               </svg>
               <span>Find Email & Draft</span>
             </button>
-            <button id="coffeeChatBtn" class="btn btn-outline btn-full">
-              <span>☕</span> Coffee Chat Prep
+            <button id="meetingBtn" class="btn btn-outline btn-full">
+              <span>☕</span> Meeting Prep
             </button>
-            <p id="coffeeChatHint" class="coffee-chat-hint">Uses 15 credits • PDF saved to Library</p>
+            <p id="meetingHint" class="meeting-hint">Uses 15 credits • PDF saved to Library</p>
           </div>
 
-          <!-- Coffee Chat Loading State -->
-          <div id="coffeeChatLoading" class="coffee-chat-loading hidden">
+          <!-- Meeting Loading State -->
+          <div id="meetingLoading" class="meeting-loading hidden">
             <div class="spinner"></div>
-            <p id="coffeeChatLoadingText">Generating Coffee Chat Prep...</p>
+            <p id="meetingLoadingText">Generating Meeting Prep...</p>
           </div>
 
-          <!-- Coffee Chat Results (shown after completion) -->
-          <div class="coffee-chat-results" id="coffeeChatResults" style="display: none;">
+          <!-- Meeting Results (shown after completion) -->
+          <div class="meeting-results" id="meetingResults" style="display: none;">
             <div class="result-card">
               <div class="result-header">
-                <span class="result-name">☕ Coffee Chat Prep Ready</span>
+                <span class="result-name">☕ Meeting Prep Ready</span>
                 <span class="status-badge">Done</span>
               </div>
-              <div class="result-contact" id="coffeeChatContact">
+              <div class="result-contact" id="meetingContact">
                 <!-- Contact name populated by JS -->
               </div>
               <div class="result-links">
-                <p><a href="#" id="coffeeChatDownloadLink" target="_blank">📥 Download PDF</a></p>
-                <p>See all preps in <a href="https://www.offerloop.ai/coffee-chat-prep" target="_blank">Coffee Chat Library</a></p>
+                <p><a href="#" id="meetingDownloadLink" target="_blank">📥 Download PDF</a></p>
+                <p>See all preps in <a href="https://www.offerloop.ai/meeting-prep" target="_blank">Meeting Library</a></p>
               </div>
             </div>
           </div>
 
-          <!-- Coffee Chat Error -->
-          <div class="coffee-chat-error" id="coffeeChatError" style="display: none;">
-            <p class="error-message" id="coffeeChatErrorMessage"></p>
+          <!-- Meeting Error -->
+          <div class="meeting-error" id="meetingError" style="display: none;">
+            <p class="error-message" id="meetingErrorMessage"></p>
           </div>
 
           <!-- Results Section -->

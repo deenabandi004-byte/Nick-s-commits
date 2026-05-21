@@ -114,7 +114,7 @@ def _format_salary_display(sal_min, sal_max, period, extracted: bool) -> str | N
         if sal_max is not None:
             parts.append(f"${int(sal_max)}")
         return f"{prefix}{('–').join(parts)}/hr" if parts else None
-    # WEEK, MONTH, YEAR — annualize then display as $Xk/yr
+    # WEEK, MONTH, YEAR - annualize then display as $Xk/yr
     multiplier = _ANNUAL_MULTIPLIER.get(period, 1)
     parts = []
     if sal_min is not None:
@@ -179,7 +179,7 @@ def _normalize_board_job(raw: dict) -> dict | None:
     except (ValueError, AttributeError):
         posted_at = now
 
-    # Salary — use structured fields if provided, else try AI extraction
+    # Salary - use structured fields if provided, else try AI extraction
     sal_min = raw.get("salary_min")
     sal_max = raw.get("salary_max")
     sal_period = raw.get("salary_period")
@@ -286,7 +286,7 @@ def normalize_job(raw: dict) -> dict | None:
     return _normalize_jsearch_job(raw)
 
 
-# Countries to exclude — jobs with these in location are filtered out even if remote,
+# Countries to exclude - jobs with these in location are filtered out even if remote,
 # since "Remote, Singapore" means the job is based internationally.
 _EXCLUDED_COUNTRIES = {
     "india", "canada", "united kingdom", "uk", "australia", "germany", "france",

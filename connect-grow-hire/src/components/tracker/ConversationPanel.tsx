@@ -176,12 +176,12 @@ export function ConversationPanel({
         {contact.pipelineStage === "meeting_scheduled" && autoPrep && (
           <div className="bg-green-50 border border-green-200/60 rounded-[3px] p-3">
             <p className="text-[10px] font-semibold text-green-600 uppercase tracking-wide mb-1">
-              Coffee Chat Prep
+              Meeting Prep
             </p>
             {autoPrep.status === "generating" ? (
               <div className="flex items-center gap-2 text-sm text-green-700">
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Preparing your coffee chat brief...
+                Preparing your meeting brief...
               </div>
             ) : autoPrep.status === "ready" && autoPrep.prepId ? (
               <button
@@ -189,7 +189,7 @@ export function ConversationPanel({
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-green-700 hover:text-green-800"
               >
                 <FileText className="w-3.5 h-3.5" />
-                View coffee chat prep
+                View meeting prep
               </button>
             ) : null}
           </div>
@@ -201,7 +201,7 @@ export function ConversationPanel({
             <span className="font-medium">Resolution:</span>{" "}
             {contact.resolution.replace(/_/g, " ")}
             {contact.resolutionDetails && (
-              <span className="text-gray-400 ml-1">— {contact.resolutionDetails}</span>
+              <span className="text-gray-400 ml-1"> - {contact.resolutionDetails}</span>
             )}
           </div>
         )}

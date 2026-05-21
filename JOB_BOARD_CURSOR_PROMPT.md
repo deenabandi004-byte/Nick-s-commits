@@ -2188,7 +2188,7 @@ const navigationItems = [
   { title: "Contact Search", url: "/contact-search", icon: Search },
   { title: "Firm Search", url: "/firm-search", icon: Building2 },
   { title: "Job Board", url: "/job-board", icon: Newspaper },  // ADD THIS
-  { title: "Coffee Chat Prep", url: "/coffee-chat-prep", icon: Coffee },
+  { title: "Meeting Prep", url: "/meeting-prep", icon: Coffee },
   { title: "Interview Prep", url: "/interview-prep", icon: Briefcase },
   { title: "Pricing", url: "/pricing", icon: CreditCard },
 ];

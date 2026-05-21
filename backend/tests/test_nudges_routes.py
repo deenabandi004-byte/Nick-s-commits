@@ -2,10 +2,10 @@
 Tests for nudge API routes (nudges.py).
 
 Covers:
-  GET  /api/nudges              — fetch nudges with filters
-  PATCH /api/nudges/<id>        — update nudge status
-  POST /api/nudges/<id>/draft   — create Gmail draft from nudge
-  PUT  /api/nudge-preferences   — update nudge preferences
+  GET  /api/nudges - fetch nudges with filters
+  PATCH /api/nudges/<id> - update nudge status
+  POST /api/nudges/<id>/draft - create Gmail draft from nudge
+  PUT  /api/nudge-preferences - update nudge preferences
 """
 import pytest
 from unittest.mock import patch, MagicMock, PropertyMock

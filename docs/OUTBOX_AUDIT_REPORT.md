@@ -1,4 +1,4 @@
-# Outbox / Email Outreach — Full Technical & Product Audit
+# Outbox / Email Outreach - Full Technical & Product Audit
 
 **Date:** 2026-03-04
 **Scope:** All code related to the Outbox (a.k.a. "Track Email Outreach") feature
@@ -9,19 +9,19 @@
 
 | File | Role |
 |------|------|
-| `backend/app/routes/outbox.py` (1098 lines) | Flask blueprint — list threads, sync, regenerate reply, update stage, batch sync, stats |
+| `backend/app/routes/outbox.py` (1098 lines) | Flask blueprint - list threads, sync, regenerate reply, update stage, batch sync, stats |
 | `backend/app/services/background_sync.py` (91 lines) | Find stale threads, trigger sync for each |
 | `backend/app/services/gmail_client.py` | Gmail API helpers: `sync_thread_message`, `get_latest_message_from_thread`, `extract_message_body` |
-| `backend/app/services/reply_generation.py` | `generate_reply_to_message` — AI reply generation via OpenAI |
-| `backend/app/routes/gmail_webhook.py` | Gmail push notification handler — detects sent emails and incoming replies |
-| `backend/app/routes/emails.py` | `generate-and-draft` — creates Gmail drafts and saves contact docs (entry point into outbox) |
-| `connect-grow-hire/src/pages/Outbox.tsx` (1422 lines) | Single-file page component — tabs, thread list, detail panel, batch draft, template picker |
+| `backend/app/services/reply_generation.py` | `generate_reply_to_message` - AI reply generation via OpenAI |
+| `backend/app/routes/gmail_webhook.py` | Gmail push notification handler - detects sent emails and incoming replies |
+| `backend/app/routes/emails.py` | `generate-and-draft` - creates Gmail drafts and saves contact docs (entry point into outbox) |
+| `connect-grow-hire/src/pages/Outbox.tsx` (1422 lines) | Single-file page component - tabs, thread list, detail panel, batch draft, template picker |
 | `connect-grow-hire/src/services/api.ts` | `OutboxThread` type, `OutboxStats` type, 7 API methods |
 | `connect-grow-hire/src/hooks/useNotifications.ts` (67 lines) | Real-time Firestore listener for reply notifications |
 | `connect-grow-hire/src/components/Dashboard.tsx` | References outbox threads for "emails ready" quick win count |
 | `connect-grow-hire/src/components/AppSidebar.tsx` | Sidebar nav link to `/outbox` |
 | `connect-grow-hire/src/App.tsx` | Route: `/outbox` -> `<Outbox />` |
-| `outbox-rework-prompt.md` (669 lines) | Unrealized redesign spec — conversation tracking, follow-ups, resolution detection |
+| `outbox-rework-prompt.md` (669 lines) | Unrealized redesign spec - conversation tracking, follow-ups, resolution detection |
 
 ---
 
@@ -54,7 +54,7 @@ The Outbox is a **draft-and-track pipeline** for cold outreach emails. Here's wh
 
 ### Firestore Collection: `users/{uid}/contacts/{contactId}`
 
-Each contact document serves double duty — it's both a **contact record** and an **outbox thread state machine**. The outbox-relevant fields are:
+Each contact document serves double duty - it's both a **contact record** and an **outbox thread state machine**. The outbox-relevant fields are:
 
 | Field | Type | Set By | Purpose |
 |-------|------|--------|---------|
@@ -72,7 +72,7 @@ Each contact document serves double duty — it's both a **contact record** and 
 | `lastMessageSnippet` | string | outbox.py, webhook | Preview of latest message |
 | `lastActivityAt` | string (ISO) | outbox.py, webhook | Last activity timestamp |
 | `lastSyncAt` | string (ISO) | outbox.py | Last Gmail sync timestamp |
-| `lastSyncError` | object | outbox.py | `{code, message, at}` — last sync error |
+| `lastSyncError` | object | outbox.py | `{code, message, at}` - last sync error |
 | `suggestedReply` | string | outbox.py regenerate | AI-generated reply text |
 | `replyType` | string | outbox.py regenerate | Type of reply (positive, decline, etc.) |
 | `draftCreatedAt` | string (ISO) | outbox.py, emails.py | When draft was created |
@@ -174,9 +174,9 @@ Each step writes to Firestore independently. If two requests hit sync simultaneo
 
 The pipeline stage is derived/defaulted in three separate places with subtly different logic:
 
-1. `_build_outbox_thread()` at line 267-275 — derives from `hasUnreadReply`, `hasDraft`, `draftStillExists`
-2. `outbox_stats()` at line 1023-1037 — same logic but slightly different conditions
-3. `Outbox.tsx:getDisplayStage()` at line 63-71 — derives from legacy `status` field
+1. `_build_outbox_thread()` at line 267-275 - derives from `hasUnreadReply`, `hasDraft`, `draftStillExists`
+2. `outbox_stats()` at line 1023-1037 - same logic but slightly different conditions
+3. `Outbox.tsx:getDisplayStage()` at line 63-71 - derives from legacy `status` field
 
 These can disagree, causing the stats badges to show different counts than the actual filtered list.
 
@@ -245,8 +245,8 @@ Eight tabs for what is typically 5-30 threads creates cognitive overload. Most t
 The right panel shows:
 1. Contact name, title, company, email
 2. Pipeline stage dropdown
-3. "Latest Message" — a single snippet
-4. "Suggested Reply" — a read-only textarea (only populated after "Regenerate")
+3. "Latest Message" - a single snippet
+4. "Suggested Reply" - a read-only textarea (only populated after "Regenerate")
 5. Three buttons: Open Gmail Draft, Copy Reply, Regenerate
 
 There's no conversation timeline, no message history, no context about the relationship. The user sees one snippet and has to go to Gmail to understand what happened.
@@ -261,7 +261,7 @@ The "Regenerate" button only works when the contact has replied, but it's always
 
 ### 4.6 No Archive or Close Mechanism
 
-There's no way to remove a thread from the active list. Once a contact is in the outbox, they stay forever. The only way to "close" is to manually change the pipeline stage to "Closed" or "No Response" — but those still show up in tabs.
+There's no way to remove a thread from the active list. Once a contact is in the outbox, they stay forever. The only way to "close" is to manually change the pipeline stage to "Closed" or "No Response" - but those still show up in tabs.
 
 ### 4.7 Batch Draft UX is Disconnected
 
@@ -284,8 +284,8 @@ These journey stages are defined as constants but there is no visual journey/ste
 
 ### 5.1 Reframe Around PEOPLE, Not Emails
 
-**Current:** "Email Outreach — Track your pipeline from draft to connection"
-**Proposed:** "Network Tracker — Stay on top of every conversation"
+**Current:** "Email Outreach - Track your pipeline from draft to connection"
+**Proposed:** "Network Tracker - Stay on top of every conversation"
 
 The fundamental unit should be a **person**, not an email thread. Each card should answer: "What's happening with this person and what should I do next?"
 
@@ -305,7 +305,7 @@ Each bucket shows a count badge. "Needs Attention" gets a red indicator when non
 
 Each card in the list should show:
 - Name, title, company
-- **One-line status:** "Replied 2h ago — draft ready" or "Sent 5 days ago — follow-up in 2 days"
+- **One-line status:** "Replied 2h ago - draft ready" or "Sent 5 days ago - follow-up in 2 days"
 - **Primary action button:** "Review Draft" or "Send Follow-up" or "View in Gmail"
 
 No pipeline stage dropdown in the list. No multi-select. Keep it scannable.
@@ -314,9 +314,9 @@ No pipeline stage dropdown in the list. No multi-select. Keep it scannable.
 
 Replace the current detail panel (snippet + textarea) with:
 - **Contact header** (name, title, company, email, LinkedIn)
-- **AI Summary** — 1-2 sentence summary of the relationship ("You reached out about PM roles. They asked about your background.")
-- **Message timeline** — chronological list of messages with sender, date, and snippet
-- **Action bar** — context-aware: "Review Draft in Gmail", "Mark as Won", "Archive", "Snooze"
+- **AI Summary** - 1-2 sentence summary of the relationship ("You reached out about PM roles. They asked about your background.")
+- **Message timeline** - chronological list of messages with sender, date, and snippet
+- **Action bar** - context-aware: "Review Draft in Gmail", "Mark as Won", "Archive", "Snooze"
 
 ### 5.5 Built-in Follow-Up System
 
@@ -329,11 +329,11 @@ Implement the follow-up system described in `outbox-rework-prompt.md`:
 ### 5.6 Resolution Tracking
 
 Add explicit outcomes:
-- **Meeting Booked** — celebration state, shows in "Wins" section
-- **Soft No** — "not right now", auto-archive with snooze
-- **Hard No** — "not interested", archive permanently
-- **Ghosted** — no response after 3 follow-ups
-- **Completed** — conversation reached natural end
+- **Meeting Booked** - celebration state, shows in "Wins" section
+- **Soft No** - "not right now", auto-archive with snooze
+- **Hard No** - "not interested", archive permanently
+- **Ghosted** - no response after 3 follow-ups
+- **Completed** - conversation reached natural end
 
 ### 5.7 Separate Thread State from Contact Identity
 
@@ -359,7 +359,7 @@ Keep a manual "Refresh" button for edge cases, but don't auto-sync on every inte
 
 ## 6. File-by-File Refactor Plan
 
-### `backend/app/routes/outbox.py` — REWRITE
+### `backend/app/routes/outbox.py` - REWRITE
 
 **Current:** 1098 lines, handles everything (list, sync, regenerate, stage update, batch sync, stats)
 **Problems:** Full collection scan, sync-on-read, in-memory caching, duplicate logic, 195-line sync function
@@ -367,7 +367,7 @@ Keep a manual "Refresh" button for edge cases, but don't auto-sync on every inte
 **New version should:**
 - Split into route file (thin) + service file (`outbox_service.py`)
 - Use Firestore queries with indexes instead of full scans
-- Remove `_perform_sync` from the list endpoint — let webhooks + background sync handle it
+- Remove `_perform_sync` from the list endpoint - let webhooks + background sync handle it
 - Remove `_build_outbox_thread` duplication (consolidate field normalization)
 - Remove legacy snake_case field fallbacks (do a one-time migration instead)
 - Keep: `list_threads`, `update_stage`, `stats` endpoints
@@ -375,12 +375,12 @@ Keep a manual "Refresh" button for edge cases, but don't auto-sync on every inte
 - Move: `regenerate` to reply_generation service
 - Move: `_perform_sync` to `gmail_sync_service.py`
 
-### `backend/app/services/background_sync.py` — MODIFY
+### `backend/app/services/background_sync.py` - MODIFY
 
 **Current:** Works fine but only triggered by frontend batch-sync call
 **Change:** Add a scheduled trigger (Cloud Function or cron). Remove the `time.sleep(1)` between syncs (use async or batch). Add a `sync_one_thread` method that the webhook can also call.
 
-### `backend/app/routes/gmail_webhook.py` — KEEP AS-IS (minor fixes)
+### `backend/app/routes/gmail_webhook.py` - KEEP AS-IS (minor fixes)
 
 **Current:** Correctly detects sent emails and incoming replies
 **Fixes needed:**
@@ -388,22 +388,22 @@ Keep a manual "Refresh" button for edge cases, but don't auto-sync on every inte
 - Add follow-up count tracking on reply detection
 - Add resolution detection on reply (call AI to detect "let's schedule" / "not interested")
 
-### `backend/app/routes/emails.py` — KEEP AS-IS
+### `backend/app/routes/emails.py` - KEEP AS-IS
 
 **Current:** `generate-and-draft` works correctly as the entry point into the outbox
 **No changes needed** for the outbox redesign. This is the drafting flow, not the tracking flow.
 
-### `connect-grow-hire/src/pages/Outbox.tsx` — REWRITE
+### `connect-grow-hire/src/pages/Outbox.tsx` - REWRITE
 
 **Current:** 1422 lines, single monolithic component with inline styles
 **Problems:** 8 tabs, no follow-up UI, underwhelming detail panel, batch draft complexity, 500+ lines of inline CSS
 
 **New version should be split into:**
-- `pages/NetworkTracker.tsx` — page shell, data fetching, routing
-- `components/tracker/TrackerBuckets.tsx` — three-bucket layout (Needs Attention / Waiting / Done)
-- `components/tracker/ContactCard.tsx` — single contact card with status + next action
-- `components/tracker/ConversationPanel.tsx` — detail panel with timeline, summary, actions
-- `components/tracker/ActionBar.tsx` — context-aware action buttons
+- `pages/NetworkTracker.tsx` - page shell, data fetching, routing
+- `components/tracker/TrackerBuckets.tsx` - three-bucket layout (Needs Attention / Waiting / Done)
+- `components/tracker/ContactCard.tsx` - single contact card with status + next action
+- `components/tracker/ConversationPanel.tsx` - detail panel with timeline, summary, actions
+- `components/tracker/ActionBar.tsx` - context-aware action buttons
 
 **Remove from current:**
 - `handleCopy` and copy button
@@ -424,7 +424,7 @@ Keep a manual "Refresh" button for edge cases, but don't auto-sync on every inte
 - Loading/error states
 - TanStack Query patterns
 
-### `connect-grow-hire/src/services/api.ts` — MODIFY
+### `connect-grow-hire/src/services/api.ts` - MODIFY
 
 **Changes:**
 - Update `OutboxThread` interface to match new data model (add `followUpCount`, `resolution`, `lastMessageFrom`, `conversationSummary`)
@@ -433,16 +433,16 @@ Keep a manual "Refresh" button for edge cases, but don't auto-sync on every inte
 - Remove: `regenerateOutboxReply` (replaced by follow-up draft generation)
 - Rename type from `OutboxThread` to `TrackerContact` or similar
 
-### `connect-grow-hire/src/hooks/useNotifications.ts` — KEEP AS-IS
+### `connect-grow-hire/src/hooks/useNotifications.ts` - KEEP AS-IS
 
 **Current:** Clean, simple, works well. Real-time Firestore listener for reply notifications.
 **No changes needed.**
 
-### `connect-grow-hire/src/components/Dashboard.tsx` — MODIFY (minor)
+### `connect-grow-hire/src/components/Dashboard.tsx` - MODIFY (minor)
 
 **Changes:** Update outbox thread references to use new tracker data model. Update the "emails ready" quick win to use the new "Needs Attention" bucket count instead.
 
-### `outbox-rework-prompt.md` — DELETE after implementation
+### `outbox-rework-prompt.md` - DELETE after implementation
 
 **Current:** 669-line redesign spec that describes the intended end state
 **Status:** Good spec, but none of it is implemented. It should be used as the design doc for the rewrite, then deleted once the work is done.
@@ -488,6 +488,6 @@ The Outbox feature is functional but architecturally strained. It suffers from:
 - **Data model:** Contact documents are overloaded with transient outbox state; legacy field duplication doubles storage
 - **UX:** Email-centric pipeline model (8 tabs) instead of people-centric tracker; no follow-ups; underwhelming detail panel
 - **Code quality:** 1098-line backend route + 1422-line frontend component; duplicate derivation logic in 3 places; in-memory caching that breaks with multiple workers
-- **Unrealized potential:** A detailed redesign spec (`outbox-rework-prompt.md`) exists with conversation tracking, auto follow-ups, and resolution detection — but none of it is built
+- **Unrealized potential:** A detailed redesign spec (`outbox-rework-prompt.md`) exists with conversation tracking, auto follow-ups, and resolution detection - but none of it is built
 
 The core recommendation is to reframe the feature around **people and next actions** rather than email states, implement the follow-up system, and fix the sync architecture to be event-driven rather than poll-on-every-click.

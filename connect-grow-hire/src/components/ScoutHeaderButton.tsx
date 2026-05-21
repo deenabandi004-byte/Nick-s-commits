@@ -1,4 +1,5 @@
 import React from "react";
+import { useLocation } from "react-router-dom";
 import { useScout } from "@/contexts/ScoutContext";
 import ScoutIconImage from "@/assets/Scout_icon.png";
 
@@ -7,54 +8,46 @@ interface ScoutHeaderButtonProps {
 }
 
 /**
- * ScoutHeaderButton - Clear call-to-action for asking questions and getting help
+ * ScoutHeaderButton - Floating blue call-to-action that opens the Scout panel.
+ *
+ * Appearance:
+ * - A rounded blue pill in the top-right of the header, with a colored shadow
+ *   so it reads as "floating" above the page.
+ * - On the dashboard (home) it gently pulses with an expanding ring to invite
+ *   first use. On every other page it is a consistent, static blue button.
  */
 const ScoutHeaderButton: React.FC<ScoutHeaderButtonProps> = () => {
-  const { openPanel, isPanelOpen } = useScout();
+  const { openPanel, closePanel, isPanelOpen } = useScout();
+  const { pathname } = useLocation();
+  const isHome = pathname === "/dashboard";
+  const shouldPulse = isHome && !isPanelOpen;
 
   return (
-    <div className="flex items-end">
-      <button
-        onClick={openPanel}
-        aria-label={isPanelOpen ? "Close Scout" : "Ask Scout questions to navigate Offerloop"}
-        className="inline-flex items-center gap-2 rounded-[3px] px-3 py-1.5 text-sm font-medium transition-all duration-150 cursor-pointer focus:outline-none"
-        style={{
-          background: isPanelOpen ? 'rgba(139,46,31,0.06)' : 'transparent',
-          border: `1px solid ${isPanelOpen ? 'var(--accent, #8B2E1F)' : 'var(--line, #E8E8E8)'}`,
-          color: 'var(--ink, #1A1D23)',
-          opacity: isPanelOpen ? 1 : 0.8,
-        }}
-        onMouseEnter={e => {
-          if (!isPanelOpen) {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--accent, #8B2E1F)';
-            (e.currentTarget as HTMLButtonElement).style.opacity = '1';
-          }
-        }}
-        onMouseLeave={e => {
-          if (!isPanelOpen) {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--line, #E8E8E8)';
-            (e.currentTarget as HTMLButtonElement).style.opacity = '0.8';
-          }
-        }}
-      >
-        {/* Scout Icon — oxblood tinted */}
-        <div className="relative flex items-center justify-center h-5 w-5 flex-shrink-0">
-          <img
-            src={ScoutIconImage}
-            alt=""
-            className="w-4 h-4 object-contain"
-            style={{
-              filter: 'brightness(0) saturate(100%) invert(22%) sepia(60%) saturate(900%) hue-rotate(340deg) brightness(85%) contrast(95%)',
-            }}
-          />
-        </div>
+    <button
+      onClick={isPanelOpen ? closePanel : openPanel}
+      aria-label={isPanelOpen ? "Close Scout" : "Ask Scout for help navigating Offerloop"}
+      className={`group inline-flex items-center gap-2.5 rounded-full pl-2 pr-7 py-2 text-sm font-semibold text-white
+        bg-[#3B82F6] hover:bg-[#2563EB] active:scale-[0.97]
+        transition-[background-color,transform] duration-150 cursor-pointer
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6]/40 focus-visible:ring-offset-2
+        ${shouldPulse ? "scout-btn-pulse" : "shadow-[0_4px_14px_rgba(59,130,246,0.40)]"}`}
+    >
+      {/* Scout icon inside a bright circle for a polished, floating look */}
+      <span className="flex items-center justify-center h-8 w-8 rounded-full bg-white/30 flex-shrink-0">
+        <img
+          src={ScoutIconImage}
+          alt=""
+          className="w-5 h-5 object-contain"
+          style={{
+            filter: "brightness(0) invert(1) drop-shadow(0 1px 1px rgba(0,0,0,0.25))",
+          }}
+        />
+      </span>
 
-        {/* Button label */}
-        <span className="whitespace-nowrap hidden sm:inline">
-          Ask Scout
-        </span>
-      </button>
-    </div>
+      <span className="whitespace-nowrap hidden sm:inline tracking-wide">
+        {isPanelOpen ? "Close Scout" : "Ask Scout"}
+      </span>
+    </button>
   );
 };
 

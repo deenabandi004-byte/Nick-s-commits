@@ -1,10 +1,10 @@
-# Onboarding Fix — Changes by Phase
+# Onboarding Fix - Changes by Phase
 
 Report of all code and behavior changes made across Phases 1–4.
 
 ---
 
-## PHASE 1 — Backend: Set needsOnboarding for All New Users
+## PHASE 1 - Backend: Set needsOnboarding for All New Users
 
 **Goal:** Ensure every new user (web, extension, or future entry points) gets `needsOnboarding: true`. Fix extension-created users never seeing onboarding.
 
@@ -33,13 +33,13 @@ Report of all code and behavior changes made across Phases 1–4.
 | Change | Description |
 |--------|-------------|
 | **Legacy users in loadUserData()** | Comment added: *Legacy users (doc exists but no needsOnboarding field) are treated as needsOnboarding: false*. Behavior unchanged: `needsOnboarding: d.needsOnboarding ?? false` already implements this. |
-| **signIn() — avoid race** | For new users: after `await setDoc(ref, newUserPayload)`, added an immediate `setUser({ ...newUserPayload, needsOnboarding: true })` so the routing guard has the flag before `onIdTokenChanged`/`loadUserData` run. New-user payload is built once and used for both Firestore and state. |
+| **signIn() - avoid race** | For new users: after `await setDoc(ref, newUserPayload)`, added an immediate `setUser({ ...newUserPayload, needsOnboarding: true })` so the routing guard has the flag before `onIdTokenChanged`/`loadUserData` run. New-user payload is built once and used for both Firestore and state. |
 
 **Summary:** Web and extension creation paths both set `needsOnboarding: true` for new users; existing users and legacy docs (no field) remain treated as onboarded.
 
 ---
 
-## PHASE 2 — Tighten the Web Routing Guard
+## PHASE 2 - Tighten the Web Routing Guard
 
 **Goal:** Make onboarding routing bulletproof: never render protected content or redirect logged-in users before full user data (including `needsOnboarding`) is loaded.
 
@@ -62,7 +62,7 @@ No change to guard order; only clarity and consistent loading UX.
 
 ---
 
-## PHASE 3 — Chrome Extension Onboarding Gate
+## PHASE 3 - Chrome Extension Onboarding Gate
 
 **Goal:** Extension users who have not completed onboarding see a gate and are sent to the web app; no feature use until onboarding is done.
 
@@ -109,7 +109,7 @@ No change to guard order; only clarity and consistent loading UX.
 
 ---
 
-## PHASE 4 — Cleanup & Edge Case Handling
+## PHASE 4 - Cleanup & Edge Case Handling
 
 **Goal:** Handle edge cases and align messaging; verify flows.
 
@@ -117,13 +117,13 @@ No change to guard order; only clarity and consistent loading UX.
 
 | Change | Description |
 |--------|-------------|
-| **ProtectedRoute — direct /onboarding** | After the "user needs onboarding" block, added: if path is `/onboarding` and user does **not** need onboarding → `<Navigate to="/contact-search" replace />`. So logged-in users who already completed onboarding are redirected away from `/onboarding` instead of seeing the flow again. Comment: *User already onboarded but hit /onboarding directly → redirect to app*. Step numbering updated (new step 5, then 6 for "authenticated and onboarded"). |
+| **ProtectedRoute - direct /onboarding** | After the "user needs onboarding" block, added: if path is `/onboarding` and user does **not** need onboarding → `<Navigate to="/contact-search" replace />`. So logged-in users who already completed onboarding are redirected away from `/onboarding` instead of seeing the flow again. Comment: *User already onboarded but hit /onboarding directly → redirect to app*. Step numbering updated (new step 5, then 6 for "authenticated and onboarded"). |
 
 ### File 2: `connect-grow-hire/src/pages/OnboardingFlow.tsx`
 
 | Change | Description |
 |--------|-------------|
-| **completeOnboarding() failure** | In `handleLocationData` catch block: toast message changed to *"Failed to save profile. Please try again."* Comment updated: *Don't navigate if onboarding failed — user stays on last step and can retry.* (Try/catch and `setIsSubmitting(false)` were already in place.) |
+| **completeOnboarding() failure** | In `handleLocationData` catch block: toast message changed to *"Failed to save profile. Please try again."* Comment updated: *Don't navigate if onboarding failed - user stays on last step and can retry.* (Try/catch and `setIsSubmitting(false)` were already in place.) |
 
 **Confirmed (no code change):**
 

@@ -240,7 +240,7 @@ export const firebaseApi = {
 
     return {
       firstName: (pi.firstName as string) || (d.firstName as string) || (profile.firstName as string) || (d.name as string) || '',
-      // Prefer the most recently parsed resume value first — that's the freshest source of truth.
+      // Prefer the most recently parsed resume value first - that's the freshest source of truth.
       // Then resumeEducation (parser_v2 list shape), then top-level overrides, then legacy
       // onboarding paths. This prevents stale "Alabama State University" defaults from old
       // onboarding test entries shadowing the real resume-parsed value.
@@ -539,7 +539,7 @@ export const firebaseApi = {
   async createGoal(
     uid: string,
     goal: {
-      type: 'contacts' | 'firms' | 'coffeeChats' | 'outreach';
+      type: 'contacts' | 'firms' | 'meetings' | 'outreach';
       target: number;
       period: 'month' | 'week' | 'year';
       startDate: Timestamp;

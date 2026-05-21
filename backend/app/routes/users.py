@@ -261,7 +261,7 @@ def update_user_preferences():
             
             print(f"[JobBoard][INVALIDATE] user={user_id[:8]}... reason=intent_changed changed_fields={changed_fields}")
         else:
-            print(f"[IntentUpdate] intent_unchanged — no recompute triggered")
+            print(f"[IntentUpdate] intent_unchanged - no recompute triggered")
         
         return jsonify({
             "success": True,

@@ -1,5 +1,5 @@
 /**
- * ProfilePreview — visual mockup of the proposed Profile page.
+ * ProfilePreview - visual mockup of the proposed Profile page.
  * Lives at /dev/profile-preview. Static design preview, no live data.
  *
  * Visual language matches the marketing site: soft-blue field, serif section
@@ -30,7 +30,7 @@ import {
   ChevronRight,
   Plus,
   X,
-  Sparkles,
+  Star,
   Paperclip,
   Pencil,
   ArrowRight,
@@ -323,7 +323,7 @@ function asStringArray(v: any): string[] {
 /** Splits "Business Administration - STEM Designated" → { primary: "Business Administration", modifier: "STEM Designated" } */
 export function cleanMajor(s: string): { primary: string; modifier: string } {
   if (!s) return { primary: '', modifier: '' };
-  const m = s.match(/^(.+?)\s+[-–—]\s*(.+?)\)?$/) || s.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+  const m = s.match(/^(.+?)\s+[-– - ]\s*(.+?)\)?$/) || s.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
   if (m) return { primary: m[1].trim(), modifier: m[2].trim() };
   return { primary: s.trim(), modifier: '' };
 }
@@ -332,7 +332,7 @@ function mapToProfile(uid: string, d: Record<string, any>, authPhotoUrl: string 
   const fullName =
     d.fullName || d.name || [d.firstName, d.lastName].filter(Boolean).join(' ') || '';
 
-  // Resume-derived education (rich) — prefer parsed values over legacy top-level fields,
+  // Resume-derived education (rich) - prefer parsed values over legacy top-level fields,
   // since the most recent resume upload is the freshest source of truth.
   const rp = d.resumeParsed || {};
   const edu = pickEducation(rp);
@@ -351,7 +351,7 @@ function mapToProfile(uid: string, d: Record<string, any>, authPhotoUrl: string 
 
   const experiences = mapExperiences(rp);
 
-  // LinkedIn — backend writes:
+  // LinkedIn - backend writes:
   //   linkedinResumeParsed   ← LLM-structured (resume-parser shape)
   //   linkedinEnrichmentData ← raw PDL/Bright Data response
   //   linkedinEnrichmentSource ← "pdl" | "bright_data" | "jina"
@@ -367,7 +367,7 @@ function mapToProfile(uid: string, d: Record<string, any>, authPhotoUrl: string 
       ? mapExperiences(linkedinParsed)
       : mapExperiences(linkedinRaw);
 
-  // Education: build a list — LLM education is sometimes single-object
+  // Education: build a list - LLM education is sometimes single-object
   const liEduRaw = linkedinParsed.education;
   const liEduList: Array<{ school: string; degree?: string; major?: string; dates?: string }> = (
     Array.isArray(liEduRaw)
@@ -619,7 +619,7 @@ const Chip: React.FC<ChipProps> = ({ children, variant = 'user', removable, onCl
         ...styles[variant],
       }}
     >
-      {variant === 'suggested' && <Sparkles style={{ width: 9, height: 9 }} />}
+      {variant === 'suggested' && <Star style={{ width: 9, height: 9 }} />}
       {children}
       {removable && <X style={{ width: 10, height: 10, opacity: 0.28 }} />}
     </button>
@@ -1034,7 +1034,7 @@ function LinkedInConnect() {
       } else {
         toast({
           title: 'LinkedIn URL saved',
-          description: errorMsg || 'LinkedIn blocks scraping — try uploading your LinkedIn PDF below for full data.',
+          description: errorMsg || 'LinkedIn blocks scraping - try uploading your LinkedIn PDF below for full data.',
           variant: 'destructive',
         });
       }
@@ -1088,7 +1088,7 @@ function LinkedInConnect() {
   return (
     <div>
       <div style={{ fontSize: 12.5, color: C.ink3, marginBottom: 12, lineHeight: 1.55 }}>
-        Add your LinkedIn to enrich your profile. <span style={{ color: C.ink2 }}>Two ways</span> —
+        Add your LinkedIn to enrich your profile. <span style={{ color: C.ink2 }}>Two ways</span> - 
         paste your URL (we'll try to pull data automatically) or upload your LinkedIn PDF for the
         most reliable, complete import.
       </div>
@@ -1148,7 +1148,7 @@ function LinkedInConnect() {
         }}
       >
         <div style={{ flex: 1, height: 1, background: C.hairline }} />
-        <Mono>or — for the most reliable import</Mono>
+        <Mono>or - for the most reliable import</Mono>
         <div style={{ flex: 1, height: 1, background: C.hairline }} />
       </div>
 
@@ -1242,7 +1242,7 @@ function LinkedInConnect() {
                       >
                         linkedin.com/in/me
                       </a>{' '}
-                      — that link sends you straight to your own profile.
+                       - that link sends you straight to your own profile.
                     </>
                   ),
                 },
@@ -1304,7 +1304,7 @@ function LinkedInConnect() {
                 lineHeight: 1.55,
               }}
             >
-              The PDF stays private to you. We don't post or message anyone — we just read what's
+              The PDF stays private to you. We don't post or message anyone - we just read what's
               already on your public profile to personalize your matches and emails.
             </div>
           </div>
@@ -1336,7 +1336,7 @@ function ResumeUpload() {
   return (
     <div>
       <div style={{ fontSize: 12.5, color: C.ink3, marginBottom: 10, lineHeight: 1.55 }}>
-        Drop a PDF or DOCX here — we extract experience, skills, GPA, and coursework.
+        Drop a PDF or DOCX here - we extract experience, skills, GPA, and coursework.
       </div>
       <div
         onClick={busy ? undefined : pickResumeFile}
@@ -1494,7 +1494,7 @@ function LinkedInDetail() {
           Source: {sourceLabel}
           {li.source === 'pdl' && (
             <span style={{ color: C.ink3 }}>
-              {' '}— PDL has limited coverage for college students; switch to Bright Data / Jina for richer data.
+              {' '} - PDL has limited coverage for college students; switch to Bright Data / Jina for richer data.
             </span>
           )}
         </div>
@@ -1670,7 +1670,7 @@ const EditableChipRow: React.FC<EditableChipRowProps> = ({
                 key={s}
                 type="button"
                 onMouseDown={(e) => {
-                  // mousedown fires before input blur — prevents blur dismissing dropdown
+                  // mousedown fires before input blur - prevents blur dismissing dropdown
                   e.preventDefault();
                   commit(s);
                 }}
@@ -1876,9 +1876,9 @@ function Direction() {
   // Sync local textarea state when profile reloads
   useEffect(() => { setNarrative(c.directionNarrative); }, [c.directionNarrative]);
 
-  // Cycle parsing — Firestore stores `recruitingCycle` (key) and `cycleYear` separately.
+  // Cycle parsing - Firestore stores `recruitingCycle` (key) and `cycleYear` separately.
   // The mapped `c.cycle` is a display string ("Summer 2027"); for the picker we want the key.
-  // Read raw Firestore values via a side channel — for now derive from display string.
+  // Read raw Firestore values via a side channel - for now derive from display string.
   const [cycleKey, setCycleKey] = useState<string>('summer-sa');
   const [cycleYear, setCycleYear] = useState<number | null>(profile.classYear);
   useEffect(() => {
@@ -1904,7 +1904,7 @@ function Direction() {
     }
   };
 
-  // Persistent updaters per row — each updates Firestore and reloads
+  // Persistent updaters per row - each updates Firestore and reloads
   const persistChips = async (
     field: 'targetIndustries' | 'extractedRoles' | 'targetFirms' | 'preferredLocations',
     next: string[],
@@ -2025,7 +2025,7 @@ function Direction() {
         </Serif>
         <TitleRule />
         <div style={{ fontSize: 13, color: C.ink2, marginTop: 12, lineHeight: 1.55 }}>
-          What kind of work are you after? Plain English — strengths, what you like, what you don't.
+          What kind of work are you after? Plain English - strengths, what you like, what you don't.
         </div>
       </div>
 
@@ -2057,7 +2057,7 @@ function Direction() {
             lineHeight: 1.6,
           }}
         />
-        {/* Inline action — quiet circular arrow, bottom-right inside textarea */}
+        {/* Inline action - quiet circular arrow, bottom-right inside textarea */}
         <button
           type="button"
           onClick={handleExtract}
@@ -2121,7 +2121,7 @@ function Direction() {
 
       {showReceipt && (
         <>
-          {/* Quiet toggle — chevron + summary, right-aligned, no pill, no glow */}
+          {/* Quiet toggle - chevron + summary, right-aligned, no pill, no glow */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
             <button
               type="button"
@@ -2453,7 +2453,10 @@ function AnythingMissed() {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
-const ProfilePreview: React.FC = () => {
+// ProfilePanel - the Profile page content, shell-free so it can be embedded
+// as the first section of Account Settings. The standalone ProfilePreview
+// wrapper (below) keeps the original /dev/profile-preview route identical.
+export const ProfilePanel: React.FC = () => {
   const [profile, setProfile] = useState<ProfileData>(EMPTY);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -2619,7 +2622,7 @@ const ProfilePreview: React.FC = () => {
         li.connections.total > 0
           ? `${li.connections.total.toLocaleString()} connections${
               li.connections.byCompany[0]
-                ? ` — ${li.connections.byCompany[0].count} at ${li.connections.byCompany[0].company}`
+                ? ` - ${li.connections.byCompany[0].count} at ${li.connections.byCompany[0].company}`
                 : ''
             }`
           : null,
@@ -2630,36 +2633,31 @@ const ProfilePreview: React.FC = () => {
 
   return (
     <ProfileContext.Provider value={ctx}>
-      <SidebarProvider>
-        <style>{`
-          @keyframes spin360 { to { transform: rotate(360deg); } }
-          .btn-spin {
-            width: 14px;
-            height: 14px;
-            border: 2px solid rgba(255,255,255,0.4);
-            border-top-color: #FFFFFF;
-            border-radius: 50%;
-            animation: spin360 0.8s linear infinite;
-          }
-        `}</style>
-        <div className="flex min-h-screen w-full font-sans" style={{ color: C.ink }}>
-          <AppSidebar />
-          <MainContentWrapper>
-            <AppHeader title="Profile" />
-            <div
-              style={{
-                flex: 1,
-                overflow: 'auto',
-                background: `linear-gradient(180deg, ${C.bgGradTop} 0%, ${C.bgGradBottom} 100%)`,
-                padding: '40px 48px 80px',
-              }}
-            >
+      <style>{`
+        @keyframes spin360 { to { transform: rotate(360deg); } }
+        .btn-spin {
+          width: 14px;
+          height: 14px;
+          border: 2px solid rgba(255,255,255,0.4);
+          border-top-color: #FFFFFF;
+          border-radius: 50%;
+          animation: spin360 0.8s linear infinite;
+        }
+      `}</style>
+      <div
+        className="font-sans"
+        style={{
+          background: `linear-gradient(180deg, ${C.bgGradTop} 0%, ${C.bgGradBottom} 100%)`,
+          padding: '40px 48px 80px',
+          color: C.ink,
+        }}
+      >
               <div style={{ maxWidth: 760, margin: '0 auto' }}>
                 {loading ? (
                   <div style={{ fontSize: 13, color: C.ink3, padding: '32px 0' }}>Loading your profile…</div>
                 ) : (
                   <>
-                    {/* Hidden file input — triggered by Replace action and ResumeUpload zone */}
+                    {/* Hidden file input - triggered by Replace action and ResumeUpload zone */}
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -2713,12 +2711,25 @@ const ProfilePreview: React.FC = () => {
                   </>
                 )}
               </div>
-            </div>
-          </MainContentWrapper>
-        </div>
-      </SidebarProvider>
+      </div>
     </ProfileContext.Provider>
   );
 };
+
+// Standalone wrapper - keeps the original Profile page shell for the
+// /dev/profile-preview route. The app's Profile lives inside Account Settings.
+const ProfilePreview: React.FC = () => (
+  <SidebarProvider>
+    <div className="flex min-h-screen w-full font-sans" style={{ color: C.ink }}>
+      <AppSidebar />
+      <MainContentWrapper>
+        <AppHeader title="Profile" />
+        <div style={{ flex: 1, overflow: 'auto' }}>
+          <ProfilePanel />
+        </div>
+      </MainContentWrapper>
+    </div>
+  </SidebarProvider>
+);
 
 export default ProfilePreview;

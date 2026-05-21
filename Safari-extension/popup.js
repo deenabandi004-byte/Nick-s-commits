@@ -4,7 +4,7 @@ console.log('[Offerloop Popup] Loaded');
 // API Configuration
 const API_BASE_URL = 'https://final-offerloop.onrender.com';
 
-// Shared job URL patterns — used by detectMode() and isJobUrl()
+// Shared job URL patterns - used by detectMode() and isJobUrl()
 const JOB_URL_PATTERNS = [
   /linkedin\.com\/jobs\//,
   /boards\.greenhouse\.io\//,
@@ -91,7 +91,7 @@ let currentJobUrl = null;
 let manualInputRequired = false;
 let _actionInProgress = false;
 
-// Credits cache — avoid redundant API calls when popup reopens quickly
+// Credits cache - avoid redundant API calls when popup reopens quickly
 let _creditsCacheTime = 0;
 const CREDITS_CACHE_TTL = 120000; // 2 minutes
 
@@ -783,32 +783,32 @@ function initElements() {
 }
 
 // ============================================
-// COFFEE CHAT PREP WORKFLOW (aligned with website)
+// MEETING PREP WORKFLOW (aligned with website)
 // ============================================
 
-const COFFEE_CHAT_CREDITS = 15; // Must match backend config
-let coffeeChatPollInterval = null;
+const MEETING_CREDITS = 15; // Must match backend config
+let meetingPollInterval = null;
 
-function updateCoffeeChatButtonState() {
-  const btn = document.getElementById('coffeeChatBtn');
-  const hint = document.getElementById('coffeeChatHint');
+function updateMeetingButtonState() {
+  const btn = document.getElementById('meetingBtn');
+  const hint = document.getElementById('meetingHint');
   const credits = currentState.credits;
-  const hasEnough = credits !== null && credits !== undefined && credits >= COFFEE_CHAT_CREDITS;
+  const hasEnough = credits !== null && credits !== undefined && credits >= MEETING_CREDITS;
   if (btn) {
     btn.disabled = !hasEnough;
-    btn.title = hasEnough ? '' : `Need ${COFFEE_CHAT_CREDITS} credits. Check Account Settings for resume.`;
+    btn.title = hasEnough ? '' : `Need ${MEETING_CREDITS} credits. Check Account Settings for resume.`;
   }
   if (hint) {
     hint.textContent = hasEnough
-      ? `Uses ${COFFEE_CHAT_CREDITS} credits • PDF saved to Library`
-      : `Need ${COFFEE_CHAT_CREDITS} credits • Upload resume in Account Settings`;
-    hint.className = hasEnough ? 'coffee-chat-hint' : 'coffee-chat-hint coffee-chat-hint-disabled';
+      ? `Uses ${MEETING_CREDITS} credits • PDF saved to Library`
+      : `Need ${MEETING_CREDITS} credits • Upload resume in Account Settings`;
+    hint.className = hasEnough ? 'meeting-hint' : 'meeting-hint meeting-hint-disabled';
   }
 }
 
-// Coffee Chat Prep handler - Full workflow (matches website behavior)
-async function handleCoffeeChatPrep() {
-  const btn = document.getElementById('coffeeChatBtn');
+// Meeting Prep handler - Full workflow (matches website behavior)
+async function handleMeetingPrep() {
+  const btn = document.getElementById('meetingBtn');
   
   // Get current LinkedIn URL
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -816,22 +816,22 @@ async function handleCoffeeChatPrep() {
   
   // Validate we're on a LinkedIn profile
   if (!linkedinUrl || !linkedinUrl.match(/linkedin\.com\/in\//)) {
-    showCoffeeChatError('Please navigate to a LinkedIn profile first');
+    showMeetingError('Please navigate to a LinkedIn profile first');
     return;
   }
   
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
   if (!authData.authToken) {
-    showCoffeeChatError('Please sign in to use this feature');
+    showMeetingError('Please sign in to use this feature');
     return;
   }
   
   // Pre-flight: check credits (match website)
   const credits = currentState.credits;
-  if (credits === null || credits === undefined || credits < COFFEE_CHAT_CREDITS) {
-    showCoffeeChatError(
-      `You need ${COFFEE_CHAT_CREDITS} credits to generate a coffee chat prep. ` +
+  if (credits === null || credits === undefined || credits < MEETING_CREDITS) {
+    showMeetingError(
+      `You need ${MEETING_CREDITS} credits to generate a meeting prep. ` +
       (credits != null ? `You have ${credits} credits.` : 'Check your balance in Account Settings.')
     );
     return;
@@ -840,15 +840,15 @@ async function handleCoffeeChatPrep() {
   // Show loading state
   btn.classList.add('loading');
   btn.disabled = true;
-  hideCoffeeChatResults();
-  hideCoffeeChatError();
-  showCoffeeChatLoading('Starting Coffee Chat Prep...');
+  hideMeetingResults();
+  hideMeetingError();
+  showMeetingLoading('Starting Meeting Prep...');
   
   try {
     // Step 1: Start the prep
-    console.log('[Offerloop Popup] Starting Coffee Chat Prep for:', linkedinUrl);
+    console.log('[Offerloop Popup] Starting Meeting Prep for:', linkedinUrl);
     
-    const startResponse = await fetchWithTimeout(`${API_BASE_URL}/api/coffee-chat-prep`, {
+    const startResponse = await fetchWithTimeout(`${API_BASE_URL}/api/meeting-prep`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -861,7 +861,7 @@ async function handleCoffeeChatPrep() {
     
     if (!startResponse.ok) {
       // Map backend errors to friendly messages (same as website)
-      let message = errorData.error || 'Failed to start Coffee Chat Prep';
+      let message = errorData.error || 'Failed to start Meeting Prep';
       if (errorData.needsResume) {
         message = 'Please upload your resume in Account Settings first.';
       } else if (errorData.credits_needed != null) {
@@ -882,27 +882,27 @@ async function handleCoffeeChatPrep() {
     }
     
     // Step 2: Poll for completion
-    pollCoffeeChatStatus(prepId, authData.authToken, btn);
+    pollMeetingStatus(prepId, authData.authToken, btn);
     
   } catch (error) {
-    console.error('[Offerloop Popup] Coffee Chat Prep error:', error);
-    showCoffeeChatError(error.message || 'Something went wrong. Please try again.');
-    hideCoffeeChatLoading();
+    console.error('[Offerloop Popup] Meeting Prep error:', error);
+    showMeetingError(error.message || 'Something went wrong. Please try again.');
+    hideMeetingLoading();
     btn.classList.remove('loading');
-    updateCoffeeChatButtonState();
+    updateMeetingButtonState();
   }
 }
 
-function pollCoffeeChatStatus(prepId, authToken, btn) {
+function pollMeetingStatus(prepId, authToken, btn) {
   let attempts = 0;
   const maxAttempts = 60; // Fewer attempts needed with backoff
   const maxTotalMs = 10 * 60 * 1000; // 10 minute absolute timeout
   const startTime = Date.now();
 
   // Clear any existing poll
-  if (coffeeChatPollInterval) {
-    clearTimeout(coffeeChatPollInterval);
-    coffeeChatPollInterval = null;
+  if (meetingPollInterval) {
+    clearTimeout(meetingPollInterval);
+    meetingPollInterval = null;
   }
 
   const statusMessages = {
@@ -913,7 +913,7 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
     'extracting_hometown': 'Extracting location...',
     'generating_content': 'Generating content...',
     'generating_pdf': 'Generating PDF...',
-    'completed': 'Coffee Chat Prep ready!',
+    'completed': 'Meeting Prep ready!',
     'failed': 'Generation failed'
   };
 
@@ -926,16 +926,16 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
     attempts++;
 
     if (attempts > maxAttempts || (Date.now() - startTime) > maxTotalMs) {
-      coffeeChatPollInterval = null;
-      hideCoffeeChatLoading();
-      showCoffeeChatError('Prep is taking longer than expected. Check the Coffee Chat Library for results.');
+      meetingPollInterval = null;
+      hideMeetingLoading();
+      showMeetingError('Prep is taking longer than expected. Check the Meeting Library for results.');
       btn.classList.remove('loading');
-      updateCoffeeChatButtonState();
+      updateMeetingButtonState();
       return;
     }
 
     try {
-      const statusResponse = await fetchWithTimeout(`${API_BASE_URL}/api/coffee-chat-prep/${prepId}`, {
+      const statusResponse = await fetchWithTimeout(`${API_BASE_URL}/api/meeting-prep/${prepId}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -950,18 +950,18 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
 
       // Update loading message based on status
       const loadingMessage = statusMessages[statusData.status] || 'Processing...';
-      updateCoffeeChatLoadingText(loadingMessage);
+      updateMeetingLoadingText(loadingMessage);
 
       if (statusData.status === 'completed' && statusData.pdfUrl) {
         // Success!
-        coffeeChatPollInterval = null;
+        meetingPollInterval = null;
 
-        hideCoffeeChatLoading();
-        showCoffeeChatResults(statusData);
+        hideMeetingLoading();
+        showMeetingResults(statusData);
         triggerPdfDownload(statusData.pdfUrl, statusData.contactData);
 
         btn.classList.remove('loading');
-        updateCoffeeChatButtonState();
+        updateMeetingButtonState();
 
         // Refresh credits
         try {
@@ -980,52 +980,52 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
 
       } else if (statusData.status === 'failed') {
         // Failed
-        coffeeChatPollInterval = null;
+        meetingPollInterval = null;
 
-        hideCoffeeChatLoading();
-        showCoffeeChatError(statusData.error || 'Coffee Chat Prep failed. Please try again.');
+        hideMeetingLoading();
+        showMeetingError(statusData.error || 'Meeting Prep failed. Please try again.');
 
         btn.classList.remove('loading');
-        updateCoffeeChatButtonState();
+        updateMeetingButtonState();
         return;
       }
 
-      // Still processing — schedule next poll with backoff
-      coffeeChatPollInterval = setTimeout(poll, getBackoffDelay(attempts));
+      // Still processing - schedule next poll with backoff
+      meetingPollInterval = setTimeout(poll, getBackoffDelay(attempts));
 
     } catch (error) {
       console.error('[Offerloop Popup] Polling error:', error);
       // Don't stop polling on transient errors, schedule next with backoff
-      coffeeChatPollInterval = setTimeout(poll, getBackoffDelay(attempts));
+      meetingPollInterval = setTimeout(poll, getBackoffDelay(attempts));
     }
   }
 
   // Start first poll
-  coffeeChatPollInterval = setTimeout(poll, 2000);
+  meetingPollInterval = setTimeout(poll, 2000);
 }
 
-function showCoffeeChatLoading(message) {
-  const loadingDiv = document.getElementById('coffeeChatLoading');
-  const loadingText = document.getElementById('coffeeChatLoadingText');
+function showMeetingLoading(message) {
+  const loadingDiv = document.getElementById('meetingLoading');
+  const loadingText = document.getElementById('meetingLoadingText');
   
-  if (loadingText) loadingText.textContent = message || 'Generating Coffee Chat Prep...';
+  if (loadingText) loadingText.textContent = message || 'Generating Meeting Prep...';
   if (loadingDiv) loadingDiv.classList.remove('hidden');
 }
 
-function hideCoffeeChatLoading() {
-  const loadingDiv = document.getElementById('coffeeChatLoading');
+function hideMeetingLoading() {
+  const loadingDiv = document.getElementById('meetingLoading');
   if (loadingDiv) loadingDiv.classList.add('hidden');
 }
 
-function updateCoffeeChatLoadingText(message) {
-  const loadingText = document.getElementById('coffeeChatLoadingText');
+function updateMeetingLoadingText(message) {
+  const loadingText = document.getElementById('meetingLoadingText');
   if (loadingText) loadingText.textContent = message;
 }
 
-function showCoffeeChatResults(data) {
-  const resultsDiv = document.getElementById('coffeeChatResults');
-  const contactDiv = document.getElementById('coffeeChatContact');
-  const downloadLink = document.getElementById('coffeeChatDownloadLink');
+function showMeetingResults(data) {
+  const resultsDiv = document.getElementById('meetingResults');
+  const contactDiv = document.getElementById('meetingContact');
+  const downloadLink = document.getElementById('meetingDownloadLink');
   
   // Show contact name if available
   if (data.contactData) {
@@ -1053,21 +1053,21 @@ function showCoffeeChatResults(data) {
   if (resultsDiv) resultsDiv.style.display = 'block';
 }
 
-function hideCoffeeChatResults() {
-  const resultsDiv = document.getElementById('coffeeChatResults');
+function hideMeetingResults() {
+  const resultsDiv = document.getElementById('meetingResults');
   if (resultsDiv) resultsDiv.style.display = 'none';
 }
 
-function showCoffeeChatError(message) {
-  const errorDiv = document.getElementById('coffeeChatError');
-  const errorMsg = document.getElementById('coffeeChatErrorMessage');
+function showMeetingError(message) {
+  const errorDiv = document.getElementById('meetingError');
+  const errorMsg = document.getElementById('meetingErrorMessage');
   
   if (errorMsg) errorMsg.textContent = message;
   if (errorDiv) errorDiv.style.display = 'block';
 }
 
-function hideCoffeeChatError() {
-  const errorDiv = document.getElementById('coffeeChatError');
+function hideMeetingError() {
+  const errorDiv = document.getElementById('meetingError');
   if (errorDiv) errorDiv.style.display = 'none';
 }
 
@@ -1085,7 +1085,7 @@ function triggerPdfDownload(pdfUrl, contactData) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
   
-  const filename = `coffee-chat-prep-${sanitizedName}.pdf`;
+  const filename = `meeting-prep-${sanitizedName}.pdf`;
   
   // Use Chrome downloads API
   chrome.downloads.download({
@@ -1105,9 +1105,9 @@ function triggerPdfDownload(pdfUrl, contactData) {
 
 // Clean up polling if popup closes
 window.addEventListener('unload', () => {
-  if (coffeeChatPollInterval) {
-    clearTimeout(coffeeChatPollInterval);
-    coffeeChatPollInterval = null;
+  if (meetingPollInterval) {
+    clearTimeout(meetingPollInterval);
+    meetingPollInterval = null;
   }
 });
 
@@ -1118,8 +1118,8 @@ function initEventListeners() {
   elements.findEmailBtn?.addEventListener('click', handleFindEmail);
   elements.retryBtn?.addEventListener('click', handleRetry);
   
-  // Coffee Chat Prep button
-  document.getElementById('coffeeChatBtn')?.addEventListener('click', handleCoffeeChatPrep);
+  // Meeting Prep button
+  document.getElementById('meetingBtn')?.addEventListener('click', handleMeetingPrep);
 }
 
 // Handle retry - refresh token first, then retry the action
@@ -1227,7 +1227,7 @@ function updateCredits(credits) {
     elements.creditsCount.textContent = credits;
   }
   currentState.credits = credits;
-  updateCoffeeChatButtonState();
+  updateMeetingButtonState();
 }
 
 // Silently refresh the Firebase token by delegating to the background service worker.
@@ -1572,11 +1572,11 @@ async function init() {
   // Load stored auth state
   await loadAuthState();
   
-  // Update credits display and coffee chat button state
+  // Update credits display and meeting button state
   if (currentState.credits !== null) {
     updateCredits(currentState.credits);
   } else {
-    updateCoffeeChatButtonState();
+    updateMeetingButtonState();
   }
   
   // Check if already logged in

@@ -72,7 +72,7 @@ export function GmailBanner() {
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <span className="text-sm shrink-0">
-          Gmail is not connected — email drafts won&apos;t be created.
+          Gmail is not connected - email drafts won&apos;t be created.
         </span>
         <button
           type="button"

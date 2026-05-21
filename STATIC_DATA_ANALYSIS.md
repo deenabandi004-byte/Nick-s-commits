@@ -5,12 +5,12 @@
 ### ✅ Connected to Backend
 - **Contact Count** - Fetched from Firebase (`firebaseApi.getContacts`)
 - **Firm Count** - Fetched from API (`apiService.getFirmSearchHistory`)
-- **Coffee Chat Count** - Fetched from API (`apiService.getAllCoffeeChatPreps`)
+- **Meeting Count** - Fetched from API (`apiService.getAllCoffeeChatPreps`)
 - **Weekly Summary** - Calculated from activities (`calculateWeeklySummary`)
 - **Streak Data** - Calculated from activities (`calculateStreak`)
 - **Goal Progress** - Calculated from activities (`calculateGoalProgress`)
 - **Activity Feed** - Fetched from Firebase (`firebaseApi.getActivities`)
-- **Time Saved** - Calculated from contact/firm/coffee chat counts
+- **Time Saved** - Calculated from contact/firm/meeting counts
 
 ### ❌ Static/Hardcoded Data (NOT Connected)
 
@@ -81,13 +81,13 @@
   - Count completed vs total
 - **Backend needed**: Already exists, just needs to be wired up
 
-#### 8. **Coffee Chats Subtitle** (Line 808)
+#### 8. **Meetings Subtitle** (Line 808)
 - **Location**: KPICard component
 - **Issue**: Hardcoded subtitle "12 scheduled"
 - **Should be**: Count of:
-  - Coffee chat preps with scheduled dates
-  - Or calendar events linked to coffee chats
-- **Backend needed**: Link coffee chat preps to calendar events, or add scheduled date field
+  - Meeting preps with scheduled dates
+  - Or calendar events linked to meetings
+- **Backend needed**: Link meeting preps to calendar events, or add scheduled date field
 
 #### 9. **"View all activity" Button** (Line 289-291)
 - **Location**: ActivityFeed component
@@ -124,7 +124,7 @@
 
 #### 3. **Suggested Actions** (if any exist)
 - **Location**: Check if there are any action buttons
-- **Issue**: Need to verify if "Schedule coffee chat", "View firm research" buttons work
+- **Issue**: Need to verify if "Schedule meeting", "View firm research" buttons work
 - **Status**: Need to check if these are wired up
 
 ---
@@ -219,4 +219,4 @@ Response: {
 ### Priority Fixes
 1. **High Priority**: Replies Received KPI, Outreach vs Replies Chart
 2. **Medium Priority**: Top Firms, AI Recommendations, Interview Preps count
-3. **Low Priority**: US Map, Recruiting Timeline, Coffee Chats scheduled count
+3. **Low Priority**: US Map, Recruiting Timeline, Meetings scheduled count

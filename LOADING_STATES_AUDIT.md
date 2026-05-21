@@ -83,9 +83,9 @@ This audit documents **90+ loading state instances** across the Offerloop codeba
 - **Context:** Initial page load
 - **Progress:** Indeterminate
 
-**3. CoffeeChatLibrary.tsx**
+**3. MeetingLibrary.tsx**
 - **Location:** Line 165
-- **Trigger:** Loading coffee chat preps from Firestore
+- **Trigger:** Loading meeting preps from Firestore
 - **Visual:**
   - Size: `h-5 w-5`
   - Color: `text-blue-400`
@@ -163,9 +163,9 @@ This audit documents **90+ loading state instances** across the Offerloop codeba
 - **Context:** AI content generation
 - **Progress:** Indeterminate
 
-**11. CoffeeChatPrepPage.tsx**
+**11. MeetingPrepPage.tsx**
 - **Location:** Multiple instances
-- **Trigger:** Generating coffee chat prep PDFs
+- **Trigger:** Generating meeting prep PDFs
 - **Visual:**
   - Size: `h-4 w-4` to `h-5 w-5`
   - Color: Default or `text-blue-400`
@@ -382,7 +382,7 @@ This audit documents **90+ loading state instances** across the Offerloop codeba
 - **Operations:**
   - Resume uploads (file size known)
   - PDF generation (could track steps)
-  - Coffee chat prep (has status updates: `pending`, `processing`, `enriching_profile`, `fetching_news`, `generating_content`, `completed`)
+  - Meeting prep (has status updates: `pending`, `processing`, `enriching_profile`, `fetching_news`, `generating_content`, `completed`)
 - **Recommendation:** Implement determinate bars for these
 
 ---
@@ -447,7 +447,7 @@ This audit documents **90+ loading state instances** across the Offerloop codeba
 - **Border Radius:** `rounded-full`
 
 ### Design 3: Determinate Progress Bar
-**Use Case:** File uploads, multi-step processes (Coffee Chat Prep)
+**Use Case:** File uploads, multi-step processes (Meeting Prep)
 
 **Specifications:**
 - **Height:** 4px (slightly thicker for visibility)
@@ -536,11 +536,11 @@ This audit documents **90+ loading state instances** across the Offerloop codeba
 
 ### Phase 2: Context-Specific
 4. **Form submissions** (Onboarding, AccountSettings)
-5. **Data fetching** (ContactDirectory, CoffeeChatLibrary)
+5. **Data fetching** (ContactDirectory, MeetingLibrary)
 6. **AI processing** (ResumeOptimization, InterviewPrep)
 
 ### Phase 3: Enhanced Features
-7. **Determinate bars** (File uploads, Coffee Chat Prep with status)
+7. **Determinate bars** (File uploads, Meeting Prep with status)
 8. **Skeleton alternatives** (Optional, if desired)
 
 ---

@@ -8,7 +8,7 @@
 - RESUME_LINE constant
 - GMAIL_SCOPES list
 - OAUTH_REDIRECT_URI logic
-- COFFEE_CHAT_CREDITS
+- MEETING_CREDITS
 - CACHE_DURATION
 - DB_PATH
 - CREATE_GMAIL_DRAFTS flag
@@ -66,12 +66,12 @@
 ### routes/resume.py
 - `/api/parse-resume` (POST)
 
-### routes/coffee_chat_prep.py
-- `/api/coffee-chat-prep` (POST)
-- `/api/coffee-chat-prep/history` (GET)
-- `/api/coffee-chat-prep/all` (GET)
-- `/api/coffee-chat-prep/<prep_id>` (GET, DELETE)
-- `/api/coffee-chat-prep/<prep_id>/download` (GET)
+### routes/meeting_prep.py
+- `/api/meeting-prep` (POST)
+- `/api/meeting-prep/history` (GET)
+- `/api/meeting-prep/all` (GET)
+- `/api/meeting-prep/<prep_id>` (GET, DELETE)
+- `/api/meeting-prep/<prep_id>/download` (GET)
 
 ### routes/billing.py
 - `/api/tier-info` (GET)
@@ -131,8 +131,8 @@
 ### services/openai_client.py
 - OpenAI client initialization
 - `batch_generate_emails()`
-- `generate_coffee_chat_similarity()`
-- `generate_coffee_chat_questions()`
+- `generate_meeting_similarity()`
+- `generate_meeting_questions()`
 - `extract_hometown_from_education_history_enhanced()`
 - `batch_extract_hometowns()`
 - `generate_similarity_summary()`
@@ -162,8 +162,8 @@
 - `upload_resume_to_firebase_storage()`
 
 ### services/pdf_builder.py
-- `generate_coffee_chat_pdf_simple_fixed()`
-- `process_coffee_chat_prep_background()`
+- `generate_meeting_pdf_simple_fixed()`
+- `process_meeting_prep_background()`
 
 ### services/stripe_client.py
 - All Stripe-related functions:
@@ -185,8 +185,8 @@
 - Contact data models/schemas
 - `normalize_contact()` function
 
-### models/coffee_chat_prep.py
-- Coffee chat prep models (if any)
+### models/meeting_prep.py
+- Meeting prep models (if any)
 
 ## 6. Utils → utils/*.py
 
@@ -209,8 +209,8 @@
 - `extract_hometown_from_education()`
 - `_choose_best_email()`
 
-### utils/coffee_chat_prep.py
-- Coffee chat utility functions
+### utils/meeting_prep.py
+- Meeting utility functions
 - `fetch_company_news()`
 
 ### utils/enums.py

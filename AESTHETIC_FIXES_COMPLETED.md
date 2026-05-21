@@ -104,7 +104,7 @@ All fixes follow the design system:
 ### 2. Other Page Components
 - ContactSearchPage.tsx
 - FirmSearchPage.tsx
-- CoffeeChatPrepPage.tsx
+- MeetingPrepPage.tsx
 - InterviewPrepPage.tsx
 - And other pages...
 

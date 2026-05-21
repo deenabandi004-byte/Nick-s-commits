@@ -3,7 +3,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader2, AlertCircle, Sparkles, FileText } from 'lucide-react';
+import { Loader2, AlertCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -377,7 +377,7 @@ export default function ApplicationLabPage() {
                           </>
                         ) : (
                           <>
-                            <Sparkles size={16} className="mr-2" />
+                            <FileText size={16} className="mr-2" />
                             Analyze Job Description
                           </>
                         )}
@@ -475,7 +475,7 @@ export default function ApplicationLabPage() {
                           </>
                         ) : (
                           <>
-                            <Sparkles size={16} className="mr-2" />
+                            <FileText size={16} className="mr-2" />
                             Analyze Application
                           </>
                         )}
@@ -545,7 +545,7 @@ export default function ApplicationLabPage() {
               {!analysis && !isLoading && !error && (
                 <Card className="bg-white border-border rounded-[3px]">
                   <CardContent className="p-12 text-center">
-                    <Sparkles className="text-gray-300 mx-auto mb-4" size={48} />
+                    <FileText className="text-gray-300 mx-auto mb-4" size={48} />
                     <h3 className="text-lg font-medium text-foreground mb-2">
                       Get Started with Application Lab
                     </h3>

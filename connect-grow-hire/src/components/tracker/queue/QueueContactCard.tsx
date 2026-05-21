@@ -1,5 +1,5 @@
 /**
- * QueueContactCard — single card in the "Suggested For You" tab.
+ * QueueContactCard - single card in the "Suggested For You" tab.
  *
  * Displays a queued contact with its warmth badge, why-this-contact
  * rationale, drafted email preview, and Approve / Dismiss actions.
@@ -8,7 +8,7 @@
  *  - Warmth palette is ZERO red. Warm = #3B82F6, Neutral = gray, Cold = light-blue.
  *  - Uses shared ContactAvatar / ContactIdentity / CardAccentBorder primitives
  *    so it stays visually aligned with the Pipeline ContactCard.
- *  - Approve / Dismiss are non-destructive — dismiss opens a modal for reason.
+ *  - Approve / Dismiss are non-destructive - dismiss opens a modal for reason.
  */
 import { useState } from "react";
 import { CheckCircle2, X, Mail, MapPin, GraduationCap, Loader2, ExternalLink } from "lucide-react";
@@ -29,7 +29,7 @@ interface QueueContactCardProps {
   readOnly?: boolean;
 }
 
-// Warmth palette — intentionally ZERO red (see design doc §Warmth).
+// Warmth palette - intentionally ZERO red (see design doc §Warmth).
 const WARMTH_STYLE: Record<
   NonNullable<QueueContact["warmthTier"]>,
   { bg: string; fg: string; label: string; accent: string }

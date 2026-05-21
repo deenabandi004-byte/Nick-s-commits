@@ -38,7 +38,7 @@ FONT_MAP: dict[str, str] = {
 }
 
 # Bullet characters that start a bullet line (preserve when replacing)
-BULLET_PREFIXES = ("•", "◦", "○", "▪", "●", "–", "-", "—")
+BULLET_PREFIXES = ("•", "◦", "○", "▪", "●", "–", "-", " - ")
 # Map Unicode bullets to glyphs that exist in standard PDF fonts (times-roman, helvetica)
 BULLET_FONT_REPLACEMENTS = {
     "\u25E6": "o",   # ◦ (U+25E6) open circle → o
@@ -51,8 +51,8 @@ MIN_FONT_SIZE = 8.0  # Allow slightly smaller text to fit longer replacements
 SKILL_APPEND_MIN_FONT_SIZE = 8.0  # allow smaller when bbox expanded for wrap
 # Multi-line merge heuristics
 LINE_HEIGHT_GAP_RATIO = 1.5  # max gap / line_height to still merge continuation
-INDENT_DECREASE_THRESHOLD = 5.0  # pt — de-indent by more = new bullet/block
-INDENT_TOLERANCE = 3.0  # pt — same indent within this
+INDENT_DECREASE_THRESHOLD = 5.0  # pt - de-indent by more = new bullet/block
+INDENT_TOLERANCE = 3.0  # pt - same indent within this
 FONT_SIZE_HEADER_RATIO = 1.15  # next line font size > prev * this = section header
 BODY_FONT_HEADER_RATIO = 1.1  # line font size > page median * this = section header
 # Common resume section titles (case-insensitive); section headers are never merged
@@ -738,11 +738,11 @@ def apply_patch(
     bullet_part = ""
     remainder = replacement_text
     if remainder and (
-        remainder[0] in "o•-–—"
+        remainder[0] in "o•-– - "
         or (len(remainder) >= 2 and remainder[0].isdigit() and remainder[1] in ".)")
     ):
         i = 0
-        if remainder[0] in "o•-–—":
+        if remainder[0] in "o•-– - ":
             bullet_part = remainder[0]
             i = 1
             while i < len(remainder) and remainder[i] in " \t":
@@ -850,7 +850,7 @@ def apply_patch(
         )
 
     # White cover approach: draw filled white rectangle over original text
-    # (no apply_redactions — it invalidates coordinates for multi-patch)
+    # (no apply_redactions - it invalidates coordinates for multi-patch)
     page = doc[page_num]
     rect_cover = fitz.Rect(bbox_redact)
     shape = page.new_shape()

@@ -4,7 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useParams } from "react-router-dom";
 import { FirebaseAuthProvider, useFirebaseAuth } from "./contexts/FirebaseAuthContext";
 import { ScoutProvider, useScout } from "./contexts/ScoutContext";
 import { TourProvider } from "./contexts/TourContext";
@@ -30,7 +30,7 @@ const NetworkTracker = React.lazy(() => import("./pages/NetworkTracker"));
 const CompanyTrackerPage = React.lazy(() => import("./pages/CompanyTrackerPage"));
 const CalendarPage = React.lazy(() => import("./pages/CalendarPage"));
 const Contact = React.lazy(() => import("./pages/Contact"));
-const CoffeeChatLibrary = React.lazy(() => import("./pages/CoffeeChatLibrary"));
+const MeetingLibrary = React.lazy(() => import("./pages/MeetingLibrary"));
 const ContactDirectory = React.lazy(() => import("./pages/ContactDirectory"));
 const ContactUs = React.lazy(() => import("./pages/ContactUs"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
@@ -46,7 +46,7 @@ const MyNetworkPage = React.lazy(() => import("./pages/MyNetworkPage"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
 // Feature Pages - These are the largest, most important to lazy load
-const CoffeeChatPrepPage = React.lazy(() => import("./pages/CoffeeChatPrepPage"));
+const MeetingPrepPage = React.lazy(() => import("./pages/MeetingPrepPage"));
 const FindPage = React.lazy(() => import("./pages/FindPage"));
 const EmailTemplatesPage = React.lazy(() => import("./pages/EmailTemplatesPage"));
 const InterviewPrepPage = React.lazy(() => import("./pages/InterviewPrepPage"));
@@ -73,17 +73,23 @@ const ColdEmailConsulting = React.lazy(() => import("./pages/ColdEmailConsulting
 const ColdEmailBanking = React.lazy(() => import("./pages/ColdEmailBanking"));
 const ColdEmailTech = React.lazy(() => import("./pages/ColdEmailTech"));
 const AlumniOutreach = React.lazy(() => import("./pages/AlumniOutreach"));
-const CoffeeChatNetworking = React.lazy(() => import("./pages/CoffeeChatNetworking"));
+const MeetingNetworking = React.lazy(() => import("./pages/MeetingNetworking"));
 const Glossary = React.lazy(() => import("./pages/Glossary"));
 const Blog = React.lazy(() => import("./pages/Blog"));
 const BlogPost = React.lazy(() => import("./pages/BlogPost"));
 const NetworkingGuidePage = React.lazy(() => import("./pages/NetworkingGuidePage"));
 const AlumniGuidePage = React.lazy(() => import("./pages/AlumniGuidePage"));
 const ColdEmailGuidePage = React.lazy(() => import("./pages/ColdEmailGuidePage"));
-const CoffeeChatGuidePage = React.lazy(() => import("./pages/CoffeeChatGuidePage"));
+const MeetingGuidePage = React.lazy(() => import("./pages/MeetingGuidePage"));
 const RoleNetworkingGuidePage = React.lazy(() => import("./pages/RoleNetworkingGuidePage"));
 const CompanyComparisonPage = React.lazy(() => import("./pages/CompanyComparisonPage"));
-const CoffeeChatPrepPreview = React.lazy(() => import("./pages/seo-preview/CoffeeChatPrepPreview"));
+const MeetingPrepPreview = React.lazy(() => import("./pages/seo-preview/MeetingPrepPreview"));
+const ColdEmailPreview = React.lazy(() => import("./pages/seo-preview/ColdEmailPreview"));
+const FindAlumniPreview = React.lazy(() => import("./pages/seo-preview/FindAlumniPreview"));
+const InterviewPrepPreview = React.lazy(() => import("./pages/seo-preview/InterviewPrepPreview"));
+const ResumeCheckerPreview = React.lazy(() => import("./pages/seo-preview/ResumeCheckerPreview"));
+const RecruitingTimelinePreview = React.lazy(() => import("./pages/seo-preview/RecruitingTimelinePreview"));
+const NetworkingEmailGeneratorPreview = React.lazy(() => import("./pages/seo-preview/NetworkingEmailGeneratorPreview"));
 
 // Optimized QueryClient with caching
 const queryClient = new QueryClient({
@@ -104,7 +110,7 @@ const PageLoader = () => (
   </div>
 );
 
-// Phase 3 stationery aesthetic — always-on (shipped).
+// Phase 3 stationery aesthetic - always-on (shipped).
 // Formerly gated by VITE_FLAG_NEW_AESTHETIC env var during dev preview.
 const NEW_AESTHETIC = true;
 
@@ -133,7 +139,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     isSignedOut
   });
 
-  // Dev preview bypass — skip all auth checks in dev mode with ?devpreview=true
+  // Dev preview bypass - skip all auth checks in dev mode with ?devpreview=true
   if (IS_DEV_PREVIEW) {
     devLog("🔒 [PROTECTED ROUTE] Dev preview bypass active, skipping auth");
     return <>{children}</>;
@@ -253,7 +259,7 @@ const AppRoutes: React.FC = () => {
       />
       <Route path="/onboarding/*" element={<Navigate to="/onboarding" replace />} />
 
-      {/* Dev preview routes — no auth, no protection. For visual iteration only.
+      {/* Dev preview routes - no auth, no protection. For visual iteration only.
           See docs/PROFILE_ONBOARDING_SPEC.md. */}
       <Route
         path="/dev/profile-preview"
@@ -267,7 +273,7 @@ const AppRoutes: React.FC = () => {
         path="/dev/onboarding-preview"
         element={
           <Suspense fallback={<PageLoader />}>
-            <OnboardingFlow onComplete={() => { /* preview only — no save */ }} />
+            <OnboardingFlow onComplete={() => { /* preview only - no save */ }} />
           </Suspense>
         }
       />
@@ -275,7 +281,8 @@ const AppRoutes: React.FC = () => {
       {/* Protected App Pages - Wrapped in Suspense for lazy loading */}
       <Route path="/dashboard" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DashboardPage /></Suspense></ProtectedRoute>} />
       <Route path="/find" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><FindPage /></Suspense></ProtectedRoute>} />
-      <Route path="/profile" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><ProfilePreview /></Suspense></ProtectedRoute>} />
+      {/* Profile merged into Account Settings - redirect the old route */}
+      <Route path="/profile" element={<Navigate to="/account-settings" replace />} />
       <Route path="/my-network" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><MyNetworkPage /></Suspense></ProtectedRoute>} />
       <Route path="/my-network/:tab" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><MyNetworkPage /></Suspense></ProtectedRoute>} />
       <Route path="/contact-search" element={<Navigate to="/find" replace />} />
@@ -285,14 +292,17 @@ const AppRoutes: React.FC = () => {
       {/* Legacy /home redirect to contact search */}
       <Route path="/home" element={<Navigate to="/dashboard" replace />} />
       <Route path="/contact-directory" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><ContactDirectory /></Suspense></ProtectedRoute>} />
-      <Route path="/coffee-chat-library" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CoffeeChatLibrary /></Suspense></ProtectedRoute>} />
+      <Route path="/meeting-library" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><MeetingLibrary /></Suspense></ProtectedRoute>} />
+      {/* Legacy coffee-chat URLs redirect to the renamed meeting routes */}
+      <Route path="/coffee-chat-library" element={<Navigate to="/meeting-library" replace />} />
       <Route path="/account-settings" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AccountSettings /></Suspense></ProtectedRoute>} />
       <Route path="/pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
       <Route path="/documentation" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DocumentationPage /></Suspense></ProtectedRoute>} />
       <Route path="/payment-success" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><PaymentSuccess /></Suspense></ProtectedRoute>} />
       
       {/* Feature Pages - Largest pages, most important to lazy load */}
-      <Route path="/coffee-chat-prep" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CoffeeChatPrepPage /></Suspense></ProtectedRoute>} />
+      <Route path="/meeting-prep" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><MeetingPrepPage /></Suspense></ProtectedRoute>} />
+      <Route path="/coffee-chat-prep" element={<Navigate to="/meeting-prep" replace />} />
       <Route path="/contact-search/templates" element={<Navigate to="/find/templates" replace />} />
       <Route path="/find/templates" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><EmailTemplatesPage /></Suspense></ProtectedRoute>} />
       <Route path="/interview-prep" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><InterviewPrepPage /></Suspense></ProtectedRoute>} />
@@ -323,22 +333,34 @@ const AppRoutes: React.FC = () => {
       <Route path="/compare/apollo" element={<Suspense fallback={<PageLoader />}><CompareApollo /></Suspense>} />
       <Route path="/compare/chatgpt" element={<Suspense fallback={<PageLoader />}><CompareChatGPT /></Suspense>} />
 
-      {/* SEO format preview — not linked, not in sitemap, noindex */}
-      <Route path="/seo-preview/coffee-chat-mckinsey" element={<Suspense fallback={<PageLoader />}><CoffeeChatPrepPreview /></Suspense>} />
+      {/* SEO format preview - not linked, not in sitemap, noindex */}
+      <Route path="/seo-preview/meeting-mckinsey" element={<Suspense fallback={<PageLoader />}><MeetingPrepPreview /></Suspense>} />
+      <Route path="/seo-preview/cold-email-goldman" element={<Suspense fallback={<PageLoader />}><ColdEmailPreview /></Suspense>} />
+      <Route path="/seo-preview/find-usc-goldman" element={<Suspense fallback={<PageLoader />}><FindAlumniPreview /></Suspense>} />
+      <Route path="/seo-preview/interview-prep-goldman-superday" element={<Suspense fallback={<PageLoader />}><InterviewPrepPreview /></Suspense>} />
+      <Route path="/seo-preview/resume-checker" element={<Suspense fallback={<PageLoader />}><ResumeCheckerPreview /></Suspense>} />
+      <Route path="/seo-preview/ib-recruiting-timeline" element={<Suspense fallback={<PageLoader />}><RecruitingTimelinePreview /></Suspense>} />
+      <Route path="/seo-preview/networking-email-generator" element={<Suspense fallback={<PageLoader />}><NetworkingEmailGeneratorPreview /></Suspense>} />
 
       {/* SEO Landing Pages */}
       <Route path="/cold-email-consulting" element={<Suspense fallback={<PageLoader />}><ColdEmailConsulting /></Suspense>} />
       <Route path="/cold-email-investment-banking" element={<Suspense fallback={<PageLoader />}><ColdEmailBanking /></Suspense>} />
       <Route path="/cold-email-tech-internships" element={<Suspense fallback={<PageLoader />}><ColdEmailTech /></Suspense>} />
       <Route path="/alumni-outreach" element={<Suspense fallback={<PageLoader />}><AlumniOutreach /></Suspense>} />
-      <Route path="/coffee-chat-networking" element={<Suspense fallback={<PageLoader />}><CoffeeChatNetworking /></Suspense>} />
+      <Route path="/meeting-networking" element={<Suspense fallback={<PageLoader />}><MeetingNetworking /></Suspense>} />
+      <Route path="/coffee-chat-networking" element={<Navigate to="/meeting-networking" replace />} />
       <Route path="/glossary" element={<Suspense fallback={<PageLoader />}><Glossary /></Suspense>} />
       <Route path="/blog" element={<Suspense fallback={<PageLoader />}><Blog /></Suspense>} />
       <Route path="/blog/:slug" element={<Suspense fallback={<PageLoader />}><BlogPost /></Suspense>} />
+      {/* Legacy coffee-chat blog slugs redirect to their renamed posts */}
+      <Route path="/blog/coffee-chat-guide" element={<Navigate to="/blog/meeting-guide" replace />} />
+      <Route path="/blog/coffee-chat-questions-to-ask" element={<Navigate to="/blog/meeting-questions-to-ask" replace />} />
+      <Route path="/blog/how-to-ask-for-a-coffee-chat" element={<Navigate to="/blog/how-to-ask-for-a-meeting" replace />} />
       <Route path="/networking/:slug" element={<Suspense fallback={<PageLoader />}><NetworkingGuidePage /></Suspense>} />
       <Route path="/alumni/:slug" element={<Suspense fallback={<PageLoader />}><AlumniGuidePage /></Suspense>} />
       <Route path="/cold-email/:slug" element={<Suspense fallback={<PageLoader />}><ColdEmailGuidePage /></Suspense>} />
-      <Route path="/coffee-chat/:slug" element={<Suspense fallback={<PageLoader />}><CoffeeChatGuidePage /></Suspense>} />
+      <Route path="/meeting/:slug" element={<Suspense fallback={<PageLoader />}><MeetingGuidePage /></Suspense>} />
+      <Route path="/coffee-chat/:slug" element={<CoffeeChatSlugRedirect />} />
       <Route path="/networking-for/:slug" element={<Suspense fallback={<PageLoader />}><RoleNetworkingGuidePage /></Suspense>} />
       <Route path="/compare/:comparison" element={<Suspense fallback={<PageLoader />}><CompanyComparisonPage /></Suspense>} />
 
@@ -362,6 +384,12 @@ const AppRoutes: React.FC = () => {
       <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
     </Routes>
   );
+};
+
+/* ---------------- Legacy slug redirect (coffee-chat -> meeting rebrand) ---------------- */
+const CoffeeChatSlugRedirect: React.FC = () => {
+  const { slug } = useParams();
+  return <Navigate to={`/meeting/${slug ?? ""}`} replace />;
 };
 
 /* ---------------- Scout Redirect Component ---------------- */

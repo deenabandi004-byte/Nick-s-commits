@@ -245,7 +245,7 @@ def prompt_search():
                 print(f"⚠️ Failed to load user profile for {user_id}: {e}")
                 return jsonify({"error": "Could not load user profile. Please try again."}), 500
 
-        # Credit check outside try/except — always enforced
+        # Credit check outside try/except - always enforced
         if credits_available < 15:
             return jsonify({
                 "error": "Insufficient credits",
@@ -537,7 +537,7 @@ def prompt_search():
                         "attach_resume": attach_resume,
                     })
 
-        # 1E: Silent email quality gate — check + parallel regen for failures
+        # 1E: Silent email quality gate - check + parallel regen for failures
         try:
             from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -746,7 +746,7 @@ def prompt_search():
                 traceback.print_exc()
 
         # Metrics: log email_generated per contact with email (outside save block
-        # so events fire even if Firestore save fails — emails were already generated)
+        # so events fire even if Firestore save fails - emails were already generated)
         try:
             from app.utils.metrics_events import log_event
             for contact in contacts:

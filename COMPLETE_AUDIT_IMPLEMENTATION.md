@@ -39,7 +39,7 @@ Successfully implemented **17 critical improvements** from the Offerloop health 
 
 ### 6. ✅ Input Validation with Pydantic
 - **Files:** `backend/app/utils/validation.py`, all route files
-- **Schemas:** ContactSearchRequest, FirmSearchRequest, CoffeeChatPrepRequest, InterviewPrepRequest, ContactCreateRequest, ContactUpdateRequest
+- **Schemas:** ContactSearchRequest, FirmSearchRequest, MeetingPrepRequest, InterviewPrepRequest, ContactCreateRequest, ContactUpdateRequest
 - **Impact:** Prevents invalid data, better error messages
 - **Status:** ✅ Complete
 
@@ -73,8 +73,8 @@ Successfully implemented **17 critical improvements** from the Offerloop health 
 
 ## ✅ Round 3 Improvements (6/6 COMPLETED)
 
-### 12. ✅ Validation for Coffee Chat Prep
-- **File:** `backend/app/routes/coffee_chat_prep.py`
+### 12. ✅ Validation for Meeting Prep
+- **File:** `backend/app/routes/meeting_prep.py`
 - **Impact:** Validates LinkedIn URLs and all inputs
 - **Status:** ✅ Complete
 
@@ -91,7 +91,7 @@ Successfully implemented **17 critical improvements** from the Offerloop health 
   - Contacts: `linkedinUrl ASC + createdAt DESC`
   - Contacts: `firstName + lastName + company` (for deduplication)
   - Search History: `createdAt DESC + tier ASC`
-  - Coffee Chat Preps: `createdAt DESC + status ASC`
+  - Meeting Preps: `createdAt DESC + status ASC`
   - Interview Preps: `createdAt DESC + status ASC`
 - **Impact:** Faster queries, reduced Firestore costs
 - **Status:** ✅ Complete (deploy with `firebase deploy --only firestore:indexes`)
@@ -108,7 +108,7 @@ Successfully implemented **17 critical improvements** from the Offerloop health 
 - **Status:** ✅ Complete
 
 ### 16. ✅ Enhanced Error Handling in Prep Endpoints
-- **Files:** `backend/app/routes/coffee_chat_prep.py`, `backend/app/routes/interview_prep.py`
+- **Files:** `backend/app/routes/meeting_prep.py`, `backend/app/routes/interview_prep.py`
 - **Impact:** Uses standardized exceptions, better error messages
 - **Status:** ✅ Complete
 
@@ -195,7 +195,7 @@ Successfully implemented **17 critical improvements** from the Offerloop health 
 - `backend/app/routes/contacts.py` - Validation, pagination, bulk delete, better errors
 - `backend/app/routes/runs.py` - Validation, search history, better errors
 - `backend/app/routes/firm_search.py` - Validation, atomic credits, better errors
-- `backend/app/routes/coffee_chat_prep.py` - Validation, atomic credits, better errors
+- `backend/app/routes/meeting_prep.py` - Validation, atomic credits, better errors
 - `backend/app/routes/interview_prep.py` - Validation, atomic credits, better errors
 
 ### Frontend

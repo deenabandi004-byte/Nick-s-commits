@@ -705,7 +705,7 @@ function scrapeJobData() {
       urlPattern: url.replace(/\/\d+/g, '/:id').replace(/[a-f0-9-]{20,}/g, ':hash'),
     });
   } catch (e) {
-    // Ignore — telemetry is best-effort
+    // Ignore - telemetry is best-effort
   }
 
   return result;
@@ -799,7 +799,7 @@ if (document.readyState === 'loading') {
   init();
 }
 
-// Handle SPA navigation — use popstate + polling instead of expensive MutationObserver
+// Handle SPA navigation - use popstate + polling instead of expensive MutationObserver
 let lastUrl = location.href;
 
 function checkUrlChange() {
@@ -844,7 +844,7 @@ function cleanupObservers() {
 
 window.addEventListener('beforeunload', cleanupObservers);
 
-// Also handle visibility changes — when the document becomes hidden (e.g., tab
+// Also handle visibility changes - when the document becomes hidden (e.g., tab
 // closed or navigated away in some SPA scenarios), pause observing. Resume when
 // the tab becomes visible again.
 document.addEventListener('visibilitychange', () => {

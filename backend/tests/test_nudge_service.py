@@ -1,5 +1,5 @@
 """
-Tests for app.services.nudge_service — follow-up nudge generation and lifecycle.
+Tests for app.services.nudge_service - follow-up nudge generation and lifecycle.
 """
 import os
 import time

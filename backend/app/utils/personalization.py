@@ -665,7 +665,7 @@ def build_contact_profile(contact: dict) -> NormalizedContactProfile:
         if first_yr > last_yr:
             career_path = list(reversed(career_path))
         elif first_yr == last_yr:
-            # Years missing or equal — check is_current flag
+            # Years missing or equal - check is_current flag
             # If first entry is current job, PDL gave us newest-first → reverse
             if career_path[0].get("is_current") and not career_path[-1].get("is_current"):
                 career_path = list(reversed(career_path))
@@ -890,8 +890,8 @@ def _detect_all_signals(
                     f"{curr_title} at {curr_co}"
                 )
             instruction = (
-                f"Four parts: (1) Position yourself — who you are and what "
-                f"you're exploring. (2) Reference {concrete_fact} — state the "
+                f"Four parts: (1) Position yourself - who you are and what "
+                f"you're exploring. (2) Reference {concrete_fact} - state the "
                 f"fact of the move itself, then say what makes you curious about "
                 f"it. Do NOT invent commentary about either firm's reputation, "
                 f"culture, or market position. (3) One thoughtful question about "
@@ -1038,7 +1038,7 @@ def _detect_all_signals(
                 )
             instruction = (
                 f"Four parts: (1) Position yourself and your interest in "
-                f"{user.career_track}. (2) Reference {role_fact} — state the "
+                f"{user.career_track}. (2) Reference {role_fact} - state the "
                 f"fact, then say what makes you curious. Do NOT invent "
                 f"commentary about the firm's reputation, culture, or market "
                 f"position. Only reference facts from their record. "
@@ -1124,22 +1124,22 @@ def build_personalization_strategy(
             role_desc = "this professional"
 
         # General fallback: no real signal about this contact. Use honest
-        # 3-part structure — don't fake a research sentence with firm-PR.
+        # 3-part structure - don't fake a research sentence with firm-PR.
         instruction = f"You're a {user.university_short} student"
         if user.career_track:
             instruction += f" exploring {user.career_track}"
         instruction += (
             f". Three parts, in order: "
-            f"(1) One or two sentences positioning yourself — who you are, "
+            f"(1) One or two sentences positioning yourself - who you are, "
             f"what you're exploring, and why their specific role as {role_desc} "
             f"is relevant to your interests. "
-            f"(2) One thoughtful question about their experience as {role_desc} — "
+            f"(2) One thoughtful question about their experience as {role_desc} - "
             f"ask about their day-to-day, what surprised them, how they got into "
             f"the role, or what they'd tell someone exploring this career. "
             f"Do NOT write generic firm reputation commentary "
             f"(e.g., 'known for elite M&A,' 'collaborative culture'). "
             f"(3) The ask. "
-            f"Keep it honest and direct — at least 60 words."
+            f"Keep it honest and direct - at least 60 words."
         )
 
         return PersonalizationStrategy(

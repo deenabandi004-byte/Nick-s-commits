@@ -6,23 +6,23 @@ import { ArrowRight } from 'lucide-react';
 const faqData = [
   {
     question: "How much does Apollo.io cost compared to Offerloop?",
-    answer: "Apollo's paid plans start at $49/month (billed annually) and go up to $119/month for Professional features. Enterprise plans run $500+/month. Offerloop Pro is $14.99/month — purpose-built for students, not enterprise sales teams. Offerloop also has a free tier with 300 credits, while Apollo's free tier is limited to 60 mobile credits/month."
+    answer: "Apollo's paid plans start at $49/month (billed annually) and go up to $119/month for Professional features. Enterprise plans run $500+/month. Offerloop Pro is $14.99/month - purpose-built for students, not enterprise sales teams. Offerloop also has a free tier with 300 credits, while Apollo's free tier is limited to 60 mobile credits/month."
   },
   {
     question: "Is Apollo.io good for college students?",
-    answer: "Apollo was designed for B2B sales teams — its interface, features, and pricing reflect that. Features like sequence automation, call dialer, and CRM sync are built for sales reps running hundreds of outreach campaigns. For a college student sending 10-15 networking emails per week, Apollo is overkill and overpriced. Offerloop is purpose-built for the student networking use case."
+    answer: "Apollo was designed for B2B sales teams - its interface, features, and pricing reflect that. Features like sequence automation, call dialer, and CRM sync are built for sales reps running hundreds of outreach campaigns. For a college student sending 10-15 networking emails per week, Apollo is overkill and overpriced. Offerloop is purpose-built for the student networking use case."
   },
   {
     question: "Does Apollo have a better contact database than Offerloop?",
-    answer: "Apollo claims 275+ million contacts. Offerloop has access to over 2.2 billion verified contacts. More importantly, Offerloop's search is designed for how students think — natural language queries like 'McKinsey consultants who went to USC' rather than complex Boolean filters designed for sales prospecting."
+    answer: "Apollo claims 275+ million contacts. Offerloop has access to over 2.2 billion verified contacts. More importantly, Offerloop's search is designed for how students think - natural language queries like 'McKinsey consultants who went to USC' rather than complex Boolean filters designed for sales prospecting."
   },
   {
     question: "Can I use Apollo.io to send networking emails through Gmail?",
-    answer: "Apollo has email integration, but it's designed for automated sales sequences — not personalized 1-on-1 networking emails. Offerloop generates unique, personalized emails for each contact and sends them through your Gmail account so they look and feel like hand-written messages, not bulk outreach."
+    answer: "Apollo has email integration, but it's designed for automated sales sequences - not personalized 1-on-1 networking emails. Offerloop generates unique, personalized emails for each contact and sends them through your Gmail account so they look and feel like hand-written messages, not bulk outreach."
   },
   {
     question: "What does Offerloop have that Apollo doesn't?",
-    answer: "Offerloop offers features specifically for student networking that Apollo lacks: Coffee Chat Prep PDFs, interview preparation tools, a resume workshop, natural language contact search, and a networking pipeline tracker designed for relationship-building rather than sales funnels. Offerloop also costs 70-90% less than Apollo's paid plans."
+    answer: "Offerloop offers features specifically for student networking that Apollo lacks: Meeting Prep PDFs, interview preparation tools, a resume workshop, natural language contact search, and a networking pipeline tracker designed for relationship-building rather than sales funnels. Offerloop also costs 70-90% less than Apollo's paid plans."
   }
 ];
 
@@ -32,7 +32,7 @@ const comparisonRows = [
   { feature: "Contact Database", offerloop: "2.2B verified contacts", competitor: "275M+ contacts" },
   { feature: "AI Email Generation", offerloop: true, competitor: true },
   { feature: "Gmail Integration", offerloop: true, competitor: true },
-  { feature: "Coffee Chat / Interview Prep", offerloop: true, competitor: false },
+  { feature: "Meeting / Interview Prep", offerloop: true, competitor: false },
   { feature: "Free Tier", offerloop: "300 credits", competitor: "60 mobile credits/mo" },
   { feature: "Pricing", offerloop: "Free / $14.99/mo Pro", competitor: "$49-119/mo (annual billing)" },
 ];
@@ -74,7 +74,7 @@ const CompareApollo = () => {
           Offerloop vs <span style={{ color: '#3B82F6' }}>Apollo.io</span>
         </h1>
         <p style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B', maxWidth: '620px' }}>
-          Apollo.io is a powerful B2B sales platform — but it's built for sales teams, not students. Offerloop delivers the same core capability (find contacts, send emails) at a fraction of the price, with features designed specifically for student networking.
+          Apollo.io is a powerful B2B sales platform - but it's built for sales teams, not students. Offerloop delivers the same core capability (find contacts, send emails) at a fraction of the price, with features designed specifically for student networking.
         </p>
       </section>
 
@@ -112,13 +112,13 @@ const CompareApollo = () => {
           Is Apollo.io worth the price for college students?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Apollo.io is an excellent tool — for its target audience. B2B sales teams use Apollo to build lead lists, run automated email sequences, track engagement, and integrate with CRMs like Salesforce and HubSpot. If you're a sales development rep sending 500 emails per day, Apollo's $49-119/month pricing makes sense.
+          Apollo.io is an excellent tool - for its target audience. B2B sales teams use Apollo to build lead lists, run automated email sequences, track engagement, and integrate with CRMs like Salesforce and HubSpot. If you're a sales development rep sending 500 emails per day, Apollo's $49-119/month pricing makes sense.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          For a college student sending 10-15 personalized networking emails per week, Apollo is massive overkill. You don't need automated sequences, call dialers, or CRM integrations. You need to find the right person, write a great email, send it, and track the response. That's exactly what Offerloop does — at $14.99/month instead of $49-119.
+          For a college student sending 10-15 personalized networking emails per week, Apollo is massive overkill. You don't need automated sequences, call dialers, or CRM integrations. You need to find the right person, write a great email, send it, and track the response. That's exactly what Offerloop does - at $14.99/month instead of $49-119.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop also includes student-specific features that Apollo doesn't offer: Coffee Chat Prep PDFs, interview preparation tools, a resume workshop, and a networking tracker designed for relationship-building rather than sales pipeline management.
+          Offerloop also includes student-specific features that Apollo doesn't offer: Meeting Prep PDFs, interview preparation tools, a resume workshop, and a networking tracker designed for relationship-building rather than sales pipeline management.
         </p>
       </section>
 
@@ -131,7 +131,7 @@ const CompareApollo = () => {
           Apollo excels at enterprise sales workflows. It offers multi-step email sequences with automated follow-ups, a built-in phone dialer, engagement scoring, A/B testing, and deep CRM integrations. If you're managing thousands of leads across a sales team, these features are essential.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop intentionally doesn't have these features because they're not relevant to student networking. Automated sequences feel impersonal for 1-on-1 outreach. Sales-style engagement scoring doesn't apply to coffee chat requests. Students need a simpler, more affordable tool that does the core job — find, email, track — exceptionally well.
+          Offerloop intentionally doesn't have these features because they're not relevant to student networking. Automated sequences feel impersonal for 1-on-1 outreach. Sales-style engagement scoring doesn't apply to meeting requests. Students need a simpler, more affordable tool that does the core job - find, email, track - exceptionally well.
         </p>
       </section>
 
@@ -141,10 +141,10 @@ const CompareApollo = () => {
           How does Offerloop's contact database compare to Apollo's?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Apollo reports 275+ million contacts in its database. Offerloop provides access to over 2.2 billion verified contacts — roughly 8x larger. Both databases cover professionals across industries, companies, and roles. The difference isn't just size — it's how you search.
+          Apollo reports 275+ million contacts in its database. Offerloop provides access to over 2.2 billion verified contacts - roughly 8x larger. Both databases cover professionals across industries, companies, and roles. The difference isn't just size - it's how you search.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Apollo's search interface is built for sales prospecting with complex Boolean filters, revenue ranges, and technographic data. Offerloop's search is built for students — type natural language queries like "Goldman Sachs analysts who went to Michigan" and get instant results. The AI understands what you're looking for without requiring you to build a complex filter chain.
+          Apollo's search interface is built for sales prospecting with complex Boolean filters, revenue ranges, and technographic data. Offerloop's search is built for students - type natural language queries like "Goldman Sachs analysts who went to Michigan" and get instant results. The AI understands what you're looking for without requiring you to build a complex filter chain.
         </p>
       </section>
 
@@ -163,7 +163,7 @@ const CompareApollo = () => {
       <section className="px-6 py-20" style={{ background: '#FAFBFF' }}>
         <div className="text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.15, color: '#0F172A', marginBottom: '16px' }}>
-            Try Offerloop free — built for student networking
+            Try Offerloop free - built for student networking
           </h2>
           <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '28px' }}>
             Search 2.2B contacts. Generate personalized emails. Track every conversation.

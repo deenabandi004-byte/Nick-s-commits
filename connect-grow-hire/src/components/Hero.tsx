@@ -5,7 +5,7 @@ const features = [
   {
     icon: Send,
     title: "Instant Outreach",
-    description: "Automate personalized applications and messages to top employers with a single click—no more copy-pasting or repetitive forms.",
+    description: "Automate personalized applications and messages to top employers with a single click - no more copy-pasting or repetitive forms.",
     iconColor: "text-[#3B82F6]"
   },
   {
@@ -17,7 +17,7 @@ const features = [
   {
     icon: Handshake,
     title: "Meaningful Connections",
-    description: "Jump straight to real conversations with professionals and hiring managers—skip the small talk and get to what matters most.",
+    description: "Jump straight to real conversations with professionals and hiring managers - skip the small talk and get to what matters most.",
     iconColor: "text-[#3B82F6]"
   },
   {
@@ -39,7 +39,7 @@ const Hero = () => {
             </h1>
             
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
-              We're here to help you land better offers, faster—by taking the tedious, repetitive work out of recruiting. Spend <span className="font-bold text-foreground">less time</span> stuck behind a screen and more time where it matters: connecting with professionals and <span className="font-bold text-foreground">living your life</span>. We handle the busywork, so you can focus on your growth, your passions, and your next big opportunity.
+              We're here to help you land better offers, faster - by taking the tedious, repetitive work out of recruiting. Spend <span className="font-bold text-foreground">less time</span> stuck behind a screen and more time where it matters: connecting with professionals and <span className="font-bold text-foreground">living your life</span>. We handle the busywork, so you can focus on your growth, your passions, and your next big opportunity.
             </p>
           </div>
         </div>
@@ -52,7 +52,7 @@ const Hero = () => {
               Why Choose Offerloop.ai?
             </h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Everything you need to streamline your recruiting process and land the best opportunities — in less time.
+              Everything you need to streamline your recruiting process and land the best opportunities - in less time.
             </p>
           </div>
 

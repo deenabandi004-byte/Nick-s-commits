@@ -1,7 +1,7 @@
 ---
 title: "How to Network With Alumni (The Cold Email That Actually Gets a Response)"
 date: "2026-03-13"
-description: "Step-by-step guide to reaching out to alumni for coffee chats, internships, and referrals. Includes email templates that get replies."
+description: "Step-by-step guide to reaching out to alumni for meetings, internships, and referrals. Includes email templates that get replies."
 slug: "alumni-networking-guide"
 keywords: "alumni networking, how to reach out to alumni, alumni email template college student"
 faqSchema:
@@ -47,7 +47,7 @@ Every effective alumni outreach email has four components. Miss any one of them 
 
 **3. The specific reason.** Explain why you are reaching out to this person specifically, not just anyone at their company. Reference their role, their career path, their team, or something they have written or spoken about. Specificity is what makes outreach feel genuine rather than mass-produced.
 
-**4. The clear ask.** End with a low-commitment, time-bounded request. A 15-minute phone call or a quick virtual coffee chat works best. Do not ask for a referral in your first message. Do not leave the ask open-ended like "I would love to pick your brain sometime."
+**4. The clear ask.** End with a low-commitment, time-bounded request. A 15-minute phone call or a quick virtual meeting works best. Do not ask for a referral in your first message. Do not leave the ask open-ended like "I would love to pick your brain sometime."
 
 ## Email Template 1: Same University, Different Industry
 

@@ -41,7 +41,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat-networking</loc>
+    <loc>https://www.offerloop.ai/meeting-networking</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -266,52 +266,52 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mckinsey</loc>
+    <loc>https://www.offerloop.ai/meeting/mckinsey</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bcg</loc>
+    <loc>https://www.offerloop.ai/meeting/bcg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bain</loc>
+    <loc>https://www.offerloop.ai/meeting/bain</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/goldman-sachs</loc>
+    <loc>https://www.offerloop.ai/meeting/goldman-sachs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/jpmorgan</loc>
+    <loc>https://www.offerloop.ai/meeting/jpmorgan</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/morgan-stanley</loc>
+    <loc>https://www.offerloop.ai/meeting/morgan-stanley</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/google</loc>
+    <loc>https://www.offerloop.ai/meeting/google</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/meta</loc>
+    <loc>https://www.offerloop.ai/meeting/meta</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/amazon</loc>
+    <loc>https://www.offerloop.ai/meeting/amazon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/blackstone</loc>
+    <loc>https://www.offerloop.ai/meeting/blackstone</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -556,52 +556,52 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/accenture</loc>
+    <loc>https://www.offerloop.ai/meeting/accenture</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bank-of-america</loc>
+    <loc>https://www.offerloop.ai/meeting/bank-of-america</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/citigroup</loc>
+    <loc>https://www.offerloop.ai/meeting/citigroup</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/apollo</loc>
+    <loc>https://www.offerloop.ai/meeting/apollo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/netflix</loc>
+    <loc>https://www.offerloop.ai/meeting/netflix</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/uber</loc>
+    <loc>https://www.offerloop.ai/meeting/uber</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/airbnb</loc>
+    <loc>https://www.offerloop.ai/meeting/airbnb</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/openai</loc>
+    <loc>https://www.offerloop.ai/meeting/openai</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/spacex</loc>
+    <loc>https://www.offerloop.ai/meeting/spacex</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/jane-street</loc>
+    <loc>https://www.offerloop.ai/meeting/jane-street</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -626,7 +626,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/blog/coffee-chat-guide</loc>
+    <loc>https://www.offerloop.ai/blog/meeting-guide</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -886,102 +886,102 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pwc</loc>
+    <loc>https://www.offerloop.ai/meeting/pwc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ey</loc>
+    <loc>https://www.offerloop.ai/meeting/ey</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/wells-fargo</loc>
+    <loc>https://www.offerloop.ai/meeting/wells-fargo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ubs</loc>
+    <loc>https://www.offerloop.ai/meeting/ubs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/jefferies</loc>
+    <loc>https://www.offerloop.ai/meeting/jefferies</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/houlihan-lokey</loc>
+    <loc>https://www.offerloop.ai/meeting/houlihan-lokey</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/shopify</loc>
+    <loc>https://www.offerloop.ai/meeting/shopify</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/figma</loc>
+    <loc>https://www.offerloop.ai/meeting/figma</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/notion</loc>
+    <loc>https://www.offerloop.ai/meeting/notion</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/adobe</loc>
+    <loc>https://www.offerloop.ai/meeting/adobe</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/palo-alto-networks</loc>
+    <loc>https://www.offerloop.ai/meeting/palo-alto-networks</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/crowdstrike</loc>
+    <loc>https://www.offerloop.ai/meeting/crowdstrike</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/workday</loc>
+    <loc>https://www.offerloop.ai/meeting/workday</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/servicenow</loc>
+    <loc>https://www.offerloop.ai/meeting/servicenow</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/insight</loc>
+    <loc>https://www.offerloop.ai/meeting/insight</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/general-atlantic</loc>
+    <loc>https://www.offerloop.ai/meeting/general-atlantic</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ares</loc>
+    <loc>https://www.offerloop.ai/meeting/ares</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/vista</loc>
+    <loc>https://www.offerloop.ai/meeting/vista</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/silver-lake</loc>
+    <loc>https://www.offerloop.ai/meeting/silver-lake</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/robinhood</loc>
+    <loc>https://www.offerloop.ai/meeting/robinhood</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1316,7 +1316,7 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/spotify</loc>
+    <loc>https://www.offerloop.ai/meeting/spotify</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -2017,252 +2017,252 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/accenture-strategy</loc>
+    <loc>https://www.offerloop.ai/meeting/accenture-strategy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mckinsey-implementation</loc>
+    <loc>https://www.offerloop.ai/meeting/mckinsey-implementation</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/strategy-and</loc>
+    <loc>https://www.offerloop.ai/meeting/strategy-and</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kearney</loc>
+    <loc>https://www.offerloop.ai/meeting/kearney</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mercer</loc>
+    <loc>https://www.offerloop.ai/meeting/mercer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bcg-gamma</loc>
+    <loc>https://www.offerloop.ai/meeting/bcg-gamma</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/deloitte-digital</loc>
+    <loc>https://www.offerloop.ai/meeting/deloitte-digital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kpmg-advisory</loc>
+    <loc>https://www.offerloop.ai/meeting/kpmg-advisory</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ey-parthenon</loc>
+    <loc>https://www.offerloop.ai/meeting/ey-parthenon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/guidehouse</loc>
+    <loc>https://www.offerloop.ai/meeting/guidehouse</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lazard-am</loc>
+    <loc>https://www.offerloop.ai/meeting/lazard-am</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/perella-weinberg</loc>
+    <loc>https://www.offerloop.ai/meeting/perella-weinberg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/rothschild</loc>
+    <loc>https://www.offerloop.ai/meeting/rothschild</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nomura</loc>
+    <loc>https://www.offerloop.ai/meeting/nomura</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mizuho</loc>
+    <loc>https://www.offerloop.ai/meeting/mizuho</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/smbc</loc>
+    <loc>https://www.offerloop.ai/meeting/smbc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bnp-paribas</loc>
+    <loc>https://www.offerloop.ai/meeting/bnp-paribas</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/societe-generale</loc>
+    <loc>https://www.offerloop.ai/meeting/societe-generale</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/macquarie</loc>
+    <loc>https://www.offerloop.ai/meeting/macquarie</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/stifel</loc>
+    <loc>https://www.offerloop.ai/meeting/stifel</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/piper-sandler</loc>
+    <loc>https://www.offerloop.ai/meeting/piper-sandler</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/william-blair</loc>
+    <loc>https://www.offerloop.ai/meeting/william-blair</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/baird</loc>
+    <loc>https://www.offerloop.ai/meeting/baird</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/raymond-james</loc>
+    <loc>https://www.offerloop.ai/meeting/raymond-james</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cowen</loc>
+    <loc>https://www.offerloop.ai/meeting/cowen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/brookfield</loc>
+    <loc>https://www.offerloop.ai/meeting/brookfield</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/oaktree</loc>
+    <loc>https://www.offerloop.ai/meeting/oaktree</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/advent</loc>
+    <loc>https://www.offerloop.ai/meeting/advent</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bain-capital</loc>
+    <loc>https://www.offerloop.ai/meeting/bain-capital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/leonard-green</loc>
+    <loc>https://www.offerloop.ai/meeting/leonard-green</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/thoma-bravo</loc>
+    <loc>https://www.offerloop.ai/meeting/thoma-bravo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/summit</loc>
+    <loc>https://www.offerloop.ai/meeting/summit</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ta-associates</loc>
+    <loc>https://www.offerloop.ai/meeting/ta-associates</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/genstar</loc>
+    <loc>https://www.offerloop.ai/meeting/genstar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/american-securities</loc>
+    <loc>https://www.offerloop.ai/meeting/american-securities</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/capital-one</loc>
+    <loc>https://www.offerloop.ai/meeting/capital-one</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/blackrock</loc>
+    <loc>https://www.offerloop.ai/meeting/blackrock</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/vanguard</loc>
+    <loc>https://www.offerloop.ai/meeting/vanguard</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/fidelity</loc>
+    <loc>https://www.offerloop.ai/meeting/fidelity</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pimco</loc>
+    <loc>https://www.offerloop.ai/meeting/pimco</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/renaissance</loc>
+    <loc>https://www.offerloop.ai/meeting/renaissance</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/de-shaw</loc>
+    <loc>https://www.offerloop.ai/meeting/de-shaw</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/millennium</loc>
+    <loc>https://www.offerloop.ai/meeting/millennium</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/accel</loc>
+    <loc>https://www.offerloop.ai/meeting/accel</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kleiner-perkins</loc>
+    <loc>https://www.offerloop.ai/meeting/kleiner-perkins</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ycombinator</loc>
+    <loc>https://www.offerloop.ai/meeting/ycombinator</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/first-round</loc>
+    <loc>https://www.offerloop.ai/meeting/first-round</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/moderna</loc>
+    <loc>https://www.offerloop.ai/meeting/moderna</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/jnj</loc>
+    <loc>https://www.offerloop.ai/meeting/jnj</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pfizer</loc>
+    <loc>https://www.offerloop.ai/meeting/pfizer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -3387,152 +3387,152 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/accenture-federal</loc>
+    <loc>https://www.offerloop.ai/meeting/accenture-federal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/booz-allen-strategy</loc>
+    <loc>https://www.offerloop.ai/meeting/booz-allen-strategy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/grant-thornton</loc>
+    <loc>https://www.offerloop.ai/meeting/grant-thornton</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/rsm</loc>
+    <loc>https://www.offerloop.ai/meeting/rsm</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bdo</loc>
+    <loc>https://www.offerloop.ai/meeting/bdo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/moss-adams</loc>
+    <loc>https://www.offerloop.ai/meeting/moss-adams</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/plante-moran</loc>
+    <loc>https://www.offerloop.ai/meeting/plante-moran</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/dhg</loc>
+    <loc>https://www.offerloop.ai/meeting/dhg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/crowe</loc>
+    <loc>https://www.offerloop.ai/meeting/crowe</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/baker-tilly</loc>
+    <loc>https://www.offerloop.ai/meeting/baker-tilly</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lazard-freres</loc>
+    <loc>https://www.offerloop.ai/meeting/lazard-freres</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/greenhill</loc>
+    <loc>https://www.offerloop.ai/meeting/greenhill</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/imperial-capital</loc>
+    <loc>https://www.offerloop.ai/meeting/imperial-capital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/duff-phelps</loc>
+    <loc>https://www.offerloop.ai/meeting/duff-phelps</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lincoln-international</loc>
+    <loc>https://www.offerloop.ai/meeting/lincoln-international</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/harris-williams</loc>
+    <loc>https://www.offerloop.ai/meeting/harris-williams</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/baird-ib</loc>
+    <loc>https://www.offerloop.ai/meeting/baird-ib</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/oppenheimer</loc>
+    <loc>https://www.offerloop.ai/meeting/oppenheimer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/canaccord</loc>
+    <loc>https://www.offerloop.ai/meeting/canaccord</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/needham</loc>
+    <loc>https://www.offerloop.ai/meeting/needham</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/brookfield-infrastructure</loc>
+    <loc>https://www.offerloop.ai/meeting/brookfield-infrastructure</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/gip</loc>
+    <loc>https://www.offerloop.ai/meeting/gip</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/stonepeak</loc>
+    <loc>https://www.offerloop.ai/meeting/stonepeak</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/energy-capital</loc>
+    <loc>https://www.offerloop.ai/meeting/energy-capital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/riverstone</loc>
+    <loc>https://www.offerloop.ai/meeting/riverstone</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hellman-friedman</loc>
+    <loc>https://www.offerloop.ai/meeting/hellman-friedman</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/gtcr</loc>
+    <loc>https://www.offerloop.ai/meeting/gtcr</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/madison-dearborn</loc>
+    <loc>https://www.offerloop.ai/meeting/madison-dearborn</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/welsh-carson</loc>
+    <loc>https://www.offerloop.ai/meeting/welsh-carson</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/new-mountain</loc>
+    <loc>https://www.offerloop.ai/meeting/new-mountain</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -4607,127 +4607,127 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nike</loc>
+    <loc>https://www.offerloop.ai/meeting/nike</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/adidas</loc>
+    <loc>https://www.offerloop.ai/meeting/adidas</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lululemon</loc>
+    <loc>https://www.offerloop.ai/meeting/lululemon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/warby-parker</loc>
+    <loc>https://www.offerloop.ai/meeting/warby-parker</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/glossier</loc>
+    <loc>https://www.offerloop.ai/meeting/glossier</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/away</loc>
+    <loc>https://www.offerloop.ai/meeting/away</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/peloton</loc>
+    <loc>https://www.offerloop.ai/meeting/peloton</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/classpass</loc>
+    <loc>https://www.offerloop.ai/meeting/classpass</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/stitch-fix</loc>
+    <loc>https://www.offerloop.ai/meeting/stitch-fix</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/realreal</loc>
+    <loc>https://www.offerloop.ai/meeting/realreal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pg</loc>
+    <loc>https://www.offerloop.ai/meeting/pg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/unilever</loc>
+    <loc>https://www.offerloop.ai/meeting/unilever</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nestle</loc>
+    <loc>https://www.offerloop.ai/meeting/nestle</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/coca-cola</loc>
+    <loc>https://www.offerloop.ai/meeting/coca-cola</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pepsico</loc>
+    <loc>https://www.offerloop.ai/meeting/pepsico</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/general-mills</loc>
+    <loc>https://www.offerloop.ai/meeting/general-mills</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kelloggs</loc>
+    <loc>https://www.offerloop.ai/meeting/kelloggs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mars</loc>
+    <loc>https://www.offerloop.ai/meeting/mars</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kraft-heinz</loc>
+    <loc>https://www.offerloop.ai/meeting/kraft-heinz</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mondelez</loc>
+    <loc>https://www.offerloop.ai/meeting/mondelez</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/disney</loc>
+    <loc>https://www.offerloop.ai/meeting/disney</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nbcuniversal</loc>
+    <loc>https://www.offerloop.ai/meeting/nbcuniversal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/wbd</loc>
+    <loc>https://www.offerloop.ai/meeting/wbd</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/paramount</loc>
+    <loc>https://www.offerloop.ai/meeting/paramount</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/sony-pictures</loc>
+    <loc>https://www.offerloop.ai/meeting/sony-pictures</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -5237,127 +5237,127 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lvmh</loc>
+    <loc>https://www.offerloop.ai/meeting/lvmh</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kering</loc>
+    <loc>https://www.offerloop.ai/meeting/kering</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/richemont</loc>
+    <loc>https://www.offerloop.ai/meeting/richemont</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hermes</loc>
+    <loc>https://www.offerloop.ai/meeting/hermes</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/chanel</loc>
+    <loc>https://www.offerloop.ai/meeting/chanel</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/estee-lauder</loc>
+    <loc>https://www.offerloop.ai/meeting/estee-lauder</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/loreal</loc>
+    <loc>https://www.offerloop.ai/meeting/loreal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/sephora</loc>
+    <loc>https://www.offerloop.ai/meeting/sephora</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/target</loc>
+    <loc>https://www.offerloop.ai/meeting/target</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/walmart</loc>
+    <loc>https://www.offerloop.ai/meeting/walmart</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/costco</loc>
+    <loc>https://www.offerloop.ai/meeting/costco</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nordstrom</loc>
+    <loc>https://www.offerloop.ai/meeting/nordstrom</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/macys</loc>
+    <loc>https://www.offerloop.ai/meeting/macys</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/gap</loc>
+    <loc>https://www.offerloop.ai/meeting/gap</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/vf-corp</loc>
+    <loc>https://www.offerloop.ai/meeting/vf-corp</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hasbro</loc>
+    <loc>https://www.offerloop.ai/meeting/hasbro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mattel</loc>
+    <loc>https://www.offerloop.ai/meeting/mattel</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/johnson-controls</loc>
+    <loc>https://www.offerloop.ai/meeting/johnson-controls</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/emerson</loc>
+    <loc>https://www.offerloop.ai/meeting/emerson</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/itw</loc>
+    <loc>https://www.offerloop.ai/meeting/itw</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/danaher-corp</loc>
+    <loc>https://www.offerloop.ai/meeting/danaher-corp</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ingersoll-rand</loc>
+    <loc>https://www.offerloop.ai/meeting/ingersoll-rand</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/textron</loc>
+    <loc>https://www.offerloop.ai/meeting/textron</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bae</loc>
+    <loc>https://www.offerloop.ai/meeting/bae</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/leidos</loc>
+    <loc>https://www.offerloop.ai/meeting/leidos</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -5612,132 +5612,132 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/accenture-tech</loc>
+    <loc>https://www.offerloop.ai/meeting/accenture-tech</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/infosys</loc>
+    <loc>https://www.offerloop.ai/meeting/infosys</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/wipro</loc>
+    <loc>https://www.offerloop.ai/meeting/wipro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tcs</loc>
+    <loc>https://www.offerloop.ai/meeting/tcs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cognizant</loc>
+    <loc>https://www.offerloop.ai/meeting/cognizant</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/capgemini</loc>
+    <loc>https://www.offerloop.ai/meeting/capgemini</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cgi</loc>
+    <loc>https://www.offerloop.ai/meeting/cgi</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/unisys</loc>
+    <loc>https://www.offerloop.ai/meeting/unisys</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/dxc</loc>
+    <loc>https://www.offerloop.ai/meeting/dxc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/gartner</loc>
+    <loc>https://www.offerloop.ai/meeting/gartner</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/oliver-wyman-group</loc>
+    <loc>https://www.offerloop.ai/meeting/oliver-wyman-group</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/zs-associates</loc>
+    <loc>https://www.offerloop.ai/meeting/zs-associates</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/simon-kucher</loc>
+    <loc>https://www.offerloop.ai/meeting/simon-kucher</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/korn-ferry</loc>
+    <loc>https://www.offerloop.ai/meeting/korn-ferry</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/spencer-stuart</loc>
+    <loc>https://www.offerloop.ai/meeting/spencer-stuart</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/heidrick</loc>
+    <loc>https://www.offerloop.ai/meeting/heidrick</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/russell-reynolds</loc>
+    <loc>https://www.offerloop.ai/meeting/russell-reynolds</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/egon-zehnder</loc>
+    <loc>https://www.offerloop.ai/meeting/egon-zehnder</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/towers-watson</loc>
+    <loc>https://www.offerloop.ai/meeting/towers-watson</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/aon-hewitt</loc>
+    <loc>https://www.offerloop.ai/meeting/aon-hewitt</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nomura-securities</loc>
+    <loc>https://www.offerloop.ai/meeting/nomura-securities</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hsbc-ib</loc>
+    <loc>https://www.offerloop.ai/meeting/hsbc-ib</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/standard-chartered</loc>
+    <loc>https://www.offerloop.ai/meeting/standard-chartered</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mizuho-securities</loc>
+    <loc>https://www.offerloop.ai/meeting/mizuho-securities</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/td-securities</loc>
+    <loc>https://www.offerloop.ai/meeting/td-securities</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cibc</loc>
+    <loc>https://www.offerloop.ai/meeting/cibc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -5942,1512 +5942,1512 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/10x-genomics</loc>
+    <loc>https://www.offerloop.ai/meeting/10x-genomics</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/3m</loc>
+    <loc>https://www.offerloop.ai/meeting/3m</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/a16z</loc>
+    <loc>https://www.offerloop.ai/meeting/a16z</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/a16z-bio</loc>
+    <loc>https://www.offerloop.ai/meeting/a16z-bio</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/a16z-growth</loc>
+    <loc>https://www.offerloop.ai/meeting/a16z-growth</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/abbott</loc>
+    <loc>https://www.offerloop.ai/meeting/abbott</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/abbvie</loc>
+    <loc>https://www.offerloop.ai/meeting/abbvie</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/aetna</loc>
+    <loc>https://www.offerloop.ai/meeting/aetna</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/aflac</loc>
+    <loc>https://www.offerloop.ai/meeting/aflac</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/airtable</loc>
+    <loc>https://www.offerloop.ai/meeting/airtable</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/alixpartners</loc>
+    <loc>https://www.offerloop.ai/meeting/alixpartners</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/allstate</loc>
+    <loc>https://www.offerloop.ai/meeting/allstate</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/alnylam</loc>
+    <loc>https://www.offerloop.ai/meeting/alnylam</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/alvarez-marsal</loc>
+    <loc>https://www.offerloop.ai/meeting/alvarez-marsal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/amex</loc>
+    <loc>https://www.offerloop.ai/meeting/amex</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/amgen</loc>
+    <loc>https://www.offerloop.ai/meeting/amgen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/analysis-group</loc>
+    <loc>https://www.offerloop.ai/meeting/analysis-group</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/anduril</loc>
+    <loc>https://www.offerloop.ai/meeting/anduril</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ankura</loc>
+    <loc>https://www.offerloop.ai/meeting/ankura</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/anthem</loc>
+    <loc>https://www.offerloop.ai/meeting/anthem</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/anthropic</loc>
+    <loc>https://www.offerloop.ai/meeting/anthropic</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/antler</loc>
+    <loc>https://www.offerloop.ai/meeting/antler</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/apple</loc>
+    <loc>https://www.offerloop.ai/meeting/apple</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/aqr</loc>
+    <loc>https://www.offerloop.ai/meeting/aqr</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/archer</loc>
+    <loc>https://www.offerloop.ai/meeting/archer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/arvinas</loc>
+    <loc>https://www.offerloop.ai/meeting/arvinas</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/astrazeneca</loc>
+    <loc>https://www.offerloop.ai/meeting/astrazeneca</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/at-kearney</loc>
+    <loc>https://www.offerloop.ai/meeting/at-kearney</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/avalonbay</loc>
+    <loc>https://www.offerloop.ai/meeting/avalonbay</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bah-defense</loc>
+    <loc>https://www.offerloop.ai/meeting/bah-defense</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/barclays</loc>
+    <loc>https://www.offerloop.ai/meeting/barclays</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/battery</loc>
+    <loc>https://www.offerloop.ai/meeting/battery</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/baupost</loc>
+    <loc>https://www.offerloop.ai/meeting/baupost</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bcg-full</loc>
+    <loc>https://www.offerloop.ai/meeting/bcg-full</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/beam-tx</loc>
+    <loc>https://www.offerloop.ai/meeting/beam-tx</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/benchling</loc>
+    <loc>https://www.offerloop.ai/meeting/benchling</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bessemer</loc>
+    <loc>https://www.offerloop.ai/meeting/bessemer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/biogen</loc>
+    <loc>https://www.offerloop.ai/meeting/biogen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/blackstone-re</loc>
+    <loc>https://www.offerloop.ai/meeting/blackstone-re</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/block</loc>
+    <loc>https://www.offerloop.ai/meeting/block</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/blueprint</loc>
+    <loc>https://www.offerloop.ai/meeting/blueprint</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bms</loc>
+    <loc>https://www.offerloop.ai/meeting/bms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/boeing</loc>
+    <loc>https://www.offerloop.ai/meeting/boeing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/booz-allen</loc>
+    <loc>https://www.offerloop.ai/meeting/booz-allen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/booz-allen-strategy-2</loc>
+    <loc>https://www.offerloop.ai/meeting/booz-allen-strategy-2</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/boston-properties</loc>
+    <loc>https://www.offerloop.ai/meeting/boston-properties</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/boston-scientific</loc>
+    <loc>https://www.offerloop.ai/meeting/boston-scientific</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bp</loc>
+    <loc>https://www.offerloop.ai/meeting/bp</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/brex</loc>
+    <loc>https://www.offerloop.ai/meeting/brex</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bridgewater</loc>
+    <loc>https://www.offerloop.ai/meeting/bridgewater</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bytedance</loc>
+    <loc>https://www.offerloop.ai/meeting/bytedance</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/c4-tx</loc>
+    <loc>https://www.offerloop.ai/meeting/c4-tx</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/calico</loc>
+    <loc>https://www.offerloop.ai/meeting/calico</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cantor-fitzgerald</loc>
+    <loc>https://www.offerloop.ai/meeting/cantor-fitzgerald</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/canva</loc>
+    <loc>https://www.offerloop.ai/meeting/canva</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/carlyle</loc>
+    <loc>https://www.offerloop.ai/meeting/carlyle</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/caterpillar</loc>
+    <loc>https://www.offerloop.ai/meeting/caterpillar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cbre</loc>
+    <loc>https://www.offerloop.ai/meeting/cbre</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/celgene</loc>
+    <loc>https://www.offerloop.ai/meeting/celgene</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/centerview</loc>
+    <loc>https://www.offerloop.ai/meeting/centerview</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cerebral</loc>
+    <loc>https://www.offerloop.ai/meeting/cerebral</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cfs</loc>
+    <loc>https://www.offerloop.ai/meeting/cfs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/chevron</loc>
+    <loc>https://www.offerloop.ai/meeting/chevron</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/chime</loc>
+    <loc>https://www.offerloop.ai/meeting/chime</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cigna</loc>
+    <loc>https://www.offerloop.ai/meeting/cigna</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/citadel</loc>
+    <loc>https://www.offerloop.ai/meeting/citadel</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cloudflare</loc>
+    <loc>https://www.offerloop.ai/meeting/cloudflare</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/coatue</loc>
+    <loc>https://www.offerloop.ai/meeting/coatue</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/coinbase</loc>
+    <loc>https://www.offerloop.ai/meeting/coinbase</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/color-health</loc>
+    <loc>https://www.offerloop.ai/meeting/color-health</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/compass-lexecon</loc>
+    <loc>https://www.offerloop.ai/meeting/compass-lexecon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/conde-nast</loc>
+    <loc>https://www.offerloop.ai/meeting/conde-nast</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/confluent</loc>
+    <loc>https://www.offerloop.ai/meeting/confluent</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/conocophillips</loc>
+    <loc>https://www.offerloop.ai/meeting/conocophillips</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cornerstone</loc>
+    <loc>https://www.offerloop.ai/meeting/cornerstone</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cra</loc>
+    <loc>https://www.offerloop.ai/meeting/cra</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/credit-suisse</loc>
+    <loc>https://www.offerloop.ai/meeting/credit-suisse</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/crispr-tx</loc>
+    <loc>https://www.offerloop.ai/meeting/crispr-tx</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cruise</loc>
+    <loc>https://www.offerloop.ai/meeting/cruise</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cursor</loc>
+    <loc>https://www.offerloop.ai/meeting/cursor</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cushman-wakefield</loc>
+    <loc>https://www.offerloop.ai/meeting/cushman-wakefield</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/d1-capital</loc>
+    <loc>https://www.offerloop.ai/meeting/d1-capital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/danaher</loc>
+    <loc>https://www.offerloop.ai/meeting/danaher</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/databricks</loc>
+    <loc>https://www.offerloop.ai/meeting/databricks</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/datadog</loc>
+    <loc>https://www.offerloop.ai/meeting/datadog</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/dbt-labs</loc>
+    <loc>https://www.offerloop.ai/meeting/dbt-labs</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/deere</loc>
+    <loc>https://www.offerloop.ai/meeting/deere</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/deloitte</loc>
+    <loc>https://www.offerloop.ai/meeting/deloitte</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/deutsche-bank</loc>
+    <loc>https://www.offerloop.ai/meeting/deutsche-bank</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/dfa</loc>
+    <loc>https://www.offerloop.ai/meeting/dfa</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/discord</loc>
+    <loc>https://www.offerloop.ai/meeting/discord</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/dominion</loc>
+    <loc>https://www.offerloop.ai/meeting/dominion</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/doordash</loc>
+    <loc>https://www.offerloop.ai/meeting/doordash</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/dragoneer</loc>
+    <loc>https://www.offerloop.ai/meeting/dragoneer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/dst</loc>
+    <loc>https://www.offerloop.ai/meeting/dst</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/duke-energy</loc>
+    <loc>https://www.offerloop.ai/meeting/duke-energy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/duolingo</loc>
+    <loc>https://www.offerloop.ai/meeting/duolingo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/eaton</loc>
+    <loc>https://www.offerloop.ai/meeting/eaton</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/editas</loc>
+    <loc>https://www.offerloop.ai/meeting/editas</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/equity-residential</loc>
+    <loc>https://www.offerloop.ai/meeting/equity-residential</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/evercore</loc>
+    <loc>https://www.offerloop.ai/meeting/evercore</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/exxonmobil</loc>
+    <loc>https://www.offerloop.ai/meeting/exxonmobil</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/first-solar</loc>
+    <loc>https://www.offerloop.ai/meeting/first-solar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/flatiron</loc>
+    <loc>https://www.offerloop.ai/meeting/flatiron</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/fog</loc>
+    <loc>https://www.offerloop.ai/meeting/fog</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/fortive</loc>
+    <loc>https://www.offerloop.ai/meeting/fortive</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/founders-fund</loc>
+    <loc>https://www.offerloop.ai/meeting/founders-fund</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/francisco-partners</loc>
+    <loc>https://www.offerloop.ai/meeting/francisco-partners</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/franklin-templeton</loc>
+    <loc>https://www.offerloop.ai/meeting/franklin-templeton</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/fti</loc>
+    <loc>https://www.offerloop.ai/meeting/fti</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ge</loc>
+    <loc>https://www.offerloop.ai/meeting/ge</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ge-healthcare</loc>
+    <loc>https://www.offerloop.ai/meeting/ge-healthcare</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/genentech</loc>
+    <loc>https://www.offerloop.ai/meeting/genentech</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/general-catalyst</loc>
+    <loc>https://www.offerloop.ai/meeting/general-catalyst</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/general-dynamics</loc>
+    <loc>https://www.offerloop.ai/meeting/general-dynamics</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ggv</loc>
+    <loc>https://www.offerloop.ai/meeting/ggv</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/gilead</loc>
+    <loc>https://www.offerloop.ai/meeting/gilead</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/greenhouse</loc>
+    <loc>https://www.offerloop.ai/meeting/greenhouse</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/greylock</loc>
+    <loc>https://www.offerloop.ai/meeting/greylock</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/guardant</loc>
+    <loc>https://www.offerloop.ai/meeting/guardant</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/guggenheim</loc>
+    <loc>https://www.offerloop.ai/meeting/guggenheim</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/gusto</loc>
+    <loc>https://www.offerloop.ai/meeting/gusto</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/gv</loc>
+    <loc>https://www.offerloop.ai/meeting/gv</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/halliburton</loc>
+    <loc>https://www.offerloop.ai/meeting/halliburton</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hartford</loc>
+    <loc>https://www.offerloop.ai/meeting/hartford</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hashicorp</loc>
+    <loc>https://www.offerloop.ai/meeting/hashicorp</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hearst</loc>
+    <loc>https://www.offerloop.ai/meeting/hearst</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/helion</loc>
+    <loc>https://www.offerloop.ai/meeting/helion</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hines</loc>
+    <loc>https://www.offerloop.ai/meeting/hines</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hinge-health</loc>
+    <loc>https://www.offerloop.ai/meeting/hinge-health</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/honeywell</loc>
+    <loc>https://www.offerloop.ai/meeting/honeywell</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hsbc</loc>
+    <loc>https://www.offerloop.ai/meeting/hsbc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hubspot</loc>
+    <loc>https://www.offerloop.ai/meeting/hubspot</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hugging-face</loc>
+    <loc>https://www.offerloop.ai/meeting/hugging-face</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/hulu</loc>
+    <loc>https://www.offerloop.ai/meeting/hulu</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/humana</loc>
+    <loc>https://www.offerloop.ai/meeting/humana</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/huron</loc>
+    <loc>https://www.offerloop.ai/meeting/huron</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ibm</loc>
+    <loc>https://www.offerloop.ai/meeting/ibm</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/icf</loc>
+    <loc>https://www.offerloop.ai/meeting/icf</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/iheartmedia</loc>
+    <loc>https://www.offerloop.ai/meeting/iheartmedia</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/illumina</loc>
+    <loc>https://www.offerloop.ai/meeting/illumina</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/imperial-cap</loc>
+    <loc>https://www.offerloop.ai/meeting/imperial-cap</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/incyte</loc>
+    <loc>https://www.offerloop.ai/meeting/incyte</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/index-ventures</loc>
+    <loc>https://www.offerloop.ai/meeting/index-ventures</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/initialized</loc>
+    <loc>https://www.offerloop.ai/meeting/initialized</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/insitro</loc>
+    <loc>https://www.offerloop.ai/meeting/insitro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/instacart</loc>
+    <loc>https://www.offerloop.ai/meeting/instacart</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/intellia</loc>
+    <loc>https://www.offerloop.ai/meeting/intellia</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/intuit</loc>
+    <loc>https://www.offerloop.ai/meeting/intuit</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/intuitive-surgical</loc>
+    <loc>https://www.offerloop.ai/meeting/intuitive-surgical</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/invesco</loc>
+    <loc>https://www.offerloop.ai/meeting/invesco</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/jll</loc>
+    <loc>https://www.offerloop.ai/meeting/jll</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/joby</loc>
+    <loc>https://www.offerloop.ai/meeting/joby</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/karuna</loc>
+    <loc>https://www.offerloop.ai/meeting/karuna</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/khosla</loc>
+    <loc>https://www.offerloop.ai/meeting/khosla</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kkr</loc>
+    <loc>https://www.offerloop.ai/meeting/kkr</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/kpmg</loc>
+    <loc>https://www.offerloop.ai/meeting/kpmg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/l3harris</loc>
+    <loc>https://www.offerloop.ai/meeting/l3harris</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lattice</loc>
+    <loc>https://www.offerloop.ai/meeting/lattice</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lazard</loc>
+    <loc>https://www.offerloop.ai/meeting/lazard</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lek</loc>
+    <loc>https://www.offerloop.ai/meeting/lek</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lek-consulting</loc>
+    <loc>https://www.offerloop.ai/meeting/lek-consulting</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lightspeed</loc>
+    <loc>https://www.offerloop.ai/meeting/lightspeed</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lilly</loc>
+    <loc>https://www.offerloop.ai/meeting/lilly</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lincoln-financial</loc>
+    <loc>https://www.offerloop.ai/meeting/lincoln-financial</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/linear</loc>
+    <loc>https://www.offerloop.ai/meeting/linear</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/linkedin</loc>
+    <loc>https://www.offerloop.ai/meeting/linkedin</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lockheed</loc>
+    <loc>https://www.offerloop.ai/meeting/lockheed</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lone-pine</loc>
+    <loc>https://www.offerloop.ai/meeting/lone-pine</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lucid</loc>
+    <loc>https://www.offerloop.ai/meeting/lucid</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lucid-group</loc>
+    <loc>https://www.offerloop.ai/meeting/lucid-group</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lux</loc>
+    <loc>https://www.offerloop.ai/meeting/lux</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/lyft</loc>
+    <loc>https://www.offerloop.ai/meeting/lyft</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mailchimp</loc>
+    <loc>https://www.offerloop.ai/meeting/mailchimp</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mantech</loc>
+    <loc>https://www.offerloop.ai/meeting/mantech</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mastercard</loc>
+    <loc>https://www.offerloop.ai/meeting/mastercard</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/matrix</loc>
+    <loc>https://www.offerloop.ai/meeting/matrix</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mckinsey-co</loc>
+    <loc>https://www.offerloop.ai/meeting/mckinsey-co</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mckinsey-digital</loc>
+    <loc>https://www.offerloop.ai/meeting/mckinsey-digital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mckinsey-health</loc>
+    <loc>https://www.offerloop.ai/meeting/mckinsey-health</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/medium</loc>
+    <loc>https://www.offerloop.ai/meeting/medium</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/medtronic</loc>
+    <loc>https://www.offerloop.ai/meeting/medtronic</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/menlo</loc>
+    <loc>https://www.offerloop.ai/meeting/menlo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/merck</loc>
+    <loc>https://www.offerloop.ai/meeting/merck</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/metlife-im</loc>
+    <loc>https://www.offerloop.ai/meeting/metlife-im</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/microsoft</loc>
+    <loc>https://www.offerloop.ai/meeting/microsoft</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/mistral</loc>
+    <loc>https://www.offerloop.ai/meeting/mistral</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/moelis</loc>
+    <loc>https://www.offerloop.ai/meeting/moelis</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/navigant</loc>
+    <loc>https://www.offerloop.ai/meeting/navigant</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nbf</loc>
+    <loc>https://www.offerloop.ai/meeting/nbf</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nea</loc>
+    <loc>https://www.offerloop.ai/meeting/nea</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nera</loc>
+    <loc>https://www.offerloop.ai/meeting/nera</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/newmark</loc>
+    <loc>https://www.offerloop.ai/meeting/newmark</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nextera</loc>
+    <loc>https://www.offerloop.ai/meeting/nextera</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/northrop</loc>
+    <loc>https://www.offerloop.ai/meeting/northrop</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/novartis</loc>
+    <loc>https://www.offerloop.ai/meeting/novartis</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nurix</loc>
+    <loc>https://www.offerloop.ai/meeting/nurix</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nuro</loc>
+    <loc>https://www.offerloop.ai/meeting/nuro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nuveen</loc>
+    <loc>https://www.offerloop.ai/meeting/nuveen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/nuveen-re</loc>
+    <loc>https://www.offerloop.ai/meeting/nuveen-re</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/oliver-wyman</loc>
+    <loc>https://www.offerloop.ai/meeting/oliver-wyman</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/oracle</loc>
+    <loc>https://www.offerloop.ai/meeting/oracle</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/orsted</loc>
+    <loc>https://www.offerloop.ai/meeting/orsted</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/oscar</loc>
+    <loc>https://www.offerloop.ai/meeting/oscar</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pacbio</loc>
+    <loc>https://www.offerloop.ai/meeting/pacbio</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/palantir</loc>
+    <loc>https://www.offerloop.ai/meeting/palantir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/palantir-tech</loc>
+    <loc>https://www.offerloop.ai/meeting/palantir-tech</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/parker-hannifin</loc>
+    <loc>https://www.offerloop.ai/meeting/parker-hannifin</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/parthenon</loc>
+    <loc>https://www.offerloop.ai/meeting/parthenon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/perplexity</loc>
+    <loc>https://www.offerloop.ai/meeting/perplexity</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pinterest</loc>
+    <loc>https://www.offerloop.ai/meeting/pinterest</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pioneer</loc>
+    <loc>https://www.offerloop.ai/meeting/pioneer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/pjt</loc>
+    <loc>https://www.offerloop.ai/meeting/pjt</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/plaid</loc>
+    <loc>https://www.offerloop.ai/meeting/plaid</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/point72</loc>
+    <loc>https://www.offerloop.ai/meeting/point72</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/prime-medicine</loc>
+    <loc>https://www.offerloop.ai/meeting/prime-medicine</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/principal</loc>
+    <loc>https://www.offerloop.ai/meeting/principal</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/progressive</loc>
+    <loc>https://www.offerloop.ai/meeting/progressive</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/prologis</loc>
+    <loc>https://www.offerloop.ai/meeting/prologis</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/prosus</loc>
+    <loc>https://www.offerloop.ai/meeting/prosus</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/protiviti</loc>
+    <loc>https://www.offerloop.ai/meeting/protiviti</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/prudential</loc>
+    <loc>https://www.offerloop.ai/meeting/prudential</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/quora</loc>
+    <loc>https://www.offerloop.ai/meeting/quora</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/raytheon</loc>
+    <loc>https://www.offerloop.ai/meeting/raytheon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/rbc</loc>
+    <loc>https://www.offerloop.ai/meeting/rbc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/recursion</loc>
+    <loc>https://www.offerloop.ai/meeting/recursion</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/reddit</loc>
+    <loc>https://www.offerloop.ai/meeting/reddit</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/regeneron</loc>
+    <loc>https://www.offerloop.ai/meeting/regeneron</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/related</loc>
+    <loc>https://www.offerloop.ai/meeting/related</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/relay-tx</loc>
+    <loc>https://www.offerloop.ai/meeting/relay-tx</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/retool</loc>
+    <loc>https://www.offerloop.ai/meeting/retool</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/ripple</loc>
+    <loc>https://www.offerloop.ai/meeting/ripple</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/rippling</loc>
+    <loc>https://www.offerloop.ai/meeting/rippling</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/rivian</loc>
+    <loc>https://www.offerloop.ai/meeting/rivian</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/rivian-auto</loc>
+    <loc>https://www.offerloop.ai/meeting/rivian-auto</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/roblox</loc>
+    <loc>https://www.offerloop.ai/meeting/roblox</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/roche</loc>
+    <loc>https://www.offerloop.ai/meeting/roche</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/roland-berger</loc>
+    <loc>https://www.offerloop.ai/meeting/roland-berger</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/roper-tech</loc>
+    <loc>https://www.offerloop.ai/meeting/roper-tech</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/saic</loc>
+    <loc>https://www.offerloop.ai/meeting/saic</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/salesforce</loc>
+    <loc>https://www.offerloop.ai/meeting/salesforce</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/samsara</loc>
+    <loc>https://www.offerloop.ai/meeting/samsara</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/sanofi</loc>
+    <loc>https://www.offerloop.ai/meeting/sanofi</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/scale-ai</loc>
+    <loc>https://www.offerloop.ai/meeting/scale-ai</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/scotiabank</loc>
+    <loc>https://www.offerloop.ai/meeting/scotiabank</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/seagen</loc>
+    <loc>https://www.offerloop.ai/meeting/seagen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/sequoia</loc>
+    <loc>https://www.offerloop.ai/meeting/sequoia</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/shell</loc>
+    <loc>https://www.offerloop.ai/meeting/shell</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/simon-property</loc>
+    <loc>https://www.offerloop.ai/meeting/simon-property</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/sl-green</loc>
+    <loc>https://www.offerloop.ai/meeting/sl-green</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/slalom</loc>
+    <loc>https://www.offerloop.ai/meeting/slalom</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/slb</loc>
+    <loc>https://www.offerloop.ai/meeting/slb</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/slow-ventures</loc>
+    <loc>https://www.offerloop.ai/meeting/slow-ventures</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/snap</loc>
+    <loc>https://www.offerloop.ai/meeting/snap</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/snowflake</loc>
+    <loc>https://www.offerloop.ai/meeting/snowflake</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/soc-telemed</loc>
+    <loc>https://www.offerloop.ai/meeting/soc-telemed</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/softbank</loc>
+    <loc>https://www.offerloop.ai/meeting/softbank</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/southern-company</loc>
+    <loc>https://www.offerloop.ai/meeting/southern-company</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/spotify-2</loc>
+    <loc>https://www.offerloop.ai/meeting/spotify-2</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/starwood</loc>
+    <loc>https://www.offerloop.ai/meeting/starwood</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/state-street</loc>
+    <loc>https://www.offerloop.ai/meeting/state-street</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/stripe</loc>
+    <loc>https://www.offerloop.ai/meeting/stripe</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/substack</loc>
+    <loc>https://www.offerloop.ai/meeting/substack</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/sun-life</loc>
+    <loc>https://www.offerloop.ai/meeting/sun-life</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/sunrun</loc>
+    <loc>https://www.offerloop.ai/meeting/sunrun</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/t-rowe-price</loc>
+    <loc>https://www.offerloop.ai/meeting/t-rowe-price</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tae</loc>
+    <loc>https://www.offerloop.ai/meeting/tae</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/teladoc</loc>
+    <loc>https://www.offerloop.ai/meeting/teladoc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tempus</loc>
+    <loc>https://www.offerloop.ai/meeting/tempus</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tesla</loc>
+    <loc>https://www.offerloop.ai/meeting/tesla</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/thermo-fisher</loc>
+    <loc>https://www.offerloop.ai/meeting/thermo-fisher</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tiger-global</loc>
+    <loc>https://www.offerloop.ai/meeting/tiger-global</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tiktok</loc>
+    <loc>https://www.offerloop.ai/meeting/tiktok</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tishman-speyer</loc>
+    <loc>https://www.offerloop.ai/meeting/tishman-speyer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tpg</loc>
+    <loc>https://www.offerloop.ai/meeting/tpg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/travelers</loc>
+    <loc>https://www.offerloop.ai/meeting/travelers</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/twilio</loc>
+    <loc>https://www.offerloop.ai/meeting/twilio</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/twist-bio</loc>
+    <loc>https://www.offerloop.ai/meeting/twist-bio</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/twitch</loc>
+    <loc>https://www.offerloop.ai/meeting/twitch</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/two-sigma</loc>
+    <loc>https://www.offerloop.ai/meeting/two-sigma</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/unitedhealth</loc>
+    <loc>https://www.offerloop.ai/meeting/unitedhealth</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/unum</loc>
+    <loc>https://www.offerloop.ai/meeting/unum</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/usv</loc>
+    <loc>https://www.offerloop.ai/meeting/usv</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/veeva</loc>
+    <loc>https://www.offerloop.ai/meeting/veeva</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/veracyte</loc>
+    <loc>https://www.offerloop.ai/meeting/veracyte</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/vercel</loc>
+    <loc>https://www.offerloop.ai/meeting/vercel</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/verily</loc>
+    <loc>https://www.offerloop.ai/meeting/verily</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/verkada</loc>
+    <loc>https://www.offerloop.ai/meeting/verkada</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/verkada-ent</loc>
+    <loc>https://www.offerloop.ai/meeting/verkada-ent</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/vertex</loc>
+    <loc>https://www.offerloop.ai/meeting/vertex</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/viking</loc>
+    <loc>https://www.offerloop.ai/meeting/viking</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/visa</loc>
+    <loc>https://www.offerloop.ai/meeting/visa</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/vornado</loc>
+    <loc>https://www.offerloop.ai/meeting/vornado</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/warburg-pincus</loc>
+    <loc>https://www.offerloop.ai/meeting/warburg-pincus</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/waymo</loc>
+    <loc>https://www.offerloop.ai/meeting/waymo</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/wellington</loc>
+    <loc>https://www.offerloop.ai/meeting/wellington</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/west-monroe</loc>
+    <loc>https://www.offerloop.ai/meeting/west-monroe</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/wisk</loc>
+    <loc>https://www.offerloop.ai/meeting/wisk</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/workiva</loc>
+    <loc>https://www.offerloop.ai/meeting/workiva</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/x</loc>
+    <loc>https://www.offerloop.ai/meeting/x</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/zendesk</loc>
+    <loc>https://www.offerloop.ai/meeting/zendesk</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://www.offerloop.ai/coffee-chat/zymergen</loc>
+    <loc>https://www.offerloop.ai/meeting/zymergen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

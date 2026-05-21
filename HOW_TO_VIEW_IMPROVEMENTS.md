@@ -118,10 +118,10 @@ curl -X POST http://localhost:5001/api/free-run \
 # Should get validation error (max 10)
 ```
 
-#### Test Coffee Chat Prep Validation
+#### Test Meeting Prep Validation
 ```bash
 # Invalid LinkedIn URL
-curl -X POST http://localhost:5001/api/coffee-chat-prep \
+curl -X POST http://localhost:5001/api/meeting-prep \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{"linkedinUrl": "not-a-linkedin-url"}'

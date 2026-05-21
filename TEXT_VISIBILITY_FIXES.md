@@ -35,7 +35,7 @@
   - Contact Search section
   - Firm Search section
   - Contact Library section
-  - Coffee Chat Prep section
+  - Meeting Prep section
   - Scout section
 
 ### 4. **CSS Enhancements** ✓

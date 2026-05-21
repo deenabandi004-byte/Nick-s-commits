@@ -66,7 +66,7 @@ def init_swagger(app):
             },
             {
                 "name": "Prep",
-                "description": "Coffee chat and interview prep endpoints"
+                "description": "Meeting and interview prep endpoints"
             },
             {
                 "name": "Billing",

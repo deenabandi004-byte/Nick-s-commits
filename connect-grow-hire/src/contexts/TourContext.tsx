@@ -1,5 +1,5 @@
 /**
- * TourContext — In-app guided walkthrough (product tour) using react-joyride.
+ * TourContext - In-app guided walkthrough (product tour) using react-joyride.
  * Persists completion in Firestore; auto-starts for new users or after 7 days away.
  */
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
@@ -32,11 +32,11 @@ export interface TourStepConfig {
 // Step list (order defines tour flow)
 // -----------------------------------------------------------------------------
 export const TOUR_STEPS: TourStepConfig[] = [
-  { target: '[data-tour="tour-search-form"]', title: 'Search or Import', content: 'Search by name, role, or company — or paste a LinkedIn URL to import a contact. We\'ll find their emails and draft outreach for you.', route: '/find', tab: 'contact-search' },
+  { target: '[data-tour="tour-search-form"]', title: 'Search or Import', content: 'Search by name, role, or company - or paste a LinkedIn URL to import a contact. We\'ll find their emails and draft outreach for you.', route: '/find', tab: 'contact-search' },
   { target: '[data-tour="tour-tracker-table"]', title: 'Track Your Contacts', content: 'Everyone you find lands here. Update their status, open email drafts, and export to CSV.', route: '/find', tab: 'contact-library' },
   { target: '[data-tour="tour-find-companies"]', title: 'Find Companies', content: 'Describe the type of companies you\'re looking for in plain English and we\'ll find them for you.', route: '/find?tab=companies' },
   { target: '[data-tour="tour-find-hiring-managers"]', title: 'Find Hiring Managers', content: 'Paste a job posting URL and we\'ll find the recruiters and hiring managers for that role.', route: '/find?tab=hiring-managers' },
-  { target: '[data-tour="tour-coffee-chat-prep"]', title: 'Coffee Chat Prep', content: 'Paste a LinkedIn URL and get a personalized prep sheet with talking points, recent news, and smart questions.', route: '/coffee-chat-prep' },
+  { target: '[data-tour="tour-meeting-prep"]', title: 'Meeting Prep', content: 'Paste a LinkedIn URL and get a personalized prep sheet with talking points, recent news, and smart questions.', route: '/meeting-prep' },
   { target: '[data-tour="tour-track-email"]', title: 'Track Your Outreach', content: 'Monitor all your email threads, follow-ups, and replies in one place. Use the calendar and networking tabs to stay organized.', route: '/tracker' },
 ];
 

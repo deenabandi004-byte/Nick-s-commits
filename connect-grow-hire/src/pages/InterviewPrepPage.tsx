@@ -1232,7 +1232,7 @@ const InterviewPrepPage: React.FC = () => {
                                       )}
                                       <div className="flex items-center gap-2 text-xs text-gray-500">
                                         <Calendar className="h-3 w-3" />
-                                        {prep.createdAt ? new Date(prep.createdAt).toLocaleDateString() : "—"}
+                                        {prep.createdAt ? new Date(prep.createdAt).toLocaleDateString() : " - "}
                                       </div>
                                     </div>
 

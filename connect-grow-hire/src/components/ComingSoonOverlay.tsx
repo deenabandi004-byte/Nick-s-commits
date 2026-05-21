@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { Sparkles, Rocket, Star } from "lucide-react";
+import { Rocket, Star } from 'lucide-react';
 
 interface ComingSoonOverlayProps {
   title: string;
@@ -22,7 +22,7 @@ export const ComingSoonOverlay: React.FC<ComingSoonOverlayProps> = ({
       
       <div className="mb-4">
         <Badge className={`bg-gradient-to-r ${gradient} text-white border-none px-4 py-1 text-sm font-semibold mb-3`}>
-          <Sparkles className="h-3 w-3 mr-1 inline" />
+          <Rocket className="h-3 w-3 mr-1 inline" />
           Coming Soon
         </Badge>
       </div>

@@ -339,7 +339,7 @@ def get_or_cache_sanitized_resume(user_id: str, raw_resume: dict) -> str:
 **Impact:** High (UX) | **Effort:** High | **Time Savings:** Perceived (user doesn't wait)
 
 **Actions:**
-1. Create background task (similar to coffee chat prep)
+1. Create background task (similar to meeting prep)
 2. Store generation status in Firestore
 3. Frontend polls for completion
 4. Return immediately with task ID

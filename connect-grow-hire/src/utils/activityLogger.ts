@@ -107,18 +107,18 @@ export function generateContactSearchSummary(params: {
 }
 
 /**
- * Generate coffee chat prep summary
+ * Generate meeting prep summary
  */
 export function generateCoffeeChatPrepSummary(params: {
   contactName?: string;
   company?: string;
 }): string {
   if (params.contactName && params.company) {
-    return `Created coffee chat prep for ${params.contactName} at ${params.company}`;
+    return `Created meeting prep for ${params.contactName} at ${params.company}`;
   } else if (params.contactName) {
-    return `Created coffee chat prep for ${params.contactName}`;
+    return `Created meeting prep for ${params.contactName}`;
   }
-  return 'Created coffee chat prep';
+  return 'Created meeting prep';
 }
 
 /**

@@ -33,7 +33,7 @@ Monitors whether Googlebot sees real rendered content on all programmatic page t
 
 ## What it does
 
-Curls 30 URLs across 6 route types (`/compare/`, `/coffee-chat/`, `/cold-email/`, `/networking/`, `/alumni/`, `/blog/`) with a Googlebot user-agent. For each URL it checks:
+Curls 30 URLs across 6 route types (`/compare/`, `/meeting/`, `/cold-email/`, `/networking/`, `/alumni/`, `/blog/`) with a Googlebot user-agent. For each URL it checks:
 
 1. **HTTP 200** (not 503 from Prerender quota, not 301 redirect)
 2. **Body size > 10KB** (confirms Prerender rendered real content, not the empty 4.3KB SPA shell)
@@ -66,6 +66,6 @@ Exits with code 0 if all 30 URLs pass, code 1 if any fail. Can be used in CI.
 
 ## Related files
 
-- `backend/wsgi.py` — Prerender middleware, Cache-Control headers
-- `connect-grow-hire/src/pages/templates/` — all 6 programmatic page templates
-- `scripts/browse-auth.sh` — authenticate the gstack headless browser for QA
+- `backend/wsgi.py` - Prerender middleware, Cache-Control headers
+- `connect-grow-hire/src/pages/templates/` - all 6 programmatic page templates
+- `scripts/browse-auth.sh` - authenticate the gstack headless browser for QA

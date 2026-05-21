@@ -363,7 +363,7 @@ export interface OutboxThread {
   // True when a draft has been in draft_created state > 24h with no matched
   // Gmail thread (webhook silent-drop). UI should nudge the user to Refresh.
   needsManualSync?: boolean;
-  // Legacy aliases — used by Outbox.tsx and Dashboard.tsx until migrated
+  // Legacy aliases - used by Outbox.tsx and Dashboard.tsx until migrated
   contactName?: string;
   jobTitle?: string;
   hasDraft?: boolean;
@@ -522,20 +522,20 @@ export interface ApiError {
 }
 
 // ================================
-// Coffee Chat Prep Types
+// Meeting Prep Types
 // ================================
-export interface CoffeeChatPrepRequest {
+export interface MeetingPrepRequest {
   linkedinUrl: string;
   resumeText?: string;
 }
 
-export interface CoffeeChatPrepResponse {
+export interface MeetingPrepResponse {
   prepId: string;
   status: string;
   message: string;
 }
 
-export interface CoffeeChatNewsItem {
+export interface MeetingNewsItem {
   title: string;
   url: string;
   source: string;
@@ -558,7 +558,7 @@ export interface CoffeeChatPrepStatus {
     | 'completed'
     | 'failed';
   contactData?: any;
-  companyNews?: CoffeeChatNewsItem[];
+  companyNews?: MeetingNewsItem[];
   similaritySummary?: string;
   coffeeQuestions?: string[];
   pdfUrl?: string;
@@ -574,7 +574,7 @@ export interface CoffeeChatPrepStatus {
   userEmail?: string;  // ✅ ADD THIS
 }
 
-export interface CoffeeChatPrep {
+export interface MeetingPrep {
   id: string;
   contactName: string;
   company: string;
@@ -1316,50 +1316,50 @@ class ApiService {
   }
 
   // ================================
-  // Coffee Chat Prep Endpoints
+  // Meeting Prep Endpoints
   // ================================
 
-  /** Create a Coffee Chat Prep */
-  async createCoffeeChatPrep(request: CoffeeChatPrepRequest): Promise<CoffeeChatPrepResponse | ApiError> {
+  /** Create a Meeting Prep */
+  async createMeetingPrep(request: MeetingPrepRequest): Promise<MeetingPrepResponse | ApiError> {
     const headers = await this.getAuthHeaders();
-    return this.makeRequest<CoffeeChatPrepResponse | ApiError>('/coffee-chat-prep', {
+    return this.makeRequest<MeetingPrepResponse | ApiError>('/meeting-prep', {
       method: 'POST',
       headers,
       body: JSON.stringify(request),
     });
   }
 
-  /** Get Coffee Chat Prep status */
+  /** Get Meeting Prep status */
   async getCoffeeChatPrepStatus(prepId: string): Promise<CoffeeChatPrepStatus | ApiError> {
     const headers = await this.getAuthHeaders();
-    return this.makeRequest<CoffeeChatPrepStatus | ApiError>(`/coffee-chat-prep/${prepId}`, {
+    return this.makeRequest<CoffeeChatPrepStatus | ApiError>(`/meeting-prep/${prepId}`, {
       method: 'GET',
       headers,
     });
   }
 
-  /** Get Coffee Chat PDF download URL */
-  async downloadCoffeeChatPDF(prepId: string): Promise<{ pdfUrl: string }> {
+  /** Get Meeting PDF download URL */
+  async downloadMeetingPDF(prepId: string): Promise<{ pdfUrl: string }> {
     const headers = await this.getAuthHeaders();
-    return this.makeRequest<{ pdfUrl: string }>(`/coffee-chat-prep/${prepId}/download`, {
+    return this.makeRequest<{ pdfUrl: string }>(`/meeting-prep/${prepId}/download`, {
       method: 'GET',
       headers,
     });
   }
 
-  /** Get all Coffee Chat Preps for user */
-  async getAllCoffeeChatPreps(): Promise<{ preps: CoffeeChatPrep[] } | ApiError> {
+  /** Get all Meeting Preps for user */
+  async getAllCoffeeChatPreps(): Promise<{ preps: MeetingPrep[] } | ApiError> {
     const headers = await this.getAuthHeaders();
-    return this.makeRequest<{ preps: CoffeeChatPrep[] } | ApiError>('/coffee-chat-prep/all', {
+    return this.makeRequest<{ preps: MeetingPrep[] } | ApiError>('/meeting-prep/all', {
       method: 'GET',
       headers,
     });
   }
 
-  /** Get Coffee Chat history (limited) */
-  async getCoffeeChatHistory(limit: number = 10): Promise<{ history: CoffeeChatPrep[] } | ApiError> {
+  /** Get Meeting history (limited) */
+  async getMeetingHistory(limit: number = 10): Promise<{ history: MeetingPrep[] } | ApiError> {
     const headers = await this.getAuthHeaders();
-    return this.makeRequest<{ history: CoffeeChatPrep[] } | ApiError>(`/coffee-chat-prep/history?limit=${limit}`, {
+    return this.makeRequest<{ history: MeetingPrep[] } | ApiError>(`/meeting-prep/history?limit=${limit}`, {
       method: 'GET',
       headers,
     });
@@ -1607,10 +1607,10 @@ class ApiService {
     return this.makeRequest('/health');
   }
   
-  /** Delete Coffee Chat Prep */
-  async deleteCoffeeChatPrep(prepId: string): Promise<{ success: boolean; message: string } | ApiError> {
+  /** Delete Meeting Prep */
+  async deleteMeetingPrep(prepId: string): Promise<{ success: boolean; message: string } | ApiError> {
     const headers = await this.getAuthHeaders();
-    return this.makeRequest<{ success: boolean; message: string } | ApiError>(`/coffee-chat-prep/${prepId}`, {
+    return this.makeRequest<{ success: boolean; message: string } | ApiError>(`/meeting-prep/${prepId}`, {
       method: 'DELETE',
       headers,
     });
@@ -1682,7 +1682,7 @@ async sendReplyCoachDraft(contactId: string): Promise<{ success: boolean; draftI
   });
 }
 
-/** Get auto-prep status for a contact (Coffee Chat Auto-Prep) */
+/** Get auto-prep status for a contact (Meeting Auto-Prep) */
 async getAutoPrep(contactId: string): Promise<AutoPrepStatus | ErrorResponse> {
   const headers = await this.getAuthHeaders();
   return this.makeRequest<AutoPrepStatus | ErrorResponse>(`/contacts/${contactId}/auto-prep`, {
@@ -2182,7 +2182,7 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
         }),
       });
     } catch {
-      // Swallow — error reporting must never throw
+      // Swallow - error reporting must never throw
     }
   }
 
@@ -2300,7 +2300,7 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
     );
   }
 
-  /** Approve a queue contact — creates Gmail draft and adds to pipeline. */
+  /** Approve a queue contact - creates Gmail draft and adds to pipeline. */
   async approveQueueContact(
     queueId: string,
     contactId: string

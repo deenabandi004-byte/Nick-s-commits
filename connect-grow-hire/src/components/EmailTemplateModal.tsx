@@ -18,11 +18,11 @@ import { cn } from "@/lib/utils";
 const MAX_CUSTOM_LEN = 4000;
 
 const PREVIEWS: Record<string, string> = {
-  "networking_casual": "Hi Alex,\n\nI'm Sid, CS at USC — been geeking out over Google's search infra work lately. Curious what your day-to-day actually looks like on the team. Down for a quick 15-min chat sometime?\n\nThanks,\nSid",
+  "networking_casual": "Hi Alex,\n\nI'm Sid, CS at USC - been geeking out over Google's search infra work lately. Curious what your day-to-day actually looks like on the team. Down for a quick 15-min chat sometime?\n\nThanks,\nSid",
   "networking_professional": "Hi Alex,\n\nMy name is Sid, and I'm a junior studying Computer Science at USC. I came across your profile while researching engineering roles at Google, and your work on search infrastructure stood out. Would you be available for a brief 15-20 minute conversation?\n\nBest regards,\nSid",
-  "sales_bold_confident": "Hi Alex,\n\nMost career platforms give students a job board and call it a day. We built Offerloop — it finds the right people at the right companies and writes personalized outreach in seconds. 1,000+ students are using it. Worth a 15-min demo?\n\nThanks,\nSid",
+  "sales_bold_confident": "Hi Alex,\n\nMost career platforms give students a job board and call it a day. We built Offerloop - it finds the right people at the right companies and writes personalized outreach in seconds. 1,000+ students are using it. Worth a 15-min demo?\n\nThanks,\nSid",
   "referral_warm_enthusiastic": "Hi Alex,\n\nI'm Sid, a CS student at USC, and I've been genuinely excited about the engineering work at Google. I noticed there's an open SWE role and your team's search infrastructure work is exactly the kind of problem I want to tackle. Would you be open to referring me or pointing me to the right person?\n\nReally appreciate it,\nSid",
-  "follow_up_short_direct": "Hi Alex,\n\nFollowing up on my note last week. Saw Google just announced the new search features — congrats to the team. Still happy to chat for 15 min if you have time.\n\nThanks,\nSid",
+  "follow_up_short_direct": "Hi Alex,\n\nFollowing up on my note last week. Saw Google just announced the new search features - congrats to the team. Still happy to chat for 15 min if you have time.\n\nThanks,\nSid",
 };
 
 const CUSTOM_PURPOSE_ID = "custom";
@@ -149,7 +149,7 @@ export const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6 py-2">
-          {/* Part A — Purpose */}
+          {/* Part A - Purpose */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold text-gray-700">What kind of email?</Label>
             <div className="flex flex-wrap gap-2">
@@ -193,7 +193,7 @@ export const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             )}
           </div>
 
-          {/* Part B — Style */}
+          {/* Part B - Style */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold text-gray-700">How should it sound?</Label>
             <div className="flex flex-wrap gap-2">
@@ -227,7 +227,7 @@ export const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             </div>
           </div>
 
-          {/* Part C — Custom instructions (always visible) */}
+          {/* Part C - Custom instructions (always visible) */}
           <div className="space-y-2">
             <Label className="text-sm font-semibold text-gray-700">Additional instructions (optional)</Label>
             <Textarea
@@ -242,7 +242,7 @@ export const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             </p>
           </div>
 
-          {/* Part D — Sign-off & signature (collapsible) */}
+          {/* Part D - Sign-off & signature (collapsible) */}
           <Collapsible open={signoffOpen} onOpenChange={setSignoffOpen}>
             <CollapsibleTrigger asChild>
               <button
@@ -308,7 +308,7 @@ export const EmailTemplateModal: React.FC<EmailTemplateModalProps> = ({
             {previewBody ? (
               <pre className="text-sm text-gray-700 whitespace-pre-wrap font-sans">{previewBody}</pre>
             ) : (
-              <p className="text-sm text-gray-500 italic">Preview not available for this combination — your emails will still be personalized based on your selections.</p>
+              <p className="text-sm text-gray-500 italic">Preview not available for this combination - your emails will still be personalized based on your selections.</p>
             )}
           </div>
         </div>

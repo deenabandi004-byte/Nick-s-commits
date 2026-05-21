@@ -17,7 +17,7 @@ SCOUT_CREDIT_COST = 5
 
 def _get_user_resume():
     """Fetch resume data from Firestore for the authenticated user.
-    Returns (user_resume_dict, error_response) — error_response is None on success."""
+    Returns (user_resume_dict, error_response) - error_response is None on success."""
     user_id = request.firebase_user.get("uid")
     db = get_db()
 
@@ -54,7 +54,7 @@ def _get_user_resume():
 
 def _check_credits():
     """Check if the authenticated user has enough credits for a Scout run.
-    Returns (user_id, error_response) — error_response is None on success."""
+    Returns (user_id, error_response) - error_response is None on success."""
     user_id = request.firebase_user.get("uid")
     db = get_db()
     user_ref = db.collection("users").document(user_id)

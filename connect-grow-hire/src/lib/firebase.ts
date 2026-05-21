@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';  // ← ADD THIS LINE
 
-// Firebase configuration — read from VITE_ env vars with hardcoded fallbacks
+// Firebase configuration - read from VITE_ env vars with hardcoded fallbacks
 // so existing deploys continue to work without setting env vars.
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyCxcZbNwbh09DFw70tBQUSoqBIDaXNwZdE",

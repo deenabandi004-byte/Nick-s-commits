@@ -133,7 +133,7 @@ const PrivacyPolicy = () => {
                 </p>
                 <p className="text-gray-600">
                   <strong>Payment Processors (Stripe):</strong> Stripe processes all payments. We only receive
-                  subscription details and a Stripe Customer ID—not full payment card details.
+                  subscription details and a Stripe Customer ID - not full payment card details.
                 </p>
                 <p className="text-gray-600">
                   <strong>Hosting Providers (Render, Firebase Hosting):</strong> Used for backend infrastructure and
@@ -321,13 +321,13 @@ const PrivacyPolicy = () => {
                 <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">a. Browser Permissions</h3>
                 <p className="text-gray-600">The extension requests the following Chrome permissions, each limited to what is necessary for its features:</p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><strong>tabs</strong> — Detects when you are viewing a LinkedIn profile or job posting so the extension can activate relevant features.</li>
-                  <li><strong>activeTab</strong> — Reads publicly visible LinkedIn page content (name, headline, company, position) when you click the extension icon.</li>
-                  <li><strong>storage</strong> — Saves your authentication state and preferences locally in your browser.</li>
-                  <li><strong>identity</strong> — Authenticates you via Google OAuth through the Chrome Identity API.</li>
-                  <li><strong>contextMenus</strong> — Provides right-click menu options for quick access to extension features.</li>
-                  <li><strong>notifications</strong> — Displays browser notifications when actions complete (e.g., draft saved).</li>
-                  <li><strong>downloads</strong> — Enables downloading of generated PDFs (Coffee Chat Prep, Interview Prep).</li>
+                  <li><strong>tabs</strong> - Detects when you are viewing a LinkedIn profile or job posting so the extension can activate relevant features.</li>
+                  <li><strong>activeTab</strong> - Reads publicly visible LinkedIn page content (name, headline, company, position) when you click the extension icon.</li>
+                  <li><strong>storage</strong> - Saves your authentication state and preferences locally in your browser.</li>
+                  <li><strong>identity</strong> - Authenticates you via Google OAuth through the Chrome Identity API.</li>
+                  <li><strong>contextMenus</strong> - Provides right-click menu options for quick access to extension features.</li>
+                  <li><strong>notifications</strong> - Displays browser notifications when actions complete (e.g., draft saved).</li>
+                  <li><strong>downloads</strong> - Enables downloading of generated PDFs (Meeting Prep, Interview Prep).</li>
                 </ul>
                 <p className="text-gray-600">
                   Host permissions are limited to <code className="text-sm bg-gray-100 px-1 rounded">https://*.linkedin.com/*</code> (to read LinkedIn page content) and our backend server (to process requests).
@@ -336,9 +336,9 @@ const PrivacyPolicy = () => {
                 <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">b. Data the Extension Collects</h3>
                 <p className="text-gray-600">
                   <strong>LinkedIn Profile &amp; Job Page Data:</strong> When you click the extension icon on a LinkedIn
-                  page, the extension reads publicly visible information from that page — such as the person's name,
-                  headline, current position, company, and profile URL, or job title, company, and description — and
-                  transmits it to our servers to power features like email lookup, outreach drafting, Coffee Chat Prep,
+                  page, the extension reads publicly visible information from that page - such as the person's name,
+                  headline, current position, company, and profile URL, or job title, company, and description - and
+                  transmits it to our servers to power features like email lookup, outreach drafting, Meeting Prep,
                   Interview Prep, and cover letter generation.
                 </p>
                 <p className="text-gray-600">
@@ -355,7 +355,7 @@ const PrivacyPolicy = () => {
                   <li>Looking up professional email addresses via our backend (People Data Labs).</li>
                   <li>Generating personalized outreach emails using AI (OpenAI).</li>
                   <li>Saving email drafts to your connected Gmail account at your request.</li>
-                  <li>Generating Coffee Chat Prep and Interview Prep documents.</li>
+                  <li>Generating Meeting Prep and Interview Prep documents.</li>
                   <li>Generating cover letters based on job posting details.</li>
                   <li>Tracking your credit usage and subscription status.</li>
                 </ul>
@@ -364,7 +364,7 @@ const PrivacyPolicy = () => {
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
                   <li>Does not track or store your general browsing history.</li>
                   <li>Does not collect data from any website other than LinkedIn.</li>
-                  <li>Does not run in the background — it only activates when you click the extension icon or use the right-click menu.</li>
+                  <li>Does not run in the background - it only activates when you click the extension icon or use the right-click menu.</li>
                   <li>Does not sell, rent, or trade any data collected through the extension.</li>
                   <li>Does not use any collected data for advertising, remarketing, or any purpose unrelated to Offerloop's core networking features.</li>
                   <li>Does not use data to train general AI or machine learning models.</li>

@@ -17,7 +17,7 @@ export interface UserContext {
   dreamCompanies: string[];
   careerTrack: string;
   preferredJobRole: string;
-  // Newer profile-driven fields — populated from the Direction extractor + Profile page
+  // Newer profile-driven fields - populated from the Direction extractor + Profile page
   targetFirms: string[];        // explicit firms the user picked
   extractedRoles: string[];     // role titles inferred from their narrative
   directionNarrative: string;   // freeform "what they want"
@@ -194,7 +194,7 @@ export function generateFirmChips(ctx: UserContext): SuggestionChip[] {
 
 // ── Discovery-oriented firm chips for "Find Companies" tab ──────────
 
-// Niche angles per industry — more specific than the industry name itself
+// Niche angles per industry - more specific than the industry name itself
 const INDUSTRY_NICHE_ANGLES: Record<string, string[]> = {
   'Data Science': ['AI and ML startups', 'Data-driven companies', 'Analytics companies'],
   'Data Science & Analytics': ['AI and ML startups', 'Data-driven companies', 'Analytics companies'],
@@ -257,7 +257,7 @@ export function generateFirmDiscoveryPrompts(ctx: UserContext): PromptChip[] {
     );
   }
 
-  // Chip 2: School affinity — firms that recruited from user's school
+  // Chip 2: School affinity - firms that recruited from user's school
   if (uni && industry) {
     add(
       `${industry} firms that recruited from ${uni} in the last two years`,
@@ -387,7 +387,7 @@ export function rotateChips(all: SuggestionChip[], count: number, seed?: number)
   return arr.slice(0, count);
 }
 
-// Default fallback chips — school-specific chips only appear if university is known
+// Default fallback chips - school-specific chips only appear if university is known
 export function getDefaultPeopleChips(university?: string | null): SuggestionChip[] {
   const school = getUniversityShortName(university);
   const chips: SuggestionChip[] = [
@@ -414,7 +414,7 @@ export function getDefaultFirmChips(university?: string | null): SuggestionChip[
   return chips;
 }
 
-// Legacy exports for backward compat — use the function versions in new code
+// Legacy exports for backward compat - use the function versions in new code
 export const DEFAULT_PEOPLE_CHIPS = getDefaultPeopleChips();
 export const DEFAULT_FIRM_CHIPS = getDefaultFirmChips();
 
@@ -544,7 +544,7 @@ export const COMPANY_DOMAINS: Record<string, string> = {
   'NERA': 'nera.com',
 };
 
-// Google Favicon API — public, no key needed, 100% uptime.
+// Google Favicon API - public, no key needed, 100% uptime.
 //
 // Lookup is case-insensitive against COMPANY_DOMAINS (Firestore stores names
 // lowercase). When we don't have a curated domain, we construct a plausible
@@ -566,7 +566,7 @@ export function getCompanyLogoUrl(company: string): string | null {
   // Skip obvious non-companies (academic institutions, freeform terms) so we
   // don't request bogus favicons for things like "hurricane katrina" or
   // "university of phoenix". Universities aren't real "companies" in this
-  // context — they showed up because the user has saved professors as
+  // context - they showed up because the user has saved professors as
   // contacts, but a logo card wouldn't help.
   const skipPatterns = [
     /\buniversity\b/i, /\bcollege\b/i, /\bschool\b/i, /\binstitute\b/i,
@@ -582,7 +582,7 @@ export function getCompanyLogoUrl(company: string): string | null {
   return `https://www.google.com/s2/favicons?domain=${slug}.com&sz=128`;
 }
 
-// Accent colors by broad category — used for the card accent bar
+// Accent colors by broad category - used for the card accent bar
 const INDUSTRY_COLOR_MAP: Record<string, string> = {
   'Investment Banking': '#F59E0B', 'Retail Banking': '#F59E0B', 'Corporate Finance': '#F59E0B',
   'Management Consulting': '#6366F1', 'Consulting': '#6366F1', 'Economic Consulting': '#6366F1',
@@ -648,12 +648,12 @@ const LOCATION_INDUSTRY_HINTS: Record<string, string[]> = {
 // ── Discovery rails: curated firm pools per industry ─────────────────────
 //
 // Used by the Companies tab's "Hidden gems" and "Up and coming" rails. The
-// goal is exposure — surface firms a student likely hasn't considered. So:
+// goal is exposure - surface firms a student likely hasn't considered. So:
 //   - HIDDEN_GEMS: well-respected mid-tier shops (boutiques, regional
 //     leaders, specialty firms) that don't show up first in a Google search.
 //   - UP_AND_COMING: late-stage startups / scale-ups in each industry; the
 //     "post-Series-B but pre-IPO" cohort that's hiring aggressively.
-// Lists are intentionally compact (5-8 firms) and editorialized — we'd
+// Lists are intentionally compact (5-8 firms) and editorialized - we'd
 // rather surface fewer, well-chosen names than a long noisy list.
 const HIDDEN_GEMS_BY_INDUSTRY: Record<string, string[]> = {
   'investment-banking': ['Centerview Partners', 'Evercore', 'Lazard', 'Moelis & Company', 'PJT Partners', 'Guggenheim Partners', 'Jefferies', 'Houlihan Lokey'],
@@ -697,7 +697,7 @@ function _resolveTopIndustry(ctx: UserContext): { name: string; slug: string } |
   return null;
 }
 
-/** Hidden gems — mid-tier firms in user's top industry the user likely
+/** Hidden gems - mid-tier firms in user's top industry the user likely
  *  hasn't auto-considered. Excludes firms in the user's target/dream lists. */
 export function getHiddenGems(ctx: UserContext, limit = 6): RecommendedCompany[] {
   const top = _resolveTopIndustry(ctx);
@@ -722,7 +722,7 @@ export function getHiddenGems(ctx: UserContext, limit = 6): RecommendedCompany[]
   return out;
 }
 
-/** Up and coming — late-stage startups / scale-ups in user's top industry. */
+/** Up and coming - late-stage startups / scale-ups in user's top industry. */
 export function getUpAndComing(ctx: UserContext, limit = 6): RecommendedCompany[] {
   const top = _resolveTopIndustry(ctx);
   if (!top) return [];
@@ -916,7 +916,7 @@ export function getRecommendedCompanies(ctx: UserContext): RecommendedCompany[] 
   const MAX_DISTINCT_INDUSTRIES = 2;
 
   // Pass 1: lead with the highest-scoring company. Subsequent picks may add a
-  // second industry, but never a third — once 2 distinct industries are in,
+  // second industry, but never a third - once 2 distinct industries are in,
   // remaining slots fill from the user's primary industry pool.
   for (const card of scored) {
     if (top.length >= 5) break;
@@ -1095,7 +1095,7 @@ export function inferRoleLabel(ctx: UserContext, cardIndustry: string): string {
   if (ctx.careerTrack && CAREER_TRACK_ROLES[ctx.careerTrack])
     return CAREER_TRACK_ROLES[ctx.careerTrack];
 
-  // 3. User's interests — first one that has a role mapping
+  // 3. User's interests - first one that has a role mapping
   for (const interest of ctx.targetIndustries) {
     if (INTEREST_ROLE_LABELS[interest]) return INTEREST_ROLE_LABELS[interest];
   }

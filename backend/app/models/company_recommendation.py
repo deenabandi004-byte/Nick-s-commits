@@ -8,7 +8,7 @@ class ScoutSentence:
     headline: str       # italic serif headline (hero) or aggregate stat
     detail: str         # sans detail paragraph (hero) or fit sentence
     short: str          # compact 1-liner for list rows
-    stat_value: str     # hero stat numeral (e.g. "12", "—")
+    stat_value: str     # hero stat numeral (e.g. "12", " - ")
     stat_label: str     # unit below the stat (e.g. "alumni", "on your radar")
     facts_used: list = field(default_factory=list)  # empty for R4/R5 deterministic
 

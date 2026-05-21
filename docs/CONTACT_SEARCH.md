@@ -198,12 +198,12 @@ Maps PDL raw person data to Offerloop contact format:
 | `education` | Raw education array (for alumni filtering) |
 | `experience` | Raw experience array (for career transition detection) |
 
-### `_choose_best_email()` — Email Priority Logic
+### `_choose_best_email()` - Email Priority Logic
 
-1. `work_email` — highest priority (professional email)
-2. `emails[0]` — first email in PDL emails array
-3. `personal_emails[0]` — first personal email
-4. `recommended_personal_email` — PDL's recommended personal
+1. `work_email` - highest priority (professional email)
+2. `emails[0]` - first email in PDL emails array
+3. `personal_emails[0]` - first personal email
+4. `recommended_personal_email` - PDL's recommended personal
 5. Returns `None` if no valid email found
 
 Email validation: `_is_valid_email()` checks for `@`, non-empty, not "not available" / "n/a".
@@ -216,7 +216,7 @@ Email validation: `_is_valid_email()` checks for `@`, non-empty, not "not availa
 
 **Contact Identity:** `get_contact_identity()` → `"first_name||last_name||company"`
 
-- Deduplication uses `(first_name, last_name, company)` tuple — NOT email
+- Deduplication uses `(first_name, last_name, company)` tuple - NOT email
 - Email is excluded because it may be added later by Hunter.io enrichment
 - `_contact_hash()` generates the identity tuple
 

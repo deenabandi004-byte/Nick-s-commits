@@ -26,7 +26,7 @@ const PREVIEWS: Record<string, string> = {
 };
 
 const PURPOSE_DESCRIPTIONS: Record<string, string> = {
-  networking: "Request a coffee chat or informational interview to learn about their role and company.",
+  networking: "Request a meeting or informational interview to learn about their role and company.",
   referral: "Ask to be referred for a specific job opening at their company.",
   follow_up: "Follow up on a previous email or conversation that didn't get a reply.",
 };
@@ -335,10 +335,10 @@ export default function EmailTemplatesPage() {
                   marginBottom: 28,
                 }}
               >
-                This controls how your outreach emails are written. Pick what you're asking for and how you want it to sound — check the preview below to see exactly what you'll get.
+                This controls how your outreach emails are written. Pick what you're asking for and how you want it to sound - check the preview below to see exactly what you'll get.
               </p>
 
-              {/* Purpose pills — defaults + saved custom templates */}
+              {/* Purpose pills - defaults + saved custom templates */}
               <div style={{ marginBottom: 24 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: '#3B3530', display: 'block', marginBottom: 8 }}>What kind of email?</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
@@ -414,7 +414,7 @@ export default function EmailTemplatesPage() {
                 )}
               </div>
 
-              {/* Create Your Own Template — expandable card (Elite only) */}
+              {/* Create Your Own Template - expandable card (Elite only) */}
               {isElite ? (
               <div
                 role="button"
@@ -490,7 +490,7 @@ export default function EmailTemplatesPage() {
                     </div>
                     <div>
                       <p style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)', lineHeight: 1.5, marginBottom: 8 }}>
-                        Describe exactly what you want your emails to say — in plain English. Want to pitch your startup? Ask for an intro to their manager? Request a campus speaking slot? Just type it out.
+                        Describe exactly what you want your emails to say - in plain English. Want to pitch your startup? Ask for an intro to their manager? Request a campus speaking slot? Just type it out.
                       </p>
                       <Textarea
                         placeholder="e.g., Write a 3-sentence email pitching my startup to university career center directors and asking for a 15-minute demo call..."
@@ -526,7 +526,7 @@ export default function EmailTemplatesPage() {
               </div>
               )}
 
-              {/* Sign-off & signature — always visible */}
+              {/* Sign-off & signature - always visible */}
               <div style={{ marginBottom: 28 }}>
                 <label style={{ fontSize: 13, fontWeight: 600, color: '#3B3530', display: 'block', marginBottom: 8 }}>Sign-off & signature</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>

@@ -1009,7 +1009,7 @@ def generate_interview_prep_pdf_v2(
                             if quote_text:
                                 stage_text += f'<br/>"{quote_text}"'
                                 if source:
-                                    stage_text += f" — {source}"
+                                    stage_text += f" - {source}"
                                 if attribution:
                                     stage_text += f" ({attribution})"
                 
@@ -1126,7 +1126,7 @@ def generate_interview_prep_pdf_v2(
             ))
             for q_obj in company_qs[:5]:
                 if isinstance(q_obj, dict):
-                    q_text = f'<b>"{q_obj.get("question", "")}"</b> — What they want to hear:<br/>'
+                    q_text = f'<b>"{q_obj.get("question", "")}"</b> - What they want to hear:<br/>'
                     wants = q_obj.get("what_they_want", [])
                     if isinstance(wants, list):
                         for want in wants:
@@ -1208,7 +1208,7 @@ def generate_interview_prep_pdf_v2(
                 outcome_emoji = "✓" if "OFFER" in outcome.upper() else ("✗" if "REJECT" in outcome.upper() else "○")
                 
                 # Header with role, year, outcome
-                header = f"<b>{exp.get('role', 'Unknown Role')} ({exp.get('year', 'Year')}) — {outcome} {outcome_emoji}</b>"
+                header = f"<b>{exp.get('role', 'Unknown Role')} ({exp.get('year', 'Year')}) - {outcome} {outcome_emoji}</b>"
                 story.append(_safe_paragraph(header, body_style))
                 
                 # Source
@@ -1317,7 +1317,7 @@ def generate_interview_prep_pdf_v2(
                     if isinstance(resource, dict):
                         res_text = f"<b>{resource.get('name', '')}</b>"
                         if resource.get("url"):
-                            res_text += f" — {resource.get('url')}"
+                            res_text += f" - {resource.get('url')}"
                         if resource.get("description"):
                             res_text += f"<br/>{resource.get('description')}"
                         story.append(_safe_paragraph(res_text, body_style))

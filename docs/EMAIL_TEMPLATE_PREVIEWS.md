@@ -15,7 +15,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> I'm Sid, CS at USC — been geeking out over Google's search infra work lately. Curious what your day-to-day actually looks like on the team. Down for a quick 15-min chat sometime?
+> I'm Sid, CS at USC - been geeking out over Google's search infra work lately. Curious what your day-to-day actually looks like on the team. Down for a quick 15-min chat sometime?
 >
 > Thanks,  
 > Sid
@@ -48,7 +48,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> I'm Sid, a CS student at USC, and I've been genuinely fascinated by the search infrastructure work coming out of Google — the scale of what your team handles is incredible. I'd love to hear what drew you to that side of things. Would you be open to a 15-minute chat?
+> I'm Sid, a CS student at USC, and I've been genuinely fascinated by the search infrastructure work coming out of Google - the scale of what your team handles is incredible. I'd love to hear what drew you to that side of things. Would you be open to a 15-minute chat?
 >
 > Really appreciate it,  
 > Sid
@@ -59,7 +59,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> Most networking emails start with "I hope this finds you well" — so I'll skip that. I'm Sid, CS at USC, diving deep into distributed systems. Google's search stack is the benchmark. What's the gnarliest scaling problem you've tackled there?
+> Most networking emails start with "I hope this finds you well" - so I'll skip that. I'm Sid, CS at USC, diving deep into distributed systems. Google's search stack is the benchmark. What's the gnarliest scaling problem you've tackled there?
 >
 > 15 min if you're game.
 >
@@ -74,7 +74,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> I'm Sid, CS at USC — I've been really into the infra work Google's doing and saw there's an open SWE role on the team. Figured I'd shoot my shot. Any chance you'd be open to passing along my resume or pointing me to the right person?
+> I'm Sid, CS at USC - I've been really into the infra work Google's doing and saw there's an open SWE role on the team. Figured I'd shoot my shot. Any chance you'd be open to passing along my resume or pointing me to the right person?
 >
 > Thanks,  
 > Sid
@@ -120,7 +120,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> I'm Sid, CS at USC. I've spent the last year building distributed systems and I want to do it at Google. There's an open SWE role that's a strong fit. I'd rather get a warm intro than cold-apply — would you be willing to refer me?
+> I'm Sid, CS at USC. I've spent the last year building distributed systems and I want to do it at Google. There's an open SWE role that's a strong fit. I'd rather get a warm intro than cold-apply - would you be willing to refer me?
 >
 > Resume attached. Thanks,  
 > Sid
@@ -133,7 +133,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> Just bumping this — totally get that things are busy. Still would love to chat for 15 min if you get a chance. No rush at all.
+> Just bumping this - totally get that things are busy. Still would love to chat for 15 min if you get a chance. No rush at all.
 >
 > Thanks,  
 > Sid
@@ -155,7 +155,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> Following up on my note last week. Saw Google just announced the new search features — congrats to the team. Still happy to chat for 15 min if you have time.
+> Following up on my note last week. Saw Google just announced the new search features - congrats to the team. Still happy to chat for 15 min if you have time.
 >
 > Thanks,  
 > Sid
@@ -166,7 +166,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> Just circling back — I saw Google's latest search update and it reminded me how much I'd love to hear about your work on the team. Totally understand if timing doesn't work right now, but I'm flexible whenever you are!
+> Just circling back - I saw Google's latest search update and it reminded me how much I'd love to hear about your work on the team. Totally understand if timing doesn't work right now, but I'm flexible whenever you are!
 >
 > Would love to chat,  
 > Sid
@@ -177,7 +177,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> Round two. I reached out last week about your search infra work — still think it's some of the most interesting engineering happening right now. 15 minutes, any time that works.
+> Round two. I reached out last week about your search infra work - still think it's some of the most interesting engineering happening right now. 15 minutes, any time that works.
 >
 > Thanks,  
 > Sid
@@ -190,7 +190,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> I'm Sid — I built Offerloop, a tool that helps students find and reach out to professionals like you (in a non-spammy way, promise). We've got 1,000+ students using it and I think Google's recruiting team might find it useful. Worth a quick chat?
+> I'm Sid - I built Offerloop, a tool that helps students find and reach out to professionals like you (in a non-spammy way, promise). We've got 1,000+ students using it and I think Google's recruiting team might find it useful. Worth a quick chat?
 >
 > Thanks,  
 > Sid
@@ -212,7 +212,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> Built Offerloop — helps students find and email professionals. 1,000+ users, strong engagement. Could be useful for Google's campus recruiting. 15-min demo?
+> Built Offerloop - helps students find and email professionals. 1,000+ users, strong engagement. Could be useful for Google's campus recruiting. 15-min demo?
 >
 > Thanks,  
 > Sid
@@ -223,7 +223,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> I'm Sid, and I built something I'm really proud of — Offerloop helps students connect with professionals for career opportunities, and over 1,000 students are already using it. I think there's a natural fit with what Google does on campus recruiting and I'd love to explore that with you.
+> I'm Sid, and I built something I'm really proud of - Offerloop helps students connect with professionals for career opportunities, and over 1,000 students are already using it. I think there's a natural fit with what Google does on campus recruiting and I'd love to explore that with you.
 >
 > Would love to chat,  
 > Sid
@@ -234,7 +234,7 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 
 > Hi Alex,
 >
-> Most career platforms give students a job board and call it a day. We built Offerloop — it finds the right people at the right companies and writes personalized outreach in seconds. 1,000+ students are using it. Worth a 15-min demo?
+> Most career platforms give students a job board and call it a day. We built Offerloop - it finds the right people at the right companies and writes personalized outreach in seconds. 1,000+ students are using it. Worth a 15-min demo?
 >
 > Thanks,  
 > Sid
@@ -266,4 +266,4 @@ Keys are `purpose_style` and match the backend presets in `backend/email_templat
 | 19 | sales_warm_enthusiastic | Sales | Warm & Enthusiastic |
 | 20 | sales_bold_confident | Sales | Bold & Confident |
 
-**Source:** `connect-grow-hire/src/pages/EmailTemplatesPage.tsx` — `PREVIEWS` map. In the app, "Sid" is replaced with the signed-in user’s first name (fallback: "Your Name").
+**Source:** `connect-grow-hire/src/pages/EmailTemplatesPage.tsx` - `PREVIEWS` map. In the app, "Sid" is replaced with the signed-in user’s first name (fallback: "Your Name").

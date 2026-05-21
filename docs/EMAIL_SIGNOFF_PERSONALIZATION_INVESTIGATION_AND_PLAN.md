@@ -1,4 +1,4 @@
-# Email Template System & Signoff Personalization — Investigation & Implementation Plan
+# Email Template System & Signoff Personalization - Investigation & Implementation Plan
 
 ## Step 1 & 2: Investigation Summary
 
@@ -49,7 +49,7 @@
 
 1. **LLM output:** The `requirements_block` in reply_generation.py tells the model to use "Best," and "[Full Name]" and "[University] | Class of [Year]". So the **phrase "Best,"** and the **structure** (closing line + name + university line) are **hardcoded in the prompt**, not user-configurable.
 2. **Style presets:** Only give the LLM **hints** (e.g. "Sign off with 'Thanks,' then name"); they don’t override the structural block.
-3. **emails.py fallback signature:** When the backend decides the body has no signature, it appends "Best," + name + university/year + email — again **hardcoded "Best,"**.
+3. **emails.py fallback signature:** When the backend decides the body has no signature, it appends "Best," + name + university/year + email - again **hardcoded "Best,"**.
 
 There is **no** stored field for user-chosen signoff phrase or custom signature block today.
 
@@ -59,9 +59,9 @@ There is **no** stored field for user-chosen signoff phrase or custom signature 
 
 **Relevant files:**
 
-- **`connect-grow-hire/src/pages/EmailTemplatesPage.tsx`** — Full-page "Email template" (route: `/contact-search/templates`). Purpose pills (Networking, Referral, Follow-Up, Custom), optional custom instructions, Save as default / Apply to search. **No signoff or signature block controls.**
-- **`connect-grow-hire/src/components/EmailTemplateModal.tsx`** — Modal version: purpose, style preset dropdown, custom instructions. **No signoff or signature block controls.**
-- **`connect-grow-hire/src/services/api.ts`** — `EmailTemplate` type: `{ purpose, stylePreset, customInstructions }`. `getEmailTemplate()`, `saveEmailTemplate()`, `getEmailTemplatePresets()`.
+- **`connect-grow-hire/src/pages/EmailTemplatesPage.tsx`** - Full-page "Email template" (route: `/contact-search/templates`). Purpose pills (Networking, Referral, Follow-Up, Custom), optional custom instructions, Save as default / Apply to search. **No signoff or signature block controls.**
+- **`connect-grow-hire/src/components/EmailTemplateModal.tsx`** - Modal version: purpose, style preset dropdown, custom instructions. **No signoff or signature block controls.**
+- **`connect-grow-hire/src/services/api.ts`** - `EmailTemplate` type: `{ purpose, stylePreset, customInstructions }`. `getEmailTemplate()`, `saveEmailTemplate()`, `getEmailTemplatePresets()`.
 
 **Current customization:** Purpose, style preset, and free-form custom instructions only. No UI for signoff phrase or signature block (name, title, university, year, phone, LinkedIn).
 
@@ -109,7 +109,7 @@ Allow users to:
 **Firestore `users/{uid}`:**
 
 - Add a sub-map or top-level fields for signoff/signature. Recommended: one object for clarity.
-- **Option A — single object:**
+- **Option A - single object:**
   - `emailSignoff`: {
     - `signoffPhrase`: string (e.g. "Best,", "Warm regards,", "Thanks,", "Cheers,", or custom text; default `"Best,"`)
     - `signatureName`: string | null (display name; null = use auth/profile name)
@@ -120,7 +120,7 @@ Allow users to:
     - `signatureLinkedIn`: boolean (default false)
     - `customSignatureLine`: string | null (optional single line, e.g. "MBA Candidate 2025")
   }
-- **Option B — keep flat:** Add `signoffPhrase`, `signatureUniversity`, etc. under `users/{uid}` or under `emailTemplate`. Option B is simpler; Option A keeps signoff grouped.
+- **Option B - keep flat:** Add `signoffPhrase`, `signatureUniversity`, etc. under `users/{uid}` or under `emailTemplate`. Option B is simpler; Option A keeps signoff grouped.
 
 **Recommendation:** Extend `emailTemplate` so signoff lives next to purpose/style:
 

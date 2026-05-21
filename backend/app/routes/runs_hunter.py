@@ -194,7 +194,7 @@ def run_free_tier_enhanced_optimized(job_title, company, location, user_email=No
 
         print(f"📧 Attached emails to {emails_attached}/{len(contacts)} contacts")
 
-        # Always fetch user resume if available — attach to every draft
+        # Always fetch user resume if available - attach to every draft
         resume_url = None
         resume_content = None
         resume_filename = None
@@ -475,7 +475,7 @@ def run_pro_tier_enhanced_final_with_text(job_title, company, location, resume_t
 
         print(f"📧 Attached emails to {emails_attached}/{len(contacts)} contacts")
 
-        # Always fetch user resume if available — attach to every draft
+        # Always fetch user resume if available - attach to every draft
         resume_url = None
         resume_content = None
         resume_filename = None

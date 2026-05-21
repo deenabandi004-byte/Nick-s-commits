@@ -1,12 +1,12 @@
 ---
 title: "College Networking Statistics 2025: What Actually Works (And What Doesn't)"
 date: "2026-03-14"
-description: "The latest data on college networking — response rates, coffee chat conversion, cold email open rates, and what top students do differently."
+description: "The latest data on college networking - response rates, meeting conversion, cold email open rates, and what top students do differently."
 slug: "college-networking-statistics-2025"
 keywords: "college networking statistics"
 ---
 
-# College Networking Statistics 2025: 47 Data Points on Cold Email, Coffee Chats & Internship Outreach
+# College Networking Statistics 2025: 47 Data Points on Cold Email, Meetings & Internship Outreach
 
 ## Summary Table
 
@@ -14,11 +14,11 @@ keywords: "college networking statistics"
 |-----------|-------|--------|
 | Average cold email reply rate for consulting first-years | **25%** | [Source](#) |
 | Average cold email reply rate for IB seniors | **18%** | [Source](#) |
-| Coffee chat acceptance rate on Mondays | **30%** | [Source](#) |
-| Best time for coffee chat requests | **10 AM** | [Source](#) |
+| Meeting acceptance rate on Mondays | **30%** | [Source](#) |
+| Best time for meeting requests | **10 AM** | [Source](#) |
 | Alumni reply rate on LinkedIn | **45%** | [Source](#) |
 | Internship filled via networking | **70%** | [Source](#) |
-| Coffee chat to referral conversion rate | **20%** | [Source](#) |
+| Meeting to referral conversion rate | **20%** | [Source](#) |
 | Accuracy of email finder tools | **85%** | [Source](#) |
 | Most common email format in Tech | **first.last@company.com** | [Source](#) |
 | Alumni vs non-alumni reply rate | **40% vs 15%** | [Source](#) |
@@ -31,11 +31,11 @@ keywords: "college networking statistics"
 
 > **22%**: Tech industry outreach by juniors shows an average response rate of **22%**. [Source](#)
 
-## Coffee Chat Request Statistics
+## Meeting Request Statistics
 
-> **30%**: Coffee chat requests sent on Mondays have a **30%** acceptance rate. [Source](#)
+> **30%**: Meeting requests sent on Mondays have a **30%** acceptance rate. [Source](#)
 
-> **10 AM**: The best time to send coffee chat requests is at **10 AM**. [Source](#)
+> **10 AM**: The best time to send meeting requests is at **10 AM**. [Source](#)
 
 > **15%**: Using a specific subject line mentioning the company name increases acceptance rates by **15%**. [Source](#)
 
@@ -51,7 +51,7 @@ keywords: "college networking statistics"
 
 > **70%**: **70%** of internships are filled through networking instead of direct applications. [Source](#)
 
-> **20%**: Conversion rate from coffee chat to internship referral is **20%**. [Source](#)
+> **20%**: Conversion rate from meeting to internship referral is **20%**. [Source](#)
 
 > **25%**: Networking leads to a **25%** higher chance of securing an internship offer. [Source](#)
 
@@ -68,8 +68,8 @@ keywords: "college networking statistics"
 ### What is the average cold email response rate for college students?
 The average cold email response rate varies by industry and year. For consulting roles, first-years have a **25%** response rate. In investment banking, seniors see a **18%** response rate. [Source](#)
 
-### When is the best time to send a coffee chat request?
-The optimal time to send a coffee chat request is at **10 AM**. Monday requests have a **30%** acceptance rate. [Source](#)
+### When is the best time to send a meeting request?
+The optimal time to send a meeting request is at **10 AM**. Monday requests have a **30%** acceptance rate. [Source](#)
 
 ### How effective is alumni networking compared to reaching out to non-alumni?
 Alumni networking is significantly more effective, with a **40%** reply rate compared to **15%** for non-alumni. [Source](#)

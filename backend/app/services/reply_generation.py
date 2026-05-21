@@ -16,7 +16,7 @@ from app.utils.users import (
     get_current_season,
     determine_industry
 )
-from app.utils.coffee_chat_prep import detect_commonality
+from app.utils.meeting_prep import detect_commonality
 from app.utils.contact_analysis import (
     _detect_career_transition,
     _detect_tenure,
@@ -236,7 +236,7 @@ def _build_signature_block_for_prompt(signoff_config, user_info):
         sig_lines.append(name)
     else:
         sig_lines.append("[Full Name]")
-    # University is already mentioned in the email body — don't repeat in signature
+    # University is already mentioned in the email body - don't repeat in signature
     return "\n".join(sig_lines)
 
 
@@ -415,7 +415,7 @@ def batch_generate_emails(contacts, resume_text, user_profile, career_interests,
                     year_match = re.search(r'20\d{2}', str(grad))
                     user_info["year"] = year_match.group() if year_match else grad
         
-        # Never leave name blank — use profile, then Auth display name, never "Student" if we have a real name
+        # Never leave name blank - use profile, then Auth display name, never "Student" if we have a real name
         if not (user_info.get("name") or "").strip():
             user_info["name"] = (user_profile.get("name") or "") if user_profile else ""
             if not (user_info.get("name") or "").strip() and user_profile:
@@ -496,7 +496,7 @@ def batch_generate_emails(contacts, resume_text, user_profile, career_interests,
             title = contact.get('Title', '')
             industry = determine_industry(company, title)
 
-            # Select anchor (priority: transition → tenure → title) — kept for post-processing dedup
+            # Select anchor (priority: transition → tenure → title) - kept for post-processing dedup
             selected_anchor = _select_anchor(contact)
             selected_anchors[i] = selected_anchor
 
@@ -542,7 +542,7 @@ def batch_generate_emails(contacts, resume_text, user_profile, career_interests,
                 if talking_pts:
                     enrichment_lines += "\n- Recent activity/interests: " + "; ".join(talking_pts[:3])
                 if enrich.get("verified_role") is False:
-                    enrichment_lines += "\n- NOTE: Role may have changed — keep opening generic"
+                    enrichment_lines += "\n- NOTE: Role may have changed - keep opening generic"
 
             contact_context = f"""Contact {i}: {firstname} {lastname}
 - Role: {title} at {company}
@@ -692,7 +692,7 @@ CONTACTS:
             subject_instruction = ""
             if subject_line:
                 subject_instruction = f'\n- Use this subject line pattern for all emails (personalize with recipient details): "{subject_line}"'
-            # Check if custom instructions already contain the signoff phrase — avoid double signoff
+            # Check if custom instructions already contain the signoff phrase - avoid double signoff
             _instructions_lower = (template_instructions or "").lower()
             _signoff_phrase = (signoff_config or {}).get("signoffPhrase", "Best,").strip()
             _phrase_variations = [
@@ -703,14 +703,14 @@ CONTACTS:
             instructions_already_have_signoff = any(v in _instructions_lower for v in _phrase_variations if v)
 
             if instructions_already_have_signoff:
-                # Custom instructions already contain a signoff — don't add SIGNATURE block
-                print("DEBUG: Skipping SIGNATURE block in prompt — custom instructions already contain signoff phrase", flush=True)
+                # Custom instructions already contain a signoff - don't add SIGNATURE block
+                print("DEBUG: Skipping SIGNATURE block in prompt - custom instructions already contain signoff phrase", flush=True)
                 minimal_formatting = f"""
 ===== FORMATTING ONLY =====
 - Start each email with "Hi [FirstName],"{subject_instruction}
 - Use proper grammar with apostrophes (I'm, I'd, you're, it's)
 - Use \\n\\n for paragraph breaks in JSON
-- Do NOT add a sign-off block — the custom instructions already include one
+- Do NOT add a sign-off block - the custom instructions already include one
 - IMPORTANT: Replace any name in the sign-off with: {user_info.get('name', 'the sender')}
 
 Return ONLY valid JSON:
@@ -728,7 +728,7 @@ Return ONLY valid JSON:
 Return ONLY valid JSON:
 {{"0": {{"subject": "...", "body": "..."}}, "1": {{"subject": "...", "body": "..."}}, ...}}"""
             prompt = f"{context_block}\n\n{(template_instructions or '').strip()}\n\n{minimal_formatting}"
-            system_content = "You write personalized emails. Follow the user's custom instructions and style exactly. Do not add networking rules, resume mentions, or coffee chat asks unless the instructions say so. Return only valid JSON."
+            system_content = "You write personalized emails. Follow the user's custom instructions and style exactly. Do not add networking rules, resume mentions, or meeting asks unless the instructions say so. Return only valid JSON."
         else:
             # --- A1: Build enriched contact contexts with PDL data ---
             enriched_contact_contexts = []
@@ -833,7 +833,7 @@ CONTACTS:
             else:
                 sender_status = 'alum' if _grad_year else 'current_student'
 
-            # Sender-status-aware example openers — prevents the LLM from saying
+            # Sender-status-aware example openers - prevents the LLM from saying
             # "fellow alum" when the sender is still a student.
             _uni_label = sender_university_short or '[University]'
             _nick = sender_school_nickname or 'student'
@@ -870,12 +870,12 @@ NEUTRAL contacts (same industry, career track match, dream company):
 COLD contacts (no overlap):
 - Concise and respectful of their time, but concise does not mean skeletal.
 - 80-120 words. A senior professional will dismiss a 50-word email as low-effort.
-- Demonstrate you've thought about who you're writing to — reference something specific.
+- Demonstrate you've thought about who you're writing to - reference something specific.
 - Example opener: "I'm exploring [industry] careers and your path from [X] to [Y] stood out..."
 
 For ALL contacts:
-- FOLLOW the "Personalization instruction" for each contact — it tells you exactly what to lead with and what to ask.
-- Respect the "AVOID" lines — do not use those phrases or patterns.
+- FOLLOW the "Personalization instruction" for each contact - it tells you exactly what to lead with and what to ask.
+- Respect the "AVOID" lines - do not use those phrases or patterns.
 - Do NOT use "I came across your background" or any forced opener pattern.
 - Open naturally based on the lead hook for THIS person.
 - Ask ONE thoughtful question (not forced two-question structure).
@@ -887,7 +887,7 @@ DEFAULT TONE: Most contacts in this batch are {dominant_tier.upper()}. Lean towa
                 {"warm": "a conversational, friendly style", "neutral": "a professional but personable style", "cold": "a concise, respectful style"}[dominant_tier],
             )
 
-            # ── About-the-sender block — surfaces personalization signals to the LLM ──
+            # ── About-the-sender block - surfaces personalization signals to the LLM ──
             sender_status_label = {
                 'current_student': f'CURRENT {sender_university_short or ""} STUDENT (graduating {sender_grad_year_int or "soon"})',
                 'recent_grad': f'RECENT {sender_university_short or ""} GRADUATE ({sender_grad_year_int or ""})',
@@ -910,7 +910,7 @@ CRITICAL FACTS YOU MUST RESPECT:
 - Never invent the contact's prior schools or companies. Only reference what's explicitly in their data.
 
 COMMON-GROUND DISCOVERY (warm-cold conversion):
-- If the sender's hometown matches the contact's hometown or the contact's location, mention it once, naturally. ("Saw you're also from {sender_hometown or '[hometown]'} — small world.")
+- If the sender's hometown matches the contact's hometown or the contact's location, mention it once, naturally. ("Saw you're also from {sender_hometown or '[hometown]'} - small world.")
 - If the sender's personal context mentions a specific interest (sport, hobby, organization, school club) and the contact's profile clearly mentions the same, weave it in once. NEVER fabricate the contact's interests.
 - One shared signal per email max. Don't pile them up.
 """
@@ -939,7 +939,7 @@ COMMON-GROUND DISCOVERY (warm-cold conversion):
    Each email in the batch must open differently.
 3. Show genuine interest in something specific about their work or background
 4. Ask ONE thoughtful, specific question
-5. Brief time ask — vary the phrasing across the batch. Use different wording each time, e.g.:
+5. Brief time ask - vary the phrasing across the batch. Use different wording each time, e.g.:
    - "Would you have 15 minutes for a quick chat?"
    - "Would you be open to a brief call?"
    - "Could we set up a short conversation?"
@@ -976,7 +976,7 @@ Return ONLY valid JSON:
                 "for cold outreach. You never use forced opener patterns. Each email feels "
                 "individually written, not templated. You end every email with a sign-off and the "
                 "sender's name. Use proper apostrophes. Never use placeholders.\n\n"
-                "FACTUAL DISCIPLINE — non-negotiable: "
+                "FACTUAL DISCIPLINE - non-negotiable: "
                 "(a) Respect the sender's actual status. If the sender is a CURRENT STUDENT, never "
                 "write \"fellow alum\" or imply they've graduated; use phrasing like \"current "
                 "[School] student\" or the school nickname (Trojan, Bruin, Bear, etc.) instead. "
@@ -1008,7 +1008,7 @@ Return ONLY valid JSON:
                 ai_provider = "claude"
                 logger.info("[EMAIL-GEN] ✅ Claude succeeded (%d chars)", len(response_text))
             except Exception as claude_err:
-                logger.warning("[EMAIL-GEN] ⚠️ Claude failed: %s — falling back to GPT", claude_err)
+                logger.warning("[EMAIL-GEN] ⚠️ Claude failed: %s - falling back to GPT", claude_err)
                 response_text = None
 
         # --- Attempt 2: GPT (OpenAI) ---
@@ -1028,11 +1028,11 @@ Return ONLY valid JSON:
                 ai_provider = "gpt"
                 logger.info("[EMAIL-GEN] ✅ GPT succeeded (%d chars)", len(response_text))
             except Exception as gpt_err:
-                logger.error("[EMAIL-GEN] ❌ GPT also failed: %s — will use static fallback", gpt_err)
+                logger.error("[EMAIL-GEN] ❌ GPT also failed: %s - will use static fallback", gpt_err)
                 raise  # Let the outer except handle static fallback
 
         if response_text is None:
-            raise Exception("Both Claude and GPT failed or unavailable — no AI response generated")
+            raise Exception("Both Claude and GPT failed or unavailable - no AI response generated")
 
         logger.info("[EMAIL-GEN] Using %s-generated emails", ai_provider)
 
@@ -1222,7 +1222,7 @@ Return ONLY valid JSON:
                         else:
                             body = f"{body}\n\n{resume_line}"
             else:
-                # No resume — strip any AI-generated resume mentions so the email doesn't lie
+                # No resume - strip any AI-generated resume mentions so the email doesn't lie
                 lines = body.split('\n')
                 filtered_lines = [line for line in lines if not any(m in line.lower() for m in RESUME_MENTIONS)]
                 body = '\n'.join(filtered_lines)
@@ -1258,7 +1258,7 @@ Return ONLY valid JSON:
             
             is_malformed = any(pattern in body for pattern in malformed_patterns)
             if is_malformed:
-                logger.warning("[EMAIL-GEN] ⚠️ Malformed email for contact %d from %s — using per-contact fallback", idx, ai_provider)
+                logger.warning("[EMAIL-GEN] ⚠️ Malformed email for contact %d from %s - using per-contact fallback", idx, ai_provider)
                 contact = contacts[idx] if idx < len(contacts) else {}
                 matched_pattern = next((p for p in malformed_patterns if p in body), "unknown")
                 _log_email_fallback(uid, contact, "per_contact", f"malformed:{matched_pattern} provider:{ai_provider}")
@@ -1353,7 +1353,7 @@ Would you be open to a brief chat?
                             f"Opening sentences already used: {existing_openers[:4]}. "
                             f"Rewrite with a different subject specific to {contact.get('Company', '')} or "
                             f"{contact.get('FirstName', '')}'s role as {contact.get('Title', '')}. "
-                            f"Also use a DIFFERENT opening sentence structure — do not start with "
+                            f"Also use a DIFFERENT opening sentence structure - do not start with "
                             f"'I'm [name], a [major] student at [school]' if other emails already do."
                         )
                         try:
@@ -1375,7 +1375,7 @@ Would you be open to a brief chat?
         return cleaned_results
 
     except Exception as e:
-        logger.error("[EMAIL-GEN] ❌ Both Claude and GPT failed — using STATIC FALLBACK templates: %s", e)
+        logger.error("[EMAIL-GEN] ❌ Both Claude and GPT failed - using STATIC FALLBACK templates: %s", e)
         import traceback
         traceback.print_exc()
 
@@ -1665,7 +1665,7 @@ def regenerate_with_feedback(contact, user_profile, original_email, failures):
             title = contact.get("Title") or contact.get("title") or ""
             failure_instructions.append(
                 f"The subject line must reference the contact specifically. "
-                f"Include their company ({company}), name ({first_name}), or role ({title}) — "
+                f"Include their company ({company}), name ({first_name}), or role ({title}) - "
                 f"not just the sender's university. Make it unique to THIS recipient."
             )
         elif f == "template_leak":
@@ -1677,7 +1677,7 @@ def regenerate_with_feedback(contact, user_profile, original_email, failures):
             failure_instructions.append(
                 f"This email is too similar to others in the batch. "
                 f"Rewrite the subject to be specific to {company} or {first_name}'s role as {title}. "
-                f"Also use a DIFFERENT opening sentence structure — do not use 'I'm [name], a [major] student at [school]'. "
+                f"Also use a DIFFERENT opening sentence structure - do not use 'I'm [name], a [major] student at [school]'. "
                 f"Try alternatives like 'Currently studying [major] at [school],...' or 'As a [school] student interested in [career],...'."
             )
 

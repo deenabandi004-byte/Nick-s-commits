@@ -158,7 +158,7 @@
 
 ## 🚀 Next Steps (Optional - Phase 3)
 
-1. **Background Processing:** Implement async task system similar to coffee chat prep
+1. **Background Processing:** Implement async task system similar to meeting prep
 2. **Resume Caching Integration:** Integrate `get_or_cache_sanitized_resume()` into route handler
 3. **Streaming Responses:** Use OpenAI streaming API for progressive results
 4. **Monitoring:** Add metrics tracking for generation times and success rates

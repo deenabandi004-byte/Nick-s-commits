@@ -1,5 +1,5 @@
 """
-Production resume parser — zero hallucination design.
+Production resume parser - zero hallucination design.
 Rules-first, LLM for structure only, reconstruct from original text.
 """
 
@@ -42,7 +42,7 @@ SECTION_PATTERNS = [
     ("coursework", re.compile(r'^(?:relevant\s+)?coursework\s*$', re.IGNORECASE)),
 ]
 
-BULLET_MARKERS = re.compile(r'^[\s]*[•◦▪▸▹►▻‣⁃\-–—\*]\s*')
+BULLET_MARKERS = re.compile(r'^[\s]*[•◦▪▸▹►▻‣⁃\-– - \*]\s*')
 NUMBERED_BULLET = re.compile(r'^[\s]*\d+[.)]\s+')
 
 DATE_PATTERN = re.compile(
@@ -55,7 +55,7 @@ YEAR_PATTERN = re.compile(r'\b20\d{2}\b')
 DATE_RANGE_PATTERN = re.compile(
     r'(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z.]*\s*\d{4}|'
     r'\d{4}|Present|Current|Ongoing)'
-    r'\s*[-–—to]+\s*'
+    r'\s*[-– - to]+\s*'
     r'(?:(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z.]*\s*\d{4}|'
     r'\d{4}|Present|Current|Ongoing)',
     re.IGNORECASE
@@ -208,7 +208,7 @@ def detect_sections_rule_based(lines: List[Dict]) -> Tuple[Dict[str, List[int]],
 
 
 # ============================================================
-# LLM FALLBACK — LINE-BY-LINE CLASSIFICATION
+# LLM FALLBACK - LINE-BY-LINE CLASSIFICATION
 # ============================================================
 
 async def classify_lines_with_llm(lines: List[Dict]) -> Dict[str, List[int]]:
@@ -224,7 +224,7 @@ async def classify_lines_with_llm(lines: List[Dict]) -> Dict[str, List[int]]:
 You are NOT allowed to rewrite, summarize, modify, or infer any resume content.
 Your ONLY job is to assign each numbered line to exactly one section.
 You must assign EVERY line number from 1 to {total_lines} exactly once.
-Return ONLY valid JSON — no markdown, no explanation.""".format(total_lines=total_lines)
+Return ONLY valid JSON - no markdown, no explanation.""".format(total_lines=total_lines)
 
     user_prompt = f"""Classify each line of this resume into sections.
 
@@ -349,7 +349,7 @@ def _convert_llm_structure_to_sections(structure: dict) -> Dict[str, List[int]]:
 
 
 # ============================================================
-# FIELD PARSING — FROM ORIGINAL LINES ONLY
+# FIELD PARSING - FROM ORIGINAL LINES ONLY
 # ============================================================
 
 def parse_header(lines: List[Dict], header_indices: List[int]) -> Dict:
@@ -610,7 +610,7 @@ def parse_experience(lines: List[Dict], indices: List[int]) -> List[Dict]:
         has_date = bool(DATE_RANGE_PATTERN.search(text) or DATE_PATTERN.search(text))
 
         if line['is_bullet'] and not has_date and not _looks_like_role_header(text):
-            # Regular bullet — check if it could be a company name (no title yet)
+            # Regular bullet - check if it could be a company name (no title yet)
             if current_entry and not current_entry['company'] and _looks_like_company(text):
                 current_entry['company'] = text.strip()
             elif current_entry is not None:
@@ -642,7 +642,7 @@ def parse_experience(lines: List[Dict], indices: List[int]) -> List[Dict]:
                         i += 1  # consume the company line
 
         else:
-            # Non-bullet line — could be continuation bullet (lost marker), location, company, or new entry
+            # Non-bullet line - could be continuation bullet (lost marker), location, company, or new entry
             # If current entry has bullets and this doesn't look like a new header, treat as continuation
             looks_like_company = _looks_like_company(text)
             looks_like_role = bool(re.search(
@@ -650,7 +650,7 @@ def parse_experience(lines: List[Dict], indices: List[int]) -> List[Dict]:
                 r'president|coordinator|director|lead|associate|consultant|researcher|specialist)\b',
                 text, re.IGNORECASE
             ))
-            has_dash_separator = bool(re.search(r'\s+[–—-]\s+', text))
+            has_dash_separator = bool(re.search(r'\s+[– - -]\s+', text))
 
             # Continuation: entry has bullets, or has title (first bullet lost its marker)
             has_content = current_entry and (current_entry['bullets'] or current_entry['title'])
@@ -665,13 +665,13 @@ def parse_experience(lines: List[Dict], indices: List[int]) -> List[Dict]:
                 i += 1
                 continue
 
-            # Location line (e.g. "San Diego, CA") — only if line doesn't look like new entry
+            # Location line (e.g. "San Diego, CA") - only if line doesn't look like new entry
             location_match = re.search(r'[A-Z][a-z]+,\s*[A-Z]{2}', text)
             if (current_entry and not current_entry['location'] and location_match and
                     not has_dash_separator):
                 current_entry['location'] = text.strip()
             else:
-                # Start new entry — this line is company or title
+                # Start new entry - this line is company or title
                 if current_entry and (current_entry['bullets'] or current_entry['title']):
                     entries.append(current_entry)
 
@@ -753,7 +753,7 @@ def parse_skills(lines: List[Dict], indices: List[int]) -> Dict[str, List[str]]:
 
         if ':' in text:
             parts = text.split(':', 1)
-            # Preserve original casing and spacing — the PDF renderer iterates dynamically
+            # Preserve original casing and spacing - the PDF renderer iterates dynamically
             category = parts[0].strip()
             items_text = parts[1].strip()
             if items_text:
@@ -778,7 +778,7 @@ def parse_activities(lines: List[Dict], indices: List[int]) -> List[Dict]:
     """Parse activities/leadership. Output uses organization, role, dates, description.
 
     Each bullet line is treated as a separate entry (common in leadership sections where
-    each role is listed as '• Role — Organization: description text').
+    each role is listed as '• Role - Organization: description text').
     Non-bullet lines are treated as standalone entries or continuations.
     """
     if not indices:
@@ -798,9 +798,9 @@ def parse_activities(lines: List[Dict], indices: List[int]) -> List[Dict]:
                 entries.append(current_entry)
             current_entry = {'role': '', 'organization': '', 'description': '', 'dates': ''}
 
-            # Parse "Role — Organization: Description" or "Role — Organization"
+            # Parse "Role - Organization: Description" or "Role - Organization"
             parsed = False
-            for sep in ['—', '–', ' - ']:
+            for sep in [' - ', '–', ' - ']:
                 if sep in text:
                     head, rest = text.split(sep, 1)
                     current_entry['role'] = head.strip()
@@ -815,7 +815,7 @@ def parse_activities(lines: List[Dict], indices: List[int]) -> List[Dict]:
                     break
 
             if not parsed:
-                # No separator — treat the whole text as description
+                # No separator - treat the whole text as description
                 current_entry['description'] = text
 
             logger.info(
@@ -831,7 +831,7 @@ def parse_activities(lines: List[Dict], indices: List[int]) -> List[Dict]:
                 if current_entry:
                     entries.append(current_entry)
                 current_entry = {'role': '', 'organization': '', 'description': '', 'dates': ''}
-                for sep in ['—', '–', '|', ' - ']:
+                for sep in [' - ', '–', '|', ' - ']:
                     if sep in text:
                         parts = text.split(sep, 1)
                         current_entry['role'] = parts[0].strip()
@@ -854,7 +854,7 @@ def parse_summary(lines: List[Dict], indices: List[int]) -> str:
 
 
 # ============================================================
-# SNAP TO ORIGINAL — SAFETY NET
+# SNAP TO ORIGINAL - SAFETY NET
 # ============================================================
 
 def snap_to_original(parsed_info: dict, original_text: str) -> dict:
@@ -883,7 +883,7 @@ def snap_to_original(parsed_info: dict, original_text: str) -> dict:
                 corrected.append(matches[0] if matches else bullet)
             proj['bullets'] = corrected
 
-    # Date correction: only log mismatches — do not auto-swap dates (causes false corrections).
+    # Date correction: only log mismatches - do not auto-swap dates (causes false corrections).
     original_dates_set = set(DATE_PATTERN.findall(original_text))
     parsed_json_str = json.dumps(parsed_info)
     parsed_dates_set = set(DATE_PATTERN.findall(parsed_json_str))
@@ -975,7 +975,7 @@ async def _parse_resume_async(resume_text: str) -> dict:
         'awards': [],
     }
 
-    # Only snap when LLM was used — LLM may hallucinate/paraphrase content that needs
+    # Only snap when LLM was used - LLM may hallucinate/paraphrase content that needs
     # anchoring back to the original text. The rule-based parser uses original text
     # verbatim, so snapping only corrupts correctly merged multi-line bullets.
     if used_llm:
@@ -985,7 +985,7 @@ async def _parse_resume_async(resume_text: str) -> dict:
         logger.warning(f"[ResumeParserV2] {w}")
 
     elapsed = time.time() - start_time
-    logger.info(f"[ResumeParserV2] Parse complete in {elapsed:.1f}s — "
+    logger.info(f"[ResumeParserV2] Parse complete in {elapsed:.1f}s - "
                 f"{len(parsed.get('experience', []))} experiences, "
                 f"{sum(len(e.get('bullets', [])) for e in parsed.get('experience', []))} bullets, "
                 f"{len(parsed.get('projects', []))} projects")

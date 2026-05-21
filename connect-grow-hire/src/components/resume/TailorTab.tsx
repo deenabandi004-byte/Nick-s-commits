@@ -94,7 +94,7 @@ function buildPatchesFromAccepted(
         });
       }
     } else if (rec.category === 'Skills' && rec.id.startsWith('skill-add-')) {
-      // skill_append: need original skills line from resume — use PDF display label, not JSON key
+      // skill_append: need original skills line from resume - use PDF display label, not JSON key
       const skillName = rec.suggested?.trim();
       if (!skillName) continue;
       const skills = resumeData?.skills;
@@ -215,7 +215,7 @@ function convertSectionsToRecommendations(tailorResult: TailorResult): Recommend
         : [];
     for (let bulletIndex = 0; bulletIndex < bullets.length; bulletIndex++) {
       const bullet = bullets[bulletIndex];
-      // MUST check string first — model sometimes returns bullets as plain strings
+      // MUST check string first - model sometimes returns bullets as plain strings
       if (typeof bullet === 'string') {
         recommendations.push({
           id: `exp-${expIndex}-${bulletIndex}`,
@@ -1457,7 +1457,7 @@ export function TailorTab({
               placeholder="https://linkedin.com/jobs/..."
               className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:border-[#3B82F6] focus:ring-1 focus:ring-[#3B82F6]"
             />
-            <p className="text-xs text-gray-500 mt-1">Paste any job URL — LinkedIn, Greenhouse, Lever, Indeed, etc.</p>
+            <p className="text-xs text-gray-500 mt-1">Paste any job URL - LinkedIn, Greenhouse, Lever, Indeed, etc.</p>
             {jobUrlError && <p className="text-sm text-red-600 mt-1">{jobUrlError}</p>}
           </div>
           <div>

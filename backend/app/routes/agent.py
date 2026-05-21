@@ -1,5 +1,5 @@
 """
-Agent routes — API for the autonomous networking agent.
+Agent routes - API for the autonomous networking agent.
 
 All routes require authentication. Mutation endpoints (POST/PUT) are
 Elite-only. GET endpoints are accessible to all tiers for gate UI.

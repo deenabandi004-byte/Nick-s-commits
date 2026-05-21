@@ -1,4 +1,4 @@
-# Coffee Chat Prep - Comprehensive Audit
+# Meeting Prep - Comprehensive Audit
 
 **Date:** Current Session  
 **Status:** Complete System Analysis  
@@ -23,7 +23,7 @@
 
 ## Executive Summary
 
-The Coffee Chat Prep feature generates personalized one-page PDFs to help students prepare for networking conversations. The system:
+The Meeting Prep feature generates personalized one-page PDFs to help students prepare for networking conversations. The system:
 
 - **Input:** LinkedIn profile URL
 - **Output:** PDF prep sheet with contact info, similarity summary, questions, and recent news
@@ -33,12 +33,12 @@ The Coffee Chat Prep feature generates personalized one-page PDFs to help studen
 
 ### Key Components
 
-1. **Backend Route Handler** (`coffee_chat_prep.py`) - API endpoints
+1. **Backend Route Handler** (`meeting_prep.py`) - API endpoints
 2. **Background Processor** - Multi-step async processing
-3. **Content Generators** (`coffee_chat_prep.py`) - Similarity & questions
-4. **Research Service** (`coffee_chat.py`) - SERP news fetching
+3. **Content Generators** (`meeting_prep.py`) - Similarity & questions
+4. **Research Service** (`meeting.py`) - SERP news fetching
 5. **PDF Builder** (`pdf_builder.py`) - PDF generation
-6. **Frontend Page** (`CoffeeChatPrepPage.tsx`) - User interface
+6. **Frontend Page** (`MeetingPrepPage.tsx`) - User interface
 
 ---
 
@@ -49,7 +49,7 @@ The Coffee Chat Prep feature generates personalized one-page PDFs to help studen
 ```
 User Input (LinkedIn URL)
     ↓
-[Frontend] POST /api/coffee-chat-prep
+[Frontend] POST /api/meeting-prep
     ↓
 [Backend] Create prep record → Return prep_id immediately
     ↓
@@ -90,7 +90,7 @@ Firebase Storage:
 
 ### Step 1: Request Validation & Authorization
 
-**File:** `backend/app/routes/coffee_chat_prep.py:267-367`
+**File:** `backend/app/routes/meeting_prep.py:267-367`
 
 **Checks:**
 - ✅ LinkedIn URL format validation
@@ -106,7 +106,7 @@ Firebase Storage:
 
 ### Step 2: Profile Enrichment (PDL)
 
-**File:** `backend/app/routes/coffee_chat_prep.py:109-124`
+**File:** `backend/app/routes/meeting_prep.py:109-124`
 
 **Process:**
 - Calls `enrich_linkedin_profile(linkedin_url)` from PDL client
@@ -124,7 +124,7 @@ Firebase Storage:
 
 ### Step 3: News Research (SERP)
 
-**File:** `backend/app/services/coffee_chat.py:374-494`
+**File:** `backend/app/services/meeting.py:374-494`
 
 **Process:**
 1. Builds multiple search queries (company + division, company + office, industry)
@@ -153,7 +153,7 @@ Firebase Storage:
 
 ### Step 4: User Context Building
 
-**File:** `backend/app/routes/coffee_chat_prep.py:149-178`
+**File:** `backend/app/routes/meeting_prep.py:149-178`
 
 **Process:**
 - Parses resume text OR uses stored profile data
@@ -171,7 +171,7 @@ Firebase Storage:
 
 ### Step 5: Hometown Inference
 
-**File:** `backend/app/services/coffee_chat.py:497-573`
+**File:** `backend/app/services/meeting.py:497-573`
 
 **Process:**
 - **NO AI** - Only explicit pattern matching
@@ -192,7 +192,7 @@ Firebase Storage:
 
 ### Step 6: Similarity Summary Generation
 
-**File:** `backend/app/utils/coffee_chat_prep.py:61-250`
+**File:** `backend/app/utils/meeting_prep.py:61-250`
 
 **Process:**
 1. OpenAI GPT-4o-mini call with detailed prompt
@@ -220,7 +220,7 @@ Firebase Storage:
 
 ### Step 7: Question Generation
 
-**File:** `backend/app/utils/coffee_chat_prep.py:253-418`
+**File:** `backend/app/utils/meeting_prep.py:253-418`
 
 **Process:**
 1. OpenAI GPT-4o-mini generates up to 8 candidate questions
@@ -266,7 +266,7 @@ Firebase Storage:
 
 ### Step 9: Storage & Completion
 
-**File:** `backend/app/routes/coffee_chat_prep.py:209-253`
+**File:** `backend/app/routes/meeting_prep.py:209-253`
 
 **Process:**
 1. Upload PDF to Firebase Storage
@@ -290,10 +290,10 @@ Firebase Storage:
 
 ### Main Page
 
-**File:** `connect-grow-hire/src/pages/CoffeeChatPrepPage.tsx`
+**File:** `connect-grow-hire/src/pages/MeetingPrepPage.tsx`
 
 **Features:**
-- Two tabs: "Coffee Chat Prep" (generation) and "Coffee Library" (history)
+- Two tabs: "Meeting Prep" (generation) and "Coffee Library" (history)
 - Real-time status polling (every 2 seconds)
 - Progress indicators with step visualization
 - Credit and tier limit checks
@@ -710,7 +710,7 @@ Firebase Storage:
 
 ## Summary
 
-The Coffee Chat Prep feature is **functionally complete** but has several areas for improvement:
+The Meeting Prep feature is **functionally complete** but has several areas for improvement:
 
 **Strengths:**
 - ✅ Comprehensive content generation

@@ -575,7 +575,7 @@ This document outlines the comprehensive plan to implement dark mode across all 
 
 ---
 
-### 7. CoffeeChatPrepPage.tsx
+### 7. MeetingPrepPage.tsx
 **Priority**: Medium
 
 **Changes Needed:**
@@ -589,7 +589,7 @@ This document outlines the comprehensive plan to implement dark mode across all 
 
 ---
 
-### 8. CoffeeChatLibrary.tsx
+### 8. MeetingLibrary.tsx
 **Priority**: Medium
 
 **Changes Needed:**
@@ -939,8 +939,8 @@ For each page, verify:
 
 ### Phase 2: Feature Pages (Week 2)
 6. InterviewPrepPage.tsx
-7. CoffeeChatPrepPage.tsx
-8. CoffeeChatLibrary.tsx
+7. MeetingPrepPage.tsx
+8. MeetingLibrary.tsx
 9. Outbox.tsx
 10. Dashboard.tsx (component)
 

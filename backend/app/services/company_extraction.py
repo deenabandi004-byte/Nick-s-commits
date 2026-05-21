@@ -122,7 +122,7 @@ Return JSON array:
                 result_text = claude_response.content[0].text.strip()
                 logger.info("[FIRM-GEN] ✅ Claude succeeded")
             except Exception as claude_err:
-                logger.warning("[FIRM-GEN] ⚠️ Claude failed: %s — falling back to GPT", claude_err)
+                logger.warning("[FIRM-GEN] ⚠️ Claude failed: %s - falling back to GPT", claude_err)
 
         # Fall back to GPT
         if result_text is None:
@@ -338,7 +338,7 @@ Return ONLY a JSON array in this exact format (no markdown, no code blocks, no e
                 result_text = claude_response.content[0].text.strip()
                 logger.info("[FIRM-EXTRACT] ✅ Claude succeeded")
             except Exception as claude_err:
-                logger.warning("[FIRM-EXTRACT] ⚠️ Claude failed: %s — falling back to GPT", claude_err)
+                logger.warning("[FIRM-EXTRACT] ⚠️ Claude failed: %s - falling back to GPT", claude_err)
 
         # Fall back to GPT
         if result_text is None:

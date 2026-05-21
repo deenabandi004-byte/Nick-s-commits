@@ -45,7 +45,7 @@ export function UpgradeModal({
       bulk_drafting: 'Bulk Drafting',
       export: 'Export to CSV/Gmail',
       alumni_search: 'Alumni Search',
-      coffee_chat_prep: 'Coffee Chat Prep',
+      meeting_prep: 'Meeting Prep',
       interview_prep: 'Interview Prep',
     };
     return featureMap[feature] || feature;
@@ -57,7 +57,7 @@ export function UpgradeModal({
       pro: [
         '1,500 credits (~100 contacts)',
         'Full Firm Search',
-        '10 Coffee Chat Preps/month',
+        '10 Meeting Preps/month',
         '5 Interview Preps/month',
         'Unlimited alumni searches',
         'Export unlocked',
@@ -66,7 +66,7 @@ export function UpgradeModal({
       elite: [
         '3,000 credits (~200 contacts)',
         'Everything in Pro, plus:',
-        'Unlimited Coffee Chat Prep',
+        'Unlimited Meeting Prep',
         'Unlimited Interview Prep',
         'Priority queue',
         'Personalized templates',

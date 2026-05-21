@@ -1,12 +1,12 @@
 """
-Email Templates — preset definitions and template utility.
+Email Templates - preset definitions and template utility.
 Pure business logic; no Flask or Firestore.
 """
 
 EMAIL_STYLE_PRESETS = {
     "casual": {
         "name": "Casual",
-        "description": "Relaxed and friendly — like texting a friend of a friend",
+        "description": "Relaxed and friendly - like texting a friend of a friend",
         "instructions": """STYLE INSTRUCTIONS:
 - Tone: relaxed, genuine, like you're messaging someone a mutual friend introduced you to
 - Use contractions freely (I'm, you're, I'd)
@@ -18,7 +18,7 @@ EMAIL_STYLE_PRESETS = {
     },
     "professional": {
         "name": "Professional",
-        "description": "Polished and respectful — safe for senior executives",
+        "description": "Polished and respectful - safe for senior executives",
         "instructions": """STYLE INSTRUCTIONS:
 - Tone: polished, respectful, confident but not stiff
 - Use complete sentences with proper grammar
@@ -29,18 +29,18 @@ EMAIL_STYLE_PRESETS = {
     },
     "short_direct": {
         "name": "Short & Direct",
-        "description": "Under 50 words — get to the point fast",
+        "description": "Under 50 words - get to the point fast",
         "instructions": """STYLE INSTRUCTIONS:
 - STRICT: Keep the entire email body under 50 words (excluding greeting and sign-off)
 - Get to the point in the first sentence
-- One specific question or ask — nothing else
+- One specific question or ask - nothing else
 - No filler, no pleasantries beyond "Hi [Name],"
 - Every word must earn its place
 - Sign off with just "Thanks," then name""",
     },
     "warm_enthusiastic": {
         "name": "Warm & Enthusiastic",
-        "description": "Genuinely excited — great for people you admire",
+        "description": "Genuinely excited - great for people you admire",
         "instructions": """STYLE INSTRUCTIONS:
 - Tone: warm, genuinely enthusiastic, admiring but not sycophantic
 - Show specific excitement about their work (not generic "I'm a huge fan")
@@ -51,14 +51,14 @@ EMAIL_STYLE_PRESETS = {
     },
     "bold_confident": {
         "name": "Bold & Confident",
-        "description": "Stand out in the inbox — memorable and direct",
+        "description": "Stand out in the inbox - memorable and direct",
         "instructions": """STYLE INSTRUCTIONS:
 - Tone: confident, slightly bold, memorable
 - Open with something unexpected or a sharp observation about their work/company
 - Use one vivid or surprising word/phrase that makes the email stick
 - Don't be apologetic ("Sorry to bother you", "I know you're busy")
 - State what you bring to the conversation, not just what you want
-- Keep it punchy — short paragraphs, no walls of text
+- Keep it punchy - short paragraphs, no walls of text
 - Sign off with "Thanks," then name""",
     },
 }
@@ -66,8 +66,8 @@ EMAIL_STYLE_PRESETS = {
 EMAIL_PURPOSE_PRESETS = {
     "networking": {
         "name": "Networking",
-        "description": "Coffee chats and informational interviews",
-        "base_prompt": """Write a personalized networking email requesting an informational interview or coffee chat.
+        "description": "Meetings and informational interviews",
+        "base_prompt": """Write a personalized networking email requesting an informational interview or meeting.
 
 The email should:
 - Introduce the sender as a student interested in the recipient's field
@@ -98,7 +98,7 @@ The email should:
         "base_prompt": """Write a brief, warm follow-up email to someone who hasn't responded to a previous outreach or to follow up after a meeting/call.
 
 The email should:
-- Be SHORT — 2-3 sentences max
+- Be SHORT - 2-3 sentences max
 - Reference the previous interaction naturally without guilt-tripping
 - Add one small piece of new value (a relevant article, company news, or brief update on sender's progress)
 - Restate the ask lightly without being pushy
@@ -111,10 +111,10 @@ The email should:
 
 The email should:
 - Lead with a specific pain point or opportunity relevant to the recipient's role/organization
-- Introduce the product/service in ONE sentence — what it does and who it's for
+- Introduce the product/service in ONE sentence - what it does and who it's for
 - Include one concrete proof point (users, results, traction) if available from sender context
 - Make a specific, low-friction ask (15-min demo, quick call, or reply)
-- Do NOT sound like a mass email — reference something specific about their organization
+- Do NOT sound like a mass email - reference something specific about their organization
 - Do NOT include a resume attachment line
 - Close with sender's name and title/role""",
     },

@@ -1,5 +1,5 @@
 """
-Email quality gate — deterministic checks, no LLM.
+Email quality gate - deterministic checks, no LLM.
 
 Validates generated emails meet a quality floor before the student sees them.
 """
@@ -9,7 +9,7 @@ import re
 # Ask-phrase patterns (compiled once)
 # ---------------------------------------------------------------------------
 _ASK_PATTERNS = re.compile(
-    r"15 minutes|quick chat|coffee chat|your time|would love to hear|"
+    r"15 minutes|quick chat|meeting|your time|would love to hear|"
     r"would appreciate|brief call|short conversation|few minutes|"
     r"chance to connect|love to learn|happy to work around your schedule|"
     r"pick your brain|hear your perspective|learn more about",
@@ -19,7 +19,7 @@ _ASK_PATTERNS = re.compile(
 _TEMPLATE_LEAK = re.compile(r"\[Name\]|\[Company\]|\{\{|(?<!\w)\[\s*\]")
 
 _GENERIC_SUBJECTS = frozenset({
-    "coffee chat?", "quick question", "hi", "hello", "hey",
+    "meeting?", "quick question", "hi", "hello", "hey",
     "introduction", "reaching out", "networking",
 })
 

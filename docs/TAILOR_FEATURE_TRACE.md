@@ -1,4 +1,4 @@
-# Tailor Feature — End-to-End Trace
+# Tailor Feature - End-to-End Trace
 
 Complete trace of the tailor flow from user click to final result, for upgrading with ATS intelligence and role-type detection.
 
@@ -8,14 +8,14 @@ Complete trace of the tailor flow from user click to final result, for upgrading
 
 ### Where the user initiates tailor
 - **Component:** `connect-grow-hire/src/components/resume/TailorTab.tsx`
-- **Button:** "Tailor Resume" — rendered in the form view (when `showResults` is false). No separate "results" view has its own trigger; the same tab shows form → then results after the API returns.
+- **Button:** "Tailor Resume" - rendered in the form view (when `showResults` is false). No separate "results" view has its own trigger; the same tab shows form → then results after the API returns.
 
 ### User inputs (all optional as a set; at least job URL or manual fields required)
-- **jobUrl** — Job posting URL (e.g. LinkedIn, Greenhouse). Normalized with `normalizeJobUrl` (adds `https://` if missing).
-- **jobTitle** — Manual job title.
-- **company** — Manual company.
-- **locationInput** — Manual location.
-- **jobDescription** — Manual job description (textarea).
+- **jobUrl** - Job posting URL (e.g. LinkedIn, Greenhouse). Normalized with `normalizeJobUrl` (adds `https://` if missing).
+- **jobTitle** - Manual job title.
+- **company** - Manual company.
+- **locationInput** - Manual location.
+- **jobDescription** - Manual job description (textarea).
 
 Validation: `hasJobContext = hasJobUrl || hasManualFields` where `hasManualFields = jobTitle.trim() && company.trim() && locationInput.trim() && jobDescription.trim()`. So either a non-empty job URL or all four manual fields.
 
@@ -121,7 +121,7 @@ You are an expert resume consultant. Always respond with valid JSON only.
 **User message (full prompt):**
 
 ```python
-# backend/app/routes/resume_workshop.py — _analyze_resume_sections()
+# backend/app/routes/resume_workshop.py - _analyze_resume_sections()
 prompt = f"""You are an expert resume consultant. Analyze this resume against the job posting and provide specific, actionable suggestions to tailor it for this role.
 
 ## RESUME:
@@ -222,7 +222,7 @@ response = await openai_client.chat.completions.create(
 - **Model:** `gpt-4o-mini`
 - **Temperature:** `0.5`
 - **max_tokens:** `4000`
-- **Response format:** `json_object` — raw response is a single JSON object.
+- **Response format:** `json_object` - raw response is a single JSON object.
 
 ### Raw OpenAI response shape
 
@@ -243,7 +243,7 @@ response = await openai_client.chat.completions.create(
 ### Exact response structure returned to frontend
 
 ```python
-# backend/app/routes/resume_workshop.py — analyze() success path
+# backend/app/routes/resume_workshop.py - analyze() success path
 response = {
     "status": "ok",
     "score": analysis.get("score", 50),
@@ -278,17 +278,17 @@ return jsonify(response)
 
 ### Fields from the response used
 
-- **score** — Shown as “{score}/100” and for score band styling (green/amber/red).
-- **score_label** — Shown next to the score.
-- **sections.summary** — One recommendation (current/suggested/why).
-- **sections.experience** — One recommendation per bullet (role/company in title; current/suggested/why).
-- **sections.skills.add** — “Add Skill: X” with reason.
-- **sections.skills.remove** — “Consider Removing: X” with reason.
-- **sections.keywords** — “Add Keyword: X” with where_to_add.
-- **job_context** — Used for “Tailored for: {job_title} at {company}” and for Save to Library display name.
-- **url_parse_warning** — Shown in an amber banner when present.
-- **credits_remaining** — Passed to `updateCredits` if provided.
-- **categories** — Not rendered in TailorTab (only in type; could be used elsewhere).
+- **score** - Shown as “{score}/100” and for score band styling (green/amber/red).
+- **score_label** - Shown next to the score.
+- **sections.summary** - One recommendation (current/suggested/why).
+- **sections.experience** - One recommendation per bullet (role/company in title; current/suggested/why).
+- **sections.skills.add** - “Add Skill: X” with reason.
+- **sections.skills.remove** - “Consider Removing: X” with reason.
+- **sections.keywords** - “Add Keyword: X” with where_to_add.
+- **job_context** - Used for “Tailored for: {job_title} at {company}” and for Save to Library display name.
+- **url_parse_warning** - Shown in an amber banner when present.
+- **credits_remaining** - Passed to `updateCredits` if provided.
+- **categories** - Not rendered in TailorTab (only in type; could be used elsewhere).
 
 ### Score display
 
@@ -319,14 +319,14 @@ So “Save to Library” and “Use as Main” both use the **same** application
 
 ## 6. Current limitations (for ATS / role-type upgrade)
 
-- **No role-type or job-level detection** — Prompt does not ask for “role type” (e.g. IC vs manager, seniority) or explicit ATS framing.
-- **No ATS-specific instructions** — No mention of ATS, keyword density, or formatting that ATS systems care about.
-- **Scoring** — Done entirely by OpenAI (single score + label). No separate formula or ATS-style keyword match score.
-- **Recommendations** — Specific: real current/suggested text and reasons. Not generic; includes actual rewrites.
-- **Missing keywords** — Yes: `sections.keywords` lists “keyword from job posting missing in resume” and “where_to_add”. Frontend shows them as “Add Keyword: X” and uses `where_to_add` as description/why.
-- **Before/after** — Yes: every recommendation has `current` and `suggested`; the UI shows “Current” and “Suggested” in expandable cards with copy.
-- **Resume input to OpenAI** — Plain text only (`resume_text` from Firestore, truncated to 12000 chars). No structured (parsed) resume sent to the model; no explicit “skills” or “sections” structure in the prompt beyond what’s in the prose.
-- **Job description** — Sent as raw text (and optionally from URL fetch), truncated to 4000 chars in the prompt. No explicit extraction of “required skills” or “preferred qualifications” as separate fields for the model.
+- **No role-type or job-level detection** - Prompt does not ask for “role type” (e.g. IC vs manager, seniority) or explicit ATS framing.
+- **No ATS-specific instructions** - No mention of ATS, keyword density, or formatting that ATS systems care about.
+- **Scoring** - Done entirely by OpenAI (single score + label). No separate formula or ATS-style keyword match score.
+- **Recommendations** - Specific: real current/suggested text and reasons. Not generic; includes actual rewrites.
+- **Missing keywords** - Yes: `sections.keywords` lists “keyword from job posting missing in resume” and “where_to_add”. Frontend shows them as “Add Keyword: X” and uses `where_to_add` as description/why.
+- **Before/after** - Yes: every recommendation has `current` and `suggested`; the UI shows “Current” and “Suggested” in expandable cards with copy.
+- **Resume input to OpenAI** - Plain text only (`resume_text` from Firestore, truncated to 12000 chars). No structured (parsed) resume sent to the model; no explicit “skills” or “sections” structure in the prompt beyond what’s in the prose.
+- **Job description** - Sent as raw text (and optionally from URL fetch), truncated to 4000 chars in the prompt. No explicit extraction of “required skills” or “preferred qualifications” as separate fields for the model.
 
 ---
 

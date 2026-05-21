@@ -96,7 +96,7 @@ def mock_credit_helpers():
 
 
 # ===========================================================================
-# 1, 2, 3 — no_parse flag behavior
+# 1, 2, 3 - no_parse flag behavior
 # ===========================================================================
 
 class TestNoParseFlag:
@@ -183,7 +183,7 @@ class TestNoParseFlag:
 
 
 # ===========================================================================
-# 4, 5 — @require_tier
+# 4, 5 - @require_tier
 # ===========================================================================
 
 class TestRequireTier:
@@ -233,7 +233,7 @@ class TestRequireTier:
 
 
 # ===========================================================================
-# 6 — derive_receipts unit test
+# 6 - derive_receipts unit test
 # ===========================================================================
 
 class TestDeriveReceipts:
@@ -283,7 +283,7 @@ class TestDeriveReceipts:
 
 
 # ===========================================================================
-# 7 — per-user hourly rate cap
+# 7 - per-user hourly rate cap
 # ===========================================================================
 
 class TestHourlyRateCap:
@@ -315,7 +315,7 @@ class TestHourlyRateCap:
                 )
                 assert resp.status_code == 200, f"request {i + 1} should succeed: {resp.get_json()}"
 
-            # 21st request — capped
+            # 21st request - capped
             resp = client.post(
                 ENDPOINT,
                 json={
@@ -334,7 +334,7 @@ class TestHourlyRateCap:
 
 
 # ===========================================================================
-# 8 — REGRESSION: existing recruiter-search-tab path
+# 8 - REGRESSION: existing recruiter-search-tab path
 # ===========================================================================
 
 class TestRegressionExistingRecruiterTab:

@@ -10,7 +10,7 @@
 **Schemas Created:**
 - `ContactSearchRequest` - Validates contact search inputs
 - `FirmSearchRequest` - Validates firm search inputs
-- `CoffeeChatPrepRequest` - Validates coffee chat prep inputs
+- `MeetingPrepRequest` - Validates meeting prep inputs
 - `InterviewPrepRequest` - Validates interview prep inputs
 - `ContactCreateRequest` - Validates contact creation
 - `ContactUpdateRequest` - Validates contact updates
@@ -216,7 +216,7 @@ From the audit roadmap, next items to tackle:
 
 1. **Optimize Firestore Queries** - Add composite indexes
 2. **Implement Caching** - Add Redis for API responses
-3. **Add More Validation** - Coffee chat prep, interview prep endpoints
+3. **Add More Validation** - Meeting prep, interview prep endpoints
 4. **Standardize Field Naming** - Migrate to consistent camelCase
 5. **Add React Error Boundaries** - Better frontend error handling
 

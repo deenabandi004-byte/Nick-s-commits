@@ -1,5 +1,5 @@
 """
-Email quality tests — verify every email output path produces well-formatted,
+Email quality tests - verify every email output path produces well-formatted,
 grammatically correct emails with proper capitalization, greeting, sign-off,
 no placeholders, no double spaces, and acceptable structure.
 
@@ -77,13 +77,13 @@ def _assert_email_basics(body: str, recipient_first: str, label: str = "email"):
         if char not in ('i',) and "e.g." not in context and "i.e." not in context:
             # Skip URLs and emails
             if "http" not in context and "@" not in context and "linkedin" not in context.lower():
-                pass  # Soft check — GPT may legitimately start with lowercase in some styles
+                pass  # Soft check - GPT may legitimately start with lowercase in some styles
 
     # 7. Body should have at least 2 paragraphs (greeting + content)
     paragraphs = [p.strip() for p in body.split("\n\n") if p.strip()]
     assert len(paragraphs) >= 2, f"{label}: only {len(paragraphs)} paragraph(s), expected >= 2"
 
-    # 8. No "Dear" — we use "Hi"
+    # 8. No "Dear" - we use "Hi"
     assert not body.strip().startswith("Dear"), f"{label}: starts with 'Dear' instead of 'Hi'"
 
 
@@ -111,7 +111,7 @@ def _assert_no_empty_greeting(body: str, label: str = "email"):
 
 
 # =============================================================================
-# Recruiter email — GPT path
+# Recruiter email - GPT path
 # =============================================================================
 
 class TestRecruiterEmailGPTPath:
@@ -130,8 +130,8 @@ class TestRecruiterEmailGPTPath:
                 "drawn to the focus on building resilient payment infrastructure. Having built "
                 "a distributed transaction system in my capstone project that handled 10K TPS, "
                 "I'm excited about tackling similar challenges at Stripe's scale.\n\n"
-                "My experience with Go during my JPMorgan internship — where I helped migrate "
-                "a monolith to microservices — aligns well with what the role describes. "
+                "My experience with Go during my JPMorgan internship - where I helped migrate "
+                "a monolith to microservices - aligns well with what the role describes. "
                 "I'd love to learn more about the team and how I might contribute.\n\n"
                 "Would you have a few minutes to chat?"
             )))]
@@ -260,7 +260,7 @@ class TestRecruiterEmailGPTPath:
 
 
 # =============================================================================
-# Recruiter email — Fallback path (GPT failure)
+# Recruiter email - Fallback path (GPT failure)
 # =============================================================================
 
 class TestRecruiterEmailFallback:
@@ -425,7 +425,7 @@ class TestRecruiterEmailFallback:
 
 
 # =============================================================================
-# Recruiter email — Full pipeline (generate_recruiter_emails)
+# Recruiter email - Full pipeline (generate_recruiter_emails)
 # =============================================================================
 
 class TestRecruiterEmailPipeline:
@@ -483,7 +483,7 @@ class TestRecruiterEmailPipeline:
 
 
 # =============================================================================
-# Contact/networking email — GPT path
+# Contact/networking email - GPT path
 # =============================================================================
 
 class TestContactEmailGPTPath:
@@ -503,7 +503,7 @@ class TestContactEmailGPTPath:
                     "I came across your background at Goldman Sachs and noticed your work "
                     "as a VP in Investment Banking there. I'm a USC student studying Finance, "
                     "and I'm especially interested in how the IBD team approaches deal structuring.\n\n"
-                    "I'd love to hear about your transition from equity research — what drove "
+                    "I'd love to hear about your transition from equity research - what drove "
                     "that move? If you're open to it, would you have 15 minutes for a quick "
                     "chat sometime in the next couple of weeks?\n\n"
                     "I've included my resume (Resume.pdf) for your reference.\n\n"
@@ -546,7 +546,7 @@ class TestContactEmailGPTPath:
 
     @patch("app.services.reply_generation.get_openai_client")
     def test_placeholder_replacement(self, mock_get_client):
-        """GPT sometimes returns [FirstName] placeholders — they must be replaced."""
+        """GPT sometimes returns [FirstName] placeholders - they must be replaced."""
         mock_client = MagicMock()
         mock_get_client.return_value = mock_client
 
@@ -622,7 +622,7 @@ class TestContactEmailGPTPath:
 
 
 # =============================================================================
-# Contact/networking email — Malformed fallback
+# Contact/networking email - Malformed fallback
 # =============================================================================
 
 class TestContactEmailMalformedFallback:
@@ -671,7 +671,7 @@ class TestContactEmailMalformedFallback:
 
 
 # =============================================================================
-# Contact/networking email — Exception fallback
+# Contact/networking email - Exception fallback
 # =============================================================================
 
 class TestContactEmailExceptionFallback:
@@ -776,7 +776,7 @@ class TestReplyToMessage:
         mock_get_client.return_value = mock_client
         mock_client.chat.completions.create.return_value = MagicMock(
             choices=[MagicMock(message=MagicMock(content=json.dumps({
-                "subject": "Re: Coffee chat follow-up",
+                "subject": "Re: Meeting follow-up",
                 "body": (
                     "Hi John,\n\n"
                     "Thank you so much for getting back to me! I'd love to find a time "

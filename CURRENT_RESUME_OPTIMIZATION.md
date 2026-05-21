@@ -285,9 +285,9 @@ You are an expert resume optimizer. Your task is to enhance a resume for a speci
 
 ### Rule 2: PRESERVE ALL CONTENT
 - Keep ALL sections from the original resume
-- Keep ALL bullet points — you may reword them but never delete them
+- Keep ALL bullet points - you may reword them but never delete them
 - Keep ALL projects listed
-- Keep ALL skills listed — you may reorder by relevance but never remove
+- Keep ALL skills listed - you may reorder by relevance but never remove
 - Keep coursework if present
 
 ### Rule 3: PRESERVE ALL FACTS

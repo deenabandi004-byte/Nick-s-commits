@@ -771,12 +771,12 @@ const RecruiterSpreadsheet: React.FC = () => {
                             style={{ fontSize: 11, color: '#2563EB', textDecoration: 'none', borderBottom: '1px solid #BFDBFE', paddingBottom: 1 }}
                             onMouseEnter={(e) => { e.currentTarget.style.color = '#1D4ED8'; e.currentTarget.style.borderColor = '#1D4ED8'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#2563EB'; e.currentTarget.style.borderColor = '#BFDBFE'; }}
                           >↗ view</a>
-                        ) : <span style={{ color: '#bbb' }}>—</span>}
+                        ) : <span style={{ color: '#bbb' }}> - </span>}
                       </td>
 
                       {/* Email */}
                       <td onClick={() => setActiveCell({ rowId: recruiter.id || '', col: 'email' })} style={cellStyle('email')}>
-                        <span style={{ fontSize: 12, color: '#555' }}>{recruiter.email || '—'}</span>
+                        <span style={{ fontSize: 12, color: '#555' }}>{recruiter.email || ' - '}</span>
                       </td>
 
                       {/* Company */}
@@ -784,7 +784,7 @@ const RecruiterSpreadsheet: React.FC = () => {
                         {editingCell?.row === index && editingCell?.col === 'company' ? (
                           <Input value={recruiter.company} onChange={(e) => handleCellEdit(recruiter.id!, 'company', e.target.value)} onBlur={handleCellBlur} className="text-sm h-6 border-gray-300" style={{ fontFamily: mono }} autoFocus />
                         ) : (
-                          <span style={{ fontSize: 12, color: '#555', cursor: 'default' }}>{recruiter.company || '—'}</span>
+                          <span style={{ fontSize: 12, color: '#555', cursor: 'default' }}>{recruiter.company || ' - '}</span>
                         )}
                       </td>
 
@@ -793,7 +793,7 @@ const RecruiterSpreadsheet: React.FC = () => {
                         {editingCell?.row === index && editingCell?.col === 'jobTitle' ? (
                           <Input value={recruiter.jobTitle} onChange={(e) => handleCellEdit(recruiter.id!, 'jobTitle', e.target.value)} onBlur={handleCellBlur} className="text-sm h-6 border-gray-300" style={{ fontFamily: mono }} autoFocus />
                         ) : (
-                          <span style={{ fontSize: 12, color: '#555', cursor: 'default' }}>{recruiter.jobTitle || '—'}</span>
+                          <span style={{ fontSize: 12, color: '#555', cursor: 'default' }}>{recruiter.jobTitle || ' - '}</span>
                         )}
                       </td>
 
@@ -809,7 +809,7 @@ const RecruiterSpreadsheet: React.FC = () => {
                               >↗</a>
                             )}
                           </div>
-                        ) : <span style={{ color: '#bbb' }}>—</span>}
+                        ) : <span style={{ color: '#bbb' }}> - </span>}
                       </td>
 
                       {/* Status */}

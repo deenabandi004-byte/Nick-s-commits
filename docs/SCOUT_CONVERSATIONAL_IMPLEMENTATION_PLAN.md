@@ -1,4 +1,4 @@
-# Scout Conversational Upgrade — Implementation Plan
+# Scout Conversational Upgrade - Implementation Plan
 
 This plan maps the spec in `scout-conversational-upgrade.md` to the Offerloop codebase and orders work so we can implement in one sitting (items 1–7) with optional follow-ups (8–9).
 
@@ -16,13 +16,13 @@ This plan maps the spec in `scout-conversational-upgrade.md` to the Offerloop co
 | 4 | Rotate loading messages | Frontend: `ScoutSidePanel.tsx` | Small |
 | 5 | Add error recovery lines | Backend + Frontend: `scout_assistant_service.py` + `useScoutChat.ts` | Small |
 | 6 | Post-navigation toast | Frontend: `ScoutSidePanel.tsx` | Small |
-| 7 | (Covered in 1 — current_page already in prompt) | — | — |
+| 7 | (Covered in 1 - current_page already in prompt) | - | - |
 | 8 | Context-aware suggestion chips | Frontend: `scout-knowledge.ts` + `ScoutSidePanel.tsx` | Medium |
 | 9 | Align search-help prompts with Scout voice | Backend: `scout_assistant_service.py` | Medium |
 
 ---
 
-## 1. System Prompt — "Conversational Teammate" Persona
+## 1. System Prompt - "Conversational Teammate" Persona
 
 **File:** `backend/app/services/scout_assistant_service.py`
 
@@ -38,7 +38,7 @@ This plan maps the spec in `scout-conversational-upgrade.md` to the Offerloop co
   - `AVAILABLE ROUTES FOR NAVIGATION:` and `{routes_list}`
   - `AUTO-POPULATE INSTRUCTIONS` (contact/firm examples and rules)
   - `RESPONSE FORMAT` (JSON with `message`, `navigate_to`, `action_buttons`, `auto_populate`)
-- **Merge:** Add explicit instruction that when suggesting navigation, the model must still populate `navigate_to` (and optionally `action_buttons`, `auto_populate`) in the JSON — the new “offer, don’t command” wording is about the *message* text, not removing the fields.
+- **Merge:** Add explicit instruction that when suggesting navigation, the model must still populate `navigate_to` (and optionally `action_buttons`, `auto_populate`) in the JSON - the new “offer, don’t command” wording is about the *message* text, not removing the fields.
 
 **Result:** One updated system prompt: persona + context + knowledge + routes + auto-populate + JSON format.
 
@@ -59,7 +59,7 @@ message=f"Hi{', ' + user_name if user_name != 'there' else ''}! I'm Scout, your 
 
 **New:**
 ```text
-message=f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout — I know the platform inside and out. What are you trying to do right now?"
+message=f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout - I know the platform inside and out. What are you trying to do right now?"
 ```
 
 **2b. Empty state placeholder (UI, before any messages)**
@@ -70,7 +70,7 @@ message=f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout — I
 
 **Current:** `Ask me anything about Offerloop.`
 
-**New (spec recommendation — Option B):** `Need help finding people, companies, or something else?`
+**New (spec recommendation - Option B):** `Need help finding people, companies, or something else?`
 
 (Optional: make this configurable or A/B test Options A/C later.)
 
@@ -156,7 +156,7 @@ No API or type changes; only copy. Used by `ScoutSidePanel.tsx` and `ScoutPage.t
   _ERROR_RECOVERY_LINES = [
       "Try again in a sec?",
       "Want to try rephrasing that?",
-      "Give it another shot — I should be back.",
+      "Give it another shot - I should be back.",
   ]
   ```
 
@@ -176,7 +176,7 @@ No API or type changes; only copy. Used by `ScoutSidePanel.tsx` and `ScoutPage.t
 
 **File:** `connect-grow-hire/src/components/ScoutSidePanel.tsx`
 
-**Where:** `handleNavigate(route, autoPopulate)` — after storing auto-populate (if any), calling `navigate(route)`, and `closePanel()`.
+**Where:** `handleNavigate(route, autoPopulate)` - after storing auto-populate (if any), calling `navigate(route)`, and `closePanel()`.
 
 **Implementation:**
 
@@ -240,7 +240,7 @@ Already covered in **Step 1**: the new system prompt in the spec includes “Con
 
 - **Contact search help:** Update the system prompt and any fallback message so the tone matches the spec:
   - Acknowledge the miss, then suggest alternatives, then offer to help.
-  - Example pattern: “That combo didn’t return anything — here’s what I’d try next: [alternatives]. Want me to adjust the search for you?”
+  - Example pattern: “That combo didn’t return anything - here’s what I’d try next: [alternatives]. Want me to adjust the search for you?”
   - Keep the same JSON response shape (`message`, `suggestions`, `auto_populate`, etc.) and the same company/title logic; only change the wording instructions and the fallback `message` strings.
 
 - **Firm search help:** Same idea:
@@ -272,7 +272,7 @@ Already covered in **Step 1**: the new system prompt in the spec includes “Con
 
 ## Things to Watch (from spec)
 
-- **“Good question” syndrome:** If the model starts every reply with the same phrase, soften or remove the acknowledgment examples in the prompt and say only “briefly acknowledge the ask before answering — vary your phrasing.”
+- **“Good question” syndrome:** If the model starts every reply with the same phrase, soften or remove the acknowledgment examples in the prompt and say only “briefly acknowledge the ask before answering - vary your phrasing.”
 - **Over-personalization:** Use the user’s name at most once per conversation (e.g. in the greeting).
 - **Context cramming:** Only reference `current_page` when it genuinely changes the answer.
 - **Chip fallback:** For context-aware chips, always fall back to `SUGGESTED_QUESTIONS` so the chip tray is never empty.

@@ -458,7 +458,7 @@ export function ScoutSidePanel() {
                         </p>
                       </div>
                       
-                      {/* Refined-prompt cards — preferred render path. Each card
+                      {/* Refined-prompt cards - preferred render path. Each card
                           is a one-click "try this instead" that fills the search
                           bar and auto-submits. Falls through to the legacy
                           suggestions list only when refined_prompts is absent. */}
@@ -479,7 +479,7 @@ export function ScoutSidePanel() {
                                     auto_populate: { prompt: rp.prompt, autoSubmit: true },
                                   }));
                                 } catch {
-                                  // Non-fatal — sessionStorage may be disabled.
+                                  // Non-fatal - sessionStorage may be disabled.
                                 }
                                 closePanel();
                                 if (location.pathname !== '/find') {
@@ -524,7 +524,7 @@ export function ScoutSidePanel() {
                         )
                       )}
 
-                      {/* Continue button — only meaningful for the legacy
+                      {/* Continue button - only meaningful for the legacy
                           structured path (refined_prompts cards self-execute on
                           click, so the Continue button would be redundant). */}
                       {(!searchHelpResponse.refined_prompts || searchHelpResponse.refined_prompts.length === 0) && (
@@ -709,7 +709,7 @@ export function ScoutSidePanel() {
                         </div>
                       ))}
                       
-                      {/* Loading indicator — only show when loading AND no streaming content yet */}
+                      {/* Loading indicator - only show when loading AND no streaming content yet */}
                       {isLoading && !messages.some(m => m.isStreaming && m.content) && (
                         <div className="flex gap-3">
                           <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">

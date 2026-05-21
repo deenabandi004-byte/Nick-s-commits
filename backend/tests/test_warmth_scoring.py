@@ -195,7 +195,7 @@ def test_university_from_resume_parsed_education():
             },
             "experience": [],
         },
-        # No academics, no professionalInfo — university only in resume
+        # No academics, no professionalInfo - university only in resume
     }
     comparison = _build_user_comparison_data(user)
     assert "southern california" in comparison["university"], (

@@ -209,7 +209,7 @@ def get_cached_jobs(cache_key: str, user_id: Optional[str] = None) -> Optional[L
 def get_cached_jobs_with_stale(cache_key: str, user_id: Optional[str] = None) -> tuple[Optional[List[Dict[str, Any]]], bool]:
     """
     Like get_cached_jobs, but returns stale data if cache is expired.
-    Returns (jobs, is_stale) — is_stale=True means data is expired but usable.
+    Returns (jobs, is_stale) - is_stale=True means data is expired but usable.
     """
     try:
         db = get_db()
@@ -239,7 +239,7 @@ def get_cached_jobs_with_stale(cache_key: str, user_id: Optional[str] = None) ->
                             else:
                                 cache_time = cached_at
                             if cache_time < invalidation_time:
-                                # User preferences changed — stale data won't be relevant
+                                # User preferences changed - stale data won't be relevant
                                 logger.info(f"[JobBoard][INVALIDATE] Cache invalidated by preference change, not returning stale data")
                                 return None, False
 
@@ -451,7 +451,7 @@ def get_best_job_link(job: Dict[str, Any]) -> str:
 
 
 def fetch_jobs(query, location, num_results=10, user_id=None):
-    """Job search — Perplexity primary, SerpAPI fallback during transition."""
+    """Job search - Perplexity primary, SerpAPI fallback during transition."""
     # PRIMARY: Perplexity
     try:
         from app.services.perplexity_client import search_jobs_live
@@ -5154,7 +5154,7 @@ def parse_job_url(url: str) -> Optional[Dict[str, Any]]:
             if not job_data["company"] and job_data["title"]:
                 title = job_data["title"]
                 # Pattern 1: "Careers at [Company]" or "Jobs at [Company]"
-                match = re.search(r'(?:Careers|Jobs)\s+at\s+([A-Za-z0-9\s&\.]+?)(?:\s*[-–—]|\s*\||\s*$)', title, re.IGNORECASE)
+                match = re.search(r'(?:Careers|Jobs)\s+at\s+([A-Za-z0-9\s&\.]+?)(?:\s*[-– - ]|\s*\||\s*$)', title, re.IGNORECASE)
                 if match:
                     company = match.group(1).strip()
                     # Clean up common suffixes
@@ -5469,10 +5469,10 @@ async def optimize_resume_with_ai(
 
 ### Rule 2: PRESERVE ALL CONTENT
 - Keep ALL sections from the original resume (Education, Experience, Projects, Skills, etc.)
-- Keep ALL bullet points — you may reword them but never delete them
-- Keep ALL projects listed — these demonstrate technical ability
-- Keep ALL skills listed — you may reorder by relevance but never remove
-- Keep coursework if present — it shows relevant knowledge
+- Keep ALL bullet points - you may reword them but never delete them
+- Keep ALL projects listed - these demonstrate technical ability
+- Keep ALL skills listed - you may reorder by relevance but never remove
+- Keep coursework if present - it shows relevant knowledge
 
 ### Rule 3: PRESERVE ALL FACTS
 These must remain EXACTLY as in the original:
@@ -5948,7 +5948,7 @@ async def generate_cover_letter_with_ai(
     # Truncate job description to prevent overly long prompts
     job_desc_truncated = job_description[:3000] if len(job_description) > 3000 else job_description
     
-    prompt = f"""SYSTEM PROMPT — End-to-End Elite Cover Letter Generator
+    prompt = f"""SYSTEM PROMPT - End-to-End Elite Cover Letter Generator
 
 You are an expert career writer whose goal is to maximize interview conversion by producing cover letters that are:
 
@@ -5978,7 +5978,7 @@ INTERNAL WORKFLOW (MANDATORY)
 You must complete Stages 1–3 internally before producing the final output.
 Only the final cover letter text is returned.
 
-🔍 STAGE 1 — ROLE & COMPANY REALITY EXTRACTION
+🔍 STAGE 1 - ROLE & COMPANY REALITY EXTRACTION
 
 From the job description and general public knowledge, infer the work realities of this role.
 
@@ -6018,7 +6018,7 @@ Do not use marketing or mission statements
 
 Focus on execution reality
 
-🧠 STAGE 2 — OPERATING MODEL COMPRESSION
+🧠 STAGE 2 - OPERATING MODEL COMPRESSION
 
 Compress Stage 1 into 3–5 operating traits.
 
@@ -6038,11 +6038,11 @@ frequent client or user interaction
 
 These traits will act as anchors for the letter.
 
-✍️ STAGE 3 — COVER LETTER GENERATION
+✍️ STAGE 3 - COVER LETTER GENERATION
 
 Write a 3–4 paragraph cover letter using the operating traits as constraints.
 
-Paragraph 1 — Intentional, Company-Specific Hook
+Paragraph 1 - Intentional, Company-Specific Hook
 
 OPENING CONSTRAINT
 
@@ -6068,7 +6068,7 @@ Reference how the organization operates, not just what it does
 
 This paragraph must fail if the company name is swapped with a competitor
 
-Paragraph 2 — Ownership + Evidence
+Paragraph 2 - Ownership + Evidence
 
 Highlight 2–3 concrete experiences
 
@@ -6078,7 +6078,7 @@ Include at least one real constraint (ambiguity, scale, deadlines, accuracy)
 
 Frame as: action → result → impact
 
-Paragraph 3 — Role Alignment via Operating Traits
+Paragraph 3 - Role Alignment via Operating Traits
 
 Align the candidate's behavior and experience to the operating traits
 
@@ -6120,7 +6120,7 @@ decision-making process
 
 Values alone (impact, excellence, innovation) do not satisfy this requirement.
 
-Paragraph 4 — Confident Close
+Paragraph 4 - Confident Close
 
 CLOSING CONSTRAINT
 
@@ -6585,7 +6585,7 @@ def get_job_listings():
         per_page = data.get("perPage", 20)
         start = (page - 1) * per_page
         
-        # Cache invalidation is handled inside get_cached_jobs_with_stale() — no extra read needed here
+        # Cache invalidation is handled inside get_cached_jobs_with_stale() - no extra read needed here
 
         # Get comprehensive user profile
         user_profile = get_user_career_profile(user_id)
@@ -7684,7 +7684,7 @@ def find_recruiter_endpoint():
                 logger.error(f"[FindRecruiter] Error parsing job URL: {e}")
 
         # Use OpenAI to extract missing information from job description.
-        # Skipped entirely when no_parse=true (Find the Humans path) — Job
+        # Skipped entirely when no_parse=true (Find the Humans path) - Job
         # Board cards already carry structured fields and the call is the
         # main parser-brittleness drop-off point we are bypassing.
         if job_description and not no_parse:

@@ -41,7 +41,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
   const [isUploadingResume, setIsUploadingResume] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form state — pre-fill from URL param if present
+  // Form state - pre-fill from URL param if present
   const [jobPostingUrl, setJobPostingUrl] = useState(searchParams.get('jobUrl') || '');
   const [company, setCompany] = useState('');
   const [jobTitle, setJobTitle] = useState('');
@@ -116,6 +116,14 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
   useEffect(() => {
     loadSavedResume();
   }, [loadSavedResume]);
+
+  // Pre-fill from URL params (e.g. Home page recommended-search cards)
+  useEffect(() => {
+    const c = searchParams.get('company');
+    const r = searchParams.get('role');
+    if (c) setCompany(c);
+    if (r) setJobTitle(r);
+  }, [searchParams]);
 
   // Fetch job feed for chips, fallback to profile-based recommendations
   useEffect(() => {
@@ -479,7 +487,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
           <main className="px-3 py-6 sm:px-6 sm:py-12" style={{ background: '#FFFFFF', flex: 1, overflowY: 'auto', paddingBottom: '96px' }}>
             <div>
 
-              {/* Header Section — only when standalone */}
+              {/* Header Section - only when standalone */}
               {!embedded && (
               <div className="w-full px-3 py-6 sm:px-6 sm:py-12 !pb-0" style={{ maxWidth: '900px', margin: '0 auto' }}>
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
@@ -550,7 +558,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                         </div>
                       </div>
 
-                      {/* Job/recommendation cards — below search box, like People tab */}
+                      {/* Job/recommendation cards - below search box, like People tab */}
                       {!jobPostingUrl.trim() && !isSearching && (() => {
                         const hasJobs = recentJobs.length > 0;
                         const hasRecs = recommendations.length > 0;
@@ -1022,7 +1030,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                         </div>
                       )}
 
-                      {/* CTA button — matches People/Companies style */}
+                      {/* CTA button - matches People/Companies style */}
                       <button
                         ref={originalButtonRef}
                         onClick={handleFindHiringManagers}
@@ -1062,7 +1070,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                         )}
                       </button>
 
-                      {/* Resume status — subtle text line below CTA */}
+                      {/* Resume status - subtle text line below CTA */}
                       <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10, marginBottom: 8 }}>
                         {savedResumeUrl && savedResumeFileName ? (
                           <button

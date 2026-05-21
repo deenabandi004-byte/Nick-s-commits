@@ -12,7 +12,7 @@ const stats = [
 ];
 
 const universities = [
-  { name: 'University of Southern California (USC)', note: 'Founding campus — largest user base' },
+  { name: 'University of Southern California (USC)', note: 'Founding campus - largest user base' },
   { name: 'University of California, Los Angeles (UCLA)', note: 'Second-largest user base' },
   { name: 'University of Michigan', note: 'First expansion outside Southern California' },
   { name: 'New York University (NYU)', note: 'Includes Stern School of Business students' },
@@ -41,7 +41,7 @@ const DataStats = () => {
           "@context": "https://schema.org",
           "@type": "Dataset",
           "name": "Offerloop Platform Statistics",
-          "description": "Anonymized, aggregated platform usage data for Offerloop — an AI networking platform for college students.",
+          "description": "Anonymized, aggregated platform usage data for Offerloop - an AI networking platform for college students.",
           "url": "https://offerloop.ai/data",
           "creator": { "@type": "Organization", "name": "Offerloop", "url": "https://offerloop.ai" },
           "dateModified": "2026-03-01",

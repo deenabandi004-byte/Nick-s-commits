@@ -118,7 +118,7 @@ Successfully implemented **11 critical improvements** from the health check audi
 - `backend/app/routes/contacts.py` - Validation, pagination, bulk delete, better errors
 - `backend/app/routes/runs.py` - Validation, search history, better errors
 - `backend/app/routes/firm_search.py` - Validation, atomic credits, better errors
-- `backend/app/routes/coffee_chat_prep.py` - Atomic credits
+- `backend/app/routes/meeting_prep.py` - Atomic credits
 - `backend/app/routes/interview_prep.py` - Atomic credits
 
 ---

@@ -12,8 +12,8 @@ import {
   Tag,
   FileText,
   Users,
-  User,
-  Bot,
+  Home,
+  Repeat,
 } from "lucide-react";
 import CupIcon from "@/assets/sidebaricons/icons8-cup-48.png";
 import MailIcon from "@/assets/sidebaricons/icons8-important-mail-48.png";
@@ -43,8 +43,9 @@ import { cn } from "@/lib/utils";
 // ── Icon helpers ────────────────────────────────────────────────────────────
 
 const IMG_FILTER_ACTIVE =
-  "brightness(0) saturate(100%) invert(63%) sepia(57%) saturate(1188%) hue-rotate(193deg) brightness(101%) contrast(96%)";
-const IMG_FILTER_INACTIVE = "brightness(0) saturate(100%) invert(100%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(100%) contrast(100%) opacity(0.55)";
+  "brightness(0) saturate(100%) invert(20%) sepia(99%) saturate(2400%) hue-rotate(222deg) brightness(96%) contrast(95%)";
+const IMG_FILTER_INACTIVE =
+  "brightness(0) saturate(100%) invert(44%) sepia(12%) saturate(560%) hue-rotate(176deg) brightness(94%) contrast(88%)";
 
 type NavItemDef = {
   title: string;
@@ -60,34 +61,33 @@ type NavItemDef = {
   | { LucideIcon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; iconSrc?: never }
 );
 
-// CSS filter generators — vivid hues for PNG sidebar icons
+// CSS filter generators - mid-tone hues tuned for the light sidebar background
 const ICON_FILTERS: Record<string, string> = {
-  blue:      "brightness(0) saturate(100%) invert(60%) sepia(90%) saturate(800%) hue-rotate(190deg) brightness(115%) contrast(95%)",
-  sky:       "brightness(0) saturate(100%) invert(70%) sepia(60%) saturate(700%) hue-rotate(175deg) brightness(115%) contrast(95%)",
-  indigo:    "brightness(0) saturate(100%) invert(55%) sepia(70%) saturate(800%) hue-rotate(210deg) brightness(115%) contrast(95%)",
-  slate:     "brightness(0) saturate(100%) invert(65%) sepia(40%) saturate(600%) hue-rotate(190deg) brightness(120%) contrast(90%)",
-  brown:     "brightness(0) saturate(100%) invert(35%) sepia(40%) saturate(600%) hue-rotate(350deg) brightness(110%) contrast(90%)",
-  amber:     "brightness(0) saturate(100%) invert(86%) sepia(34%) saturate(900%) hue-rotate(338deg) brightness(101%) contrast(96%)",
-  emerald:   "brightness(0) saturate(100%) invert(73%) sepia(86%) saturate(361%) hue-rotate(101deg) brightness(96%) contrast(91%)",
-  rose:      "brightness(0) saturate(100%) invert(60%) sepia(82%) saturate(2358%) hue-rotate(316deg) brightness(101%) contrast(98%)",
-  violet:    "brightness(0) saturate(100%) invert(65%) sepia(43%) saturate(956%) hue-rotate(213deg) brightness(98%) contrast(101%)",
-  teal:      "brightness(0) saturate(100%) invert(78%) sepia(67%) saturate(285%) hue-rotate(122deg) brightness(102%) contrast(91%)",
+  blue:      "brightness(0) saturate(100%) invert(30%) sepia(94%) saturate(1700%) hue-rotate(213deg) brightness(95%) contrast(94%)",
+  sky:       "brightness(0) saturate(100%) invert(40%) sepia(70%) saturate(1200%) hue-rotate(180deg) brightness(95%) contrast(92%)",
+  indigo:    "brightness(0) saturate(100%) invert(28%) sepia(70%) saturate(1900%) hue-rotate(225deg) brightness(95%) contrast(95%)",
+  slate:     "brightness(0) saturate(100%) invert(44%) sepia(12%) saturate(560%) hue-rotate(176deg) brightness(94%) contrast(88%)",
+  brown:     "brightness(0) saturate(100%) invert(33%) sepia(40%) saturate(900%) hue-rotate(350deg) brightness(92%) contrast(92%)",
+  amber:     "brightness(0) saturate(100%) invert(50%) sepia(92%) saturate(1100%) hue-rotate(2deg) brightness(94%) contrast(94%)",
+  emerald:   "brightness(0) saturate(100%) invert(40%) sepia(64%) saturate(1100%) hue-rotate(118deg) brightness(92%) contrast(92%)",
+  rose:      "brightness(0) saturate(100%) invert(24%) sepia(82%) saturate(3000%) hue-rotate(331deg) brightness(94%) contrast(95%)",
+  violet:    "brightness(0) saturate(100%) invert(28%) sepia(82%) saturate(2200%) hue-rotate(245deg) brightness(95%) contrast(95%)",
+  teal:      "brightness(0) saturate(100%) invert(42%) sepia(58%) saturate(900%) hue-rotate(128deg) brightness(92%) contrast(92%)",
 };
 
-// Group 1 — main nav (base items, Agent added dynamically for Elite)
+// Group 1 - main nav (base items, Agent added dynamically for Elite)
 const baseNavItems: NavItemDef[] = [
   { title: "Find", url: "/find", iconSrc: MagnifyingGlassIcon, iconColor: "blue" },
-  { title: "Profile", url: "/profile", LucideIcon: User, iconColor: "#818CF8" },
-  { title: "My Network", url: "/my-network", LucideIcon: Users, iconColor: "#A78BFA" },
-  { title: "Coffee Chat Prep", url: "/coffee-chat-prep", iconSrc: CupIcon, iconColor: "amber", dataTour: "tour-coffee-chat-prep" },
+  { title: "My Network", url: "/my-network", LucideIcon: Users, iconColor: "#7C3AED" },
+  { title: "Meeting Prep", url: "/meeting-prep", iconSrc: CupIcon, iconColor: "amber", dataTour: "tour-meeting-prep" },
   { title: "Tracker", url: "/tracker", iconSrc: MailIcon, iconColor: "rose", dataTour: "tour-track-email" },
   { title: "Job Board", url: "/job-board", iconSrc: BriefcaseIcon, iconColor: "emerald" },
 ];
 
-// Utility nav — bottom of sidebar
+// Utility nav - bottom of sidebar
 const utilityNavItems: NavItemDef[] = [
-  { title: "Pricing", url: "/pricing", LucideIcon: Tag, iconColor: "#FCD34D" },
-  { title: "Documentation", url: "/documentation", LucideIcon: FileText, iconColor: "#5EEAD4" },
+  { title: "Pricing", url: "/pricing", LucideIcon: Tag, iconColor: "#D97706" },
+  { title: "Documentation", url: "/documentation", LucideIcon: FileText, iconColor: "#0D9488" },
 ];
 
 
@@ -102,18 +102,19 @@ const userMenuItems = [
 
 // ── Shared nav-item style constants ─────────────────────────────────────────
 
-const NAV_FONT_SIZE = "13.5px";
+const NAV_FONT_SIZE = "14px";
 const NAV_PY = "11px";
 const NAV_GAP = "10px";
 const NAV_RADIUS = "8px";
 
-const ACTIVE_BG = "rgba(59,130,246,0.18)";
-const ACTIVE_SHADOW = "inset 2px 0 0 #60A5FA";
-const ACTIVE_COLOR = "#60A5FA";
-const INACTIVE_ICON = "rgba(255,255,255,.55)";
-const INACTIVE_LABEL = "rgba(255,255,255,.70)";
-const HOVER_BG = "rgba(255,255,255,.06)";
-const HOVER_LABEL = "rgba(255,255,255,.92)";
+// White sidebar palette
+const ACTIVE_BG = "#EFF6FF";
+const ACTIVE_SHADOW = "inset 3px 0 0 #2563EB";
+const ACTIVE_COLOR = "#1D4ED8";
+const INACTIVE_ICON = "#64748B";
+const INACTIVE_LABEL = "#475569";
+const HOVER_BG = "#F1F5F9";
+const HOVER_LABEL = "#0F172A";
 
 // ── Component ───────────────────────────────────────────────────────────────
 
@@ -145,10 +146,13 @@ export function AppSidebar() {
   const creditPercentage = Math.min((credits / maxCredits) * 100, 100);
   const isCollapsed = state === "collapsed";
 
-  // Agent nav available to all users
-  const isElite = (user as { tier?: string } | null)?.tier === "elite";
+  // Launchpad (home) + Loops nav available to all users
   const agentStatus = useAgentSidebarStatus();
-  const mainNavItems: NavItemDef[] = [{ title: "Agent", url: "/agent", LucideIcon: Bot }, ...baseNavItems];
+  const mainNavItems: NavItemDef[] = [
+    { title: "Home", url: "/dashboard", LucideIcon: Home, iconColor: "#2563EB" },
+    { title: "Loops", url: "/agent", LucideIcon: Repeat, iconColor: "#4F46E5" },
+    ...baseNavItems,
+  ];
 
   // ── Render a single nav item (works for both image-icon and lucide-icon) ──
 
@@ -275,7 +279,7 @@ export function AppSidebar() {
           paddingRight: "10px",
           borderRadius: NAV_RADIUS,
           fontSize: NAV_FONT_SIZE,
-          fontWeight: active ? 500 : 400,
+          fontWeight: active ? 600 : 400,
           fontFamily: "var(--font-body)",
           background: active ? (item.activeBg || ACTIVE_BG) : "transparent",
           boxShadow: active ? ACTIVE_SHADOW : "none",
@@ -296,16 +300,16 @@ export function AppSidebar() {
       >
         <span className="relative">
           {icon}
-          {item.title === "Agent" && agentStatus.status === "active" && (
+          {item.title === "Loops" && agentStatus.status === "active" && (
             <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-green-500" />
           )}
-          {item.title === "Agent" && agentStatus.status === "paused" && (
+          {item.title === "Loops" && agentStatus.status === "paused" && (
             <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
           )}
         </span>
         <span className="flex-1">{item.title}</span>
-        {item.title === "Agent" && agentStatus.pendingCount > 0 && (
-          <span className="ml-auto bg-amber-400/20 text-amber-300 text-[10px] font-medium rounded-full px-1.5 py-0.5 leading-none">
+        {item.title === "Loops" && agentStatus.pendingCount > 0 && (
+          <span className="ml-auto bg-amber-100 text-amber-700 text-[10px] font-medium rounded-full px-1.5 py-0.5 leading-none">
             {agentStatus.pendingCount}
           </span>
         )}
@@ -321,8 +325,8 @@ export function AppSidebar() {
         <SidebarContent
           className="flex flex-col h-full overflow-hidden"
           style={{
-            background: "var(--brand, #1B2A44)",
-            borderRight: "0.5px solid rgba(255,255,255,.06)",
+            background: "#FFFFFF",
+            borderRight: "1px solid #E2E8F0",
           }}
         >
           {/* User profile / toggle */}
@@ -334,18 +338,18 @@ export function AppSidebar() {
                     <button
                       onClick={toggleSidebar}
                       className="p-2 rounded-lg transition-colors"
-                      style={{ color: "rgba(255,255,255,.45)" }}
+                      style={{ color: "#64748B" }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "rgba(255,255,255,.06)";
-                        e.currentTarget.style.color = "rgba(255,255,255,.75)";
+                        e.currentTarget.style.background = "rgba(15,23,42,.05)";
+                        e.currentTarget.style.color = "#0F172A";
                       }}
                       onMouseLeave={(e) => {
                         e.currentTarget.style.background = "transparent";
-                        e.currentTarget.style.color = "rgba(255,255,255,.45)";
+                        e.currentTarget.style.color = "#64748B";
                       }}
                       aria-label="Expand sidebar"
                     >
-                      <PanelLeft className="h-5 w-5" style={{ color: "rgba(255,255,255,.45)" }} />
+                      <PanelLeft className="h-5 w-5" />
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="right">Expand sidebar</TooltipContent>
@@ -358,10 +362,10 @@ export function AppSidebar() {
                     onClick={() => setUserDropdownOpen(!userDropdownOpen)}
                     className="flex-1 flex items-center gap-3 px-2 py-2 rounded-lg transition-all"
                     style={{
-                      background: userDropdownOpen ? "rgba(255,255,255,.06)" : "transparent",
+                      background: userDropdownOpen ? "rgba(15,23,42,.05)" : "transparent",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.background = "rgba(255,255,255,.06)";
+                      e.currentTarget.style.background = "rgba(15,23,42,.05)";
                     }}
                     onMouseLeave={(e) => {
                       if (!userDropdownOpen) {
@@ -369,11 +373,11 @@ export function AppSidebar() {
                       }
                     }}
                   >
-                    <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-white/20">
+                    <Avatar className="h-8 w-8 flex-shrink-0 ring-2 ring-[#3B82F6]/15">
                       {user?.picture && <AvatarImage src={user.picture} alt={user.name} />}
                       <AvatarFallback
                         className="text-xs font-medium"
-                        style={{ background: "rgba(255,255,255,.15)", color: "#FFFFFF" }}
+                        style={{ background: "#DBEAFE", color: "#1D4ED8" }}
                       >
                         {user?.name
                           ?.split(" ")
@@ -388,7 +392,7 @@ export function AppSidebar() {
                     <div className="flex-1 min-w-0 text-left">
                       <p
                         className="text-sm font-medium truncate"
-                        style={{ color: "#fff", fontFamily: "var(--font-body)" }}
+                        style={{ color: "#0F172A", fontFamily: "var(--font-body)" }}
                       >
                         {user?.name || "User"}
                       </p>
@@ -398,7 +402,7 @@ export function AppSidebar() {
                         "h-3.5 w-3.5 transition-transform flex-shrink-0",
                         userDropdownOpen && "rotate-180"
                       )}
-                      style={{ color: "rgba(255,255,255,.45)" }}
+                      style={{ color: "#94A3B8" }}
                     />
                   </button>
 
@@ -407,14 +411,14 @@ export function AppSidebar() {
                       <button
                         onClick={toggleSidebar}
                         className="p-2 rounded-lg transition-colors flex-shrink-0"
-                        style={{ color: "rgba(255,255,255,.45)" }}
+                        style={{ color: "#64748B" }}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "rgba(255,255,255,.06)";
-                          e.currentTarget.style.color = "rgba(255,255,255,.75)";
+                          e.currentTarget.style.background = "rgba(15,23,42,.05)";
+                          e.currentTarget.style.color = "#0F172A";
                         }}
                         onMouseLeave={(e) => {
                           e.currentTarget.style.background = "transparent";
-                          e.currentTarget.style.color = "rgba(255,255,255,.45)";
+                          e.currentTarget.style.color = "#64748B";
                         }}
                         aria-label="Collapse sidebar"
                       >
@@ -465,7 +469,7 @@ export function AppSidebar() {
 
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto px-3 pt-2 pb-3 flex flex-col">
-            {/* Group 1 — main */}
+            {/* Group 1 - main */}
             <div className="space-y-0.5">
               {mainNavItems.map(renderNavItem)}
             </div>
@@ -473,58 +477,65 @@ export function AppSidebar() {
             {/* Spacer pushes utility to bottom */}
             <div className="flex-1" />
 
-            {/* Utility nav — bottom */}
+            {/* Utility nav - bottom */}
             <div className="space-y-0.5">
               {utilityNavItems.map(renderNavItem)}
             </div>
           </nav>
         </SidebarContent>
 
-        {/* Footer — Credits + Upgrade */}
+        {/* Footer - Credits + Upgrade */}
         <SidebarFooter
           className="p-3"
           style={{
-            borderTop: "0.5px solid rgba(255,255,255,.07)",
-            background: "var(--brand, #1B2A44)",
+            borderTop: "1px solid #E2E8F0",
+            background: "#FFFFFF",
           }}
         >
           {!isCollapsed ? (
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {/* Credits */}
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
+              <div
+                style={{
+                  background: "#FFFFFF",
+                  border: "1px solid rgba(15,23,42,0.07)",
+                  borderRadius: "10px",
+                  padding: "10px 12px",
+                  boxShadow: "0 1px 2px rgba(15,23,42,0.05)",
+                }}
+              >
+                <div className="flex items-center justify-between mb-2">
                   <span
                     style={{
                       fontSize: "11px",
                       fontWeight: 700,
-                      letterSpacing: "0.06em",
-                      color: "rgba(255,255,255,.45)",
+                      letterSpacing: "0.05em",
+                      color: "#64748B",
                       fontFamily: "var(--font-body)",
                       textTransform: "uppercase" as const,
                     }}
                   >
                     Credits
                   </span>
-                  <span
-                    style={{
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      color: "rgba(255,255,255,.7)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
-                    {credits} / {maxCredits}
+                  <span style={{ fontFamily: "var(--font-body)", lineHeight: 1 }}>
+                    <span style={{ fontSize: "14px", fontWeight: 700, color: "#1D4ED8" }}>
+                      {credits}
+                    </span>
+                    <span style={{ fontSize: "12px", fontWeight: 500, color: "#94A3B8" }}>
+                      {" "}
+                      / {maxCredits}
+                    </span>
                   </span>
                 </div>
                 <div
-                  className="h-1 rounded-full overflow-hidden"
-                  style={{ background: "rgba(255, 255, 255, 0.12)" }}
+                  className="h-1.5 rounded-full overflow-hidden"
+                  style={{ background: "#E6EDF9" }}
                 >
                   <div
                     className="h-full rounded-full transition-all duration-300"
                     style={{
                       width: `${creditPercentage}%`,
-                      background: "rgba(255,255,255,.7)",
+                      background: "linear-gradient(90deg, #3B82F6 0%, #2563EB 100%)",
                     }}
                   />
                 </div>
@@ -536,20 +547,28 @@ export function AppSidebar() {
                   trackUpgradeClick("sidebar", { from_location: "sidebar" });
                   navigate("/pricing");
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-[6px] transition-all"
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-[8px] transition-all"
                 style={{
-                  background: "#3B82F6",
+                  background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
                   color: "#FFFFFF",
                   fontFamily: "var(--font-body)",
+                  fontSize: "14px",
                   fontWeight: 600,
                   border: "none",
-                  boxShadow: "0 1px 2px rgba(15,23,42,0.25), inset 0 1px 0 rgba(255,255,255,0.18)",
+                  boxShadow:
+                    "0 6px 16px -3px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "#2563EB";
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)";
+                  e.currentTarget.style.boxShadow =
+                    "0 8px 20px -3px rgba(37,99,235,0.55), inset 0 1px 0 rgba(255,255,255,0.22)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "#3B82F6";
+                  e.currentTarget.style.background =
+                    "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)";
+                  e.currentTarget.style.boxShadow =
+                    "0 6px 16px -3px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.22)";
                 }}
               >
                 <Zap className="h-4 w-4" style={{ color: "#FCD34D", fill: "#FCD34D" }} />
@@ -564,18 +583,21 @@ export function AppSidebar() {
                     trackUpgradeClick("sidebar", { from_location: "sidebar" });
                     navigate("/pricing");
                   }}
-                  className="w-full flex items-center justify-center p-2 rounded-[6px] transition-all"
+                  className="w-full flex items-center justify-center p-2.5 rounded-[8px] transition-all"
                   style={{
-                    background: "#3B82F6",
+                    background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
                     color: "#FFFFFF",
                     border: "none",
-                    boxShadow: "0 1px 2px rgba(15,23,42,0.25), inset 0 1px 0 rgba(255,255,255,0.18)",
+                    boxShadow:
+                      "0 6px 16px -3px rgba(37,99,235,0.45), inset 0 1px 0 rgba(255,255,255,0.22)",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#2563EB";
+                    e.currentTarget.style.background =
+                      "linear-gradient(135deg, #1D4ED8 0%, #1E40AF 100%)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#3B82F6";
+                    e.currentTarget.style.background =
+                      "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)";
                   }}
                 >
                   <Zap className="h-5 w-5" style={{ color: "#FCD34D", fill: "#FCD34D" }} />

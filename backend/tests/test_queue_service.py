@@ -1,5 +1,5 @@
 """
-Tests for app.services.queue_service — agentic networking queue Phase 1.
+Tests for app.services.queue_service - agentic networking queue Phase 1.
 
 Focus areas (from /plan-eng-review critical paths):
 - Dedup by pdlId AND email fallback (REGRESSION-CRITICAL)
@@ -325,7 +325,7 @@ def test_is_free_weekly_eligible_no_prior_free_queue():
 
 
 # ---------------------------------------------------------------------------
-# Approve queue contact — happy path, idempotent, schema
+# Approve queue contact - happy path, idempotent, schema
 # ---------------------------------------------------------------------------
 
 
@@ -677,7 +677,7 @@ def test_dismiss_idempotent_already_dismissed():
 
 
 # ---------------------------------------------------------------------------
-# Background generation — zero results and failure refund
+# Background generation - zero results and failure refund
 # ---------------------------------------------------------------------------
 
 
@@ -908,7 +908,7 @@ def test_background_happy_path_writes_5_contacts(
 
 
 # ---------------------------------------------------------------------------
-# get_current_queue — skips archived
+# get_current_queue - skips archived
 # ---------------------------------------------------------------------------
 
 
@@ -954,7 +954,7 @@ def test_get_current_queue_none_when_empty():
 
 
 # ---------------------------------------------------------------------------
-# Queue scanner gate (C2 coordination PR — daemon contract)
+# Queue scanner gate (C2 coordination PR - daemon contract)
 # ---------------------------------------------------------------------------
 #
 # Contract: docs/designs/tracker-daemon-contract.md
@@ -993,7 +993,7 @@ def test_queue_scanner_gate_tuesday_always_runs():
 @pytest.mark.unit
 def test_queue_scanner_gate_non_tuesday_first_boot_does_not_fire():
     """
-    First-ever boot on a non-Tuesday must NOT fire — that would push the
+    First-ever boot on a non-Tuesday must NOT fire - that would push the
     Monday-after-deploy queue a day early. Per contract line rationale.
     """
     db = _system_scanner_doc_mock(exists=False)
@@ -1096,7 +1096,7 @@ def test_queue_scanner_health_doc_write_failure_is_swallowed():
 
 
 # ---------------------------------------------------------------------------
-# scan_and_generate_queues — entry point wiring
+# scan_and_generate_queues - entry point wiring
 # ---------------------------------------------------------------------------
 
 @pytest.mark.unit

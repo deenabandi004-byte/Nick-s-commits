@@ -1,7 +1,7 @@
 # Gmail Connection Troubleshooting Report
 
 **Purpose:** Identify why users may have trouble connecting Gmail to get drafts in their inbox (Gmail Drafts folder).  
-**Scope:** Flow analysis and pain points only — no code changes in this document.
+**Scope:** Flow analysis and pain points only - no code changes in this document.
 
 ---
 
@@ -58,7 +58,7 @@
 ### 2.8 Token Expiry / Revocation After Connection
 
 - **What happens:** After Gmail is connected, tokens can expire or be revoked (e.g. user revokes access in Google account, or refresh fails). When the backend tries to create drafts or sync, it may return **401** with `needsAuth` / `authUrl` so the frontend can prompt reconnection.
-- **Impact:** Contact Search (and similar flows) can redirect to the auth URL for reconnection. If the reconnection flow is unclear, or if the user reconnects but still has cached “disconnected” state, they may think Gmail is still broken. Outbox and other surfaces show “Connect Gmail” or “Reconnect” — if the copy doesn’t match the actual state (e.g. “Connect” when they already connected once), users get confused.
+- **Impact:** Contact Search (and similar flows) can redirect to the auth URL for reconnection. If the reconnection flow is unclear, or if the user reconnects but still has cached “disconnected” state, they may think Gmail is still broken. Outbox and other surfaces show “Connect Gmail” or “Reconnect” - if the copy doesn’t match the actual state (e.g. “Connect” when they already connected once), users get confused.
 
 ### 2.9 Drafts vs Inbox Wording
 
@@ -85,7 +85,7 @@
 
 ---
 
-## 4. Recommended Next Steps (No Code Here — For Prioritization)
+## 4. Recommended Next Steps (No Code Here - For Prioritization)
 
 1. **Return path:** Support post-OAuth return to the page that started the flow (e.g. pass return path in state and have backend redirect to that path with `connected=gmail` / `gmail_error`).
 2. **Production OAuth:** Confirm OAuth consent screen is **Production** for the production app so all users can connect without being Test users.

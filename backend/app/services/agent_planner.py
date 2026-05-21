@@ -1,5 +1,5 @@
 """
-Agent Planner — LLM-driven action plan generation using Claude (Anthropic).
+Agent Planner - LLM-driven action plan generation using Claude (Anthropic).
 
 Takes user goals + pipeline state + recent activity → outputs a JSON action plan.
 Each cycle, the planner decides what the agent should do next.
@@ -128,21 +128,21 @@ def _build_prompt(config: dict, user_data: dict, pipeline_state: dict, market_co
 
     # Build action types section
     action_types = [
-        '"find" — search for contacts at a company. Include "company", "title", "count" (1-3).',
-        '"follow_up" — follow up on stale outreach. Include "contact_ids" array.',
-        '"skip" — do nothing this cycle. Include just "reason".',
+        '"find" - search for contacts at a company. Include "company", "title", "count" (1-3).',
+        '"follow_up" - follow up on stale outreach. Include "contact_ids" array.',
+        '"skip" - do nothing this cycle. Include just "reason".',
     ]
     if enable_jobs:
         action_types.append(
-            '"find_jobs" — search for jobs at a company. Include "company", "role", "count" (3-10).'
+            '"find_jobs" - search for jobs at a company. Include "company", "role", "count" (3-10).'
         )
     if enable_hms:
         action_types.append(
-            '"find_hiring_managers" — find HMs for a job. Include "company", "jobTitle", "location", "count" (1-3).'
+            '"find_hiring_managers" - find HMs for a job. Include "company", "jobTitle", "location", "count" (1-3).'
         )
     if enable_cos:
         action_types.append(
-            '"discover_companies" — find similar companies. Include "sourceCompany".'
+            '"discover_companies" - find similar companies. Include "sourceCompany".'
         )
 
     # Pipeline state section for HM pipeline
@@ -184,7 +184,7 @@ def _build_prompt(config: dict, user_data: dict, pipeline_state: dict, market_co
 {_build_market_section(market_context) if market_context else ''}## Rules
 - If market intelligence indicates a company announced layoffs or a hiring freeze, reduce contact count for that company
 - If a company announced expansion or a hiring surge, increase contact count
-1. ALWAYS include "find" actions to search for contacts — this is the core action. Every cycle must find at least some contacts.
+1. ALWAYS include "find" actions to search for contacts - this is the core action. Every cycle must find at least some contacts.
 2. Distribute contacts across target companies evenly (max 3 NEW contacts per company per cycle)
 3. Prioritize companies with fewer existing contacts
 4. If follow-up candidates exist, include follow_up actions for them
@@ -223,7 +223,7 @@ def _build_market_section(market_context: dict) -> str:
 def _call_claude(prompt: str) -> str:
     """Call Claude API for planning."""
     if not CLAUDE_API_KEY:
-        logger.warning("CLAUDE_API_KEY not set — returning empty plan")
+        logger.warning("CLAUDE_API_KEY not set - returning empty plan")
         return "[]"
 
     import anthropic

@@ -5,8 +5,8 @@ Aggregates reply data across all users with Gmail integration to establish
 a baseline reply rate before/after email personalization changes.
 
 Stores results in Firestore:
-  analytics/email_baseline  — overall baseline snapshot
-  analytics/email_outcomes  — dimensional breakdown (school, industry, personalization type)
+  analytics/email_baseline - overall baseline snapshot
+  analytics/email_outcomes - dimensional breakdown (school, industry, personalization type)
 """
 import json
 import logging
@@ -264,7 +264,7 @@ def compute_email_baseline():
 #
 # Contract: docs/designs/tracker-daemon-contract.md
 #
-# Dispatch cadence: every 6 hours invocation, but internal gate — returns
+# Dispatch cadence: every 6 hours invocation, but internal gate - returns
 # early unless today is Sunday AND current UTC hour is in [3, 9) AND the
 # last successful run was more than 6 days ago. Low-traffic Sunday window.
 #
@@ -272,7 +272,7 @@ def compute_email_baseline():
 # lastDurationMs, contactsScanned, segmentsWritten, docSizeBytes, errorCount.
 # The watchdog alerts if lastSuccessAt is older than 8 days.
 
-# Gate constants — exposed so tests can assert against the contract.
+# Gate constants - exposed so tests can assert against the contract.
 AGGREGATION_SUNDAY_WEEKDAY = 6     # datetime.weekday(): Sun=6
 AGGREGATION_HOUR_START = 3         # UTC hour window [3, 9)
 AGGREGATION_HOUR_END = 9
@@ -283,7 +283,7 @@ def _should_run_aggregation_scanner(db, now: "datetime | None" = None) -> bool:
     """
     Return True if the aggregation scanner should execute this tick.
 
-    Rule (per daemon contract): run iff ALL three are true —
+    Rule (per daemon contract): run iff ALL three are true - 
       1. today is Sunday UTC,
       2. current UTC hour is in [3, 9),
       3. last successful run was more than 6 days ago.
@@ -301,7 +301,7 @@ def _should_run_aggregation_scanner(db, now: "datetime | None" = None) -> bool:
     try:
         doc = db.collection("system").document("aggregation_scanner").get()
         if not doc.exists:
-            # First-ever Sunday in the window — run.
+            # First-ever Sunday in the window - run.
             return True
         data = doc.to_dict() or {}
         last_success = data.get("lastSuccessAt")
@@ -377,7 +377,7 @@ def aggregate_email_outcomes() -> None:
             if outcomes_doc.exists:
                 outcomes_data = outcomes_doc.to_dict() or {}
                 segments_written = int(outcomes_data.get("segmentCount", 0))
-                # Rough size estimate via JSON serialization — Firestore doc
+                # Rough size estimate via JSON serialization - Firestore doc
                 # limit is 1MB; the contract warns at 800KB / fails at 950KB.
                 try:
                     doc_size_bytes = len(json.dumps(outcomes_data, default=str))

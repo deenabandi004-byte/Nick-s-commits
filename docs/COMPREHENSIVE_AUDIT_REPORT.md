@@ -8,14 +8,14 @@
 
 ## Executive Summary
 
-A comprehensive audit of Offerloop's core features identified 48 issues across security, correctness, performance, and technical debt. All 48 have been resolved. The changes span **45 modified files** with a net reduction of **~5,100 lines** of code — the codebase is now smaller, faster, and more secure.
+A comprehensive audit of Offerloop's core features identified 48 issues across security, correctness, performance, and technical debt. All 48 have been resolved. The changes span **45 modified files** with a net reduction of **~5,100 lines** of code - the codebase is now smaller, faster, and more secure.
 
 | Category | Tasks | Status |
 |----------|-------|--------|
-| P0 — Security | 6 | All fixed |
-| P1 — Correctness / UX | 12 | All fixed |
-| P2 — Performance | 10 | All fixed |
-| P3 — Tech Debt / Cleanup | 20 | All fixed |
+| P0 - Security | 6 | All fixed |
+| P1 - Correctness / UX | 12 | All fixed |
+| P2 - Performance | 10 | All fixed |
+| P3 - Tech Debt / Cleanup | 20 | All fixed |
 | Bonus (follow-up scan) | 4 | All fixed |
 
 ---
@@ -42,7 +42,7 @@ A comprehensive audit of Offerloop's core features identified 48 issues across s
 
 - **Bonus: Tier restriction re-enabled:** Contact import endpoints had tier checks commented out "for testing." Free users could bypass Pro/Elite-only restrictions. Now enforced.
 
-**Business impact:** Closes the most critical attack surfaces — privilege escalation, secret leakage, and unauthorized access. These fixes are essential before any production traffic.
+**Business impact:** Closes the most critical attack surfaces - privilege escalation, secret leakage, and unauthorized access. These fixes are essential before any production traffic.
 
 ---
 
@@ -52,7 +52,7 @@ A comprehensive audit of Offerloop's core features identified 48 issues across s
 
 **After:**
 
-- **Contact cards after search (#7):** Search results now display interactive contact cards showing name, title, company, email, draft status, and LinkedIn link — users can see who they found at a glance.
+- **Contact cards after search (#7):** Search results now display interactive contact cards showing name, title, company, email, draft status, and LinkedIn link - users can see who they found at a glance.
 
 - **Atomic credit deduction everywhere (#8):** All search endpoints now use `deduct_credits_atomic()` with Firestore transactions instead of bare `firestore.Increment()`. Race conditions that allowed double-spending credits are eliminated.
 
@@ -72,7 +72,7 @@ A comprehensive audit of Offerloop's core features identified 48 issues across s
 
 - **Duplicate contacts filtered (#16):** The Outbox thread list now deduplicates contacts by email, preventing the same person from appearing multiple times.
 
-- **Credit cost preview (#19):** Before searching, users now see a badge showing `{batchSize × 15} credits` and their available balance — no more surprises after clicking Search.
+- **Credit cost preview (#19):** Before searching, users now see a badge showing `{batchSize × 15} credits` and their available balance - no more surprises after clicking Search.
 
 - **Resume text passed to emails (#22):** The email generator was hardcoding `resumeText: ""`. It now fetches the user's actual resume from Firestore, producing personalized outreach emails that reference real experience.
 
@@ -86,7 +86,7 @@ A comprehensive audit of Offerloop's core features identified 48 issues across s
 
 **After:**
 
-- **Async company search with SSE (#17):** Firm search now runs in a background thread with a new `POST /api/firm-search/search-async` endpoint. A Server-Sent Events stream (`/stream/<search_id>`) pushes real-time progress to the frontend — no more fake progress bars. Falls back to synchronous search if SSE fails.
+- **Async company search with SSE (#17):** Firm search now runs in a background thread with a new `POST /api/firm-search/search-async` endpoint. A Server-Sent Events stream (`/stream/<search_id>`) pushes real-time progress to the frontend - no more fake progress bars. Falls back to synchronous search if SSE fails.
 
 - **Consolidated Firestore reads (#18):** Prompt search was making 3 separate Firestore reads for user data. Now consolidated to 1 read.
 
@@ -96,7 +96,7 @@ A comprehensive audit of Offerloop's core features identified 48 issues across s
 
 - **Outbox pagination scaled (#29):** Default page size increased from 50→200 (cap 100→500). Users with 150+ contacts no longer lose visibility of older threads.
 
-- **Delete firm — blocking sleeps removed (#45):** Removed ~60 lines of verification/retry logic with `time.sleep(0.5)` and `time.sleep(0.3)` from `delete_firm`. Firestore batch commits are strongly consistent — no retry needed.
+- **Delete firm - blocking sleeps removed (#45):** Removed ~60 lines of verification/retry logic with `time.sleep(0.5)` and `time.sleep(0.3)` from `delete_firm`. Firestore batch commits are strongly consistent - no retry needed.
 
 - **Cursor-based pagination (#46):** `contacts.py` now supports Firestore cursor-based pagination alongside legacy offset pagination. Large contact lists load efficiently without skipping documents.
 
@@ -213,9 +213,9 @@ A comprehensive audit of Offerloop's core features identified 48 issues across s
 
 These items were identified but intentionally deferred as they require product decisions or new infrastructure:
 
-1. **Redis for rate limiting** — Firestore-backed solution implemented instead; Redis would reduce latency but requires new infrastructure.
-2. **Sentry DSN configuration** — ErrorBoundary now forwards to backend which forwards to Sentry, but a Sentry project/DSN must be configured in the environment.
-3. **WebSocket infrastructure** — SSE used for firm search progress instead; WebSockets would enable bidirectional communication but add deployment complexity.
+1. **Redis for rate limiting** - Firestore-backed solution implemented instead; Redis would reduce latency but requires new infrastructure.
+2. **Sentry DSN configuration** - ErrorBoundary now forwards to backend which forwards to Sentry, but a Sentry project/DSN must be configured in the environment.
+3. **WebSocket infrastructure** - SSE used for firm search progress instead; WebSockets would enable bidirectional communication but add deployment complexity.
 
 ---
 

@@ -1,4 +1,4 @@
-export const COFFEE_CHAT_CREDITS = 15;
+export const MEETING_CREDITS = 15;
 export const INTERVIEW_PREP_CREDITS = 25;
 export const TIMELINE_CREDITS = 10;
 
@@ -9,7 +9,7 @@ export const TIER_CONFIGS = {
     name: "Search Free Plan Tier",
     credits: 500,
     description: "Try out the platform free - up to 5 contacts per search + AI email drafts",
-    coffeeChat: true,
+    meeting: true,
     interviewPrep: false,
     timeSavedMinutes: 1680,
     usesResume: false,
@@ -20,8 +20,8 @@ export const TIER_CONFIGS = {
     minContacts: 1,
     name: "Search Pro Plan Tier",
     credits: 3000,
-    description: "Up to 15 contacts/search, unlimited coffee chat prep, The Agent (1 at a time), all networking features",
-    coffeeChat: true,
+    description: "Up to 15 contacts/search, unlimited meeting prep, The Agent (1 at a time), all networking features",
+    meeting: true,
     interviewPrep: true,
     timeSavedMinutes: 12600,
     usesResume: true,
@@ -33,7 +33,7 @@ export const TIER_CONFIGS = {
     name: "Search Elite Plan Tier",
     credits: 12000,
     description: "Run up to 5 agents simultaneously, 30 contacts/search, priority queue, founder kickoff call",
-    coffeeChat: true,
+    meeting: true,
     interviewPrep: true,
     timeSavedMinutes: 67200,
     usesResume: true,
@@ -41,7 +41,7 @@ export const TIER_CONFIGS = {
   },
 } as const;
 
-// Agent feature — Pro gets 1 concurrent, Elite gets up to 5
+// Agent feature - Pro gets 1 concurrent, Elite gets up to 5
 export const AGENT_CONFIG = {
   maxContactsPerWeek: 15,
   maxCreditsPerWeek: 150,
@@ -54,7 +54,7 @@ export const AGENT_CONFIG = {
   } as const,
 } as const;
 
-export type CoffeeChatHistoryItem = {
+export type MeetingHistoryItem = {
   id: string;
   contactName: string;
   company: string;

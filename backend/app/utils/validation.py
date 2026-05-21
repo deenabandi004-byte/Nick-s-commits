@@ -55,8 +55,8 @@ class FirmSearchRequest(BaseModel):
         return v.strip()
 
 
-class CoffeeChatPrepRequest(BaseModel):
-    """Validation schema for coffee chat prep requests"""
+class MeetingPrepRequest(BaseModel):
+    """Validation schema for meeting prep requests"""
     linkedinUrl: str = Field(..., description="LinkedIn profile URL")
     timeWindow: Optional[str] = Field(None, description="Time window for news search")
     geo: Optional[str] = Field(None, description="Geographic region")

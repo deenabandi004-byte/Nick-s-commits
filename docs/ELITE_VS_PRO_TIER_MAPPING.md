@@ -35,7 +35,7 @@ So: **Elite signups show as Pro when the price ID on the subscription (from Stri
 
 ## 3. Where Tier Is Determined (Code References)
 
-- **Mapping:** `backend/app/services/stripe_client.py` — `get_tier_from_price_id(price_id)`  
+- **Mapping:** `backend/app/services/stripe_client.py` - `get_tier_from_price_id(price_id)`  
   - Returns `'elite'` only if `price_id == STRIPE_ELITE_PRICE_ID`.  
   - Returns `'pro'` if `price_id == STRIPE_PRO_PRICE_ID` or for **any other** price ID (default).
 
@@ -46,7 +46,7 @@ So: **Elite signups show as Pro when the price ID on the subscription (from Stri
   - `handle_checkout_completed(session)` and `handle_subscription_updated(subscription)`  
   - Both get `subscription.items.data[0].price.id` from Stripe and call `get_tier_from_price_id`, then write `tier` and `subscriptionTier` to Firestore.
 
-- **Manual completion:** `backend/app/routes/billing.py` — `complete_upgrade()`  
+- **Manual completion:** `backend/app/routes/billing.py` - `complete_upgrade()`  
   - Retrieves subscription by `subscription_id`, gets `price_id` from `subscription.items.data[0].price.id`, calls `get_tier_from_price_id(price_id)`, then updates Firestore with `tier` (and credits, etc.).  
   - Note: this path updates `tier` but does **not** set `subscriptionTier` in the same payload; the webhook path sets both.
 

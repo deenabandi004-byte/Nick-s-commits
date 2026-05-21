@@ -77,7 +77,7 @@ OAUTH_REDIRECT_URI = get_oauth_redirect_uri()
 # Constants
 # ========================================
 RESUME_LINE = "For context, I've attached my resume below."
-COFFEE_CHAT_CREDITS = 15
+MEETING_CREDITS = 15
 INTERVIEW_PREP_CREDITS = 25
 TIMELINE_CREDITS = 10
 CACHE_DURATION = timedelta(days=365)
@@ -235,7 +235,7 @@ TIER_CONFIGS = {
         'uses_email_drafting': True,
         'uses_resume': True,
         'credits': 12000,
-        'time_saved_minutes': 67200,  # 800 max contacts/mo × 84 min — displayed as hours in UI
+        'time_saved_minutes': 67200,  # 800 max contacts/mo × 84 min - displayed as hours in UI
         'description': 'For serious recruiting season',
         'alumni_searches': 'unlimited',
         'coffee_chat_preps': 'unlimited',

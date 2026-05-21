@@ -1,5 +1,5 @@
 """
-Job Board audit tests — covers critical fixes for credit handling, auth,
+Job Board audit tests - covers critical fixes for credit handling, auth,
 email validation, refund accuracy, and API response codes.
 """
 import re
@@ -10,7 +10,7 @@ from unittest.mock import patch, MagicMock
 
 
 # =============================================================================
-# P0 #2 — Frontend credit cost must match backend
+# P0 #2 - Frontend credit cost must match backend
 # =============================================================================
 
 class TestCreditCostSync:
@@ -67,7 +67,7 @@ class TestCreditCostSync:
 
 
 # =============================================================================
-# P0 #3 — Refund response must reflect actual refund success
+# P0 #3 - Refund response must reflect actual refund success
 # =============================================================================
 
 class TestRefundAccuracy:
@@ -103,7 +103,7 @@ class TestRefundAccuracy:
 
 
 # =============================================================================
-# P0 #4 — /api/jobs/filters must require auth
+# P0 #4 - /api/jobs/filters must require auth
 # =============================================================================
 
 class TestFiltersAuth:
@@ -138,7 +138,7 @@ class TestFiltersAuth:
 
 
 # =============================================================================
-# P1 #6 — Email validation before Gmail draft creation
+# P1 #6 - Email validation before Gmail draft creation
 # =============================================================================
 
 class TestEmailValidation:
@@ -192,7 +192,7 @@ class TestEmailValidation:
 
 
 # =============================================================================
-# P1 #7 — parse-job-url must return proper error status codes
+# P1 #7 - parse-job-url must return proper error status codes
 # =============================================================================
 
 class TestParseJobUrlStatusCodes:
@@ -230,7 +230,7 @@ class TestParseJobUrlStatusCodes:
 
 
 # =============================================================================
-# P0 #1 — Credit deduction uses atomic deduct-first pattern (verify)
+# P0 #1 - Credit deduction uses atomic deduct-first pattern (verify)
 # =============================================================================
 
 class TestCreditDeductionPattern:
@@ -279,7 +279,7 @@ class TestCreditDeductionPattern:
 
 
 # =============================================================================
-# P1 #8 — SerpAPI response safety
+# P1 #8 - SerpAPI response safety
 # =============================================================================
 
 class TestSerpAPIResponseSafety:
@@ -366,7 +366,7 @@ class TestNoDeprecatedPatterns:
 
 
 # =============================================================================
-# P2 — Logging: no print() statements in job_board.py
+# P2 - Logging: no print() statements in job_board.py
 # =============================================================================
 
 class TestLoggingNotPrint:
@@ -402,7 +402,7 @@ class TestLoggingNotPrint:
 
 
 # =============================================================================
-# Pipeline normalizer — salary extraction disabled
+# Pipeline normalizer - salary extraction disabled
 # =============================================================================
 
 class TestNormalizerSalaryDisabled:

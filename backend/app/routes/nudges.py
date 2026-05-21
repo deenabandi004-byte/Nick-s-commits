@@ -1,10 +1,10 @@
 """
 Nudge API endpoints.
 
-GET  /api/nudges              — fetch pending/recent nudges for current user
-PATCH /api/nudges/<id>        — mark a nudge as read/acted_on/dismissed
-POST /api/nudges/<id>/draft   — create a Gmail draft from the nudge follow-up text
-PUT  /api/nudge-preferences   — update nudge timing and notification preferences
+GET  /api/nudges - fetch pending/recent nudges for current user
+PATCH /api/nudges/<id> - mark a nudge as read/acted_on/dismissed
+POST /api/nudges/<id>/draft - create a Gmail draft from the nudge follow-up text
+PUT  /api/nudge-preferences - update nudge timing and notification preferences
 """
 import logging
 
@@ -44,7 +44,7 @@ def get_nudges():
                 .stream()
             )
         except Exception:
-            # Composite index likely missing — fall back to unordered filter
+            # Composite index likely missing - fall back to unordered filter
             docs = None
 
     if docs is None:
@@ -53,7 +53,7 @@ def get_nudges():
                 nudges_ref.order_by("createdAt", direction="DESCENDING").limit(limit).stream()
             )
         except Exception:
-            # Even single-field order may fail on empty collection — fetch unordered
+            # Even single-field order may fail on empty collection - fetch unordered
             docs = list(nudges_ref.limit(limit).stream())
         # Apply status filter client-side when the compound query wasn't available
         if status_filter:
@@ -141,7 +141,7 @@ def create_nudge_draft(nudge_id: str):
         return jsonify({"error": "Contact has no email address"}), 400
 
     contact_name = nudge_data.get("contactName", "")
-    subject = f"Following up — {contact_name}" if contact_name else "Following up"
+    subject = f"Following up - {contact_name}" if contact_name else "Following up"
 
     # Create Gmail draft via the user's connected Gmail account
     try:

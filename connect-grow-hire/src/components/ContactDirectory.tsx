@@ -9,7 +9,7 @@ import {
   ExternalLink,
   Download,
   User,
-  Sparkles,
+  PenLine,
   Loader2,
 } from "lucide-react";
 import { LoadingSkeleton } from "./LoadingSkeleton";
@@ -1243,7 +1243,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                             ↗ view
                           </a>
                         ) : (
-                          <span style={{ color: '#bbb' }}>—</span>
+                          <span style={{ color: '#bbb' }}> - </span>
                         )}
                       </td>
 
@@ -1258,7 +1258,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                           } : {}),
                         }}
                       >
-                        <span style={{ fontSize: 12, color: '#555' }}>{contact.email || '—'}</span>
+                        <span style={{ fontSize: 12, color: '#555' }}>{contact.email || ' - '}</span>
                       </td>
 
                       {/* Company */}
@@ -1283,7 +1283,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                           />
                         ) : (
                           <span style={{ fontSize: 12, color: '#555', cursor: 'default' }}>
-                            {contact.company || <span style={{ color: '#bbb' }}>—</span>}
+                            {contact.company || <span style={{ color: '#bbb' }}> - </span>}
                           </span>
                         )}
                       </td>
@@ -1310,7 +1310,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                           />
                         ) : (
                           <span style={{ fontSize: 12, color: '#555', cursor: 'default' }}>
-                            {contact.jobTitle || <span style={{ color: '#bbb' }}>—</span>}
+                            {contact.jobTitle || <span style={{ color: '#bbb' }}> - </span>}
                           </span>
                         )}
                       </td>
@@ -1367,7 +1367,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                               </span>
                             );
                           }
-                          return <span style={{ color: '#bbb' }}>—</span>;
+                          return <span style={{ color: '#bbb' }}> - </span>;
                         })()}
                       </td>
 
@@ -1453,7 +1453,7 @@ const SpreadsheetContactDirectory: React.FC = () => {
                                 {draftingContactIds.has(contact.id) ? (
                                   <Loader2 className="h-3 w-3 animate-spin" />
                                 ) : (
-                                  <Sparkles className="h-3 w-3" />
+                                  <PenLine className="h-3 w-3" />
                                 )}
                               </button>
                             )

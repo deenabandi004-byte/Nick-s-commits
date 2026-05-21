@@ -290,7 +290,7 @@ def build_recruiter_search_query(
         title_should.append({"match_phrase": {"job_title": title}})
         title_should.append({"match": {"job_title": title}})
 
-    # Build company should clause — expand with aliases if available
+    # Build company should clause - expand with aliases if available
     if company_aliases and len(company_aliases) > 1:
         company_should = []
         for name in company_aliases:
@@ -1093,7 +1093,7 @@ def build_hiring_manager_search_query(
         title_should.append({"match_phrase": {"job_title": title}})
         title_should.append({"match": {"job_title": title}})
 
-    # Build company should clause — expand with aliases if available
+    # Build company should clause - expand with aliases if available
     if company_aliases and len(company_aliases) > 1:
         company_should = []
         for name in company_aliases:

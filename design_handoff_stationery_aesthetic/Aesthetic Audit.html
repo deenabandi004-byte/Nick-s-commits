@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Offerloop — Aesthetic Audit & Refresh</title>
+<title>Offerloop - Aesthetic Audit & Refresh</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
     --cur-serif: 'Lora', Georgia, serif;
     --cur-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-    /* Proposed refreshed system — cooler, more confident, less "blue-on-blue-on-cream" */
+    /* Proposed refreshed system - cooler, more confident, less "blue-on-blue-on-cream" */
     --ink:        oklch(0.18 0.02 255);       /* deep, warm-neutral black */
     --ink-2:      oklch(0.42 0.015 255);      /* body secondary */
     --ink-3:      oklch(0.62 0.012 255);      /* tertiary / captions */
@@ -49,7 +49,7 @@
     /* Radii */
     --r-0: 0;     --r-1: 4px;   --r-2: 6px;   --r-3: 10px;  --r-4: 14px;  --r-pill: 999px;
 
-    /* Shadows — restrained, light from above */
+    /* Shadows - restrained, light from above */
     --sh-1: 0 1px 0 rgba(16,24,40,0.04), 0 1px 2px rgba(16,24,40,0.04);
     --sh-2: 0 1px 0 rgba(16,24,40,0.04), 0 6px 16px -6px rgba(16,24,40,0.08);
     --sh-3: 0 1px 0 rgba(16,24,40,0.04), 0 16px 40px -16px rgba(16,24,40,0.16);
@@ -277,7 +277,7 @@
     <div>
       <div class="eyebrow">Design Audit · v1 · Internal</div>
       <h1>An aesthetic refresh for&nbsp;Offerloop,<br>from busy to <em style="font-variation-settings:'opsz' 96;font-style:italic;color:var(--ink-2)">quiet &amp; confident</em>.</h1>
-      <p style="margin-top:20px;font-size:16px;max-width:680px;color:var(--ink-2)">A condensed review of what's working, what isn't, and a refreshed system — type, color, spacing, components — ready to apply across product, landing and extension. This is <b>a proposal</b>, not a final spec; use the Tweaks panel to play with direction.</p>
+      <p style="margin-top:20px;font-size:16px;max-width:680px;color:var(--ink-2)">A condensed review of what's working, what isn't, and a refreshed system - type, color, spacing, components - ready to apply across product, landing and extension. This is <b>a proposal</b>, not a final spec; use the Tweaks panel to play with direction.</p>
     </div>
     <div class="hero-meta">
       <div><b>Project</b> Offerloop</div>
@@ -290,9 +290,9 @@
   <!-- 01 AUDIT ========================================================= -->
   <section class="section" id="audit">
     <div class="section-head">
-      <div class="idx">01 — Audit</div>
+      <div class="idx">01 - Audit</div>
       <div>
-        <h2>What the current system is doing — and where it's fighting itself.</h2>
+        <h2>What the current system is doing - and where it's fighting itself.</h2>
         <p>The product is solid; the surface is fighting you. The stack has two serifs, four "blues", both warm-cream and cool-navy tokens, and CSS that uses <span class="mono">!important</span> to resolve its own conflicts. The result feels both <em>too quiet</em> (cream-on-cream cards) and <em>too loud</em> (navy sidebar shouting next to a pastel content area).</p>
       </div>
     </div>
@@ -316,7 +316,7 @@
       <div class="finding">
         <span class="sev high">High · Identity</span>
         <h5>Two competing palettes</h5>
-        <p>Warm (<span class="mono">#FEFDFB / #FAF9F6</span>) and cool (<span class="mono">#FAFBFF / #E2E8F0</span>) tokens both live in <span class="mono">:root</span>. The app alternates between them — navy sidebar + cool cards + warm body — and nothing feels intentional.</p>
+        <p>Warm (<span class="mono">#FEFDFB / #FAF9F6</span>) and cool (<span class="mono">#FAFBFF / #E2E8F0</span>) tokens both live in <span class="mono">:root</span>. The app alternates between them - navy sidebar + cool cards + warm body - and nothing feels intentional.</p>
       </div>
       <div class="finding">
         <span class="sev high">High · Type</span>
@@ -326,7 +326,7 @@
       <div class="finding">
         <span class="sev high">High · Color</span>
         <h5>Brand blue is used as wallpaper</h5>
-        <p><span class="mono">#3B82F6</span> appears as tab underline, primary button, nav highlight, CTA, focus ring, link, chart color, and progress bar — simultaneously. It stops meaning anything specific.</p>
+        <p><span class="mono">#3B82F6</span> appears as tab underline, primary button, nav highlight, CTA, focus ring, link, chart color, and progress bar - simultaneously. It stops meaning anything specific.</p>
       </div>
       <div class="finding">
         <span class="sev med">Medium · Hierarchy</span>
@@ -346,7 +346,7 @@
       <div class="finding">
         <span class="sev low">Low · Voice</span>
         <h5>Serif headline + emoji CTAs</h5>
-        <p>"Burning the midnight oil, Deena" is a lovely touch, but sits under a Lora heading and next to a ⚡ upgrade button. The tone is schizophrenic — part editorial, part Duolingo.</p>
+        <p>"Burning the midnight oil, Deena" is a lovely touch, but sits under a Lora heading and next to a ⚡ upgrade button. The tone is schizophrenic - part editorial, part Duolingo.</p>
       </div>
       <div class="finding">
         <span class="sev low">Low · Density</span>
@@ -364,7 +364,7 @@
   <!-- 02 PRINCIPLES ========================================================= -->
   <section class="section" id="principles">
     <div class="section-head">
-      <div class="idx">02 — Principles</div>
+      <div class="idx">02 - Principles</div>
       <div>
         <h2>Four rules for every decision from here on.</h2>
         <p>Think of these as tiebreakers: when there's a choice between "calm" and "clever", pick calm.</p>
@@ -375,7 +375,7 @@
       <div class="principle">
         <div class="num">01</div>
         <h5>Quiet surfaces, loud content</h5>
-        <p>The UI shouldn't out-decorate the data. Warm paper background, hairline borders, no gradients. Color is reserved for signals — states, actions, alerts — never "decoration".</p>
+        <p>The UI shouldn't out-decorate the data. Warm paper background, hairline borders, no gradients. Color is reserved for signals - states, actions, alerts - never "decoration".</p>
       </div>
       <div class="principle">
         <div class="num">02</div>
@@ -385,12 +385,12 @@
       <div class="principle">
         <div class="num">03</div>
         <h5>Tools, not dashboards</h5>
-        <p>Offerloop is a workbench for recruiting. Mono labels, keyboard shortcuts, tabular numbers, dense rows. It should feel like Linear / Notion / Pitch — not a marketing site in disguise.</p>
+        <p>Offerloop is a workbench for recruiting. Mono labels, keyboard shortcuts, tabular numbers, dense rows. It should feel like Linear / Notion / Pitch - not a marketing site in disguise.</p>
       </div>
       <div class="principle">
         <div class="num">04</div>
         <h5>Earn every emphasis</h5>
-        <p>If everything is bold, nothing is. Use bold, color, size, or ornament for <em>one</em> thing per screen — the primary action or the primary insight. Everything else recedes.</p>
+        <p>If everything is bold, nothing is. Use bold, color, size, or ornament for <em>one</em> thing per screen - the primary action or the primary insight. Everything else recedes.</p>
       </div>
     </div>
   </section>
@@ -398,7 +398,7 @@
   <!-- 03 TYPE ========================================================= -->
   <section class="section" id="type">
     <div class="section-head">
-      <div class="idx">03 — Type</div>
+      <div class="idx">03 - Type</div>
       <div>
         <h2>Geist for everything, Fraunces for moments, Geist Mono for labels.</h2>
         <p>We drop Inter, Lora, Instrument Serif, DM Sans, Libre Baskerville, IBM Plex Mono and VanquishBold in favour of three families with clear jobs. Fraunces replaces Lora because its variable <span class="mono">opsz</span> axis gives the display headlines real presence without turning body UI into a novel.</p>
@@ -422,7 +422,7 @@
     </div>
 
     <div class="spec-row">
-      <div class="spec-label"><b>Title</b>Geist 600<br>—</div>
+      <div class="spec-label"><b>Title</b>Geist 600<br> - </div>
       <div class="spec-demo">
         <div style="font-family:var(--sans);font-size:20px;line-height:1.25;letter-spacing:-0.015em;font-weight:600">Contacts matched this week</div>
         <div class="mono" style="margin-top:8px">H3 · Title · 20/25 · Geist 600</div>
@@ -432,7 +432,7 @@
     <div class="spec-row">
       <div class="spec-label"><b>Body</b>Geist 400<br>15px</div>
       <div class="spec-demo">
-        <div style="font-family:var(--sans);font-size:15px;line-height:1.55;max-width:560px">Offerloop maps the alumni graph you already have — resume, school, prior roles — against 2.2B profiles, and drafts outreach that sounds like you, not like a template.</div>
+        <div style="font-family:var(--sans);font-size:15px;line-height:1.55;max-width:560px">Offerloop maps the alumni graph you already have - resume, school, prior roles - against 2.2B profiles, and drafts outreach that sounds like you, not like a template.</div>
         <div class="mono" style="margin-top:8px">Body · 15/23 · Geist 400</div>
       </div>
     </div>
@@ -468,14 +468,14 @@
   <!-- 04 COLOR ========================================================= -->
   <section class="section" id="color">
     <div class="section-head">
-      <div class="idx">04 — Color</div>
+      <div class="idx">04 - Color</div>
       <div>
         <h2>Warm paper, one deep brand blue, amber accents kept rare.</h2>
         <p>Defined in <span class="mono">oklch</span> so lightness scales evenly across hues. The palette has three jobs: <b>neutrals</b> (the entire UI surface), <b>brand</b> (one action color, used sparingly), <b>signals</b> (states only). That's it.</p>
       </div>
     </div>
 
-    <h4 style="margin-bottom:16px">Neutrals — ink & paper</h4>
+    <h4 style="margin-bottom:16px">Neutrals - ink & paper</h4>
     <div class="palette">
       <div class="swatch"><div class="chip" style="background:oklch(0.18 0.02 255)">#1B1D23</div><div class="meta"><b>ink</b>oklch 0.18 0.02 255</div></div>
       <div class="swatch"><div class="chip" style="background:oklch(0.42 0.015 255)">#555962</div><div class="meta"><b>ink-2</b>oklch 0.42 0.015 255</div></div>
@@ -485,7 +485,7 @@
       <div class="swatch"><div class="chip dark" style="background:oklch(0.995 0.003 95)">#FDFCF9</div><div class="meta"><b>paper</b>oklch 0.995 0.003 95</div></div>
     </div>
 
-    <h4 style="margin:40px 0 16px">Brand — one blue, used like punctuation</h4>
+    <h4 style="margin:40px 0 16px">Brand - one blue, used like punctuation</h4>
     <div class="palette" style="grid-template-columns:repeat(4,1fr)">
       <div class="swatch"><div class="chip" style="background:oklch(0.28 0.10 258)">ink on brand</div><div class="meta"><b>brand-ink</b>oklch 0.28 0.10 258</div></div>
       <div class="swatch"><div class="chip" style="background:oklch(0.52 0.18 258)">primary</div><div class="meta"><b>brand</b>oklch 0.52 0.18 258</div></div>
@@ -493,14 +493,14 @@
       <div class="swatch"><div class="chip dark" style="background:oklch(0.95 0.03 258)">tint</div><div class="meta"><b>brand-soft</b>oklch 0.95 0.03 258</div></div>
     </div>
 
-    <h4 style="margin:40px 0 16px">Accents &amp; signals — use only when they mean something</h4>
+    <h4 style="margin:40px 0 16px">Accents &amp; signals - use only when they mean something</h4>
     <div class="palette" style="grid-template-columns:repeat(3,1fr)">
-      <div class="swatch"><div class="chip" style="background:oklch(0.72 0.15 62)">accent</div><div class="meta"><b>accent · amber</b>oklch 0.72 0.15 62 — highlight, never decoration</div></div>
-      <div class="swatch"><div class="chip" style="background:oklch(0.58 0.14 150)">positive</div><div class="meta"><b>signal-pos</b>oklch 0.58 0.14 150 — success, replied</div></div>
-      <div class="swatch"><div class="chip" style="background:oklch(0.58 0.19 25)">negative</div><div class="meta"><b>signal-neg</b>oklch 0.58 0.19 25 — errors, bounced</div></div>
+      <div class="swatch"><div class="chip" style="background:oklch(0.72 0.15 62)">accent</div><div class="meta"><b>accent · amber</b>oklch 0.72 0.15 62 - highlight, never decoration</div></div>
+      <div class="swatch"><div class="chip" style="background:oklch(0.58 0.14 150)">positive</div><div class="meta"><b>signal-pos</b>oklch 0.58 0.14 150 - success, replied</div></div>
+      <div class="swatch"><div class="chip" style="background:oklch(0.58 0.19 25)">negative</div><div class="meta"><b>signal-neg</b>oklch 0.58 0.19 25 - errors, bounced</div></div>
     </div>
 
-    <h4 style="margin:40px 0 16px">Ink ramp — 12 steps, evenly spaced in L*</h4>
+    <h4 style="margin:40px 0 16px">Ink ramp - 12 steps, evenly spaced in L*</h4>
     <div class="ramp">
       <div style="background:oklch(0.995 0.003 95);color:var(--ink)">00</div>
       <div style="background:oklch(0.96 0.004 95);color:var(--ink)">05</div>
@@ -522,7 +522,7 @@
         <p style="font-size:13px">Warm <span class="mono">#FEFDFB</span>, cool <span class="mono">#FAFBFF</span>, gold <span class="mono">#F5B544</span>, teal gradient CSS, <span class="mono">--brand-blue-soft</span>, and the seven-step navy sidebar. Collapse into one <span class="mono">ink/paper</span> neutral set.</p>
       </div>
       <div style="flex:1">
-        <h5 style="margin:0 0 4px;font-size:13px;font-weight:600">Keep — but reframe</h5>
+        <h5 style="margin:0 0 4px;font-size:13px;font-weight:600">Keep - but reframe</h5>
         <p style="font-size:13px">The blue stays (it's Offerloop's color), but deepens half a step so it reads on warm paper, and gets used <em>only</em> for the single primary action on a screen. Never for nav hover, tab underline, or headline.</p>
       </div>
     </div>
@@ -531,14 +531,14 @@
   <!-- 05 SPACING ========================================================= -->
   <section class="section" id="spacing">
     <div class="section-head">
-      <div class="idx">05 — Spacing, radii, elevation</div>
+      <div class="idx">05 - Spacing, radii, elevation</div>
       <div>
         <h2>4px base, four radii, three shadows.</h2>
         <p>The smallest set of decisions that still covers every surface.</p>
       </div>
     </div>
 
-    <h4 style="margin-bottom:16px">Spacing scale — 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96</h4>
+    <h4 style="margin-bottom:16px">Spacing scale - 4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80, 96</h4>
     <div class="sp-grid">
       <div class="sp"><div class="bar" style="width:4px"></div><div class="name">s-1</div><div class="val">4px</div></div>
       <div class="sp"><div class="bar" style="width:8px"></div><div class="name">s-2</div><div class="val">8px</div></div>
@@ -556,7 +556,7 @@
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:48px">
       <div>
-        <h4 style="margin-bottom:16px">Radii — one scale, semantic</h4>
+        <h4 style="margin-bottom:16px">Radii - one scale, semantic</h4>
         <div class="radii">
           <div class="ra" style="border-radius:0">0</div>
           <div class="ra" style="border-radius:4px">4</div>
@@ -568,7 +568,7 @@
         <p style="margin-top:16px;font-size:13px">Used semantically: <b>4</b> inputs &amp; badges, <b>6</b> buttons, <b>10</b> cards, <b>14</b> modals &amp; app shell, <b>∞</b> pills &amp; avatars. Nothing lands on <span class="mono">3px</span>.</p>
       </div>
       <div>
-        <h4 style="margin-bottom:16px">Elevation — three levels, no blur abuse</h4>
+        <h4 style="margin-bottom:16px">Elevation - three levels, no blur abuse</h4>
         <div class="shadows">
           <div class="sh s1"><b>sh-1</b><span>Hairline lift. Rows, rests.</span></div>
           <div class="sh s2"><b>sh-2</b><span>Cards &amp; popovers.</span></div>
@@ -581,7 +581,7 @@
   <!-- 06 COMPONENTS ========================================================= -->
   <section class="section" id="components">
     <div class="section-head">
-      <div class="idx">06 — Components</div>
+      <div class="idx">06 - Components</div>
       <div>
         <h2>The working set: button, input, badge, card, tab, row.</h2>
         <p>Every screen Offerloop ships can be built from these six. Variants are intentional and few.</p>
@@ -659,7 +659,7 @@
     </div>
 
     <div style="margin-top:24px">
-      <h4 style="margin-bottom:16px">Tokens — how this resolves in code</h4>
+      <h4 style="margin-bottom:16px">Tokens - how this resolves in code</h4>
       <table class="tokens">
         <thead><tr><th>Token</th><th>Value</th><th class="sw">Swatch</th><th>Replaces</th></tr></thead>
         <tbody>
@@ -681,10 +681,10 @@
   <!-- 07 APPLIED ========================================================= -->
   <section class="section" id="applied">
     <div class="section-head">
-      <div class="idx">07 — Applied</div>
+      <div class="idx">07 - Applied</div>
       <div>
         <h2>Find screen, rebuilt on the new system.</h2>
-        <p>Same content, same functionality, same data — just the system applied. Sidebar still dark, but paper-warm; brand blue earns its one moment on "Connect Gmail"; tabs lose the red underline in favor of an ink one; spacing settles on the 4px grid; the greeting reads once, loudly, via Fraunces.</p>
+        <p>Same content, same functionality, same data - just the system applied. Sidebar still dark, but paper-warm; brand blue earns its one moment on "Connect Gmail"; tabs lose the red underline in favor of an ink one; spacing settles on the 4px grid; the greeting reads once, loudly, via Fraunces.</p>
       </div>
     </div>
 
@@ -697,7 +697,7 @@
         </div>
         <div class="mock-nav">
           <svg viewBox="0 0 24 24"><path d="M3 8h18M5 8v11a2 2 0 002 2h10a2 2 0 002-2V8"/><path d="M8 8V6a4 4 0 118 0v2"/></svg>
-          Coffee Chat Prep
+          Meeting Prep
         </div>
         <div class="mock-nav">
           <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 9h18"/></svg>
@@ -792,7 +792,7 @@
       <div class="finding">
         <span class="sev low">Before · After</span>
         <h5>One brand moment</h5>
-        <p>Blue appears once — on the action we actually want ("Connect Gmail"). Everything else is ink + hairlines.</p>
+        <p>Blue appears once - on the action we actually want ("Connect Gmail"). Everything else is ink + hairlines.</p>
       </div>
       <div class="finding">
         <span class="sev low">Before · After</span>
@@ -808,7 +808,7 @@
       <div class="idx">Next</div>
       <div>
         <h2>Suggested rollout.</h2>
-        <p>Low-risk order — start with tokens, end with marketing.</p>
+        <p>Low-risk order - start with tokens, end with marketing.</p>
       </div>
     </div>
 

@@ -8,7 +8,7 @@ Phases 1-4 (email learning loop, smart search suggestions, intelligent nudges, n
 
 Three tiers of automation, ordered by implementation priority:
 - **Tier 1**: Maximum personalization, zero work (search results that explain themselves, emails that are ready to send)
-- **Tier 2**: High personalization, minimal interaction (reply coaching, auto coffee chat prep)
+- **Tier 2**: High personalization, minimal interaction (reply coaching, auto meeting prep)
 - **Tier 3**: Proactive, no input needed (morning briefing, stuck-student intervention)
 
 ---
@@ -21,7 +21,7 @@ Three tiers of automation, ordered by implementation priority:
 
 1. **New module** `backend/app/utils/metrics_events.py`:
    - `log_event(uid, event_type, properties)` writes to `metrics_events` Firestore collection with `{uid, event_type, properties, timestamp}`
-   - Fire-and-forget pattern — wrapped in try/except, never blocks the request flow on logging failures
+   - Fire-and-forget pattern - wrapped in try/except, never blocks the request flow on logging failures
    - No LLM calls, just Firestore writes
 
 2. **Instrument these events across the codebase:**
@@ -33,7 +33,7 @@ Three tiers of automation, ordered by implementation priority:
    | `reply_response_sent` | `{contact_id, used_auto_draft, edited_before_send}` | `backend/app/routes/contacts.py` (reply-draft/send route) |
    | `briefing_viewed` | `{sections_with_content}` | `backend/app/routes/briefing.py` (GET /api/briefing) |
    | `search_performed` | `{query, results_count, top_warmth_tier}` | `backend/app/routes/runs.py` (prompt_search return) |
-   | `coffee_chat_prep_used` | `{auto_triggered, contact_id}` | `backend/app/services/outbox_service.py` (auto-prep trigger) |
+   | `meeting_prep_used` | `{auto_triggered, contact_id}` | `backend/app/services/outbox_service.py` (auto-prep trigger) |
 
 3. **Aggregation queries** (run weekly, results into `metrics_weekly` Firestore collection):
    - Reply rate per email (replies / emails sent)
@@ -47,17 +47,17 @@ Three tiers of automation, ordered by implementation priority:
 
 **Files:** `backend/app/utils/metrics_events.py` (new), instrumentation calls added to `runs.py`, `gmail_webhook.py`, `briefing.py`, `outbox_service.py`, `contacts.py`
 
-**Verification:** After 1 day of production traffic, query `metrics_events` collection — confirm all 6 event types are firing with correct properties. Run weekly aggregation manually — confirm reply rate calculation matches manual count from Firestore.
+**Verification:** After 1 day of production traffic, query `metrics_events` collection - confirm all 6 event types are firing with correct properties. Run weekly aggregation manually - confirm reply rate calculation matches manual count from Firestore.
 
 ---
 
-## Sprint 1: Tier 1 — Zero-Work Personalization (Week 1-2)
+## Sprint 1: Tier 1 - Zero-Work Personalization (Week 1-2)
 
 ### 1A. Profile-Aware Contact Ranking
 
 **Problem:** Search results come back in PDL default order. Dream company contacts are buried among irrelevant results. Warmth badges on frontend (lines 1724-1761 of `ContactSearchPage.tsx`) exist but never render because the backend doesn't attach `warmth_tier` to search results.
 
-**Root cause:** `runs.py:429` calls `score_contacts_for_email()` which returns a side-channel dict for email gen. The warmth data never gets attached to the contact objects themselves. Meanwhile `score_and_sort_contacts()` in `warmth_scoring.py` DOES attach fields and sort — but it's only used in `runs_hunter.py`, never in `prompt_search()`.
+**Root cause:** `runs.py:429` calls `score_contacts_for_email()` which returns a side-channel dict for email gen. The warmth data never gets attached to the contact objects themselves. Meanwhile `score_and_sort_contacts()` in `warmth_scoring.py` DOES attach fields and sort - but it's only used in `runs_hunter.py`, never in `prompt_search()`.
 
 **Fix (backend only, ~5 lines):**
 
@@ -86,8 +86,8 @@ This sorts contacts by relevance (dream companies first) AND attaches `warmth_ti
 **Implementation:**
 
 1. **New function** `build_briefing_line(contact, warmth_signals)` in `backend/app/utils/warmth_scoring.py`:
-   - Deterministic (no LLM cost) — combines top 2-3 warmth signals into a sentence
-   - Examples: "VP at your dream company Goldman Sachs. Went to USC like you." / "Recently joined McKinsey — good timing for a warm intro."
+   - Deterministic (no LLM cost) - combines top 2-3 warmth signals into a sentence
+   - Examples: "VP at your dream company Goldman Sachs. Went to USC like you." / "Recently joined McKinsey - good timing for a warm intro."
    - Pattern exists in `_build_personalization_label()` at `reply_generation.py:290`
 
 2. **Attach in `runs.py`** after scoring: `contact["briefing"] = build_briefing_line(contact, contact.get("warmth_signals", []))`
@@ -132,16 +132,16 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
 
 ### 1E. Silent Email Quality Gate
 
-**Problem:** Email generation quality is inconsistent — some drafts are too long, lack specificity, miss a clear ask, or use generic openers. Students see whatever the first generation produces. There's no quality floor.
+**Problem:** Email generation quality is inconsistent - some drafts are too long, lack specificity, miss a clear ask, or use generic openers. Students see whatever the first generation produces. There's no quality floor.
 
 **Principle:** The student should never see a bad email. If the first draft fails quality criteria, regenerate silently. The student doesn't know it happened.
 
 **Quality criteria (deterministic, no LLM):**
 - **Length:** body between 60–180 words
 - **Specificity:** contains at least one concrete reference to the recipient (company, role, school from PDL profile) as substring match
-- **Clear ask:** contains ≥1 ask phrase ("15 minutes", "quick chat", "coffee chat", "your time", "would love to hear", "would appreciate", etc.) via regex
+- **Clear ask:** contains ≥1 ask phrase ("15 minutes", "quick chat", "meeting", "your time", "would love to hear", "would appreciate", etc.) via regex
 - **No template tells:** no `[Name]`, `[Company]`, `{{`, empty brackets
-- **Subject line:** 3–8 words, not generic ("Coffee chat?", "Quick question", "Hi" alone fail)
+- **Subject line:** 3–8 words, not generic ("Meeting?", "Quick question", "Hi" alone fail)
 
 **Implementation:**
 
@@ -180,13 +180,13 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
 
 **Verification:**
 - Generate emails for 10 contacts, log how many regenerate
-- Inspect 5 regenerated pairs — confirm v2 is better on named failures
+- Inspect 5 regenerated pairs - confirm v2 is better on named failures
 - After 1 week: query `email_quality_logs` for most common failures, regen success rate, and contacts where both v1+v2 failed (prompt engineering targets)
 - Plan a criteria tuning pass for week 3 based on production data
 
 ---
 
-## Sprint 2: Tier 2 — Reply Coach + Auto-Prep (Week 3-4)
+## Sprint 2: Tier 2 - Reply Coach + Auto-Prep (Week 3-4)
 
 ### 2A. Reply Coach (Auto-Draft on Reply Detection)
 
@@ -200,11 +200,11 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
      - Fetch full thread via Gmail API
      - Call existing `generate_reply_to_message()` from `reply_generation.py`
      - Store draft in `users/{uid}/replyDrafts/{contactId}` with: `draftBody`, `contactName`, `company`, `messageSnippet`, `createdAt`, `status` (pending/sent/dismissed)
-   - `generate_reply_draft_on_demand(uid, contact_id)` — synchronous version for the fallback path:
+   - `generate_reply_draft_on_demand(uid, contact_id)` - synchronous version for the fallback path:
      - Check if draft already exists in Firestore → return it
      - Otherwise generate synchronously (same logic as above), store, and return
 
-2. **Background execution (primary path)** — hook into `gmail_webhook.py` at line 446 (after notification update, before history pointer advance):
+2. **Background execution (primary path)** - hook into `gmail_webhook.py` at line 446 (after notification update, before history pointer advance):
    - Write a job document to `users/{uid}/pending_reply_drafts/{contactId}` with `{threadId, messageSnippet, status: "pending", createdAt}`
    - Spawn a background thread wrapped in try/except:
      ```python
@@ -222,16 +222,16 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
                  {"status": "failed", "error": str(e)[:200]}, merge=True)
      threading.Thread(target=_auto_draft_reply_safe, args=(app, uid, contact_id, thread_id, snippet), daemon=True).start()
      ```
-   - The pending doc ensures crash recovery — if the thread dies silently, the on-demand path detects it
+   - The pending doc ensures crash recovery - if the thread dies silently, the on-demand path detects it
 
-3. **On-demand fallback path** — new routes in existing `contacts.py` blueprint:
+3. **On-demand fallback path** - new routes in existing `contacts.py` blueprint:
    - `GET /api/contacts/<id>/reply-draft`:
      - Check `users/{uid}/replyDrafts/{contactId}` → if exists with status "pending" or "sent", return it
      - If not found OR pending_reply_drafts status is "failed": call `generate_reply_draft_on_demand(uid, contact_id)` synchronously (~3-5s), return result
      - Frontend shows a brief loading state during on-demand generation
-   - `POST /api/contacts/<id>/reply-draft/send` — send via `gmail_client.create_gmail_draft_for_user`
+   - `POST /api/contacts/<id>/reply-draft/send` - send via `gmail_client.create_gmail_draft_for_user`
 
-4. **Frontend** — new `ReplyDraftCard` in `NudgePanel.tsx`:
+4. **Frontend** - new `ReplyDraftCard` in `NudgePanel.tsx`:
    - Shows: contact name, snippet of their reply, auto-generated draft
    - Actions: "Send Reply" / "Edit & Send" (opens ConversationPanel with draft pre-filled)
    - If draft is still loading (on-demand path), show skeleton/spinner for up to 5s
@@ -242,28 +242,28 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
 
 ---
 
-### 2B. Coffee Chat Auto-Prep
+### 2B. Meeting Auto-Prep
 
-**Problem:** Coffee chat prep requires manual navigation to `/coffee-chat-prep`, pasting a LinkedIn URL, and paying 15 credits. When a meeting is scheduled, prep should trigger automatically.
+**Problem:** Meeting prep requires manual navigation to `/meeting-prep`, pasting a LinkedIn URL, and paying 15 credits. When a meeting is scheduled, prep should trigger automatically.
 
 **Implementation:**
 
-1. **Background execution (primary path)** — in `backend/app/services/outbox_service.py` `update_contact_stage()`, after the `meeting_scheduled` handling (~line 342):
+1. **Background execution (primary path)** - in `backend/app/services/outbox_service.py` `update_contact_stage()`, after the `meeting_scheduled` handling (~line 342):
    - Check: user is Pro/Elite, has 15+ credits, contact has LinkedIn URL, no existing prep
    - If all met: write a pending job doc to `users/{uid}/pending_auto_preps/{contactId}` with `{status: "pending", createdAt}`
    - Spawn background thread wrapped in try/except (same crash-safe pattern as 2A):
      - Deduct credits via existing `deduct_credits_atomic`
-     - Call existing `process_coffee_chat_prep_background` from `coffee_chat_prep.py`
+     - Call existing `process_meeting_prep_background` from `meeting_prep.py`
      - On success: update contact doc with `autoPrepId`, create notification, delete pending doc
      - On failure: update pending doc status to `"failed"`, refund credits
 
-2. **On-demand fallback path** — new route `GET /api/contacts/<id>/auto-prep`:
+2. **On-demand fallback path** - new route `GET /api/contacts/<id>/auto-prep`:
    - Check `users/{uid}/coffee-chat-preps/` for existing prep for this contact → return if found
-   - If not found AND pending doc status is "failed" or missing: trigger prep synchronously (existing `process_coffee_chat_prep_background` runs in-request, returns job ID for polling)
-   - Frontend polls for completion using existing coffee chat prep status endpoint
+   - If not found AND pending doc status is "failed" or missing: trigger prep synchronously (existing `process_meeting_prep_background` runs in-request, returns job ID for polling)
+   - Frontend polls for completion using existing meeting prep status endpoint
 
-3. **Frontend** — in `ConversationPanel.tsx`, when viewing a `meeting_scheduled` contact:
-   - If `autoPrepId` exists: show inline "Coffee Chat Prep Ready" with view/download link
+3. **Frontend** - in `ConversationPanel.tsx`, when viewing a `meeting_scheduled` contact:
+   - If `autoPrepId` exists: show inline "Meeting Prep Ready" with view/download link
    - If no prep exists: show "Generating prep..." with loading state, trigger on-demand via the fallback route
 
 **Gating:** Pro/Elite only (credit-gated).
@@ -272,7 +272,7 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
 
 ---
 
-## Sprint 3: Tier 3 — Proactive Agent (Week 5-6)
+## Sprint 3: Tier 3 - Proactive Agent (Week 5-6)
 
 ### 3A. Morning Briefing as Home Screen
 
@@ -316,13 +316,13 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
    **Established users (>14 days since signup):**
    - Trigger after 7 days of no search activity AND no emails sent
    - Generate a `"stuck_student"` nudge with 3 specific search suggestions via GPT-4o-mini using user's dream companies / career track
-   - Copy: "Let's get you back on track — here are 3 contacts worth reaching out to this week."
+   - Copy: "Let's get you back on track - here are 3 contacts worth reaching out to this week."
 
    **New users (≤14 days since signup):**
    - Trigger A: 3 days post-signup with zero emails sent
      - Copy: "Ready to send your first email? Here are 3 great people to start with."
    - Trigger B: 5 days post-first-email with zero replies received (check `replyReceivedAt` across contacts)
-     - Copy: "First emails are tough — let's try a different angle. Here are 3 new contacts."
+     - Copy: "First emails are tough - let's try a different angle. Here are 3 new contacts."
 
    - All branches: store as nudge with `type: "stuck_student"`, `subtype: "established_inactive" | "new_no_emails" | "new_no_replies"`, `suggestions: [{title, company, reason}]`
    - Each user only triggers once per state (deduplicate by checking existing nudges with same subtype)
@@ -334,7 +334,7 @@ In `ContactSearchPage.tsx` contact card (after line 1789), add collapsible email
 
 **Gating:** All tiers (engagement recovery reduces churn).
 
-**Cost:** Same as before — each user triggers at most once per state, GPT-4o-mini at ~$0.001/call.
+**Cost:** Same as before - each user triggers at most once per state, GPT-4o-mini at ~$0.001/call.
 
 **Files:** `backend/app/services/nudge_service.py`, `connect-grow-hire/src/components/tracker/NudgePanel.tsx`, `connect-grow-hire/src/services/api.ts`
 
@@ -380,7 +380,7 @@ These require new infrastructure and should be evaluated after Sprints 1-3 ship:
 | Email preview | $0 | Already generated during search |
 | Silent quality gate | ~$0.0005/regen | GPT-4o-mini only when first draft fails deterministic checks; <$5/mo |
 | Reply coach | ~$0.001/reply | GPT-4o-mini via existing `generate_reply_to_message` |
-| Coffee chat auto-prep | $0 extra | Uses existing prep system (already costs 15 credits) |
+| Meeting auto-prep | $0 extra | Uses existing prep system (already costs 15 credits) |
 | Morning briefing | $0 | Aggregation of existing data |
 | Stuck-student suggestions | ~$0.001/user/week | GPT-4o-mini, only when inactive 7+ days |
 | Roadmap progress | $0 | Deterministic comparison |
@@ -392,17 +392,17 @@ These require new infrastructure and should be evaluated after Sprints 1-3 ship:
 
 | Sprint | Features | Effort | Key Principle |
 |--------|----------|--------|---------------|
-| 0 (parallel) | Metrics event logging — 6 event types + weekly aggregation | ~2 days | "Measure before you change" — runs parallel with Sprint 1 |
+| 0 (parallel) | Metrics event logging - 6 event types + weekly aggregation | ~2 days | "Measure before you change" - runs parallel with Sprint 1 |
 | 1 | 1A ranking + 1B briefings + 1C email preview + 1D smart defaults + 1E quality gate | ~1.5 weeks | "Search results that explain themselves, emails that are always good" |
-| 2 | 2A reply coach + 2B coffee chat auto-prep (with on-demand fallbacks) | ~2 weeks | "We handle your replies, you show up to meetings" |
+| 2 | 2A reply coach + 2B meeting auto-prep (with on-demand fallbacks) | ~2 weeks | "We handle your replies, you show up to meetings" |
 | 3 | 3A morning briefing + 3B stuck-student (age-differentiated) + 3C goal progress | ~2 weeks | "Open Offerloop, see what matters today" |
 
 ---
 
 ## Verification
 
-1. **Sprint 1**: Search for contacts → verify results sorted by warmth (dream companies first), briefing lines appear on cards, warmth badges render, email preview visible. Check `email_quality_logs` — verify regeneration fires for low-quality drafts and v2 has fewer failures than v1
-2. **Sprint 0**: After 1 day of traffic, query `metrics_events` — confirm all 6 event types fire with correct properties. Run weekly aggregation — confirm reply rate matches manual Firestore count
-3. **Sprint 2**: Send test email via Gmail → have someone reply → verify auto-draft appears either pre-generated or generates on first view within 5s, with no silent failures. Move contact to `meeting_scheduled` → verify coffee chat prep auto-triggers (or generates on-demand when viewing contact)
+1. **Sprint 1**: Search for contacts → verify results sorted by warmth (dream companies first), briefing lines appear on cards, warmth badges render, email preview visible. Check `email_quality_logs` - verify regeneration fires for low-quality drafts and v2 has fewer failures than v1
+2. **Sprint 0**: After 1 day of traffic, query `metrics_events` - confirm all 6 event types fire with correct properties. Run weekly aggregation - confirm reply rate matches manual Firestore count
+3. **Sprint 2**: Send test email via Gmail → have someone reply → verify auto-draft appears either pre-generated or generates on first view within 5s, with no silent failures. Move contact to `meeting_scheduled` → verify meeting prep auto-triggers (or generates on-demand when viewing contact)
 4. **Sprint 3**: Navigate to `/find` → verify briefing tab appears first with replies, follow-ups, and roadmap progress. Test stuck-student triggers: new user with 0 emails after 3 days → nudge fires with "Ready to send your first email?" copy. Established user inactive 7 days → nudge fires with "back on track" copy
-5. **All sprints**: `cd backend && pytest tests/` — no regressions. `cd connect-grow-hire && npx tsc --noEmit` — no type errors
+5. **All sprints**: `cd backend && pytest tests/` - no regressions. `cd connect-grow-hire && npx tsc --noEmit` - no type errors

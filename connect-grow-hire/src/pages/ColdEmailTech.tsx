@@ -6,11 +6,11 @@ import offerloopLogo from '../assets/offerloop_logo2.png';
 const faqData = [
   {
     question: "Is cold emailing effective for getting tech internships?",
-    answer: "Yes — while tech recruiting relies more on applications and referrals than finance, cold emailing is highly effective for getting referrals, learning about unlisted roles, and building relationships with engineers and PMs who can advocate for you internally. A warm introduction from an employee dramatically increases your chances of landing an interview."
+    answer: "Yes - while tech recruiting relies more on applications and referrals than finance, cold emailing is highly effective for getting referrals, learning about unlisted roles, and building relationships with engineers and PMs who can advocate for you internally. A warm introduction from an employee dramatically increases your chances of landing an interview."
   },
   {
     question: "Should I email engineers, recruiters, or hiring managers at tech companies?",
-    answer: "Start with engineers and PMs on teams you're interested in — they can give you the most authentic picture of the role and often provide internal referrals. Recruiters are useful for understanding the hiring process but get hundreds of messages daily. Offerloop lets you filter contacts by role so you can target the right people at each company."
+    answer: "Start with engineers and PMs on teams you're interested in - they can give you the most authentic picture of the role and often provide internal referrals. Recruiters are useful for understanding the hiring process but get hundreds of messages daily. Offerloop lets you filter contacts by role so you can target the right people at each company."
   },
   {
     question: "How do I cold email someone at Google or Meta for a referral?",
@@ -18,19 +18,19 @@ const faqData = [
   },
   {
     question: "What's different about cold emailing startups vs. big tech companies?",
-    answer: "At startups, your email might go directly to the hiring manager or CTO — so be more specific about what you can contribute. At big tech, you're usually emailing an individual contributor who may refer you. Startup emails should highlight relevant projects and skills; big tech emails should focus on shared connections and genuine curiosity. Offerloop adapts its AI-generated emails based on company size and culture."
+    answer: "At startups, your email might go directly to the hiring manager or CTO - so be more specific about what you can contribute. At big tech, you're usually emailing an individual contributor who may refer you. Startup emails should highlight relevant projects and skills; big tech emails should focus on shared connections and genuine curiosity. Offerloop adapts its AI-generated emails based on company size and culture."
   },
   {
     question: "How do I find email addresses for engineers at tech companies?",
-    answer: "Engineers at big tech companies rarely use corporate email for networking. Offerloop's database of 2.2 billion verified contacts includes professional email addresses for engineers, PMs, and managers across Google, Meta, Amazon, Apple, Microsoft, and thousands of startups — saving you from guessing email formats or LinkedIn DMs that go unread."
+    answer: "Engineers at big tech companies rarely use corporate email for networking. Offerloop's database of 2.2 billion verified contacts includes professional email addresses for engineers, PMs, and managers across Google, Meta, Amazon, Apple, Microsoft, and thousands of startups - saving you from guessing email formats or LinkedIn DMs that go unread."
   }
 ];
 
 const howToSteps = [
-  { name: "Find", text: "Search Offerloop's 2.2 billion contact database to find engineers, PMs, and recruiters at Google, Meta, Amazon, Apple, Microsoft, and startups — filtered by role, team, and university." },
+  { name: "Find", text: "Search Offerloop's 2.2 billion contact database to find engineers, PMs, and recruiters at Google, Meta, Amazon, Apple, Microsoft, and startups - filtered by role, team, and university." },
   { name: "Understand", text: "Review each person's technical background, current team, past companies, and shared connections to personalize your outreach effectively." },
   { name: "Reach", text: "Generate a personalized cold email with Offerloop's AI that references their specific background and proposes a low-commitment conversation. Send directly through Gmail." },
-  { name: "Track", text: "Monitor your tech networking pipeline in Offerloop's Network Tracker — see who you've emailed, who responded, and which conversations led to referrals." }
+  { name: "Track", text: "Monitor your tech networking pipeline in Offerloop's Network Tracker - see who you've emailed, who responded, and which conversations led to referrals." }
 ];
 
 const ColdEmailTech = () => {
@@ -92,13 +92,13 @@ const ColdEmailTech = () => {
           How do I cold email an engineer at Google or Meta for a referral?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          The key to getting tech referrals through cold email is to never ask for the referral upfront. Instead, ask for a 15-minute conversation about their team, their day-to-day work, or how they transitioned from school to their current role. If the conversation goes well, they'll almost always offer to refer you — and that organic referral is far stronger than one from a stranger.
+          The key to getting tech referrals through cold email is to never ask for the referral upfront. Instead, ask for a 15-minute conversation about their team, their day-to-day work, or how they transitioned from school to their current role. If the conversation goes well, they'll almost always offer to refer you - and that organic referral is far stronger than one from a stranger.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Your email should lead with a genuine shared connection: same university, a mutual open-source project, a shared interest in their team's product, or a blog post they wrote. Tech professionals respond well to specificity and authentic curiosity — not generic networking requests.
+          Your email should lead with a genuine shared connection: same university, a mutual open-source project, a shared interest in their team's product, or a blog post they wrote. Tech professionals respond well to specificity and authentic curiosity - not generic networking requests.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop finds verified contact information for engineers and PMs across every major tech company. The AI generates emails that reference specific details from each person's profile — their team, past projects, and shared background — so every email feels personal and genuine.
+          Offerloop finds verified contact information for engineers and PMs across every major tech company. The AI generates emails that reference specific details from each person's profile - their team, past projects, and shared background - so every email feels personal and genuine.
         </p>
       </section>
 
@@ -108,13 +108,13 @@ const ColdEmailTech = () => {
           What should I include in a cold email to a PM at a tech company?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Product managers at tech companies value clarity, user empathy, and structured thinking — and they expect to see those qualities in your email. Open with a specific reason for reaching out to them (their product area, a feature launch, or a talk they gave). Briefly mention your relevant experience — a side project, a case competition, or coursework related to their product domain.
+          Product managers at tech companies value clarity, user empathy, and structured thinking - and they expect to see those qualities in your email. Open with a specific reason for reaching out to them (their product area, a feature launch, or a talk they gave). Briefly mention your relevant experience - a side project, a case competition, or coursework related to their product domain.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
           Keep it concise and action-oriented. PMs are trained to cut scope, and they respect emails that do the same. Three to four sentences is ideal. Your ask should be specific: "Would you have 15 minutes this week or next to chat about your experience on the [Product] team?"
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop's AI understands the difference between emailing an engineer and a PM. It adapts the tone, references, and framing based on the recipient's role — so your emails always feel tailored to the person reading them.
+          Offerloop's AI understands the difference between emailing an engineer and a PM. It adapts the tone, references, and framing based on the recipient's role - so your emails always feel tailored to the person reading them.
         </p>
       </section>
 
@@ -130,7 +130,7 @@ const ColdEmailTech = () => {
           Startups also move faster. If they're interested, you might have an interview within days rather than weeks. Your email should convey energy, specific skills, and a clear understanding of what they're building. Unlike big tech outreach, it's appropriate to briefly mention what you could contribute.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop's database covers professionals at companies of all sizes — from pre-seed startups to trillion-dollar enterprises. Search by company stage, role, or technology stack to find exactly the right people at the startups you're targeting.
+          Offerloop's database covers professionals at companies of all sizes - from pre-seed startups to trillion-dollar enterprises. Search by company stage, role, or technology stack to find exactly the right people at the startups you're targeting.
         </p>
       </section>
 
@@ -169,7 +169,7 @@ const ColdEmailTech = () => {
       <section className="px-6 py-20" style={{ background: '#FAFBFF' }}>
         <div className="text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.15, color: '#0F172A', marginBottom: '16px' }}>
-            Start networking with AI — try Offerloop free
+            Start networking with AI - try Offerloop free
           </h2>
           <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '28px' }}>
             Search 2.2B contacts. Generate personalized emails. Track every conversation.

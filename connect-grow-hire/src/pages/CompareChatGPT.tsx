@@ -6,7 +6,7 @@ import offerloopLogo from '../assets/offerloop_logo2.png';
 const faqData = [
   {
     question: "Can ChatGPT find email addresses for professionals I want to network with?",
-    answer: "No. ChatGPT is a language model that generates text — it cannot look up real contact information, verify email addresses, or access databases of professional contacts. If you ask ChatGPT for someone's email, it will either refuse or make one up. Offerloop has a database of 2.2 billion verified contacts with real, deliverable email addresses."
+    answer: "No. ChatGPT is a language model that generates text - it cannot look up real contact information, verify email addresses, or access databases of professional contacts. If you ask ChatGPT for someone's email, it will either refuse or make one up. Offerloop has a database of 2.2 billion verified contacts with real, deliverable email addresses."
   },
   {
     question: "Is ChatGPT good for writing networking emails?",
@@ -14,15 +14,15 @@ const faqData = [
   },
   {
     question: "Can I use ChatGPT and Offerloop together?",
-    answer: "You could, but Offerloop already includes AI email generation that's specifically trained for networking outreach. Unlike ChatGPT, Offerloop's AI has access to each contact's professional background and generates emails that reference specific details. It also sends directly through Gmail and tracks responses — things ChatGPT can't do."
+    answer: "You could, but Offerloop already includes AI email generation that's specifically trained for networking outreach. Unlike ChatGPT, Offerloop's AI has access to each contact's professional background and generates emails that reference specific details. It also sends directly through Gmail and tracks responses - things ChatGPT can't do."
   },
   {
     question: "Does Offerloop use ChatGPT or GPT-4 for its email generation?",
-    answer: "Offerloop uses advanced AI models optimized for professional outreach. The key difference from using ChatGPT directly is that Offerloop's AI has access to each contact's verified professional data — company, role, education, career trajectory — and uses that context to generate genuinely personalized emails without any manual research on your part."
+    answer: "Offerloop uses advanced AI models optimized for professional outreach. The key difference from using ChatGPT directly is that Offerloop's AI has access to each contact's verified professional data - company, role, education, career trajectory - and uses that context to generate genuinely personalized emails without any manual research on your part."
   },
   {
     question: "Why can't I just use a free AI tool instead of paying for Offerloop?",
-    answer: "Free AI tools like ChatGPT solve one piece of the puzzle — writing text. But effective networking requires finding the right people, accessing their verified email addresses, personalizing each message to their specific background, sending through a professional email client, and tracking responses. Offerloop handles the entire workflow end-to-end. ChatGPT handles only the writing, and even that requires manual context you'd need to research yourself."
+    answer: "Free AI tools like ChatGPT solve one piece of the puzzle - writing text. But effective networking requires finding the right people, accessing their verified email addresses, personalizing each message to their specific background, sending through a professional email client, and tracking responses. Offerloop handles the entire workflow end-to-end. ChatGPT handles only the writing, and even that requires manual context you'd need to research yourself."
   }
 ];
 
@@ -74,7 +74,7 @@ const CompareChatGPT = () => {
           Offerloop vs <span style={{ color: '#3B82F6' }}>ChatGPT</span>
         </h1>
         <p style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B', maxWidth: '620px' }}>
-          ChatGPT is great at writing text. But networking requires finding real people, accessing verified emails, and sending personalized messages — things ChatGPT can't do. Offerloop handles the full workflow.
+          ChatGPT is great at writing text. But networking requires finding real people, accessing verified emails, and sending personalized messages - things ChatGPT can't do. Offerloop handles the full workflow.
         </p>
       </section>
 
@@ -112,10 +112,10 @@ const CompareChatGPT = () => {
           Can ChatGPT actually help me network for internships?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          ChatGPT can help with one part of networking: writing email drafts. If you describe the person you're emailing and provide their background details, ChatGPT can generate a reasonable template. But that's only about 20% of the networking workflow — and it requires you to manually research each person first.
+          ChatGPT can help with one part of networking: writing email drafts. If you describe the person you're emailing and provide their background details, ChatGPT can generate a reasonable template. But that's only about 20% of the networking workflow - and it requires you to manually research each person first.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          The other 80% — finding the right people, accessing their verified email addresses, personalizing messages based on real professional data, sending through Gmail, and tracking responses — ChatGPT simply can't do. It's a text generation tool, not a networking platform.
+          The other 80% - finding the right people, accessing their verified email addresses, personalizing messages based on real professional data, sending through Gmail, and tracking responses - ChatGPT simply can't do. It's a text generation tool, not a networking platform.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
           Offerloop handles the entire workflow. Search 2.2 billion contacts, get verified email addresses, generate AI-personalized emails using each contact's real background data, send directly through Gmail, and track every conversation in your networking pipeline.
@@ -128,13 +128,13 @@ const CompareChatGPT = () => {
           What's the problem with using ChatGPT for networking emails?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          The biggest problem is that ChatGPT doesn't know who you're emailing. It can write a generic template for "a consultant at McKinsey," but it can't reference that the person went to your school, worked in the Atlanta office, or transitioned from engineering to consulting. Real personalization — the kind that gets responses — requires specific knowledge about the recipient.
+          The biggest problem is that ChatGPT doesn't know who you're emailing. It can write a generic template for "a consultant at McKinsey," but it can't reference that the person went to your school, worked in the Atlanta office, or transitioned from engineering to consulting. Real personalization - the kind that gets responses - requires specific knowledge about the recipient.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          You could manually research each person and paste their details into ChatGPT, but that takes 10-15 minutes per contact. At 50-100 outreach emails during recruiting season, that's 8-25 hours of pure research — on top of an already demanding schedule.
+          You could manually research each person and paste their details into ChatGPT, but that takes 10-15 minutes per contact. At 50-100 outreach emails during recruiting season, that's 8-25 hours of pure research - on top of an already demanding schedule.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop eliminates that research entirely. The AI already has each contact's professional background, education, career trajectory, and company details. It uses this data to generate genuinely personalized emails — the kind that reference specific details and sound hand-written — without you doing any manual research.
+          Offerloop eliminates that research entirely. The AI already has each contact's professional background, education, career trajectory, and company details. It uses this data to generate genuinely personalized emails - the kind that reference specific details and sound hand-written - without you doing any manual research.
         </p>
       </section>
 
@@ -147,7 +147,7 @@ const CompareChatGPT = () => {
           ChatGPT is a general-purpose language model. It can write poems, debug code, summarize articles, and generate email templates. It's impressively versatile but knows nothing about the specific person you're trying to email.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Offerloop's AI is purpose-built for networking outreach. It has access to each contact's verified professional data — their current company, role, education, career history, and shared connections with you. When it generates an email, it references real, specific details that make the message feel personal and genuine.
+          Offerloop's AI is purpose-built for networking outreach. It has access to each contact's verified professional data - their current company, role, education, career history, and shared connections with you. When it generates an email, it references real, specific details that make the message feel personal and genuine.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
           The result: Offerloop generates emails that are genuinely personalized to each recipient, ready to send in seconds, and delivered directly through your Gmail account. No manual research, no copy-pasting between tools, no tracking conversations in a separate spreadsheet.
@@ -169,7 +169,7 @@ const CompareChatGPT = () => {
       <section className="px-6 py-20" style={{ background: '#FAFBFF' }}>
         <div className="text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.15, color: '#0F172A', marginBottom: '16px' }}>
-            Try Offerloop free — built for student networking
+            Try Offerloop free - built for student networking
           </h2>
           <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '28px' }}>
             Search 2.2B contacts. Generate personalized emails. Track every conversation.

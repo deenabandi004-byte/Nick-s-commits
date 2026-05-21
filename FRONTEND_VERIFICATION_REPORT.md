@@ -69,7 +69,7 @@ Home.tsx
 3. Error handling → Toast notifications for failures
 
 ### Features Verified
-- ✅ KPI Cards (Contacts, Firms, Coffee Chats, Replies, Time Saved, Interview Preps)
+- ✅ KPI Cards (Contacts, Firms, Meetings, Replies, Time Saved, Interview Preps)
 - ✅ Weekly Summary
 - ✅ Streak Display
 - ✅ Goal Progress (Monthly Goals)
@@ -80,7 +80,7 @@ Home.tsx
 - ✅ US Map with Firm Locations
 
 ### Navigation Links
-- ✅ Activity items → Navigate to `/firm-search`, `/contact-search`, `/coffee-chat-prep`, `/interview-prep`
+- ✅ Activity items → Navigate to `/firm-search`, `/contact-search`, `/meeting-prep`, `/interview-prep`
 - ✅ Recommendations → Navigate to `/outbox` or `/firm-search`
 
 ---
@@ -168,7 +168,7 @@ Home.tsx
 ### Navigation Items
 - ✅ Home → `/home`
 - ✅ Contact Search → `/contact-search`
-- ✅ Coffee Chat Prep → `/coffee-chat-prep`
+- ✅ Meeting Prep → `/meeting-prep`
 - ✅ Interview Prep → `/interview-prep`
 - ✅ Firm Search → `/firm-search`
 - ✅ Pricing → `/pricing`

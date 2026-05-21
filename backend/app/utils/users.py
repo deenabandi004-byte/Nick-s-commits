@@ -341,12 +341,12 @@ def parse_resume_info(resume_text):
 
 ## CRITICAL RULES
 
-1. **EXTRACT EVERYTHING** — Do not summarize or condense. Keep all details.
-2. **PRESERVE EXACT TEXT** — Company names, job titles, dates, and degrees must be copied exactly as written.
-3. **KEEP ALL BULLETS** — Every bullet point in experience and projects must be preserved.
-4. **KEEP ALL SKILLS** — Extract every skill mentioned, organized by category.
-5. **KEEP COURSEWORK** — Extract all courses listed.
-6. **KEEP PROJECTS** — Extract all projects with full descriptions.
+1. **EXTRACT EVERYTHING** - Do not summarize or condense. Keep all details.
+2. **PRESERVE EXACT TEXT** - Company names, job titles, dates, and degrees must be copied exactly as written.
+3. **KEEP ALL BULLETS** - Every bullet point in experience and projects must be preserved.
+4. **KEEP ALL SKILLS** - Extract every skill mentioned, organized by category.
+5. **KEEP COURSEWORK** - Extract all courses listed.
+6. **KEEP PROJECTS** - Extract all projects with full descriptions.
 
 ## RESUME TEXT
 
@@ -442,7 +442,7 @@ Return ONLY valid JSON in this exact structure:
 
 - If a section doesn't exist in the resume, use an empty array [] or null
 - Do NOT invent or infer information that isn't explicitly stated
-- Do NOT summarize bullet points — copy them exactly
+- Do NOT summarize bullet points - copy them exactly
 - Do NOT merge multiple experiences into one
 - Do NOT skip any experiences, projects, or skills
 - Dates should be copied exactly as formatted in the resume
@@ -559,10 +559,10 @@ def validate_parsed_resume(parsed: dict) -> tuple[bool, list[str]]:
     return is_valid, errors
 
 
-def build_coffee_chat_user_context(parsed_resume: dict, user_profile: dict = None) -> dict:
+def build_meeting_user_context(parsed_resume: dict, user_profile: dict = None) -> dict:
     """
     Convert a parsed resume (from parse_resume_info) into the rich user context
-    format used by coffee chat AI prompts. Falls back to user_profile fields.
+    format used by meeting AI prompts. Falls back to user_profile fields.
     """
     profile = user_profile or {}
 
@@ -630,7 +630,7 @@ def build_coffee_chat_user_context(parsed_resume: dict, user_profile: dict = Non
         if isinstance(ext, dict):
             label = ext.get("activity", "") or ext.get("organization", "")
             if ext.get("role"):
-                label = f"{ext['role']} — {label}"
+                label = f"{ext['role']} - {label}"
             if label:
                 clubs.append(label)
 
@@ -666,7 +666,7 @@ def build_coffee_chat_user_context(parsed_resume: dict, user_profile: dict = Non
     }
 
 
-def _empty_coffee_chat_user_context() -> dict:
+def _empty_meeting_user_context() -> dict:
     return {
         "name": "", "university": "", "major": "", "minor": "", "year": "",
         "gpa": None, "skills": [], "interests": [], "clubs": [], "awards": [],

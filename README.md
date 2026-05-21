@@ -8,7 +8,7 @@ Offerloop is a full-stack application that helps users:
 - Search and discover professional contacts
 - Generate personalized outreach emails
 - Manage contact directories
-- Prepare for coffee chats and networking events
+- Prepare for meetings and networking events
 - Manage subscriptions and billing
 
 ## Architecture
@@ -165,7 +165,7 @@ npm run dev
 - Draft creation
 - Reply tracking
 
-### Coffee Chat Preparation
+### Meeting Preparation
 - LinkedIn profile analysis
 - Similarity detection
 - Question generation
@@ -206,7 +206,7 @@ Key endpoints:
 - `POST /api/free-run` - Free tier contact search
 - `POST /api/pro-run` - Pro tier contact search
 - `GET /api/contacts` - Get user contacts
-- `POST /api/coffee-chat-prep` - Create coffee chat prep
+- `POST /api/meeting-prep` - Create meeting prep
 - `POST /api/create-checkout-session` - Stripe checkout
 
 ## Deployment

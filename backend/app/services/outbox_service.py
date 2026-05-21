@@ -125,7 +125,7 @@ def _contact_to_dict(contact_id, data):
             snippet = data.get("emailBody") or "Draft is ready to send in Gmail"
         else:
             snippet = ""
-    # Gmail API returns HTML-encoded snippets (&#39; &amp; etc.) — decode them
+    # Gmail API returns HTML-encoded snippets (&#39; &amp; etc.) - decode them
     if snippet:
         snippet = html.unescape(snippet)
 
@@ -355,7 +355,7 @@ def update_contact_stage(uid, contact_id, new_stage):
     }
     if new_stage == "meeting_scheduled" and not data.get("meetingScheduledAt"):
         updates["meetingScheduledAt"] = _now_iso()
-        # Auto-prep: trigger coffee chat prep when meeting is first scheduled
+        # Auto-prep: trigger meeting prep when meeting is first scheduled
         try:
             _maybe_trigger_auto_prep(uid, contact_id, data)
         except Exception as ap_err:
@@ -519,7 +519,7 @@ def _is_gmail_auth_error(e):
         pass
 
     # 3. String fallback for wrapped/re-raised errors. Kept deliberately
-    # narrow — only match tokens that unambiguously indicate auth failure,
+    # narrow - only match tokens that unambiguously indicate auth failure,
     # to avoid tagging transient network errors as "reconnect Gmail".
     msg = (str(e) or "").lower()
     return any(s in msg for s in (
@@ -602,7 +602,7 @@ def _check_draft_status(gmail_service, data):
                 except Exception as e:
                     logger.warning("Could not find threadId for sent draft: %s", e)
                     _capture_sentry(e)
-            # No sent message found — draft was deleted, not sent
+            # No sent message found - draft was deleted, not sent
             if not found_sent:
                 updates["pipelineStage"] = "draft_deleted"
         return updates
@@ -770,10 +770,10 @@ def sync_contact_thread(uid, contact_id):
 
 
 # ---------------------------------------------------------------------------
-# Auto-Prep (Coffee Chat) — triggered when meeting_scheduled
+# Auto-Prep (Meeting) - triggered when meeting_scheduled
 # ---------------------------------------------------------------------------
 
-COFFEE_CHAT_CREDITS = 15
+MEETING_CREDITS = 15
 
 
 def _maybe_trigger_auto_prep(uid, contact_id, contact_data):
@@ -791,13 +791,13 @@ def _maybe_trigger_auto_prep(uid, contact_id, contact_data):
     user_data = user_doc.to_dict() if user_doc.exists else {}
     tier = user_data.get("subscriptionTier") or user_data.get("tier", "free")
     if tier not in ("pro", "elite"):
-        logger.info(f"[auto_prep] uid={uid} skipping — tier={tier}")
+        logger.info(f"[auto_prep] uid={uid} skipping - tier={tier}")
         return
 
     # LinkedIn URL required
     linkedin_url = contact_data.get("linkedinUrl") or contact_data.get("linkedin_url", "")
     if not linkedin_url:
-        logger.info(f"[auto_prep] uid={uid} contact={contact_id} skipping — no LinkedIn URL")
+        logger.info(f"[auto_prep] uid={uid} contact={contact_id} skipping - no LinkedIn URL")
         return
 
     # Check for existing prep
@@ -813,7 +813,7 @@ def _maybe_trigger_auto_prep(uid, contact_id, contact_data):
 
     # Deduct credits
     from app.services.auth import deduct_credits_atomic
-    success, remaining = deduct_credits_atomic(uid, COFFEE_CHAT_CREDITS, "auto_coffee_chat_prep")
+    success, remaining = deduct_credits_atomic(uid, MEETING_CREDITS, "auto_meeting_prep")
     if not success:
         logger.info(f"[auto_prep] uid={uid} insufficient credits")
         return
@@ -841,22 +841,22 @@ def _maybe_trigger_auto_prep(uid, contact_id, contact_data):
     # Spawn background thread
     def _run():
         try:
-            from app.routes.coffee_chat_prep import process_coffee_chat_prep_background
-            process_coffee_chat_prep_background(
+            from app.routes.meeting_prep import process_meeting_prep_background
+            process_meeting_prep_background(
                 prep_id=prep_id,
                 linkedin_url=linkedin_url,
                 user_id=uid,
                 resume_text=resume_text,
                 extra_context={"contactId": contact_id, "autoTriggered": True},
                 user_profile=user_data,
-                credits_charged=COFFEE_CHAT_CREDITS,
+                credits_charged=MEETING_CREDITS,
             )
             # Clean up pending doc on success
             db.collection("users").document(uid).collection("pending_auto_preps").document(contact_id).delete()
             logger.info(f"[auto_prep] uid={uid} contact={contact_id} prep completed")
-            # Log coffee_chat_prep_used metric
+            # Log meeting_prep_used metric
             from app.utils.metrics_events import log_event
-            log_event(uid, "coffee_chat_prep_used", {
+            log_event(uid, "meeting_prep_used", {
                 "auto_triggered": True,
                 "contact_id": contact_id,
             })
@@ -891,7 +891,7 @@ def trigger_auto_prep(uid, contact_id, contact_data):
     if not linkedin_url:
         return {"status": "no_linkedin", "message": "Contact has no LinkedIn URL"}
 
-    success, remaining = deduct_credits_atomic(uid, COFFEE_CHAT_CREDITS, "auto_coffee_chat_prep")
+    success, remaining = deduct_credits_atomic(uid, MEETING_CREDITS, "auto_meeting_prep")
     if not success:
         return {"status": "insufficient_credits", "remaining": remaining}
 
@@ -921,15 +921,15 @@ def trigger_auto_prep(uid, contact_id, contact_data):
 
     def _run():
         try:
-            from app.routes.coffee_chat_prep import process_coffee_chat_prep_background
-            process_coffee_chat_prep_background(
+            from app.routes.meeting_prep import process_meeting_prep_background
+            process_meeting_prep_background(
                 prep_id=prep_id,
                 linkedin_url=linkedin_url,
                 user_id=uid,
                 resume_text=resume_text,
                 extra_context={"contactId": contact_id, "autoTriggered": True},
                 user_profile=user_data,
-                credits_charged=COFFEE_CHAT_CREDITS,
+                credits_charged=MEETING_CREDITS,
             )
             db.collection("users").document(uid).collection("pending_auto_preps").document(contact_id).delete()
         except Exception as exc:

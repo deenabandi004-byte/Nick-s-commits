@@ -1,5 +1,5 @@
 """
-Job ranking utilities — pure Python, no Flask imports.
+Job ranking utilities - pure Python, no Flask imports.
 Deterministic pre-filtering, GPT-based ranking, and feedback adjustments.
 """
 import re as _re
@@ -108,7 +108,7 @@ def infer_preferred_type(profile: dict) -> Optional[str]:
         has_intern = "Internship" in job_types
         has_ft = "Full-Time" in job_types
         if has_intern and has_ft:
-            return None  # no preference — user wants both
+            return None  # no preference - user wants both
         if has_intern:
             return "INTERNSHIP"
         if has_ft:
@@ -126,7 +126,7 @@ def infer_preferred_type(profile: dict) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
-# Category / title exclusions — filter out irrelevant blue-collar jobs
+# Category / title exclusions - filter out irrelevant blue-collar jobs
 # ---------------------------------------------------------------------------
 
 EXCLUDED_CATEGORIES = frozenset([
@@ -143,7 +143,7 @@ EXCLUDED_TITLE_KEYWORDS = [
     "field service", "maintenance technician",
 ]
 
-# Always excluded — clearly not entry-level regardless of graduation year
+# Always excluded - clearly not entry-level regardless of graduation year
 SENIOR_TITLE_KEYWORDS = [
     "sr. ", "sr ", "senior ", "lead ", "principal ", "staff ",
     "director", "vp ", "vice president", "head of",
@@ -209,7 +209,7 @@ def _is_excluded(job: dict) -> bool:
 
 
 def _normalize_location(loc) -> str:
-    """Coerce location to a string — handles dict, str, or None."""
+    """Coerce location to a string - handles dict, str, or None."""
     if not loc:
         return ""
     if isinstance(loc, str):
@@ -420,7 +420,7 @@ Include every job_id. Order by match_score descending."""
         try:
             response = _call_gpt()
         except RateLimitError:
-            logger.warning("GPT ranking hit 429 — retrying in 10s")
+            logger.warning("GPT ranking hit 429 - retrying in 10s")
             time.sleep(10)
             response = _call_gpt()
 
@@ -462,7 +462,7 @@ Include every job_id. Order by match_score descending."""
 
         return sorted(ranked, key=lambda j: j.get("match_score") or 0, reverse=True)
     except RateLimitError:
-        logger.warning("GPT ranking hit 429 twice — returning unranked")
+        logger.warning("GPT ranking hit 429 twice - returning unranked")
         return _mark_unranked(jobs)
     except Exception as e:
         logger.warning(f"GPT ranking failed: {e}")

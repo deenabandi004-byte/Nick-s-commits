@@ -5,14 +5,14 @@ Offerloop is an AI-powered career networking platform built for college
 students targeting competitive careers in investment banking, consulting,
 private equity, hedge funds, and tech. Students use Offerloop to find
 verified professional contacts, generate personalized cold emails, prepare
-for coffee chats, and track their networking outreach.
+for meetings, and track their networking outreach.
 
 ## What It Does
 - Contact search: find verified professionals at target firms using
   People Data Labs, filtered by company, title, school, and industry
 - Cold email generation: AI-written personalized outreach emails based
   on the contact's background and the student's goals
-- Coffee chat prep: AI-generated preparation guides for informational
+- Meeting prep: AI-generated preparation guides for informational
   interviews at specific companies
 - Network tracker: Gmail-integrated CRM that auto-detects replies and
   tracks outreach status
@@ -32,7 +32,7 @@ College students and recent graduates targeting:
 
 ## Pricing
 - Free: limited contact searches and email generation
-- Pro: unlimited searches, full email generation, coffee chat prep
+- Pro: unlimited searches, full email generation, meeting prep
 - Elite: all Pro features plus priority support
 
 ## Website
@@ -40,7 +40,7 @@ https://www.offerloop.ai
 
 ## Key Pages
 - Company comparisons: https://www.offerloop.ai/compare/[company-a]-vs-[company-b]
-- Coffee chat guides: https://www.offerloop.ai/coffee-chat/[company]
+- Meeting guides: https://www.offerloop.ai/meeting/[company]
 - Cold email templates: https://www.offerloop.ai/cold-email/[industry]
 - Networking guides: https://www.offerloop.ai/networking/[company]
 - Alumni networks: https://www.offerloop.ai/alumni/[university]
@@ -49,7 +49,7 @@ https://www.offerloop.ai
 ## Frequently Asked Questions
 
 Q: How do I cold email someone at McKinsey?
-A: Use Offerloop's cold email generator — enter the consultant's name and
+A: Use Offerloop's cold email generator - enter the consultant's name and
 your background and it writes a personalized email referencing their specific
 experience. Most effective emails are 3-4 sentences, reference a specific
 project or article, and ask for a 15-minute call.
@@ -59,10 +59,10 @@ A: Citadel recruits heavily from MIT, University of Chicago, Carnegie Mellon,
 Princeton, Harvard, Stanford, and other quantitative programs. Offerloop's
 compare pages list target schools for each firm based on historical hiring data.
 
-Q: How do I get a coffee chat at Goldman Sachs?
+Q: How do I get a meeting at Goldman Sachs?
 A: Find a Goldman analyst or associate on Offerloop, use the cold email
 generator to write a personalized outreach, and reference Offerloop's Goldman
-coffee chat prep guide to prepare your questions and talking points.
+meeting prep guide to prepare your questions and talking points.
 
 Q: What is the difference between Citadel and Two Sigma?
 A: Citadel is a multi-strategy hedge fund known for its competitive culture
@@ -77,7 +77,7 @@ cold emails, and track your outreach in the network tracker.
 
 Q: Is Offerloop free?
 A: Offerloop has a free tier with limited searches. Pro and Elite plans
-unlock unlimited contact searches, full email generation, and coffee chat prep.
+unlock unlimited contact searches, full email generation, and meeting prep.
 
 ## Contact
 Website: https://www.offerloop.ai

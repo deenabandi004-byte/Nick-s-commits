@@ -60,7 +60,7 @@ def get_tier_info():
                     f"{TIER_CONFIGS['elite']['credits']} credits",
                     f"Estimated time saved: {TIER_CONFIGS['elite']['time_saved_minutes']} minutes",
                     "Everything in Pro, plus:",
-                    "Unlimited Coffee Chat Prep",
+                    "Unlimited Meeting Prep",
                     "Unlimited Interview Prep",
                     "Priority queue for contact generation",
                     "Personalized outreach templates",
@@ -559,7 +559,7 @@ def increment_usage():
         # Map feature names to field names
         field_map = {
             'alumni_search': 'alumniSearchesUsed',
-            'coffee_chat_prep': 'coffeeChatPrepsUsed',
+            'meeting_prep': 'coffeeChatPrepsUsed',
             'interview_prep': 'interviewPrepsUsed',
         }
         

@@ -5,7 +5,7 @@
 </script>
 
 <meta charset="UTF-8"/>
-<title>Find · Companies · B+ — Implementation Spec</title>
+<title>Find · Companies · B+ - Implementation Spec</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -106,7 +106,7 @@
 <p class="lede">The shipping design for Find → Companies. Hero on the left, four two-line entries on the right. This doc is the handoff: tokens, structure, exact measurements, and where the Scout sentence plugs in.</p>
 
 <div class="callout">
-Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project root. That file owns the copy generation; this file owns the layout and component shape. Claude Code should read both before implementing.
+Pair this file with <b>Scout Intro Sentence - Spec.html</b> in the project root. That file owns the copy generation; this file owns the layout and component shape. Claude Code should read both before implementing.
 </div>
 
 <hr/>
@@ -115,8 +115,8 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <table>
   <thead><tr><th>File (project root)</th><th>Owns</th></tr></thead>
   <tbody>
-    <tr><td><span class="fileref">Find Companies B+ — Implementation Spec.html</span></td><td>This file. Layout, tokens, component structure, measurements.</td></tr>
-    <tr><td><span class="fileref">Scout Intro Sentence — Spec.html</span></td><td>Copy generation: data schema, closest-path score, 5-rung fallback ladder, LLM prompt, guardrails.</td></tr>
+    <tr><td><span class="fileref">Find Companies B+ - Implementation Spec.html</span></td><td>This file. Layout, tokens, component structure, measurements.</td></tr>
+    <tr><td><span class="fileref">Scout Intro Sentence - Spec.html</span></td><td>Copy generation: data schema, closest-path score, 5-rung fallback ladder, LLM prompt, guardrails.</td></tr>
     <tr><td><span class="fileref">Find - Companies Aesthetic Improvements.html</span></td><td>Working prototype. B+ is the first artboard in the "Rhythm Experiments" section. Use <code>window.TwoColumnAdjusted</code> in <span class="fileref">find-companies-rhythm.jsx</span> as the visual reference.</td></tr>
   </tbody>
 </table>
@@ -138,8 +138,8 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <span class="k">--line-2</span>:    <span class="s">#EFEDE8</span>;   <span class="c">// row dividers (hairline)</span>
 
 <span class="c">/* Brand */</span>
-<span class="k">--brand</span>:     <span class="s">#1B2A44</span>;   <span class="c">// oxblood navy — CTA links, emphasized digits</span>
-<span class="k">--accent</span>:    <span class="s">#8B2E1F</span>;   <span class="c">// USC oxblood — underline scribble, eyebrow accent</span>
+<span class="k">--brand</span>:     <span class="s">#1B2A44</span>;   <span class="c">// oxblood navy - CTA links, emphasized digits</span>
+<span class="k">--accent</span>:    <span class="s">#8B2E1F</span>;   <span class="c">// USC oxblood - underline scribble, eyebrow accent</span>
 
 <span class="c">/* Type */</span>
 <span class="k">--serif</span>:    <span class="s">'Instrument Serif', Georgia, serif</span>;
@@ -164,7 +164,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
   <div class="row"><div class="k">Content container</div><div class="v"><code>max-width: 960px</code> · <code>margin: 0 auto</code> · <code>padding: 52px 48px 40px</code></div></div>
   <div class="row"><div class="k">Header block</div><div class="v">Seal + angle · H1 · italic lede · mono stats line</div></div>
   <div class="row"><div class="k">Body</div><div class="v">2-column grid · <code>grid-template-columns: 1.15fr 1fr</code> · <code>gap: 48px</code> · top border on grid</div></div>
-  <div class="row"><div class="k">Footer</div><div class="v">Centered text link ("Search for a specific company →") — expands into single-line input with bottom border on click</div></div>
+  <div class="row"><div class="k">Footer</div><div class="v">Centered text link ("Search for a specific company →") - expands into single-line input with bottom border on click</div></div>
 </div>
 
 <hr/>
@@ -172,7 +172,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <h2><span class="num">04</span>The hero (left column)</h2>
 
 <div class="annotated">
-  <div class="hdr"><span>HERO — left column, 1.15fr</span><span>from the figma / prototype</span></div>
+  <div class="hdr"><span>HERO - left column, 1.15fr</span><span>from the figma / prototype</span></div>
   <div class="body hero-ann" style="grid-template-columns:1fr;">
     <div class="h-eye">01 · START HERE <span class="tag">eyebrow</span></div>
     <div class="h-name" style="margin-top:14px;">
@@ -180,7 +180,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
       <span class="h-nameText">Google</span>
       <span class="tag">mark + name</span>
     </div>
-    <div class="h-headline" style="margin-top:14px;">Twelve USC data scientists work here now — three started this fall. <span class="tag">scout headline</span></div>
+    <div class="h-headline" style="margin-top:14px;">Twelve USC data scientists work here now - three started this fall. <span class="tag">scout headline</span></div>
     <div class="h-detail" style="margin-top:10px;">Your closest path in: Priya Desai, '22, on the Ads ML team. She's replied to three cohort intros this month. <span class="tag">scout detail · from ladder</span></div>
     <div class="h-meta" style="margin-top:14px;">TECH · AI · <b style="color:var(--brand);font-weight:500;">SAN FRANCISCO</b> <span class="tag">meta</span></div>
     <div class="h-cta" style="margin-top:10px;">Find contacts → <span class="tag">cta</span></div>
@@ -197,7 +197,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
     <tr><td><b>Headline</b></td><td>serif italic 20px · line-height 1.4 · <code>letter-spacing: -0.005em</code></td><td><code>--ink</code></td><td><code>margin-bottom: 12px</code></td></tr>
     <tr><td><b>Detail paragraph</b></td><td>sans 13px · line-height 1.6</td><td><code>--ink-2</code></td><td><code>margin-bottom: 18px</code></td></tr>
     <tr><td><b>Meta</b></td><td>mono 9px · 0.14em tracking · uppercase</td><td><code>--ink-3</code>, city in <code>--brand</code> 500</td><td><code>margin-bottom: 10px</code></td></tr>
-    <tr><td><b>CTA</b></td><td>sans 12px · 500</td><td><code>--brand</code></td><td>—</td></tr>
+    <tr><td><b>CTA</b></td><td>sans 12px · 500</td><td><code>--brand</code></td><td> - </td></tr>
   </tbody>
 </table>
 
@@ -205,9 +205,9 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <ul class="do">
   <li><b>Headline</b> = rendered from the Scout ladder, R4-tier sentence (always aggregate, never names). See Scout Spec §04.</li>
   <li><b>Detail</b> = rendered from the Scout ladder, R1 → R5 cascade. The hero uses whichever rung fires. See Scout Spec §04.</li>
-  <li><b>Name + mark</b> = from the company record. <code>mark.color</code> is the company's primary brand color; <code>mark.letters</code> is 1–2 chars (initial or monogram). Never render an empty square — if we don't have a real color, fall back to <code>--brand</code> with the initial.</li>
+  <li><b>Name + mark</b> = from the company record. <code>mark.color</code> is the company's primary brand color; <code>mark.letters</code> is 1–2 chars (initial or monogram). Never render an empty square - if we don't have a real color, fall back to <code>--brand</code> with the initial.</li>
   <li><b>Meta</b> = <code>sector · city</code> from company record.</li>
-  <li class="x"><b>Never hardcode the Priya Desai line.</b> It's output from the ladder. If the ladder returns R4 or R5, the detail paragraph renders those rungs' sentence — NOT a placeholder.</li>
+  <li class="x"><b>Never hardcode the Priya Desai line.</b> It's output from the ladder. If the ladder returns R4 or R5, the detail paragraph renders those rungs' sentence - NOT a placeholder.</li>
 </ul>
 
 <hr/>
@@ -215,7 +215,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <h2><span class="num">05</span>The list (right column)</h2>
 
 <div class="annotated">
-  <div class="hdr"><span>LIST — right column, 1fr · four 2-line rows</span><span>from the figma / prototype</span></div>
+  <div class="hdr"><span>LIST - right column, 1fr · four 2-line rows</span><span>from the figma / prototype</span></div>
   <div class="body list-ann" style="grid-template-columns:1fr;padding:18px 24px 22px;">
     <div class="l-hdr">Four more, ranked by fit</div>
     <div class="l-row">
@@ -223,7 +223,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
       <div class="l-mark">S</div>
       <div>
         <div class="l-top"><div class="l-cname">Sequoia</div><div class="l-city">MENLO PARK</div></div>
-        <div class="l-sent">Q1 analyst roles — <em>replies come fast.</em></div>
+        <div class="l-sent">Q1 analyst roles - <em>replies come fast.</em></div>
       </div>
     </div>
     <div class="l-row">
@@ -262,13 +262,13 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <span class="k">align-items</span>: <span class="s">start</span>;
 <span class="k">cursor</span>: <span class="s">pointer</span>;                        <span class="c">// whole row is a link</span></pre>
 
-<h3>Row content — 2 lines</h3>
-<p><b>Line 1</b> — name + city, flex row with <code>justify-content: space-between</code>, <code>align-items: baseline</code>, <code>margin-bottom: 6px</code>.</p>
-<p><b>Line 2</b> — italic scout sentence, its own line, wraps naturally. Serif italic 13px, <code>--ink-2</code>, <code>line-height: 1.5</code>. Digits inside the italic sentence switch to sans + <code>--brand</code> + 600 (visible numeric emphasis inside a serif italic voice).</p>
+<h3>Row content - 2 lines</h3>
+<p><b>Line 1</b> - name + city, flex row with <code>justify-content: space-between</code>, <code>align-items: baseline</code>, <code>margin-bottom: 6px</code>.</p>
+<p><b>Line 2</b> - italic scout sentence, its own line, wraps naturally. Serif italic 13px, <code>--ink-2</code>, <code>line-height: 1.5</code>. Digits inside the italic sentence switch to sans + <code>--brand</code> + 600 (visible numeric emphasis inside a serif italic voice).</p>
 
 <ul class="do">
   <li><b>No right-arrow icon on rows.</b> Whole-row <code>cursor: pointer</code>; hover state bumps name color to <code>--brand</code>.</li>
-  <li><b>City is mono 9px uppercase.</b> Same style as the hero meta — keeps the page visually quiet.</li>
+  <li><b>City is mono 9px uppercase.</b> Same style as the hero meta - keeps the page visually quiet.</li>
   <li><b>Scout sentence on its own line.</b> Never inline-truncate. If it wraps to two lines that's fine; the row grows.</li>
   <li class="x"><b>No dividers at the TOP of the first row or BOTTOM of the last.</b> Only between rows. Visually this looks like a list, not a box.</li>
 </ul>
@@ -304,7 +304,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
       city:     <span class="s">"San Francisco"</span>,
       scout: {                        <span class="c">// from Scout Spec ladder output</span>
         rung:      <span class="s">"R1"</span>,
-        headline:  <span class="s">"Twelve USC data scientists work here now — three started this fall."</span>,
+        headline:  <span class="s">"Twelve USC data scientists work here now - three started this fall."</span>,
         detail:    <span class="s">"Your closest path in: Priya Desai, '22, on the Ads ML team. She's replied to three cohort intros this month."</span>,
         short:     <span class="s">"12 USC alumni in data roles."</span>   <span class="c">// compact form for list rows</span>
       }
@@ -314,7 +314,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
   ]
 }</pre>
 
-<p>The page has no internal state for company data. It's a pure render of these props. Scout sentence generation happens server-side (or in a background worker) using the spec in <span class="fileref">Scout Intro Sentence — Spec.html</span>, and the result is hydrated into <code>company.scout</code> before the page renders.</p>
+<p>The page has no internal state for company data. It's a pure render of these props. Scout sentence generation happens server-side (or in a background worker) using the spec in <span class="fileref">Scout Intro Sentence - Spec.html</span>, and the result is hydrated into <code>company.scout</code> before the page renders.</p>
 
 <hr/>
 
@@ -352,7 +352,7 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
     <tr><td><b>Default</b></td><td>Hero + 4 list rows + footer link (collapsed).</td></tr>
     <tr><td><b>Search expanded</b></td><td>Footer link replaced by single-line input with bottom border. <code>autofocus</code>.</td></tr>
     <tr><td><b>Loading</b></td><td>Hero and list rows render skeletons: name/headline as <code>--paper-2</code> blocks with the exact height of the text they replace. No spinner.</td></tr>
-    <tr><td><b>No companies</b></td><td>Hero and list hidden. Italic serif message centered: "Scout is still reading your resume — check back in a minute." No illustration, no spinner.</td></tr>
+    <tr><td><b>No companies</b></td><td>Hero and list hidden. Italic serif message centered: "Scout is still reading your resume - check back in a minute." No illustration, no spinner.</td></tr>
     <tr><td><b>Hero only (1 company)</b></td><td>Grid collapses to single column. Hero spans full width, max-width 720px. Footer link unchanged.</td></tr>
     <tr><td><b>Row hover</b></td><td>Company name color animates to <code>--brand</code>, 120ms. No background change, no scale.</td></tr>
     <tr><td><b>Row focus (keyboard)</b></td><td>2px <code>--accent</code> outline offset 2px. Full row is a link with <code>tabindex="0"</code>.</td></tr>
@@ -379,8 +379,8 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <ul class="do">
   <li><b>Every row is a link</b> (<code>&lt;a&gt;</code> or button with role=link), not a div with onClick.</li>
   <li><b>Focus visible</b> on all interactive elements (rows, CTA, footer link/input, tabs).</li>
-  <li><b>Hero mark has <code>aria-hidden="true"</code></b> — it's decorative; the company name below it is the label.</li>
-  <li><b>Mono italic combinations must clear 4.5:1 contrast</b>. Check <code>--ink-3</code> on <code>--paper</code> — currently passes. Check <code>--ink-2</code> italic serif at 12.5px — passes.</li>
+  <li><b>Hero mark has <code>aria-hidden="true"</code></b> - it's decorative; the company name below it is the label.</li>
+  <li><b>Mono italic combinations must clear 4.5:1 contrast</b>. Check <code>--ink-3</code> on <code>--paper</code> - currently passes. Check <code>--ink-2</code> italic serif at 12.5px - passes.</li>
   <li><b>Tab order:</b> Topbar → tabs → Ask Scout → Hero CTA → List rows top-to-bottom → Footer search.</li>
   <li class="x"><b>Do not use color alone</b> to indicate the hero vs list. The "01 · START HERE" eyebrow does the semantic work.</li>
 </ul>
@@ -406,16 +406,16 @@ Pair this file with <b>Scout Intro Sentence — Spec.html</b> in the project roo
 <ol>
   <li><b>Scaffold</b> the component hierarchy from §07. Render with hardcoded JSON that matches §06.</li>
   <li><b>Wire design tokens</b> from §02 into the global CSS (probably already exist).</li>
-  <li><b>Build HeroCard and ListRow</b> against the measurements in §04 and §05. Match the prototype pixel-for-pixel — use <code>find-companies-rhythm.jsx</code> <code>TwoColumnAdjusted</code> as the visual source of truth.</li>
+  <li><b>Build HeroCard and ListRow</b> against the measurements in §04 and §05. Match the prototype pixel-for-pixel - use <code>find-companies-rhythm.jsx</code> <code>TwoColumnAdjusted</code> as the visual source of truth.</li>
   <li><b>Swap hardcoded data</b> for real company records from the backend.</li>
   <li><b>Hydrate <code>company.scout</code></b> by calling the Scout ladder service (spec'd in Scout Spec §04–§06). If the service isn't ready, stub with R4-tier output so the page still ships.</li>
   <li><b>Add states</b> from §08 and responsive rules from §09.</li>
   <li><b>Accessibility pass</b> per §10.</li>
-  <li><b>Observability</b> — add rung-fire-rate logging per Scout Spec §07.</li>
+  <li><b>Observability</b> - add rung-fire-rate logging per Scout Spec §07.</li>
 </ol>
 
 <div class="callout">
-<b>One-line summary for the PR description:</b> Implements Find → Companies B+ layout — hero left, four two-line list rows right, no container boxes, inline-topbar tabs, text-link footer search. Scout copy is produced by the ladder in <b>Scout Intro Sentence — Spec.html</b>.
+<b>One-line summary for the PR description:</b> Implements Find → Companies B+ layout - hero left, four two-line list rows right, no container boxes, inline-topbar tabs, text-link footer search. Scout copy is produced by the ladder in <b>Scout Intro Sentence - Spec.html</b>.
 </div>
 
 </main>

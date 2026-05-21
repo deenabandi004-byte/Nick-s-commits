@@ -1,5 +1,5 @@
 """
-Agent Actions — real executors that wrap existing services.
+Agent Actions - real executors that wrap existing services.
 
 Each action (find, find_jobs, discover_companies, find_hiring_managers)
 calls the actual PDL / SerpAPI / email generation services.
@@ -211,7 +211,7 @@ def execute_find_and_draft(
     # Resolve email template from agent config
     template_instructions = _resolve_agent_template(config, user_data, db, uid)
 
-    # Warmth scoring — returns a dict keyed by index, NOT the contact list
+    # Warmth scoring - returns a dict keyed by index, NOT the contact list
     warmth_data = {}
     try:
         warmth_data = score_contacts_for_email(user_profile, filtered)
@@ -541,10 +541,10 @@ def execute_discover_companies(
         domain = _company_to_domain(co.get("name", ""))
         logo_url = f"https://logo.clearbit.com/{domain}" if domain else None
 
-        # Extract industry — field is "sector" in recommendation engine
+        # Extract industry - field is "sector" in recommendation engine
         industry = co.get("industry") or co.get("sector", "")
 
-        # Extract reason — scout sentence is nested: scout.short or scout.headline
+        # Extract reason - scout sentence is nested: scout.short or scout.headline
         scout = co.get("scout") or {}
         if isinstance(scout, dict):
             reason = scout.get("short") or scout.get("headline") or scout.get("detail") or ""

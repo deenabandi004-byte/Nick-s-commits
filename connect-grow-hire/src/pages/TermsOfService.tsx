@@ -350,7 +350,7 @@ const TermsOfService = () => {
                 <p className="text-gray-600">We use the Google user data described above solely to:</p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
                   <li>Generate personalized email drafts for professional networking and outreach</li>
-                  <li>Facilitate coffee chat preparation and interview preparation features</li>
+                  <li>Facilitate meeting preparation and interview preparation features</li>
                   <li>Send emails on your behalf when you explicitly request this action</li>
                   <li>Analyze your communication patterns to provide relevant networking insights</li>
                   <li>Maintain and improve the functionality of our Gmail integration features</li>

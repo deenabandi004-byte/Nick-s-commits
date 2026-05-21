@@ -37,7 +37,7 @@ function getFaqData(company: Company) {
     },
     {
       question: `What should I say in a cold email to someone at ${company.name}?`,
-      answer: `Keep your email under 150 words. Open with who you are and why you are emailing this specific person (shared school, shared background, interest in their division). Ask for a 15-minute coffee chat. Do not ask for a referral in the first email. Reference something specific about their role or career path to show you have done your research.`,
+      answer: `Keep your email under 150 words. Open with who you are and why you are emailing this specific person (shared school, shared background, interest in their division). Ask for a 15-minute meeting. Do not ask for a referral in the first email. Reference something specific about their role or career path to show you have done your research.`,
     },
     {
       question: `When is the best time to network with ${company.name} employees?`,
@@ -58,7 +58,7 @@ function getHowToSteps(company: Company) {
   return [
     { name: `Find ${company.name} employees`, text: `Search for ${company.name} professionals who share a connection with you. Look for alumni from your university, people in your target division, or employees who transitioned from similar backgrounds.` },
     { name: 'Craft personalized outreach', text: `Write a concise, personalized email that references the recipient's specific role, background, or division at ${company.name}. Mention why you are reaching out to them specifically.` },
-    { name: 'Prepare for your coffee chat', text: `Research the person's career path and prepare thoughtful questions about their experience at ${company.name}. Focus on their division, the recruiting process, and what they wish they had known as a student.` },
+    { name: 'Prepare for your meeting', text: `Research the person's career path and prepare thoughtful questions about their experience at ${company.name}. Focus on their division, the recruiting process, and what they wish they had known as a student.` },
     { name: 'Track and follow up', text: 'Send a thank-you note within 24 hours. Follow up periodically with updates on your recruiting progress. Keep track of every conversation in your networking pipeline so nothing falls through the cracks.' },
   ];
 }
@@ -89,7 +89,7 @@ const NetworkingGuide = ({ company }: Props) => {
           "@context": "https://schema.org",
           "@type": "HowTo",
           "name": `How to Network at ${company.name} as a College Student`,
-          "description": `Step-by-step guide to building a professional network at ${company.name} through cold email outreach and coffee chats.`,
+          "description": `Step-by-step guide to building a professional network at ${company.name} through cold email outreach and meetings.`,
           "step": howToSteps.map((s, i) => ({
             "@type": "HowToStep",
             "position": i + 1,
@@ -201,13 +201,13 @@ const NetworkingGuide = ({ company }: Props) => {
         </div>
       </section>
 
-      {/* Section 4: Coffee Chat Prep */}
+      {/* Section 4: Meeting Prep */}
       <section className="px-6 py-12" style={{ maxWidth: '800px', margin: '0 auto', borderTop: '1px solid #F1F5F9' }}>
         <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: '28px', fontWeight: 400, color: '#0F172A', marginBottom: '16px' }}>
-          How to Prepare for Your {company.name} Coffee Chat
+          How to Prepare for Your {company.name} Meeting
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Once someone at {company.name} agrees to a coffee chat, preparation is critical. You want to make the most of their time and leave a strong impression. Here are five things to do before every conversation:
+          Once someone at {company.name} agrees to a meeting, preparation is critical. You want to make the most of their time and leave a strong impression. Here are five things to do before every conversation:
         </p>
         <ul className="space-y-3 mb-4">
           {[
@@ -258,8 +258,8 @@ const NetworkingGuide = ({ company }: Props) => {
       <section className="px-6 py-16" style={{ maxWidth: '800px', margin: '0 auto', borderTop: '1px solid #F1F5F9' }}>
         <h2 style={{ fontSize: '24px', fontWeight: 700, marginBottom: '24px', color: '#0F172A' }}>Related Resources</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Link to={`/coffee-chat/${company.slug}`} style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
-            <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>{company.name} Coffee Chat Guide</p>
+          <Link to={`/meeting/${company.slug}`} style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>{company.name} Meeting Guide</p>
             <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Questions to ask, how to prepare, and follow-up templates.</p>
           </Link>
           <Link to={`/cold-email/${company.industry}`} style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>

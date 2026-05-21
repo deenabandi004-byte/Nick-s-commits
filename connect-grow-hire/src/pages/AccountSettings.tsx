@@ -1,4 +1,4 @@
-import { ArrowLeft, Upload, Trash2, LogOut, CreditCard, FileText, User, GraduationCap, Briefcase, Rocket, Settings, AlertTriangle, Lock, Eye, RefreshCw, X, CheckCircle, Mail, Target, Star } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, LogOut, CreditCard, FileText, User, GraduationCap, Briefcase, Rocket, Settings, AlertTriangle, Lock, Eye, RefreshCw, X, CheckCircle, Mail, Target, Star, UserCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { AppHeader } from "@/components/AppHeader";
+import { ProfilePanel } from "./ProfilePreview";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { db, storage, auth } from '@/lib/firebase';
 import { signOut as firebaseSignOut, onAuthStateChanged } from 'firebase/auth';
@@ -97,6 +98,7 @@ const locations = [
 
 // Section navigation items
 const sections = [
+  { id: 'profile', label: 'Profile', icon: UserCircle },
   { id: 'personal', label: 'Personal Information', icon: User },
   { id: 'academic', label: 'Academic Information', icon: GraduationCap },
   { id: 'professional', label: 'Professional Profile', icon: Briefcase },
@@ -1017,6 +1019,19 @@ export default function AccountSettings() {
                 {/* Settings Sections */}
                 <div className="lg:col-span-3 space-y-8 animate-fadeInUp" style={{ animationDelay: '150ms' }}>
                   
+                  {/* Profile - merged from the former standalone Profile page */}
+                  <div
+                    id="profile"
+                    style={{
+                      scrollMarginTop: 24,
+                      borderRadius: 3,
+                      overflow: 'hidden',
+                      border: '1px solid rgba(59,130,246,0.08)',
+                    }}
+                  >
+                    <ProfilePanel />
+                  </div>
+
                   {/* Personal Information Section */}
                   <SettingsSection
                     id="personal"
@@ -2239,7 +2254,7 @@ export default function AccountSettings() {
                               setGoalsInfo({ ...goalsInfo, personalNote: e.target.value });
                             }
                           }}
-                          placeholder="One thing about you we can't see on your resume — e.g., 'I grew up on a farm and that's why supply chain fascinates me'"
+                          placeholder="One thing about you we can't see on your resume - e.g., 'I grew up on a farm and that's why supply chain fascinates me'"
                           rows={3}
                           className="w-full transition-all resize-none"
                           style={{

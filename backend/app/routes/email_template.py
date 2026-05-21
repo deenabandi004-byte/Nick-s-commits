@@ -1,5 +1,5 @@
 """
-Email Template API — save/load user default template + CRUD for saved custom templates.
+Email Template API - save/load user default template + CRUD for saved custom templates.
 """
 from flask import Blueprint, jsonify, request
 from firebase_admin import firestore

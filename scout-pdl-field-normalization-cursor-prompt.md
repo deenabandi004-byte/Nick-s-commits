@@ -322,7 +322,7 @@ def _simplify_job_title(self, job_title: str) -> str:
     LEVEL_PREFIXES = ['senior', 'junior', 'staff', 'principal', 'lead', 'chief', 'head', 'vp', 'director']
     
     # Step 1: Remove everything after common separators
-    for sep in [' - ', ' – ', ' — ', ' | ', ' / ', ', ', ' for ', ' of the ', ' on the ']:
+    for sep in [' - ', ' – ', ' - ', ' | ', ' / ', ', ', ' for ', ' of the ', ' on the ']:
         if sep in title:
             parts = title.split(sep)
             # Score each part

@@ -5,7 +5,7 @@ This guide explains how Offerloop actually works at a technical level. It's writ
 
 ---
 
-## SECTION 1 — High-Level Architecture
+## SECTION 1 - High-Level Architecture
 
 ### What Runs Where
 
@@ -57,9 +57,9 @@ Firestore Database (or SQLite for legacy)
 
 **Async (Non-blocking)**
 - Some long-running tasks use async patterns
-- Coffee chat prep uses background processing
+- Meeting prep uses background processing
 - Gmail OAuth uses callback patterns (redirects)
-- Example: Coffee chat preparation, OAuth flows
+- Example: Meeting preparation, OAuth flows
 
 **Where State Lives**
 
@@ -70,7 +70,7 @@ Firestore Database (or SQLite for legacy)
 
 ---
 
-## SECTION 2 — Frontend Deep Dive
+## SECTION 2 - Frontend Deep Dive
 
 ### Technology Stack
 
@@ -187,7 +187,7 @@ Firebase token obtained from `FirebaseAuthContext`, included in `Authorization` 
 
 ---
 
-## SECTION 3 — Backend Deep Dive
+## SECTION 3 - Backend Deep Dive
 
 ### Framework
 
@@ -268,7 +268,7 @@ return jsonify({'contacts': contacts})
 ```
 
 Some long operations use **background processing**:
-- Coffee chat prep uses threading/async patterns
+- Meeting prep uses threading/async patterns
 - Gmail OAuth uses redirects (user leaves page, comes back)
 
 No job queue (like Celery) yet - this is a known limitation.
@@ -308,7 +308,7 @@ Services raise exceptions; routes handle them.
 
 ---
 
-## SECTION 4 — The Golden Path (End-to-End)
+## SECTION 4 - The Golden Path (End-to-End)
 
 ### Core Flow: User Searches for Contacts and Gets Emails
 
@@ -424,7 +424,7 @@ Frontend receives response, updates UI:
 
 ---
 
-## SECTION 5 — External Integrations
+## SECTION 5 - External Integrations
 
 ### Gmail API
 
@@ -558,11 +558,11 @@ Frontend receives response, updates UI:
 - Response: Feature disabled or empty results
 
 **How we protect from failures**:
-- Used in specific features only (firm search, coffee chat prep)
+- Used in specific features only (firm search, meeting prep)
 - Errors logged, feature gracefully degrades
 - Not critical path (nice-to-have enrichment)
 
-**Files**: `backend/app/services/serp_client.py`, `backend/app/services/coffee_chat.py`
+**Files**: `backend/app/services/serp_client.py`, `backend/app/services/meeting.py`
 
 ### Firebase / Firestore
 
@@ -572,7 +572,7 @@ Frontend receives response, updates UI:
 - User documents: `users/{uid}` (tier, credits, email, subscription status)
 - Contacts: `users/{uid}/contacts/{contact_id}` (name, email, LinkedIn, Gmail draft info)
 - OAuth credentials: `users/{uid}/integrations/gmail` (encrypted tokens)
-- Coffee chat preps: `users/{uid}/coffee_chat_preps/{prep_id}`
+- Meeting preps: `users/{uid}/coffee_chat_preps/{prep_id}`
 - Runs/search history: `users/{uid}/runs/{run_id}`
 
 **What data comes out**:
@@ -599,7 +599,7 @@ Frontend receives response, updates UI:
 
 ---
 
-## SECTION 6 — Data Model & Persistence
+## SECTION 6 - Data Model & Persistence
 
 ### What's Stored in Firestore
 
@@ -612,7 +612,7 @@ users/
     integrations/           # Subcollection
       gmail/                # Gmail OAuth credentials
     coffee_chat_preps/      # Subcollection
-      {prep_id}/            # Coffee chat prep document
+      {prep_id}/            # Meeting prep document
     runs/                   # Subcollection (search history)
       {run_id}/             # Run document
 ```
@@ -689,11 +689,11 @@ users/
 
 Stores historical search results (optional, may not be used in all flows).
 
-### Coffee Chat Preps
+### Meeting Preps
 
 **Path**: `users/{uid}/coffee_chat_preps/{prep_id}`
 
-Stores generated coffee chat preparation documents (PDFs, analysis, etc.).
+Stores generated meeting preparation documents (PDFs, analysis, etc.).
 
 ### Outbox Threads
 
@@ -713,7 +713,7 @@ Frontend queries contacts with `gmailThreadId` exists to show outbox.
 - User accounts and subscriptions
 - Contacts (saved when user adds to directory)
 - Gmail OAuth tokens (encrypted, stored permanently until revoked)
-- Coffee chat preps
+- Meeting preps
 - Search history (runs)
 
 ### Cached vs Recomputed
@@ -735,7 +735,7 @@ Frontend queries contacts with `gmailThreadId` exists to show outbox.
 
 ---
 
-## SECTION 7 — Auth, Security, and Permissions
+## SECTION 7 - Auth, Security, and Permissions
 
 ### How Users Authenticate
 
@@ -856,7 +856,7 @@ Gmail OAuth is **separate** from Firebase Auth:
 
 ---
 
-## SECTION 8 — Failure Modes & Tradeoffs
+## SECTION 8 - Failure Modes & Tradeoffs
 
 ### Known Fragile Points
 
@@ -978,7 +978,7 @@ Gmail OAuth is **separate** from Firebase Auth:
 
 ---
 
-## SECTION 9 — How I Would Explain This to an Investor
+## SECTION 9 - How I Would Explain This to an Investor
 
 ### 60-Second Technical Explanation
 
@@ -1026,7 +1026,7 @@ The good news is that our architecture is modular - routes, services, and extern
 
 ---
 
-## SECTION 10 — What I Should Learn Next
+## SECTION 10 - What I Should Learn Next
 
 Based on this system, here are the tech areas to deepen, in order of priority:
 

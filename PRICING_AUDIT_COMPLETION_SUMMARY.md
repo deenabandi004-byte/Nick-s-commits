@@ -57,7 +57,7 @@
 
 6. **✅ Issue #10: Free Tier Reset Logic**
    - **Fixed:** `check_and_reset_usage()` now excludes Free tier (lifetime limits)
-   - **Fixed:** Free tier limits never reset (Coffee Chat Prep, Interview Prep, Alumni Searches)
+   - **Fixed:** Free tier limits never reset (Meeting Prep, Interview Prep, Alumni Searches)
    - **Files Modified:**
      - `backend/app/services/auth.py` - Updated reset logic
 
@@ -149,9 +149,9 @@
 - [ ] Monthly reset works for Pro/Elite only
 
 ### Feature Tests
-- [ ] Free: 1 Coffee Chat Prep (lifetime, no reset)
-- [ ] Pro: 10 Coffee Chat Preps/month (resets)
-- [ ] Elite: Unlimited Coffee Chat Preps
+- [ ] Free: 1 Meeting Prep (lifetime, no reset)
+- [ ] Pro: 10 Meeting Preps/month (resets)
+- [ ] Elite: Unlimited Meeting Preps
 - [ ] Batch size limits enforced (1, 5, 15)
 
 ### Edge Cases

@@ -16,7 +16,7 @@
    - Subtitle: "Track your progress and stay on top of your recruiting pipeline"
 
 ✅ **"This Week" Card** (Lines 696-726):
-   - Shows: Contacts, Firms, Coffee Chats, Total Activities
+   - Shows: Contacts, Firms, Meetings, Total Activities
    - Uses `calculateWeeklySummary()` from `dashboardStats.ts`
 
 ✅ **"Streak" Card** (Lines 728-747):
@@ -27,13 +27,13 @@
 ✅ **"Monthly Goals" Section** (Lines 750-792):
    - 3 goal cards in a grid
    - Each shows: Target icon, Label, Current/Target numbers, Progress bar, Percentage
-   - Goal types: Contacts, Firms Searched, Coffee Chats
+   - Goal types: Contacts, Firms Searched, Meetings
    - Uses `calculateGoalProgress()` from `dashboardStats.ts`
 
 ✅ **KPI Cards** (Lines 794-812):
    1. **Contacts Found + Emails** - Shows contactCount
    2. **Firms Searched** - Shows firmCount
-   3. **Coffee Chats** - Shows coffeeChatCount + "12 scheduled" subtitle
+   3. **Meetings** - Shows meetingCount + "12 scheduled" subtitle
    4. **Replies Received** - Shows 156 + "68% response rate" subtitle
    5. **Total Time Saved** - Shows calculated hours + "vs manual research" subtitle
    6. **Interview Preps** - Shows 8 + "3 completed this month" subtitle

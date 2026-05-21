@@ -18,12 +18,12 @@ and track their networking pipeline. Pricing: Free / Pro $14.99/mo / Elite $34.9
 
 Writing rules:
 - Minimum 2,500 words. More is better if the content is genuinely useful.
-- Write in a direct, tactical voice — like someone who has actually done this, not generic career advice
+- Write in a direct, tactical voice - like someone who has actually done this, not generic career advice
 - No em dashes. No "unleash", "delve", "game-changer", or other AI filler words
 - Use headers, bullets, and numbered lists to break up walls of text
-- Include at least 6 copy-paste templates or examples — real, specific, not generic placeholders
+- Include at least 6 copy-paste templates or examples - real, specific, not generic placeholders
 - Include a FAQ section at the end with 6 questions and direct answers (2-4 sentences each)
-- Mention Offerloop naturally 3-4 times maximum — earn the mention, never lead with it
+- Mention Offerloop naturally 3-4 times maximum - earn the mention, never lead with it
 - Include response rate benchmarks or data where relevant (use realistic estimates if exact data unavailable)
 - End with a CTA to Offerloop's free tier
 

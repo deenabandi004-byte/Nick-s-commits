@@ -30,7 +30,7 @@ def _persist_warmth_on_send(db, uid, contact_email, warmth_info, job_title):
 
     Called after email generation so the Phase 2 aggregation scanner can
     bucket contacts by warmth and seniority. Idempotent (merge update).
-    Must never block the email-send flow — all exceptions are swallowed.
+    Must never block the email-send flow - all exceptions are swallowed.
     """
     try:
         email_clean = (contact_email or "").strip().lower()
@@ -193,7 +193,7 @@ def generate_and_draft():
 
     # Pull resumeParsed from Firestore (includes LinkedIn enrichment + resume data)
     # This gives the email generator rich context: skills, career_interests,
-    # extracurriculars, certifications, experience — even for LinkedIn-only users
+    # extracurriculars, certifications, experience - even for LinkedIn-only users
     resume_parsed = user_data.get("resumeParsed")
     if resume_parsed and isinstance(resume_parsed, dict):
         print(f"[EmailGen] Using resumeParsed from Firestore: name={resume_parsed.get('name')!r}, "
@@ -310,7 +310,7 @@ def generate_and_draft():
                 _cached_resume_data = None
             # Guard: skip very large attachments
             elif len(_cached_resume_data) > 8 * 1024 * 1024:
-                print(f"Resume too large ({len(_cached_resume_data)} bytes) — skipping")
+                print(f"Resume too large ({len(_cached_resume_data)} bytes) - skipping")
                 _cached_resume_data = None
         except Exception as e:
             print(f"Could not download resume from {resume_url}: {e}")
@@ -560,7 +560,7 @@ def generate_and_draft():
                 # Store personalization metadata if available
                 # New fields (leadType, commonalityTypes, warmthTierFinal, wordCountFinal,
                 # leadHookUsedInBody) added 2026-04-28. Old contacts only have
-                # personalizationLabel + personalizationType. No backfill — filter
+                # personalizationLabel + personalizationType. No backfill - filter
                 # analysis by emailGeneratedAt >= 2026-04-28 for clean P0 measurement.
                 personalization = r.get("personalization")
                 if personalization:

@@ -26,7 +26,7 @@ def qs(query):
 
 
 # ============================================================
-# QUERY BUILDING — prompt_pdl_search._build_query
+# QUERY BUILDING - prompt_pdl_search._build_query
 # ============================================================
 
 class TestQueryBuilding:
@@ -72,7 +72,7 @@ class TestQueryBuilding:
         assert "job_title" in s
 
     def test_04_no_roles_with_company(self):
-        """No roles but with company — no job_title exists fallback needed."""
+        """No roles but with company - no job_title exists fallback needed."""
         q = _build_query(self._filters(company=["Google"]), self.STRICT)
         s = qs(q)
         assert "google" in s
@@ -89,7 +89,7 @@ class TestQueryBuilding:
     # --- 6-10: Location queries ---
 
     def test_06_no_location_no_us_filter(self):
-        """No location specified — no US country filter added."""
+        """No location specified - no US country filter added."""
         q = _build_query(self._filters(roles=["PM"]), self.STRICT)
         s = qs(q)
         assert "united states" not in s
@@ -103,21 +103,21 @@ class TestQueryBuilding:
         assert "location_metro" in s or "location_locality" in s
 
     def test_08_international_london(self):
-        """London — international, no US country filter."""
+        """London - international, no US country filter."""
         q = _build_query(self._filters(roles=["SWE"], location=["London"]), self.STRICT)
         s = qs(q)
         assert "london" in s
         assert "united states" not in s
 
     def test_09_international_tokyo(self):
-        """Tokyo — international, no US country filter."""
+        """Tokyo - international, no US country filter."""
         q = _build_query(self._filters(roles=["PM"], location=["Tokyo"]), self.STRICT)
         s = qs(q)
         assert "tokyo" in s
         assert "united states" not in s
 
     def test_10_international_singapore(self):
-        """Singapore — international, no US country filter."""
+        """Singapore - international, no US country filter."""
         q = _build_query(self._filters(roles=["Analyst"], location=["Singapore"]), self.STRICT)
         s = qs(q)
         assert "singapore" in s
@@ -205,7 +205,7 @@ class TestBuildQueryFromPrompt:
         }
 
     def test_21_no_location_no_us_default(self):
-        """No location — no US country filter (fix #4)."""
+        """No location - no US country filter (fix #4)."""
         q = build_query_from_prompt(self._parsed(companies=["Google"], titles=["SWE"]), retry_level=0)
         s = qs(q)
         assert "united states" not in s
@@ -458,7 +458,7 @@ class TestPostFilterCriteria:
 
 
 # ============================================================
-# SEARCH QUALITY FIXES — Tests for Fixes 1-7
+# SEARCH QUALITY FIXES - Tests for Fixes 1-7
 # Validates that real student networking queries produce correct
 # query structures and that post-filtering doesn't drop valid matches.
 # ============================================================
@@ -475,7 +475,7 @@ class TestSearchQualityFixes:
             "industries": industries or [],
         }
 
-    # ---- Fix 2: Title matching — phrase match for precision ----
+    # ---- Fix 2: Title matching - phrase match for precision ----
 
     def test_51_multiword_title_phrase_only_no_tokenized_match(self):
         """Multi-word title like 'investment banking analyst' uses match_phrase ONLY (no tokenized match)."""
@@ -517,7 +517,7 @@ class TestSearchQualityFixes:
         )
         s = qs(q)
         assert "software development engineer" in s
-        # Level 1 is intentionally looser — plain match, not match_phrase
+        # Level 1 is intentionally looser - plain match, not match_phrase
         assert "match" in s
 
     def test_54_retry_level_1_single_word_uses_match(self):
@@ -533,7 +533,7 @@ class TestSearchQualityFixes:
     # ---- Fix 3: Bidirectional company substring check ----
 
     def test_55_company_postfilter_meta_matches_meta_platforms(self):
-        """PDL returns 'Meta' but user searched 'Meta Platforms' — should pass."""
+        """PDL returns 'Meta' but user searched 'Meta Platforms' - should pass."""
         contact = {
             "FirstName": "A", "LastName": "B", "Company": "Meta",
             "Title": "SWE", "College": "", "EducationTop": "",
@@ -547,7 +547,7 @@ class TestSearchQualityFixes:
         assert matches, "PDL 'Meta' should match user search 'Meta Platforms' (bidirectional)"
 
     def test_56_company_postfilter_jpmorgan_chase_matches_jpmorgan(self):
-        """PDL returns 'JPMorgan Chase & Co.' but user searched 'JPMorgan' — should pass."""
+        """PDL returns 'JPMorgan Chase & Co.' but user searched 'JPMorgan' - should pass."""
         contact = {
             "FirstName": "A", "LastName": "B", "Company": "JPMorgan Chase & Co.",
             "Title": "Analyst", "College": "", "EducationTop": "",
@@ -577,7 +577,7 @@ class TestSearchQualityFixes:
         assert isinstance(matches, bool)
 
     def test_58_company_postfilter_goldman_sachs_variations(self):
-        """Goldman Sachs Group vs Goldman Sachs — should match."""
+        """Goldman Sachs Group vs Goldman Sachs - should match."""
         contact = {
             "FirstName": "A", "LastName": "B", "Company": "Goldman Sachs",
             "Title": "Analyst", "College": "", "EducationTop": "",
@@ -590,7 +590,7 @@ class TestSearchQualityFixes:
         )
         assert matches, "'Goldman Sachs' should match 'Goldman Sachs Group' (bidirectional)"
 
-    # ---- Fix 4: Location filter — state as should, not must ----
+    # ---- Fix 4: Location filter - state as should, not must ----
 
     def test_59_location_sf_uses_should_block(self):
         """San Francisco search should put metro/city/state in a single should block."""
@@ -605,7 +605,7 @@ class TestSearchQualityFixes:
         assert '"should"' in s, "Location should use a should block for metro/city/state"
 
     def test_60_location_nyc_not_strict_state_must(self):
-        """NYC search: state should NOT be a separate must clause — it's in the should block."""
+        """NYC search: state should NOT be a separate must clause - it's in the should block."""
         q = build_query_from_prompt(
             self._parsed(titles=["analyst"], locations=["New York"]),
             retry_level=0,
@@ -656,7 +656,7 @@ class TestSearchQualityFixes:
         s = qs(q)
         assert "match_phrase" in s
         assert "goldman sachs" in s
-        # PDL doesn't support operator param — uses simple match (tokenized OR)
+        # PDL doesn't support operator param - uses simple match (tokenized OR)
         assert '"operator"' not in s
 
     def test_64_single_word_company_only_phrase_match(self):
@@ -672,7 +672,7 @@ class TestSearchQualityFixes:
     # ---- Real student networking scenarios ----
 
     def test_65_ib_analyst_at_goldman(self):
-        """'Investment banking analysts at Goldman Sachs' — titles should use OR, company should match."""
+        """'Investment banking analysts at Goldman Sachs' - titles should use OR, company should match."""
         q = build_query_from_prompt(
             self._parsed(
                 companies=["Goldman Sachs"],
@@ -688,7 +688,7 @@ class TestSearchQualityFixes:
         assert "goldman sachs" in s
 
     def test_66_usc_alumni_at_mckinsey(self):
-        """'USC alumni at McKinsey' — should have school and company filters."""
+        """'USC alumni at McKinsey' - should have school and company filters."""
         q = build_query_from_prompt(
             self._parsed(
                 companies=["McKinsey"],
@@ -704,7 +704,7 @@ class TestSearchQualityFixes:
         assert "consultant" in s
 
     def test_67_swe_at_google_sf(self):
-        """'Software engineers at Google in San Francisco' — full query with location."""
+        """'Software engineers at Google in San Francisco' - full query with location."""
         q = build_query_from_prompt(
             self._parsed(
                 companies=["Google"],
@@ -720,7 +720,7 @@ class TestSearchQualityFixes:
         assert "location_metro" in s or "location_locality" in s
 
     def test_68_data_scientist_at_meta(self):
-        """'Data scientists at Meta' — single-word company, should use match_phrase."""
+        """'Data scientists at Meta' - single-word company, should use match_phrase."""
         q = build_query_from_prompt(
             self._parsed(
                 companies=["Meta"],
@@ -735,7 +735,7 @@ class TestSearchQualityFixes:
         assert '"operator"' not in s
 
     def test_69_people_at_jp_morgan_nyc(self):
-        """'People at JP Morgan in New York' — company + location."""
+        """'People at JP Morgan in New York' - company + location."""
         q = build_query_from_prompt(
             self._parsed(
                 companies=["JP Morgan"],
@@ -763,7 +763,7 @@ class TestSearchQualityFixes:
         assert matches
 
     def test_71_postfilter_mckinsey_and_company(self):
-        """'McKinsey & Company' vs 'McKinsey' — bidirectional match should pass."""
+        """'McKinsey & Company' vs 'McKinsey' - bidirectional match should pass."""
         contact = {
             "FirstName": "J", "LastName": "D", "Company": "McKinsey & Company",
             "Title": "Consultant", "College": "", "EducationTop": "",
@@ -777,7 +777,7 @@ class TestSearchQualityFixes:
         assert matches, "'McKinsey' should match 'McKinsey & Company' (bidirectional)"
 
     def test_72_postfilter_bain_and_company(self):
-        """'Bain & Company' vs 'Bain' — should pass."""
+        """'Bain & Company' vs 'Bain' - should pass."""
         contact = {
             "FirstName": "A", "LastName": "B", "Company": "Bain & Company",
             "Title": "Associate Consultant", "College": "USC", "EducationTop": "",
@@ -1006,7 +1006,7 @@ class TestAlreadySavedContactSurfacing:
 class TestTitleBroadening:
     """
     Regression guards for the single-token `match` bug and the title-broadening
-    retry rung. See /tmp/pdl_diagnostic.py — PDL silently returns 0 hits for a
+    retry rung. See /tmp/pdl_diagnostic.py - PDL silently returns 0 hits for a
     bare {"match": {"job_title": "<common-token>"}} clause (e.g. "data"), so
     the level 0 query must NEVER emit one, and the level 1 (broadening) rung
     must use match_phrase bool.should, not plain match.
@@ -1058,7 +1058,7 @@ class TestTitleBroadening:
                 f"(PDL silently returns 0 for common tokens). Got: {bare_match_on_title}"
             )
             # But match_phrase on the token must be present (that's how single-word
-            # titles are queried correctly — it's equivalent to a term lookup).
+            # titles are queried correctly - it's equivalent to a term lookup).
             phrase_matches = [
                 (qt, field, value)
                 for (qt, field, value) in self._iter_match_clauses(q)

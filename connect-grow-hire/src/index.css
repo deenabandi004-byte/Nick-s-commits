@@ -25,15 +25,15 @@
   :root {
     /* Brand Blue palette */
     --background: 0 0% 100%;        /* #FFFFFF */
-    --foreground: 222 47% 11%;      /* #0F172A — navy ink */
+    --foreground: 222 47% 11%;      /* #0F172A - navy ink */
 
-    --card: 226 100% 98%;           /* #FAFBFF — cool surface */
+    --card: 226 100% 98%;           /* #FAFBFF - cool surface */
     --card-foreground: 222 47% 11%;
 
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 60%;         /* #3B82F6 — brand blue */
+    --primary: 217 91% 60%;         /* #3B82F6 - brand blue */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 60% 98%;       /* cool off-white */
@@ -48,13 +48,13 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;          /* #E2E8F0 — cool border */
+    --border: 214 32% 91%;          /* #E2E8F0 - cool border */
     --input: 214 32% 91%;
     --ring: 217 91% 60%;            /* blue ring */
 
     --radius: 3px;
 
-    /* Sidebar Tokens — deep navy */
+    /* Sidebar Tokens - deep navy */
     --sidebar-background: 220 60% 6%;   /* #060D1A */
     --sidebar-foreground: 213 100% 90%;
     --sidebar-primary: 217 91% 60%;
@@ -85,14 +85,14 @@
     --brand-border: #E2E8F0;
     --brand-border-light: #EEF2F8;
 
-    /* Warm palette — repointed to neutral to match landing page (#FFFFFF) */
+    /* Warm palette - repointed to neutral to match landing page (#FFFFFF) */
     --warm-bg: #FFFFFF;                     /* was #FEFDFB */
-    --warm-surface: #F9FAFB;                /* was #FAF9F6 — subtle gray for cards */
+    --warm-surface: #F9FAFB;                /* was #FAF9F6 - subtle gray for cards */
     --warm-surface-hover: #F3F4F6;          /* was #F5F3EF */
     --warm-border: #E5E7EB;                 /* was #E8E4DE */
     --warm-border-light: #F0F1F3;           /* was #F0EDE8 */
-    --warm-ink-secondary: #475569;          /* was #6B6560 — aligns with --brand-ink-secondary */
-    --warm-ink-tertiary: #94A3B8;           /* was #9C9590 — aligns with --brand-ink-tertiary */
+    --warm-ink-secondary: #475569;          /* was #6B6560 - aligns with --brand-ink-secondary */
+    --warm-ink-tertiary: #94A3B8;           /* was #9C9590 - aligns with --brand-ink-tertiary */
     --warm-shadow: 0 1px 3px rgba(15,23,42,0.06), 0 1px 2px rgba(15,23,42,0.04);
     --warm-shadow-hover: 0 4px 12px rgba(15,23,42,0.08), 0 2px 4px rgba(15,23,42,0.04);
 
@@ -183,7 +183,7 @@
     background-color: var(--paper, #FFFFFF);
   }
 
-  /* Clean card — warm surface bg, book border */
+  /* Clean card - warm surface bg, book border */
   .glass-card {
     background: #FAFBFF !important;
     border: 1px solid #E2E8F0;
@@ -198,7 +198,7 @@
     box-shadow: 0 2px 8px rgba(59, 130, 246, 0.10);
   }
 
-  /* Subtle card hover — no aggressive blue glow */
+  /* Subtle card hover - no aggressive blue glow */
   .card:hover {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
   }
@@ -324,7 +324,7 @@
     font-weight: 600;
   }
 
-  /* Active tabs — dark ink bg */
+  /* Active tabs - dark ink bg */
   [role="tab"][data-state="active"] {
     background: #0F172A !important;
     color: #FAFBFF !important;
@@ -396,6 +396,30 @@
 @keyframes cursor-blink {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
+}
+
+/* Scout header button: floating glow + expanding attention ring (home only) */
+@keyframes scout-pulse-ring {
+  0% {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.40), 0 0 0 0 rgba(59, 130, 246, 0.45);
+  }
+  70% {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.40), 0 0 0 9px rgba(59, 130, 246, 0);
+  }
+  100% {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.40), 0 0 0 0 rgba(59, 130, 246, 0);
+  }
+}
+
+.scout-btn-pulse {
+  animation: scout-pulse-ring 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scout-btn-pulse {
+    animation: none;
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.40);
+  }
 }
 
 @keyframes logo-entrance {
@@ -612,7 +636,7 @@
 }
 
 
-/* Scrollbar Thumb — neutral gray */
+/* Scrollbar Thumb - neutral gray */
 ::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.15);
   border-radius: 4px;

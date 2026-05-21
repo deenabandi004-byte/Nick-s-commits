@@ -11,7 +11,7 @@ const CUSTOM_OVERRIDES: Record<string, { title: string; description: string }> =
   },
   'mckinsey-vs-deloitte': {
     title: `McKinsey vs Deloitte: Consulting Recruiting Compared (${YEAR})`,
-    description: 'MBB vs Big 4 — which is right for your background? Compare McKinsey and Deloitte on recruiting difficulty, target schools, salaries, and exit opportunities.',
+    description: 'MBB vs Big 4 - which is right for your background? Compare McKinsey and Deloitte on recruiting difficulty, target schools, salaries, and exit opportunities.',
   },
   'mckinsey-vs-oliver-wyman': {
     title: `McKinsey vs Oliver Wyman: Which Consulting Firm to Target? (${YEAR})`,
@@ -39,7 +39,7 @@ const CUSTOM_OVERRIDES: Record<string, { title: string; description: string }> =
   },
   'goldman-sachs-vs-jpmorgan': {
     title: `Goldman Sachs vs JPMorgan: IB Recruiting, Culture & Which to Choose (${YEAR})`,
-    description: 'The two most targeted banks in investment banking recruiting — compared side by side. Target schools, interview format, culture, and which is harder to break into.',
+    description: 'The two most targeted banks in investment banking recruiting - compared side by side. Target schools, interview format, culture, and which is harder to break into.',
   },
   'evercore-vs-lazard': {
     title: `Evercore vs Lazard: Elite Boutique IB Recruiting Compared (${YEAR})`,
@@ -47,14 +47,14 @@ const CUSTOM_OVERRIDES: Record<string, { title: string; description: string }> =
   },
   'apollo-vs-carlyle': {
     title: `Apollo vs Carlyle: PE Recruiting, Culture & Target Schools (${YEAR})`,
-    description: 'Two of the biggest names in private equity — compared for recruiting. See on-cycle vs off-cycle timelines, target schools, and how to break into both firms.',
+    description: 'Two of the biggest names in private equity - compared for recruiting. See on-cycle vs off-cycle timelines, target schools, and how to break into both firms.',
   },
 };
 
 const BLOG_OVERRIDES: Record<string, { title: string; description: string }> = {
   'how-to-find-professional-email-address': {
     title: `How to Find Professional Email Addresses Ethically (Free Methods, ${YEAR})`,
-    description: 'The exact methods students use to ethically find verified emails for cold outreach to bankers, consultants, and PE professionals — no paid tools required.',
+    description: 'The exact methods students use to ethically find verified emails for cold outreach to bankers, consultants, and PE professionals - no paid tools required.',
   },
   'cold-email-mckinsey-consultant': {
     title: `How to Cold Email a McKinsey Consultant (Template That Works, ${YEAR})`,
@@ -80,26 +80,26 @@ export function generateMeta(
     case 'compare':
       return {
         title: `${data.companyA || ''} vs ${data.companyB || ''}: Recruiting, Target Schools & Culture (${YEAR})`,
-        description: `See which firm fits your background — target schools, internship timelines, and who actually gets hired at ${data.companyA || ''} vs ${data.companyB || ''}.`,
+        description: `See which firm fits your background - target schools, internship timelines, and who actually gets hired at ${data.companyA || ''} vs ${data.companyB || ''}.`,
       };
-    case 'coffee-chat':
+    case 'meeting':
       return {
-        title: `How to Get a Coffee Chat at ${data.company || ''} — Email Templates & Tips`,
+        title: `How to Get a Meeting at ${data.company || ''} - Email Templates & Tips`,
         description: `Copy-paste cold email scripts that actually get responses from ${data.company || ''} employees. Used by students at target schools.`,
       };
     case 'cold-email':
       return {
-        title: `Cold Email Templates for ${data.industry || ''} Jobs — ${YEAR}`,
+        title: `Cold Email Templates for ${data.industry || ''} Jobs - ${YEAR}`,
         description: `Tested cold email templates for breaking into ${data.industry || ''}. Copy-paste ready for students with no prior connections.`,
       };
     case 'networking':
       return {
         title: `${data.company || ''} Networking Guide for Students (${YEAR})`,
-        description: `How to build a connection at ${data.company || ''} before you apply — alumni paths, warm intro scripts, and timing.`,
+        description: `How to build a connection at ${data.company || ''} before you apply - alumni paths, warm intro scripts, and timing.`,
       };
     case 'alumni':
       return {
-        title: `${data.university || ''} Alumni Network Guide — Who to Reach & How`,
+        title: `${data.university || ''} Alumni Network Guide - Who to Reach & How`,
         description: `Find ${data.university || ''} alumni at top firms and learn exactly how to reach out. Built for students looking to break in.`,
       };
     case 'blog': {

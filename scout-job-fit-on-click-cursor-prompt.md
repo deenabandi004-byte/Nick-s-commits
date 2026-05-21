@@ -408,7 +408,7 @@ const analyzeJob = async (job: JobListing, jobId: string) => {
                   <span className="text-green-500 mt-0.5">✓</span>
                   <div>
                     <span className="text-sm text-slate-800">{s.point}</span>
-                    <span className="text-xs text-slate-500 ml-1">— {s.evidence}</span>
+                    <span className="text-xs text-slate-500 ml-1"> - {s.evidence}</span>
                   </div>
                 </div>
               ))}
@@ -531,9 +531,9 @@ Click Analyze Fit on any job to see how well you match.
 │                                                    │
 │  What aligns:                                      │
 │  ✓ Data Science @ USC shows analytical rigor      │
-│    — Coursework in statistics and data analysis   │
+│ - Coursework in statistics and data analysis   │
 │  ✓ Offerloop demonstrates project ownership       │
-│    — Built full-stack SaaS from scratch           │
+│ - Built full-stack SaaS from scratch           │
 │                                                    │
 │  Gaps to address:                                  │
 │  ! No formal PM title                              │

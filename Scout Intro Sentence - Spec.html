@@ -5,7 +5,7 @@
 </script>
 
 <meta charset="UTF-8"/>
-<title>Scout Intro Sentence — Spec & Fallback Ladder</title>
+<title>Scout Intro Sentence - Spec & Fallback Ladder</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -104,7 +104,7 @@
     <tr><td><b>"Priya Desai"</b></td><td>A specific real alum exists who works at {company}</td><td>alumni index · current employer verified</td></tr>
     <tr><td><b>"'22"</b></td><td>Graduation year</td><td>alumni index · school record</td></tr>
     <tr><td><b>"Ads ML team"</b></td><td>Specific team, not just job title</td><td>LinkedIn enrichment · most recent title/team parse</td></tr>
-    <tr><td><b>"closest path in"</b></td><td>Ranking — she's the best single intro candidate</td><td>derived: path score (see §3)</td></tr>
+    <tr><td><b>"closest path in"</b></td><td>Ranking - she's the best single intro candidate</td><td>derived: path score (see §3)</td></tr>
     <tr><td><b>"replied to three cohort intros"</b></td><td>Responsive to USC students in the last ~30 days</td><td>internal: intro tracking · messages-sent-and-responded</td></tr>
   </tbody>
 </table>
@@ -112,8 +112,8 @@
 <hr/>
 
 <h2><span class="num">02</span>Data schema required</h2>
-<p>Here's the minimum record we need on each alum to even attempt the top-tier sentence. Treat each field as independently nullable — the fallback ladder in §4 reads from whichever fields exist.</p>
-<pre><span class="c">// Alumni record — what we need per person</span>
+<p>Here's the minimum record we need on each alum to even attempt the top-tier sentence. Treat each field as independently nullable - the fallback ladder in §4 reads from whichever fields exist.</p>
+<pre><span class="c">// Alumni record - what we need per person</span>
 {
   <span class="k">id</span>:               <span class="s">"usc_priya_desai_01"</span>,
   <span class="k">name</span>:             <span class="s">"Priya Desai"</span>,
@@ -151,18 +151,18 @@
 
 <h3>The four hardest fields</h3>
 <ul class="checks">
-  <li><b>current.team</b> — LinkedIn rarely gives you team cleanly. You parse it out of the title, the "about" section, or recent posts. Confidence score is essential; never render a team string you're not ≥0.85 confident on.</li>
-  <li><b>current.verified_at</b> — If the record is older than 90 days, degrade silently. "Works at Google" is safe stale; "on the Ads ML team" is not — teams change every 6–12 months.</li>
-  <li><b>responsiveness</b> — Requires you to have tracked intros in your own system. For a new user or a company we haven't routed intros to, this will be empty. Most rows will not qualify for the top rung of the ladder in their first month of use.</li>
-  <li><b>privacy.allow_name_in_ui</b> — Default this to <b>false</b>. Alumni opt in to being named in prompts like this (settings toggle on profile). Without consent, always degrade to anonymized templates. Legal + ethical.</li>
+  <li><b>current.team</b> - LinkedIn rarely gives you team cleanly. You parse it out of the title, the "about" section, or recent posts. Confidence score is essential; never render a team string you're not ≥0.85 confident on.</li>
+  <li><b>current.verified_at</b> - If the record is older than 90 days, degrade silently. "Works at Google" is safe stale; "on the Ads ML team" is not - teams change every 6–12 months.</li>
+  <li><b>responsiveness</b> - Requires you to have tracked intros in your own system. For a new user or a company we haven't routed intros to, this will be empty. Most rows will not qualify for the top rung of the ladder in their first month of use.</li>
+  <li><b>privacy.allow_name_in_ui</b> - Default this to <b>false</b>. Alumni opt in to being named in prompts like this (settings toggle on profile). Without consent, always degrade to anonymized templates. Legal + ethical.</li>
 </ul>
 
 <hr/>
 
 <h2><span class="num">03</span>The "closest path in" score</h2>
-<p>One alum per company gets the "closest path in" label. We rank candidates with a small feature-weighted score and pick the top one (with a margin threshold — if #1 and #2 are tied, we say "two strong paths" instead).</p>
+<p>One alum per company gets the "closest path in" label. We rank candidates with a small feature-weighted score and pick the top one (with a margin threshold - if #1 and #2 are tied, we say "two strong paths" instead).</p>
 
-<pre><span class="c">// path_score(alum, user) — higher = closer path in</span>
+<pre><span class="c">// path_score(alum, user) - higher = closer path in</span>
 score = 0
 <span class="c">// base: must be findable and consented</span>
 <span class="k">if</span> !alum.privacy.allow_name_in_ui <span class="k">return</span> -1
@@ -185,12 +185,12 @@ score += <span class="n">max</span>(<span class="n">0</span>, <span class="n">5<
 
 <span class="k">return</span> score</pre>
 
-<div class="callout">The "closest path in" label only fires if the top candidate's score is ≥ <b>3.0</b> <b>and</b> beats the runner-up by ≥ <b>1.5</b>. Otherwise degrade — it's better to say nothing than to hero a weak tie.</div>
+<div class="callout">The "closest path in" label only fires if the top candidate's score is ≥ <b>3.0</b> <b>and</b> beats the runner-up by ≥ <b>1.5</b>. Otherwise degrade - it's better to say nothing than to hero a weak tie.</div>
 
 <hr/>
 
 <h2><span class="num">04</span>The fallback ladder</h2>
-<p>Five rungs. Read in order; use the first rung whose conditions all pass. The sentence on the hero renders whatever rung matches — there is <b>always</b> a valid output, even for an empty alumni record.</p>
+<p>Five rungs. Read in order; use the first rung whose conditions all pass. The sentence on the hero renders whatever rung matches - there is <b>always</b> a valid output, even for an empty alumni record.</p>
 
 <div class="ladder">
 
@@ -200,7 +200,7 @@ score += <span class="n">max</span>(<span class="n">0</span>, <span class="n">5<
       <div class="title">Named alum + team + responsiveness <span class="signal ok">ideal</span></div>
       <div class="cond">path_score ≥ 3.0 · team.confidence ≥ 0.85 · verified &lt; 90d · privacy.allow_name_in_ui · responsiveness.intros_replied_30d ≥ 1</div>
       <div class="out">Your closest path in: <b>Priya Desai, '22</b>, on the Ads ML team. She's replied to <b>three</b> cohort intros this month.</div>
-      <div class="note">The sentence the hero was designed for. Rare — probably 15–25% of company rows for an average user. That's okay; the lower rungs are still strong.</div>
+      <div class="note">The sentence the hero was designed for. Rare - probably 15–25% of company rows for an average user. That's okay; the lower rungs are still strong.</div>
     </div>
   </div>
 
@@ -219,8 +219,8 @@ score += <span class="n">max</span>(<span class="n">0</span>, <span class="n">5<
     <div>
       <div class="title">Named alum, no team <span class="signal warn">good</span></div>
       <div class="cond">path_score ≥ 3.0 · privacy.allow_name_in_ui · (team.confidence &lt; 0.85 OR stale)</div>
-      <div class="out">Your closest path in: <b>Priya Desai, '22</b> — same major, two shared professors.</div>
-      <div class="note">Swaps the team for shared-context facts (major, professors, clubs, internships — whatever overlap data we do have). Feels personal without making a claim we can't defend.</div>
+      <div class="out">Your closest path in: <b>Priya Desai, '22</b> - same major, two shared professors.</div>
+      <div class="note">Swaps the team for shared-context facts (major, professors, clubs, internships - whatever overlap data we do have). Feels personal without making a claim we can't defend.</div>
     </div>
   </div>
 
@@ -229,7 +229,7 @@ score += <span class="n">max</span>(<span class="n">0</span>, <span class="n">5<
     <div>
       <div class="title">Anonymized, cohort stat <span class="signal warn">safe</span></div>
       <div class="cond">No alum meets R1–R3 threshold, but cohort data exists · count ≥ 3</div>
-      <div class="out"><b>Twelve</b> USC alumni work here in data roles — <b>three</b> started this fall.</div>
+      <div class="out"><b>Twelve</b> USC alumni work here in data roles - <b>three</b> started this fall.</div>
       <div class="note">Same as the headline on the hero. Falls back to aggregate stats. Never names a person. This is the default most rows will land on at first.</div>
     </div>
   </div>
@@ -239,8 +239,8 @@ score += <span class="n">max</span>(<span class="n">0</span>, <span class="n">5<
     <div>
       <div class="title">Sector-only fallback <span class="signal bad">minimum</span></div>
       <div class="cond">No alumni data · company is in a relevant sector for the user</div>
-      <div class="out">A <b>Tech · AI</b> company on your radar — tight fit for your Data Science coursework.</div>
-      <div class="note">Never claims Trojan presence when there isn't any. Talks about the fit instead. If even this fails, the company shouldn't be in the top 5 — demote it.</div>
+      <div class="out">A <b>Tech · AI</b> company on your radar - tight fit for your Data Science coursework.</div>
+      <div class="note">Never claims Trojan presence when there isn't any. Talks about the fit instead. If even this fails, the company shouldn't be in the top 5 - demote it.</div>
     </div>
   </div>
 
@@ -249,7 +249,7 @@ score += <span class="n">max</span>(<span class="n">0</span>, <span class="n">5<
 <hr/>
 
 <h2><span class="num">05</span>Generation prompt (LLM-assisted sentences)</h2>
-<p>For R1–R3 we use a deterministic template. For R4–R5 we also use a template. The LLM is <b>only</b> used to lightly vary the phrasing for the hero detail paragraph (the 2-line prose block below the italic headline) — never to invent facts. Here's the prompt.</p>
+<p>For R1–R3 we use a deterministic template. For R4–R5 we also use a template. The LLM is <b>only</b> used to lightly vary the phrasing for the hero detail paragraph (the 2-line prose block below the italic headline) - never to invent facts. Here's the prompt.</p>
 
 <pre><span class="c">/* ========================================================================
    SYSTEM
@@ -258,7 +258,7 @@ You are Scout, a careful editorial voice inside Offerloop. You write ONE
 short paragraph (2 sentences, under 40 words) for a hero card that
 recommends a company to a USC student.
 
-Rules — violating any of these is a failure:
+Rules - violating any of these is a failure:
 1. Use ONLY facts from the provided JSON. Do not invent names, teams,
    numbers, dates, or relationships.
 2. If a field is null or missing, you do not reference it. You never
@@ -304,24 +304,24 @@ ALUMNI_SIGNAL: {
 <span class="c">/* ========================================================================
    FEW-SHOT EXAMPLES
    ======================================================================== */</span>
-Example 1 — R1 (rich)
+Example 1 - R1 (rich)
 OUT: "Your closest path in: Priya Desai, '22, on the Ads ML team.
      She's replied to three cohort intros this month."
 
-Example 2 — R2 (no responsiveness)
+Example 2 - R2 (no responsiveness)
 OUT: "Your closest path in: Marcus Chen, '21, on the Maps infra team.
      Same major, two shared professors."
 
-Example 3 — R3 (no team)
-OUT: "Your closest path in: Amy Rodriguez, '23 — same major, Trojan Data
+Example 3 - R3 (no team)
+OUT: "Your closest path in: Amy Rodriguez, '23 - same major, Trojan Data
      alum, and she started here eight months ago."
 
-Example 4 — R4 (anonymized)
+Example 4 - R4 (anonymized)
 OUT: "Twelve USC alumni work in data roles here, with three starting this
-     fall. No single warmest intro yet — but the pipeline is deep."
+     fall. No single warmest intro yet - but the pipeline is deep."
 
-Example 5 — R5 (sector only)
-OUT: "A Tech · AI company on your radar — tight fit for your Data Science
+Example 5 - R5 (sector only)
+OUT: "A Tech · AI company on your radar - tight fit for your Data Science
      coursework. No tracked Trojans here yet."
 
 <span class="c">/* ========================================================================
@@ -350,7 +350,7 @@ and the client will degrade to the next rung down.</pre>
   <li><b>Number whitelist.</b> Every digit or spelled-out number in the paragraph must correspond to a value in <code>facts_used</code>. Rejects "four" when only "3" was provided.</li>
   <li><b>Team-claim lock.</b> If <code>team_confidence &lt; 0.85</code> and the paragraph mentions "team," strip the clause and fall back to R3.</li>
   <li><b>Staleness stamp.</b> Any fact pulled from a record with <code>verified_at</code> older than 90 days is flagged; we append "<em>(verified in [month])</em>" in mono 9px under the paragraph rather than silently mislead.</li>
-  <li class="x"><b>Never ship a rung without its guardrail.</b> If validation fails twice at the same rung, drop to the next rung automatically — do not retry the LLM a third time.</li>
+  <li class="x"><b>Never ship a rung without its guardrail.</b> If validation fails twice at the same rung, drop to the next rung automatically - do not retry the LLM a third time.</li>
 </ul>
 
 <hr/>
@@ -360,20 +360,20 @@ and the client will degrade to the next rung down.</pre>
 <table>
   <thead><tr><th>Metric</th><th>Target</th><th>Alert when</th></tr></thead>
   <tbody>
-    <tr><td>R1 fire rate</td><td>15–25% of hero renders</td><td>&lt; 5% for 48h — data pipeline probably broken</td></tr>
-    <tr><td>R5 fire rate</td><td>&lt; 20%</td><td>&gt; 40% — alumni index stale or user has thin signals</td></tr>
-    <tr><td>Guardrail rejection rate</td><td>&lt; 2%</td><td>&gt; 5% — prompt or model drifting</td></tr>
-    <tr><td>Staleness-flag rate</td><td>&lt; 10%</td><td>&gt; 25% — LinkedIn scrape cadence too slow</td></tr>
-    <tr><td>User "wrong!" report</td><td>&lt; 0.5%</td><td>any sustained uptick — individual facts are wrong; audit sources</td></tr>
+    <tr><td>R1 fire rate</td><td>15–25% of hero renders</td><td>&lt; 5% for 48h - data pipeline probably broken</td></tr>
+    <tr><td>R5 fire rate</td><td>&lt; 20%</td><td>&gt; 40% - alumni index stale or user has thin signals</td></tr>
+    <tr><td>Guardrail rejection rate</td><td>&lt; 2%</td><td>&gt; 5% - prompt or model drifting</td></tr>
+    <tr><td>Staleness-flag rate</td><td>&lt; 10%</td><td>&gt; 25% - LinkedIn scrape cadence too slow</td></tr>
+    <tr><td>User "wrong!" report</td><td>&lt; 0.5%</td><td>any sustained uptick - individual facts are wrong; audit sources</td></tr>
   </tbody>
 </table>
 
 <hr/>
 
 <h2><span class="num">08</span>What this means for design</h2>
-<p>The hero component should accept a <code>rung</code> prop and render accordingly. Do NOT try to render "R1 with an R4 fallback underneath" — pick one, commit, style it like it was always the only version. The italic paragraph is the same shape at every rung; only the facts inside change.</p>
+<p>The hero component should accept a <code>rung</code> prop and render accordingly. Do NOT try to render "R1 with an R4 fallback underneath" - pick one, commit, style it like it was always the only version. The italic paragraph is the same shape at every rung; only the facts inside change.</p>
 
-<div class="callout">The design's job is to make every rung look intentional. If R5 feels like a sad consolation prize, we've failed. R5 should feel like Scout honestly telling you "not yet, but here's why it still matters" — which is <b>more</b> trustworthy than a fabricated Priya Desai.</div>
+<div class="callout">The design's job is to make every rung look intentional. If R5 feels like a sad consolation prize, we've failed. R5 should feel like Scout honestly telling you "not yet, but here's why it still matters" - which is <b>more</b> trustworthy than a fabricated Priya Desai.</div>
 
 </main>
 </body>

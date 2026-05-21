@@ -791,7 +791,7 @@ function injectAutofillButton(atsName) {
   const btn = document.createElement('button');
   btn.id = 'ol-autofill-btn';
   btn.className = 'ol-autofill-fab';
-  btn.setAttribute('title', `Offerloop Autofill — ${atsName} form detected`);
+  btn.setAttribute('title', `Offerloop Autofill - ${atsName} form detected`);
   btn.innerHTML = `
     <img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Offerloop" width="20" height="20" style="border-radius:2px;">
     <span>Autofill Application</span>
@@ -847,7 +847,7 @@ async function handleAutofillClick() {
       chrome.runtime.sendMessage({ action: 'saveAutofillAnswers', answers: toSave, domain: window.location.hostname });
     }
 
-    showToast(`✓ Filled ${filled} field${filled !== 1 ? 's' : ''} — review before submitting`, 'success');
+    showToast(`✓ Filled ${filled} field${filled !== 1 ? 's' : ''} - review before submitting`, 'success');
 
     btn.classList.remove('ol-autofill-loading');
     btn.innerHTML = `<img src="${chrome.runtime.getURL('icons/icon48.png')}" alt="Offerloop" width="20" height="20" style="border-radius:2px;"><span>✓ Filled ${filled} fields</span>`;
@@ -864,7 +864,7 @@ async function handleAutofillClick() {
 }
 
 function initAutofill() {
-  // Don't run on LinkedIn — that page has its own Offerloop UI
+  // Don't run on LinkedIn - that page has its own Offerloop UI
   if (window.location.href.includes('linkedin.com')) return;
 
   // Delay initial detection to let SPA pages (Greenhouse, Workday, etc.) render

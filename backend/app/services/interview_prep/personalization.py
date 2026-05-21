@@ -26,13 +26,13 @@ class PersonalizationEngine:
         - resume_data: Parsed resume if available
         - profile: User profile data
         - history: Past interview preps
-        - coffee_chats: Relevant conversations
+        - meetings: Relevant conversations
         """
         context = {
             "resume_data": None,
             "profile": {},
             "history": [],
-            "coffee_chats": [],
+            "meetings": [],
         }
         
         try:
@@ -73,8 +73,8 @@ class PersonalizationEngine:
             except Exception as e:
                 logger.debug(f"Could not fetch interview prep history: {e}")
             
-            # Get relevant coffee chats (optional)
-            # Could add logic to fetch from coffee-chats collection
+            # Get relevant meetings (optional)
+            # Could add logic to fetch from meetings collection
             
         except Exception as e:
             logger.error(f"Error fetching user context: {e}")

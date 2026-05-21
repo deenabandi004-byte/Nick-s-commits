@@ -1,4 +1,4 @@
-// Agent dashboard — redesigned to match Offerloop's visual language.
+// Agent dashboard - redesigned to match Offerloop's visual language.
 // Centered single column, serif italic headers, underline tabs, flat rows.
 // Running state: full-content takeover with terminal stream + flip counters.
 
@@ -1147,7 +1147,7 @@ function FlipCounter({ label, value }: { label: string; value: number }) {
   );
 }
 
-// ── Step list (D5 — vertical progress during "Run now") ──────────────────
+// ── Step list (D5 - vertical progress during "Run now") ──────────────────
 
 const ACTION_LABELS: Record<string, string> = {
   plan: "Planning actions",
@@ -1187,7 +1187,7 @@ function StepList({
             </span>
             {step.resultSummary && (
               <span className="text-[11.5px] text-[#8089a0] ml-1.5">
-                — {step.resultSummary}
+                 - {step.resultSummary}
               </span>
             )}
           </div>
@@ -1211,7 +1211,7 @@ function StepList({
   );
 }
 
-// ── Right rail — agent activity tracker ─────────────────────────────────────
+// ── Right rail - agent activity tracker ─────────────────────────────────────
 
 function MiniStat({ label, value }: { label: string; value: number }) {
   return (

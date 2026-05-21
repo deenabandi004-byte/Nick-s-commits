@@ -18,7 +18,7 @@ All routes are prefixed with `/api/` unless otherwise noted. Auth = `@require_fi
 
 | Route | Method | Auth | Credits | Description |
 |-------|--------|------|---------|-------------|
-| `/api/free-run` | POST | Yes | 15 | Free/unified tier search — PDL search + email generation + Gmail drafts |
+| `/api/free-run` | POST | Yes | 15 | Free/unified tier search - PDL search + email generation + Gmail drafts |
 | `/api/pro-run` | POST | Yes | 15 | Pro tier search (legacy, same as free-run with tier detection) |
 | `/api/basic-run` | POST | Yes | 15 | Alias for free-run |
 | `/api/advanced-run` | POST | Yes | 15 | Alias for pro-run |
@@ -219,16 +219,16 @@ Request: {
 
 ---
 
-## Coffee Chat Prep
+## Meeting Prep
 
 | Route | Method | Auth | Credits | Description |
 |-------|--------|------|---------|-------------|
-| `/api/coffee-chat-prep` | POST | Yes | 15 | Generate coffee chat prep |
-| `/api/coffee-chat-prep/history` | GET | Yes | 0 | List past preps |
-| `/api/coffee-chat-prep/all` | GET | Yes | 0 | List all preps |
-| `/api/coffee-chat-prep/{id}` | GET | Yes | 0 | Get specific prep |
-| `/api/coffee-chat-prep/{id}` | DELETE | Yes | 0 | Delete prep |
-| `/api/coffee-chat-prep/{id}/download` | GET | Yes | 0 | Download prep as PDF |
+| `/api/meeting-prep` | POST | Yes | 15 | Generate meeting prep |
+| `/api/meeting-prep/history` | GET | Yes | 0 | List past preps |
+| `/api/meeting-prep/all` | GET | Yes | 0 | List all preps |
+| `/api/meeting-prep/{id}` | GET | Yes | 0 | Get specific prep |
+| `/api/meeting-prep/{id}` | DELETE | Yes | 0 | Delete prep |
+| `/api/meeting-prep/{id}/download` | GET | Yes | 0 | Download prep as PDF |
 
 ---
 
@@ -417,9 +417,9 @@ All error responses follow this structure:
 ```
 
 Common HTTP status codes:
-- `400` — Bad request / validation error
-- `401` — Missing or invalid auth token
-- `403` — Insufficient tier (upgrade required)
-- `404` — Resource not found
-- `500` — Server error
-- `503` — Service temporarily unavailable (network error, retry suggested)
+- `400` - Bad request / validation error
+- `401` - Missing or invalid auth token
+- `403` - Insufficient tier (upgrade required)
+- `404` - Resource not found
+- `500` - Server error
+- `503` - Service temporarily unavailable (network error, retry suggested)

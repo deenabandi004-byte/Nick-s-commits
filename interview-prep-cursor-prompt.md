@@ -42,10 +42,10 @@ Paste everything below this line into Cursor:
 ## Context
 - This is for Offerloop.ai, a Flask + React networking/career platform
 - I already have OpenAI integrated (check existing email generation code for patterns)
-- I already have PDF generation logic (check existing coffee chat prep feature in `services/` for reference)
+- I already have PDF generation logic (check existing meeting prep feature in `services/` for reference)
 - Using Flask backend on Render, React frontend with TypeScript
 - Authentication uses Firebase (check existing protected routes for patterns)
-- Credit system already exists (check how coffee chat deducts credits)
+- Credit system already exists (check how meeting deducts credits)
 
 ---
 
@@ -990,7 +990,7 @@ Use the role-specific resources from ROLE_CATEGORY_CONFIG.
 ### 3. PDF Generator (`backend/app/services/interview_prep/pdf_generator.py`)
 
 ```python
-# Follow the SAME pattern as existing coffee chat PDF generation
+# Follow the SAME pattern as existing meeting PDF generation
 # Use the same PDF library and styling approach
 # TARGET: 7-8 page comprehensive prep guide TAILORED TO THE SPECIFIC ROLE
 
@@ -1155,7 +1155,7 @@ Use the role-specific resources from ROLE_CATEGORY_CONFIG.
 # - Clear visual hierarchy with consistent spacing
 # - No walls of text - use bullets, cards, and visual breaks
 
-# Store PDF in same location as coffee chat PDFs (check existing implementation)
+# Store PDF in same location as meeting PDFs (check existing implementation)
 ```
 
 ### 4. Flask Routes (`backend/app/routes/interview_prep.py` or add to existing routes file)
@@ -1176,7 +1176,7 @@ Use the role-specific resources from ROLE_CATEGORY_CONFIG.
 # Requirements:
 # - Require authentication (use same auth decorator as other protected routes)
 # - Check user has sufficient credits (use INTERVIEW_PREP_CREDITS = 25)
-# - Deduct credits on success (check how coffee chat does this)
+# - Deduct credits on success (check how meeting does this)
 # - Return: { "id": prep_id, "status": "processing", "job_details": {...} }
 
 @app.route('/api/interview-prep/generate', methods=['POST'])
@@ -1196,7 +1196,7 @@ async def generate_interview_prep():
     # Create prep record in database
     prep_id = create_interview_prep_record(current_user, job_posting_url)
     
-    # Start async job (use existing background task pattern from coffee chat)
+    # Start async job (use existing background task pattern from meeting)
     start_interview_prep_job(prep_id, job_posting_url)
     
     return jsonify({
@@ -1207,7 +1207,7 @@ async def generate_interview_prep():
 
 # GET /api/interview-prep/status/<prep_id>
 # - Return current status, job details extracted, and result when complete
-# - Same polling pattern as coffee chat
+# - Same polling pattern as meeting
 # Response when processing:
 # { "id": "...", "status": "processing", "progress": "Scraping Reddit for insights..." }
 # Response when complete:
@@ -1215,7 +1215,7 @@ async def generate_interview_prep():
 
 # GET /api/interview-prep/download/<prep_id>
 # - Return { "pdfUrl": signed_url }
-# - Same pattern as coffee chat download
+# - Same pattern as meeting download
 
 # GET /api/interview-prep/history
 # - Return list of user's past interview preps
@@ -1251,12 +1251,12 @@ const [jobPostingUrl, setJobPostingUrl] = useState("");
 const [parsedJobDetails, setParsedJobDetails] = useState<any | null>(null);
 ```
 
-**Credit cost constant** (add near COFFEE_CHAT_CREDITS):
+**Credit cost constant** (add near MEETING_CREDITS):
 ```typescript
 const INTERVIEW_PREP_CREDITS = 25;
 ```
 
-**Handler function** (add near handleCoffeeChatSubmit):
+**Handler function** (add near handleMeetingSubmit):
 ```typescript
 const handleInterviewPrepSubmit = async () => {
   // 1. Validate job posting URL
@@ -1282,7 +1282,7 @@ const handleInterviewPrepSubmit = async () => {
     const response = await apiService.generateInterviewPrep(jobPostingUrl);
     setInterviewPrepId(response.id);
     
-    // 5. Poll for status until complete (same pattern as coffee chat)
+    // 5. Poll for status until complete (same pattern as meeting)
     // Update progress messages:
     // - "Analyzing job posting..."
     // - "Extracting role requirements..."
@@ -1301,7 +1301,7 @@ const handleInterviewPrepSubmit = async () => {
 };
 
 const downloadInterviewPrepPDF = async (prepId?: string) => {
-  // Same pattern as downloadCoffeeChatPDF
+  // Same pattern as downloadMeetingPDF
 };
 ```
 
@@ -1311,7 +1311,7 @@ const downloadInterviewPrepPDF = async (prepId?: string) => {
   - **Job Posting URL** (required) - e.g., "https://boards.greenhouse.io/company/jobs/123"
   - Placeholder text: "Paste the job posting URL here..."
   - Help text: "Supports LinkedIn, Indeed, Greenhouse, Lever, Workday, and most career pages"
-- "Generate Interview Prep" button with gradient styling matching coffee chat
+- "Generate Interview Prep" button with gradient styling matching meeting
 - Loading state with Loader2 spinner and step-by-step progress messages:
   1. "Analyzing job posting..."
   2. "Extracting role requirements..."
@@ -1334,7 +1334,7 @@ const downloadInterviewPrepPDF = async (prepId?: string) => {
 - Available for all users (Free and Pro)
 
 **Match the existing UI patterns:**
-- Use same Card, CardHeader, CardContent structure as coffee chat
+- Use same Card, CardHeader, CardContent structure as meeting
 - Use same color scheme (gray-800, gradients, etc.)
 - Use same badge styling
 - Use same button gradients (purple/pink for primary actions)
@@ -1480,15 +1480,15 @@ interface InterviewPrepResult {
 
 ## Important Implementation Notes
 
-1. **Follow existing patterns** - Look at how coffee chat prep is implemented and mirror that approach for consistency
+1. **Follow existing patterns** - Look at how meeting prep is implemented and mirror that approach for consistency
 
 2. **Credit check** - Users need 25+ credits to use this feature. Check `effectiveUser.credits` before allowing generation
 
 3. **Available for all users** - Interview prep is available for both Free and Pro tier users. No tier restrictions needed.
 
-4. **Polling pattern** - Use the same polling approach as coffee chat (poll every 3 seconds, max 90 seconds timeout - longer due to job parsing + comprehensive scraping)
+4. **Polling pattern** - Use the same polling approach as meeting (poll every 3 seconds, max 90 seconds timeout - longer due to job parsing + comprehensive scraping)
 
-5. **PDF storage** - Store PDFs in the same location/bucket as coffee chat PDFs
+5. **PDF storage** - Store PDFs in the same location/bucket as meeting PDFs
 
 6. **Error messages** - Be user-friendly with actionable suggestions:
    - "Could not access this job posting. Try pasting the job description directly." (for blocked URLs)

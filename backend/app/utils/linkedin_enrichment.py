@@ -3,9 +3,9 @@ LinkedIn profile enrichment utilities.
 
 Two enrichment chains:
 
-- Default (`prefer_scrape=False`): PDL → Bright Data — used for *contact lookups*
+- Default (`prefer_scrape=False`): PDL → Bright Data - used for *contact lookups*
   where the target is an established professional (good PDL coverage).
-- Self-enrichment (`prefer_scrape=True`): Jina → Bright Data → PDL — used for
+- Self-enrichment (`prefer_scrape=True`): Jina → Bright Data → PDL - used for
   the *user's own* LinkedIn during onboarding/profile. Most users are college
   students with thin PDL records, so direct page scrapes via Jina yield far
   richer data (full work history, skills, projects, certifications) than PDL.
@@ -266,8 +266,8 @@ def enrich_linkedin_with_fallback(
 
 def convert_pdl_to_resume_parsed(pdl_data: dict) -> dict:
     """
-    Convert PDL coffee_chat_data (output of enrich_linkedin_profile) to resumeParsed format.
-    PDL's enrich_linkedin_profile returns build_coffee_chat_data() output, not raw PDL person.
+    Convert PDL meeting_data (output of enrich_linkedin_profile) to resumeParsed format.
+    PDL's enrich_linkedin_profile returns build_meeting_data() output, not raw PDL person.
     """
     result = json.loads(json.dumps(EMPTY_RESUME_PARSED))  # deep copy
 
@@ -280,7 +280,7 @@ def convert_pdl_to_resume_parsed(pdl_data: dict) -> dict:
         "location": pdl_data.get("location", {}).get("name") if isinstance(pdl_data.get("location"), dict) else pdl_data.get("location") or None,
     }
 
-    # Education — PDL returns education as array
+    # Education - PDL returns education as array
     edu_list = pdl_data.get("education", [])
     if edu_list and isinstance(edu_list, list) and len(edu_list) > 0:
         first_edu = edu_list[0]
@@ -308,7 +308,7 @@ def convert_pdl_to_resume_parsed(pdl_data: dict) -> dict:
             "bullets": [],
         })
 
-    # Skills — PDL returns flat skills list
+    # Skills - PDL returns flat skills list
     for skill in pdl_data.get("skills", []):
         if isinstance(skill, str) and skill:
             result["skills"]["technical"].append(skill)
@@ -344,14 +344,14 @@ CRITICAL RULES:
 1. Output ONLY valid JSON. No markdown, no preamble, no explanation.
 2. Only include information explicitly present in the source data.
 3. Copy company names, titles, and dates VERBATIM from the source.
-4. ALWAYS leave "bullets": [] empty — NEVER write experience descriptions or bullet points.
+4. ALWAYS leave "bullets": [] empty - NEVER write experience descriptions or bullet points.
 5. For skills: extract technologies, tools, programming languages, and frameworks mentioned in activity posts, about section, and position/headline. You MAY infer commonly associated skills from the person's major or field of study (e.g., Finance major → Financial Modeling), but only well-established associations.
-6. For career_interests: career_interests MUST be populated — infer from jobTitle, industry, education major, and company. For example: jobTitle=co-founder → entrepreneurship, industry=computer software → software engineering, major=data science → data science & analytics. Always return at least 1-2 career interests, never leave this array empty.
+6. For career_interests: career_interests MUST be populated - infer from jobTitle, industry, education major, and company. For example: jobTitle=co-founder → entrepreneurship, industry=computer software → software engineering, major=data science → data science & analytics. Always return at least 1-2 career interests, never leave this array empty.
 7. For objective: generate a one-line professional summary from the headline (position field) and about section. If neither exists, use null.
 8. For extracurriculars: extract clubs, organizations, volunteer work mentioned in activity posts or about section.
 9. If a field has no data, use null for strings or [] for arrays.
 10. Languages come from the languages[] array in the source data.
-11. Mine the activity[] array carefully — for students without formal experience, activity posts are the primary signal for skills, interests, and projects.
+11. Mine the activity[] array carefully - for students without formal experience, activity posts are the primary signal for skills, interests, and projects.
 
 OUTPUT SCHEMA (follow exactly):
 {
@@ -403,7 +403,7 @@ CRITICAL RULES:
 3. Copy company names, titles, and dates VERBATIM from the source.
 4. For experience bullets: include up to 3 bullets per role IF the source contains achievement / responsibility lines clearly under that role. If the rendered page only shows role titles without descriptions, leave bullets empty. Do NOT invent or paraphrase.
 5. For skills: extract from the Skills section, About section, and clearly mentioned tech in roles. Categorize into technical/tools/soft_skills/languages.
-6. For career_interests: career_interests MUST be populated — infer from headline, current title, industry, education major, and About section. Always return at least 1-2.
+6. For career_interests: career_interests MUST be populated - infer from headline, current title, industry, education major, and About section. Always return at least 1-2.
 7. For objective: generate a one-line professional summary from the headline (the line under the name) and About section.
 8. For extracurriculars: extract clubs, organizations, leadership roles, volunteer work mentioned anywhere on the page (Activities, Volunteer, About).
 9. For projects: include items the user explicitly lists under Projects, with a one-line description if present.
@@ -459,9 +459,9 @@ CRITICAL RULES:
 1. Output ONLY valid JSON. No markdown, no preamble, no explanation.
 2. Only include information explicitly present in the source data.
 3. Copy company names, titles, and dates VERBATIM from the source.
-4. ALWAYS leave "bullets": [] empty — NEVER write experience descriptions or bullet points.
+4. ALWAYS leave "bullets": [] empty - NEVER write experience descriptions or bullet points.
 5. Categorize skills into technical (languages, frameworks), tools (software, platforms), soft_skills, and languages (spoken).
-6. For career_interests: career_interests MUST be populated — infer from jobTitle, industry, education major, and company. For example: jobTitle=co-founder → entrepreneurship, industry=computer software → software engineering, major=data science → data science & analytics. Always return at least 1-2 career interests, never leave this array empty.
+6. For career_interests: career_interests MUST be populated - infer from jobTitle, industry, education major, and company. For example: jobTitle=co-founder → entrepreneurship, industry=computer software → software engineering, major=data science → data science & analytics. Always return at least 1-2 career interests, never leave this array empty.
 7. For objective: generate a one-line professional summary from current title, company, and industry.
 8. If a field has no data, use null for strings or [] for arrays.
 
@@ -618,7 +618,7 @@ def _validate_resume_parsed(data: dict) -> dict:
             "gpa": _clean_null(edu.get("gpa")),
         }
 
-    # Experience — enforce bullets is always empty
+    # Experience - enforce bullets is always empty
     for exp in data.get("experience", []):
         if isinstance(exp, dict):
             result["experience"].append({
@@ -651,7 +651,7 @@ def _validate_resume_parsed(data: dict) -> dict:
 def merge_linkedin_into_resume_parsed(existing: dict, linkedin: dict) -> dict:
     """
     Merge LinkedIn enrichment data into existing resumeParsed.
-    Resume is primary — LinkedIn only fills gaps.
+    Resume is primary - LinkedIn only fills gaps.
 
     Rules:
     - experience, projects, education, gpa → keep existing, ignore linkedin

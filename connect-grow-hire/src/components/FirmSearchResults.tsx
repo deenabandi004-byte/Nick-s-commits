@@ -232,7 +232,7 @@ export default function FirmSearchResults({ firms, onViewContacts, onDelete, del
 
                       {/* Company */}
                       <td onClick={() => setActiveCell({ firmKey: key, col: 'name' })} style={cellStyle('name')}>
-                        <span style={{ fontSize: 12, fontWeight: 500, color: '#2a2a2a' }}>{firm.name || '—'}</span>
+                        <span style={{ fontSize: 12, fontWeight: 500, color: '#2a2a2a' }}>{firm.name || ' - '}</span>
                       </td>
 
                       {/* Website */}
@@ -242,7 +242,7 @@ export default function FirmSearchResults({ firms, onViewContacts, onDelete, del
                             style={{ fontSize: 11, color: '#555', textDecoration: 'none', borderBottom: '1px solid #e5e5e3', paddingBottom: 1 }}
                             onMouseEnter={(e) => { e.currentTarget.style.color = '#2a2a2a'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#555'; }}
                           >↗ site</a>
-                        ) : <span style={{ color: '#bbb' }}>—</span>}
+                        ) : <span style={{ color: '#bbb' }}> - </span>}
                       </td>
 
                       {/* LinkedIn */}
@@ -252,17 +252,17 @@ export default function FirmSearchResults({ firms, onViewContacts, onDelete, del
                             style={{ fontSize: 11, color: '#555', textDecoration: 'none', borderBottom: '1px solid #e5e5e3', paddingBottom: 1 }}
                             onMouseEnter={(e) => { e.currentTarget.style.color = '#2a2a2a'; }} onMouseLeave={(e) => { e.currentTarget.style.color = '#555'; }}
                           >↗ view</a>
-                        ) : <span style={{ color: '#bbb' }}>—</span>}
+                        ) : <span style={{ color: '#bbb' }}> - </span>}
                       </td>
 
                       {/* Location */}
                       <td onClick={() => setActiveCell({ firmKey: key, col: 'location' })} style={cellStyle('location')}>
-                        <span style={{ fontSize: 12, color: '#555' }}>{firm.location?.display || '—'}</span>
+                        <span style={{ fontSize: 12, color: '#555' }}>{firm.location?.display || ' - '}</span>
                       </td>
 
                       {/* Industry */}
                       <td onClick={() => setActiveCell({ firmKey: key, col: 'industry' })} style={cellStyle('industry')}>
-                        <span style={{ fontSize: 12, color: '#555' }}>{firm.industry || '—'}</span>
+                        <span style={{ fontSize: 12, color: '#555' }}>{firm.industry || ' - '}</span>
                       </td>
 
                       {/* Actions */}

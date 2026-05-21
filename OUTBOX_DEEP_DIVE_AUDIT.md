@@ -1,10 +1,10 @@
-# Outbox Feature — Full Deep Dive Audit
+# Outbox Feature - Full Deep Dive Audit
 
 This document is the result of a full audit of the Outbox feature: backend routes, sync logic, frontend components, data flow, and gaps. It is intended to fix the Outbox and turn it into a reliable pipeline/kanban view.
 
 ---
 
-## 1. Outbox Backend — Full Audit
+## 1. Outbox Backend - Full Audit
 
 ### 1.1 Routes & Endpoints
 
@@ -12,7 +12,7 @@ All endpoints live in **`backend/app/routes/outbox.py`** (blueprint `outbox_bp`,
 
 | Endpoint | Method | What it does | Firestore read/write | Returns |
 |----------|--------|---------------|----------------------|--------|
-| `/api/outbox/threads` | GET | List outbox threads for the user | **Read**: `users/{uid}/contacts` — streams all contact docs | `{ threads, pagination }` |
+| `/api/outbox/threads` | GET | List outbox threads for the user | **Read**: `users/{uid}/contacts` - streams all contact docs | `{ threads, pagination }` |
 | `/api/outbox/threads/<id>/regenerate` | POST | Generate AI reply for a thread, create Gmail draft, update contact | **Read**: user doc, contact doc. **Write**: contact doc (suggestedReply, replyType, gmailDraftId, gmailDraftUrl, draftCreatedAt, updatedAt) | `{ success, thread, credits_used, credits_remaining }` or error |
 | `/api/outbox/threads/<id>/sync` | POST | Sync one thread with Gmail (draft existence, threadId backfill, message sync) | **Read**: contact doc. **Write**: contact doc (draftStillExists, gmailThreadId, lastMessageSnippet, lastActivityAt, lastSyncAt, hasUnreadReply, threadStatus, updatedAt) | `{ thread }` |
 
@@ -23,11 +23,11 @@ All endpoints live in **`backend/app/routes/outbox.py`** (blueprint `outbox_bp`,
   - `gmailDraftId` / `gmail_draft_id` / `gmailDraftUrl` / `gmail_draft_url`
 - **Excluded:** Contacts that were saved but never had a draft created (no draft ID, no thread ID) do **not** appear in the Outbox.
 - **No Gmail API on list:** The list uses only Firestore; no Gmail calls. Sync runs later when the user opens a thread (`POST .../sync`).
-- **Pagination:** Supports `page` and `per_page` (default 50, max 100). Response includes `pagination: { page, per_page, total, total_pages, has_next, has_prev }`. The frontend does **not** pass `page`/`per_page` and does **not** use pagination — it only ever gets the first page (up to 50 threads).
+- **Pagination:** Supports `page` and `per_page` (default 50, max 100). Response includes `pagination: { page, per_page, total, total_pages, has_next, has_prev }`. The frontend does **not** pass `page`/`per_page` and does **not** use pagination - it only ever gets the first page (up to 50 threads).
 
 ---
 
-### 1.2 `_build_outbox_thread()` — How `threadStatus` / `status` Is Computed
+### 1.2 `_build_outbox_thread()` - How `threadStatus` / `status` Is Computed
 
 **Location:** `backend/app/routes/outbox.py` (lines 83–202).
 
@@ -49,10 +49,10 @@ All endpoints live in **`backend/app/routes/outbox.py`** (blueprint `outbox_bp`,
 
 **Possible `status` values from this function:**
 
-- `no_reply_yet` — Draft pending or no thread/draft info
-- `new_reply` — Thread exists, latest message from contact, unread
-- `waiting_on_them` — Sent, waiting for contact
-- `waiting_on_you` — Contact replied (read or unread), your turn
+- `no_reply_yet` - Draft pending or no thread/draft info
+- `new_reply` - Thread exists, latest message from contact, unread
+- `waiting_on_them` - Sent, waiting for contact
+- `waiting_on_you` - Contact replied (read or unread), your turn
 
 **Not produced by backend:** `closed`. The frontend type includes `closed`, but no backend code sets `threadStatus` to `"closed"` and `sync_thread_message()` never returns it. So `closed` is effectively dead.
 
@@ -127,11 +127,11 @@ Only the **draft existence** check is cached (in-memory, 5 min TTL per draft ID)
 - **Silent failures:** Gmail init failure or rate limit results in returning cached/stale data with 200; client cannot tell that sync didn’t run.
 - **CamelCase vs snake_case:** Backend reads both; it writes camelCase. If any other code writes only snake_case, those fields are still read correctly in outbox. No evidence of writes using wrong casing in outbox itself.
 - **`closed` status:** Never set by backend; frontend type includes it but it’s unused.
-- **Pagination ignored by client:** Backend returns pagination; frontend never sends `page`/`per_page` and doesn’t use `pagination` — users with &gt;50 threads only see first 50 with no “Load more”.
+- **Pagination ignored by client:** Backend returns pagination; frontend never sends `page`/`per_page` and doesn’t use `pagination` - users with &gt;50 threads only see first 50 with no “Load more”.
 
 ---
 
-## 2. Outbox Frontend — Full Audit
+## 2. Outbox Frontend - Full Audit
 
 ### 2.1 Components & Pages
 
@@ -158,9 +158,9 @@ No tabs or filters by status. Single list; status is shown as a badge per thread
 
 **Calls (in `connect-grow-hire/src/services/api.ts`):**
 
-- **`getOutboxThreads()`** — `GET /outbox/threads` (no query params). Returns `Promise<{ threads: OutboxThread[] } | { error: string }>`.
-- **`regenerateOutboxReply(threadId)`** — `POST /outbox/threads/${threadId}/regenerate`. Returns `Promise<{ thread: OutboxThread } | { error: string }>` (and may include `credits_used`, `credits_remaining`).
-- **`syncOutboxThread(threadId)`** — `POST /outbox/threads/${threadId}/sync`. Returns `Promise<{ thread: OutboxThread } | { error: string }>`.
+- **`getOutboxThreads()`** - `GET /outbox/threads` (no query params). Returns `Promise<{ threads: OutboxThread[] } | { error: string }>`.
+- **`regenerateOutboxReply(threadId)`** - `POST /outbox/threads/${threadId}/regenerate`. Returns `Promise<{ thread: OutboxThread } | { error: string }>` (and may include `credits_used`, `credits_remaining`).
+- **`syncOutboxThread(threadId)`** - `POST /outbox/threads/${threadId}/sync`. Returns `Promise<{ thread: OutboxThread } | { error: string }>`.
 
 **TanStack Query:**  
 Outbox does **not** use TanStack Query. All three use raw `apiService` calls and local React state (`useState`). No query keys, no stale time, no cache.
@@ -178,7 +178,7 @@ None. After regenerate or sync, the UI updates from the API response (setState w
 
 ---
 
-## 3. Data Flow — End to End
+## 3. Data Flow - End to End
 
 Lifecycle of a contact through the Outbox:
 
@@ -190,11 +190,11 @@ Contact created → Draft created → Draft sent (in Gmail) → Offerloop detect
 |-----------|--------|-------------|-------------------|--------------------|-----------|
 | **Contact created** | User saves contact from search, or bulk create (runs, emails, LinkedIn import, etc.) | Various routes create/update `users/{uid}/contacts` | New or updated contact doc (often no draft/thread yet) | Duplicate contacts (same email) if created from different flows | `createdAt` / `updatedAt` |
 | **Draft created** | User creates draft from app (e.g. emails route, runs, prompt_search_simple, linkedin_import) | Gmail API `drafts.create`; then contact updated/created with draft info | `gmailDraftId`, `gmailDraftUrl`, often `gmailThreadId` if Gmail returns it, `emailSubject`, `emailBody`, `draftCreatedAt`, `lastActivityAt`, etc. | Draft created but contact not found (e.g. different email) so Outbox doesn’t show it; or threadId not returned yet | `draftCreatedAt`, `lastActivityAt` |
-| **Draft sent (in Gmail)** | User sends from Gmail UI | None (Offerloop doesn’t send mail) | None at send time | — | — |
+| **Draft sent (in Gmail)** | User sends from Gmail UI | None (Offerloop doesn’t send mail) | None at send time | - | - |
 | **Offerloop detects sent** | User opens thread in Outbox → sync | Sync: draft get → 404 → `draftStillExists: False`. If no threadId: search by to+subject → set `gmailThreadId` | `draftStillExists`, `gmailThreadId` (if found), `updatedAt` | Subject/recipient mismatch or search failure → no threadId; rate limit or Gmail error → no update | `updatedAt`; no dedicated `emailSentAt` |
-| **Reply received** | Contact replies in Gmail | None (no push) | None until next sync | — | — |
+| **Reply received** | Contact replies in Gmail | None (no push) | None until next sync | - | - |
 | **Reply detected** | Same sync when user opens thread (or would be on next open) | `sync_thread_message()` → latest message from contact, unread → `new_reply`; read → `waiting_on_you` | `lastMessageSnippet`, `lastActivityAt`, `lastSyncAt`, `hasUnreadReply`, `threadStatus` | Sync skipped (rate limit, 30s throttle, Gmail error) → stale status | `lastActivityAt`, `lastSyncAt` |
-| **Meeting scheduled / Closed** | — | No automated transition. No “mark as meeting” or “close” in app | — | No pipeline stage or manual status; “closed” exists in type only | — |
+| **Meeting scheduled / Closed** | - | No automated transition. No “mark as meeting” or “close” in app | - | No pipeline stage or manual status; “closed” exists in type only | - |
 
 **Summary:**  
 - “Sent” is inferred only when we see draft gone + (optionally) threadId.  

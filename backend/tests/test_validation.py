@@ -5,7 +5,7 @@ import pytest
 from app.utils.validation import (
     ContactSearchRequest,
     FirmSearchRequest,
-    CoffeeChatPrepRequest,
+    MeetingPrepRequest,
     InterviewPrepRequest,
     validate_request
 )
@@ -78,15 +78,15 @@ class TestFirmSearchValidation:
             validate_request(FirmSearchRequest, data)
 
 
-class TestCoffeeChatPrepValidation:
-    """Test coffee chat prep request validation"""
+class TestMeetingPrepValidation:
+    """Test meeting prep request validation"""
     
     def test_valid_linkedin_url(self):
         """Test valid LinkedIn URL"""
         data = {
             "linkedinUrl": "https://www.linkedin.com/in/johndoe"
         }
-        result = validate_request(CoffeeChatPrepRequest, data)
+        result = validate_request(MeetingPrepRequest, data)
         assert "linkedin.com" in result["linkedinUrl"]
     
     def test_invalid_linkedin_url(self):
@@ -95,7 +95,7 @@ class TestCoffeeChatPrepValidation:
             "linkedinUrl": "not-a-linkedin-url"
         }
         with pytest.raises(ValidationError):
-            validate_request(CoffeeChatPrepRequest, data)
+            validate_request(MeetingPrepRequest, data)
 
 
 class TestInterviewPrepValidation:

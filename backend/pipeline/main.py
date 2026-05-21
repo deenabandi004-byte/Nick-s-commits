@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Offerloop Job Pipeline — entry point.
+Offerloop Job Pipeline - entry point.
 
 Usage:
     python pipeline/main.py                  # Full pipeline: fetch → normalize → write

@@ -1,5 +1,5 @@
 """
-Credit reset audit tests — covers all 6 issues found in the credit system audit.
+Credit reset audit tests - covers all 6 issues found in the credit system audit.
 """
 import re
 import ast
@@ -14,7 +14,7 @@ def _read_file(relative_path: str) -> str:
 
 
 # =============================================================================
-# P0 #1 — NameError in /api/check-credits (tier used before defined)
+# P0 #1 - NameError in /api/check-credits (tier used before defined)
 # =============================================================================
 
 class TestCheckCreditsNameError:
@@ -40,7 +40,7 @@ class TestCheckCreditsNameError:
 
 
 # =============================================================================
-# P0 #2 — Transaction atomicity: reset must not call user_ref.update()
+# P0 #2 - Transaction atomicity: reset must not call user_ref.update()
 # =============================================================================
 
 class TestTransactionAtomicity:
@@ -82,7 +82,7 @@ class TestTransactionAtomicity:
 
 
 # =============================================================================
-# P1 #3 — Invoice webhook idempotency
+# P1 #3 - Invoice webhook idempotency
 # =============================================================================
 
 class TestInvoiceIdempotency:
@@ -121,7 +121,7 @@ class TestInvoiceIdempotency:
 
 
 # =============================================================================
-# P1 #4 — Downgrade must set lastCreditReset
+# P1 #4 - Downgrade must set lastCreditReset
 # =============================================================================
 
 class TestDowngradeResetDate:
@@ -140,7 +140,7 @@ class TestDowngradeResetDate:
 
 
 # =============================================================================
-# P2 #5 — Usage reset uses calendar month (consistent with credit reset)
+# P2 #5 - Usage reset uses calendar month (consistent with credit reset)
 # =============================================================================
 
 class TestUsageResetConsistency:
@@ -163,7 +163,7 @@ class TestUsageResetConsistency:
 
 
 # =============================================================================
-# P2 #6 — Checkout webhook must set lastCreditReset
+# P2 #6 - Checkout webhook must set lastCreditReset
 # =============================================================================
 
 class TestCheckoutSetsResetDate:

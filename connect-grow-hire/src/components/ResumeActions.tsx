@@ -204,7 +204,7 @@ function convertToPlainText(resume: any): string {
     lines.push('ACTIVITIES & INTERESTS');
     for (const extra of extracurriculars) {
       let line = extra.activity;
-      if (extra.role) line += ` — ${extra.role}`;
+      if (extra.role) line += ` - ${extra.role}`;
       if (extra.description) line += `: ${extra.description}`;
       lines.push(`• ${line}`);
     }

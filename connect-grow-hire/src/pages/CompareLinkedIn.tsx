@@ -6,15 +6,15 @@ import offerloopLogo from '../assets/offerloop_logo2.png';
 const faqData = [
   {
     question: "Can I use LinkedIn for cold emailing professionals?",
-    answer: "Not effectively. LinkedIn lets you send connection requests and InMail messages, but response rates on LinkedIn DMs are very low (under 5% for cold outreach). You also can't access professional email addresses through LinkedIn. Offerloop provides verified email addresses and generates personalized emails that go to actual inboxes — where response rates are 3-5x higher."
+    answer: "Not effectively. LinkedIn lets you send connection requests and InMail messages, but response rates on LinkedIn DMs are very low (under 5% for cold outreach). You also can't access professional email addresses through LinkedIn. Offerloop provides verified email addresses and generates personalized emails that go to actual inboxes - where response rates are 3-5x higher."
   },
   {
     question: "Is LinkedIn Premium worth it for college students?",
-    answer: "LinkedIn Premium costs $29.99-59.99/month and gives you InMail credits and profile insights. For students focused on networking, it's not the best value — InMail response rates are low and you still can't export email addresses. Offerloop at $14.99/month gives you verified emails, AI-generated personalized outreach, Gmail integration, and conversation tracking."
+    answer: "LinkedIn Premium costs $29.99-59.99/month and gives you InMail credits and profile insights. For students focused on networking, it's not the best value - InMail response rates are low and you still can't export email addresses. Offerloop at $14.99/month gives you verified emails, AI-generated personalized outreach, Gmail integration, and conversation tracking."
   },
   {
     question: "Should I use LinkedIn and Offerloop together?",
-    answer: "Yes. LinkedIn is great for research — browsing profiles, understanding career paths, and identifying people you want to connect with. Offerloop is great for action — finding their email, writing a personalized message, and sending it through Gmail where it's more likely to be read. Use LinkedIn to research, Offerloop to reach out."
+    answer: "Yes. LinkedIn is great for research - browsing profiles, understanding career paths, and identifying people you want to connect with. Offerloop is great for action - finding their email, writing a personalized message, and sending it through Gmail where it's more likely to be read. Use LinkedIn to research, Offerloop to reach out."
   },
   {
     question: "Why do LinkedIn connection requests get ignored?",
@@ -74,7 +74,7 @@ const CompareLinkedIn = () => {
           Offerloop vs <span style={{ color: '#3B82F6' }}>LinkedIn</span>
         </h1>
         <p style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B', maxWidth: '620px' }}>
-          LinkedIn has the largest professional network in the world. But it wasn't built for proactive outreach — Offerloop was. Use LinkedIn to research. Use Offerloop to reach out.
+          LinkedIn has the largest professional network in the world. But it wasn't built for proactive outreach - Offerloop was. Use LinkedIn to research. Use Offerloop to reach out.
         </p>
       </section>
 
@@ -112,13 +112,13 @@ const CompareLinkedIn = () => {
           Is LinkedIn effective for cold outreach as a student?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          LinkedIn is the world's largest professional network with over 900 million profiles, and it's an essential tool for browsing career paths, researching companies, and building your online presence. However, LinkedIn was designed for passive networking — profile views, connection requests, and content feeds — not active cold outreach.
+          LinkedIn is the world's largest professional network with over 900 million profiles, and it's an essential tool for browsing career paths, researching companies, and building your online presence. However, LinkedIn was designed for passive networking - profile views, connection requests, and content feeds - not active cold outreach.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
           The biggest limitation for students is reach. LinkedIn connection requests have a 300-character limit, InMail messages cost $5-10 each with Premium, and DM response rates for cold outreach hover around 3-5%. You also can't access anyone's professional email address through LinkedIn, which means you're limited to messages within the platform.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop solves the outreach problem that LinkedIn doesn't. Find verified professional email addresses, generate AI-personalized emails with no character limit, and send directly through Gmail where messages land in the primary inbox — not a LinkedIn notification that's easy to dismiss.
+          Offerloop solves the outreach problem that LinkedIn doesn't. Find verified professional email addresses, generate AI-personalized emails with no character limit, and send directly through Gmail where messages land in the primary inbox - not a LinkedIn notification that's easy to dismiss.
         </p>
       </section>
 
@@ -128,7 +128,7 @@ const CompareLinkedIn = () => {
           What can LinkedIn do that Offerloop can't?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          LinkedIn offers the richest professional profile data in the world. Detailed work histories, skill endorsements, recommendations, shared content, and company pages make it the best tool for researching someone before you reach out. LinkedIn also has job postings, company reviews, and industry news — none of which Offerloop provides.
+          LinkedIn offers the richest professional profile data in the world. Detailed work histories, skill endorsements, recommendations, shared content, and company pages make it the best tool for researching someone before you reach out. LinkedIn also has job postings, company reviews, and industry news - none of which Offerloop provides.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
           The ideal workflow is to use LinkedIn for research and Offerloop for action. Browse someone's LinkedIn profile to understand their background, then use Offerloop to find their email and send a personalized message that references what you learned. This combination gives you the best of both platforms.
@@ -141,7 +141,7 @@ const CompareLinkedIn = () => {
           Why does email outreach get better response rates than LinkedIn messages?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Email outreach consistently outperforms LinkedIn messages for three reasons. First, emails land in the primary inbox — a space professionals check dozens of times daily — while LinkedIn messages compete with connection requests, recruiter spam, and platform notifications. Second, email allows for longer, more personalized messages with no character limit. Third, email signals more effort, which professionals notice and appreciate.
+          Email outreach consistently outperforms LinkedIn messages for three reasons. First, emails land in the primary inbox - a space professionals check dozens of times daily - while LinkedIn messages compete with connection requests, recruiter spam, and platform notifications. Second, email allows for longer, more personalized messages with no character limit. Third, email signals more effort, which professionals notice and appreciate.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
           Students who switch from LinkedIn DMs to personalized email outreach through Offerloop typically see response rates increase from under 5% to 15-25%. The combination of verified email delivery, AI personalization, and Gmail integration makes every outreach attempt count.
@@ -163,7 +163,7 @@ const CompareLinkedIn = () => {
       <section className="px-6 py-20" style={{ background: '#FAFBFF' }}>
         <div className="text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.15, color: '#0F172A', marginBottom: '16px' }}>
-            Try Offerloop free — built for student networking
+            Try Offerloop free - built for student networking
           </h2>
           <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '28px' }}>
             Search 2.2B contacts. Generate personalized emails. Track every conversation.

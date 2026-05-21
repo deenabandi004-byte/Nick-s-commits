@@ -1,7 +1,7 @@
 ---
 status: ACTIVE
 created: 2026-04-09
-amended: 2026-04-09 (Phase 2 aggregation scanner added — 3rd scanner permitted)
+amended: 2026-04-09 (Phase 2 aggregation scanner added - 3rd scanner permitted)
 owners: flywheel, agentic-queue
 related:
   - ~/.gstack/projects/deenabandi004-byte-Final_offerloop/ceo-plans/2026-04-08-ai-intelligence-flywheel.md
@@ -125,18 +125,18 @@ write budget blown) while keeping user-facing scanners running. A single
 combined switch would force an all-or-nothing outage response.
 
 Thread itself can be disabled with `TRACKER_DAEMON_ENABLED=false` for
-emergencies. This is a last resort — prefer the per-scanner switches.
+emergencies. This is a last resort - prefer the per-scanner switches.
 
 ## Dispatch cadence
 
 - **Nudge scanner:** every 6 hours, no gating. Internal frequency cap (3 nudges
   per user per day) prevents spam.
-- **Queue scanner:** every 6 hours invocation, but internal gate — returns
+- **Queue scanner:** every 6 hours invocation, but internal gate - returns
   early if the most recent successful run for any user was within the last
   6 days 20 hours AND today is not the designated Tuesday dispatch day.
   The 6-hour outer loop exists so that if the scanner is briefly disabled on
   Tuesday morning and re-enabled Tuesday afternoon, it still runs that week.
-- **Aggregation scanner:** every 6 hours invocation, internal gate — returns
+- **Aggregation scanner:** every 6 hours invocation, internal gate - returns
   early unless today is Sunday AND current UTC hour is in `[3, 9)` AND the
   last successful run was more than 6 days ago. Full scan of
   `users/{uid}/contacts` across all users, writes composite-key segments to
@@ -191,7 +191,7 @@ system/aggregation_scanner
   errorCount: int
 ```
 
-The watchdog (TODOS.md P1 — "Daemon Thread Healthcheck & Auto-Restart") reads
+The watchdog (TODOS.md P1 - "Daemon Thread Healthcheck & Auto-Restart") reads
 all three docs every hour. Staleness thresholds:
 
 - **Nudge**: 8 hours (2-hour slack on 6-hour cadence)
@@ -221,7 +221,7 @@ The migration path:
 These have bitten us before. Do not:
 
 1. **Add a fourth scanner to this loop without updating this doc.** Three
-   scanners is the current contract (nudge, queue, aggregation — amended
+   scanners is the current contract (nudge, queue, aggregation - amended
    2026-04-09). A fourth requires re-evaluating the cadence math (can four
    scanners fit in one 6-hour window), health doc namespace expansion, and
    honest reconsideration of whether a migration to Cloud Tasks / Cloud
@@ -231,7 +231,7 @@ These have bitten us before. Do not:
 2. **Call `requests.get()` or any blocking I/O without a timeout.** One
    hanging HTTP call will freeze the entire thread, silently killing all
    future scanner runs. Use `timeout=30` on every external call.
-3. **Write to `system/health/*`** — the path is `system/{scanner_name}` (flat,
+3. **Write to `system/health/*`** - the path is `system/{scanner_name}` (flat,
    no nested `health` segment). Using a different path creates orphan docs the
    watchdog will not find.
 4. **Import scanner services at module load time.** Import inside the try
@@ -252,10 +252,10 @@ These have bitten us before. Do not:
 
 ## Changelog
 
-- **2026-04-09** — Initial contract. Extracted from findings in 2026-04-09
+- **2026-04-09** - Initial contract. Extracted from findings in 2026-04-09
   flywheel re-review. Error isolation bug in `wsgi.py:276-283` (single outer
   try/except) identified and scheduled for fix.
-- **2026-04-09** — Amended to permit a 3rd scanner (aggregation) for Phase 2
+- **2026-04-09** - Amended to permit a 3rd scanner (aggregation) for Phase 2
   of the AI Intelligence Flywheel. Added Sunday 3-9am UTC cadence for
   `aggregate_email_outcomes()`, `AGGREGATION_SCANNER_ENABLED` kill switch,
   `system/aggregation_scanner` health doc, 8-day watchdog threshold, and

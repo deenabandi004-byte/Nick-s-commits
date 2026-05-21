@@ -12,7 +12,7 @@ Endpoints:
 
 Tier gating: Pro/Elite only (Free tier sees a static teaser card in the
 frontend and never hits these endpoints). Backend still enforces the
-check — never trust the client tier claim.
+check - never trust the client tier claim.
 """
 from __future__ import annotations
 
@@ -89,7 +89,7 @@ def generate_queue():
     body = request.get_json(silent=True) or {}
     filters = body.get("filters") or {}
 
-    # Fall back to onboarding profile when filters are incomplete — this is
+    # Fall back to onboarding profile when filters are incomplete - this is
     # the "auto-generate on first tab visit" path from /plan-design-review HR-1.
     # The current onboarding flow only writes `careerInterests` / `location.interests`
     # (no `goals.targetCompanies` / `goals.targetRoles`), so we read from the

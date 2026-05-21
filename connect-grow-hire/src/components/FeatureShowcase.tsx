@@ -8,7 +8,7 @@ const queries = [
 ];
 
 const emailBody =
-  "Hi Maya,\n\nI came across your profile and noticed your path from USC to Goldman — exactly where I want to be.\n\nWould you be open to a quick 15-minute call?\n\nBest,\nAlex Chen · USC '26";
+  "Hi Maya,\n\nI came across your profile and noticed your path from USC to Goldman - exactly where I want to be.\n\nWould you be open to a quick 15-minute call?\n\nBest,\nAlex Chen · USC '26";
 
 const contacts = [
   { id: 0, initials: 'MR', cls: 'fs-av1', name: 'Maya Rodriguez', sub: 'Associate · Goldman Sachs · USC \'21', email: 'm.rodriguez@gs.com' },
@@ -31,7 +31,7 @@ const trackerRows = [
 
 const drafts = [
   { id: 0, to: 'Maya Rodriguez', subj: 'Quick question about your path at Goldman', prev: 'Hi Maya, I came across your profile...' },
-  { id: 1, to: 'James Kim', subj: 'Fellow Trojan — 15 min coffee chat?', prev: 'Hi James, as a fellow USC student...' },
+  { id: 1, to: 'James Kim', subj: 'Fellow Trojan - 15 min meeting?', prev: 'Hi James, as a fellow USC student...' },
   { id: 2, to: 'Sofia Patel', subj: 'Curious about your journey to Goldman', prev: 'Hi Sofia, I noticed you made the transition...' },
 ];
 
@@ -174,7 +174,7 @@ export default function FeatureShowcase() {
       currentNRef.current = n;
       setChipN(n);
       setShowChips(true);
-      setFindingText('Done —');
+      setFindingText('Done - ');
     }, 700);
     T(showContacts, 1400);
   // eslint-disable-next-line react-hooks/exhaustive-deps

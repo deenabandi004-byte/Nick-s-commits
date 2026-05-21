@@ -1,18 +1,18 @@
-# Coffee Chat Prep Improvements - Summary
+# Meeting Prep Improvements - Summary
 
-This document summarizes all improvements made to the coffee chat prep feature.
+This document summarizes all improvements made to the meeting prep feature.
 
 ## Overview
 
-Multiple enhancements were made to improve the quality, relevance, and reliability of coffee chat preparation PDFs. Changes include prompt refinements, intelligent content selection, hardened data extraction, and internal scoring systems.
+Multiple enhancements were made to improve the quality, relevance, and reliability of meeting preparation PDFs. Changes include prompt refinements, intelligent content selection, hardened data extraction, and internal scoring systems.
 
 ---
 
 ## 1. Similarity Summary Generation Enhancement
 
-**File:** `backend/app/utils/coffee_chat_prep.py`
+**File:** `backend/app/utils/meeting_prep.py`
 
-**Function:** `generate_coffee_chat_similarity()`
+**Function:** `generate_meeting_similarity()`
 
 ### Changes:
 - **Updated prompt** to identify 2-3 strongest similarities instead of generic matches
@@ -36,7 +36,7 @@ Multiple enhancements were made to improve the quality, relevance, and reliabili
 ## 2. Intelligent Question Selection
 
 **Files:** 
-- `backend/app/utils/coffee_chat_prep.py`
+- `backend/app/utils/meeting_prep.py`
 - `backend/app/services/pdf_builder.py`
 
 ### Changes:
@@ -60,7 +60,7 @@ Multiple enhancements were made to improve the quality, relevance, and reliabili
 
 ## 3. Hometown Inference Hardening
 
-**File:** `backend/app/services/coffee_chat.py`
+**File:** `backend/app/services/meeting.py`
 
 **Function:** `infer_hometown_from_education()`
 
@@ -86,7 +86,7 @@ Multiple enhancements were made to improve the quality, relevance, and reliabili
 
 ## 4. Article & Industry Summary Refinement
 
-**File:** `backend/app/services/coffee_chat.py`
+**File:** `backend/app/services/meeting.py`
 
 **Functions:** 
 - `_summarise_article()`
@@ -94,7 +94,7 @@ Multiple enhancements were made to improve the quality, relevance, and reliabili
 
 ### Changes:
 Both prompts updated to:
-- **Student-focused context**: "You are preparing a coffee chat brief for a student"
+- **Student-focused context**: "You are preparing a meeting brief for a student"
 - **Factual and neutral** requirement explicitly stated
 - **Natural student voice**: "Briefly mention why this matters...in a way that sounds natural for a student to bring up"
 - **Simple, conversational language** requirement
@@ -112,7 +112,7 @@ Both prompts updated to:
 
 **File:** `backend/app/services/pdf_builder.py`
 
-**Function:** `generate_coffee_chat_pdf()`
+**Function:** `generate_meeting_pdf()`
 
 ### Changes:
 
@@ -134,8 +134,8 @@ Both prompts updated to:
 ## 6. Internal Relevance Scoring System
 
 **Files:**
-- `backend/app/utils/coffee_chat_prep.py`
-- `backend/app/services/coffee_chat.py`
+- `backend/app/utils/meeting_prep.py`
+- `backend/app/services/meeting.py`
 - `backend/app/services/pdf_builder.py`
 
 ### Added Functions:
@@ -205,12 +205,12 @@ Both prompts updated to:
 
 ## Files Modified
 
-1. `backend/app/utils/coffee_chat_prep.py`
+1. `backend/app/utils/meeting_prep.py`
    - Enhanced similarity prompt
    - Added question selection logic
    - Added scoring functions
 
-2. `backend/app/services/coffee_chat.py`
+2. `backend/app/services/meeting.py`
    - Hardened hometown inference
    - Refined summary prompts
    - Added news scoring function
@@ -220,7 +220,7 @@ Both prompts updated to:
    - Added usage note
    - Integrated scored news selection
 
-4. `backend/app/routes/coffee_chat_prep.py`
+4. `backend/app/routes/meeting_prep.py`
    - Updated to pass contact_data to hometown inference
 
 ---

@@ -1,4 +1,4 @@
-# Resume Parsing Pipeline — Full Trace
+# Resume Parsing Pipeline - Full Trace
 
 ## 1. What handles the resume upload?
 
@@ -6,10 +6,10 @@
 **Handler:** `parse_resume()` in **`backend/app/routes/resume.py`** (line 193).
 
 - Frontend calls this from:
-  - **ResumePage.tsx** — `handleUpload` → `fetch(API_BASE_URL + '/api/parse-resume', { method: 'POST', body: formData })`
-  - **AccountSettings.tsx** — resume upload → same endpoint
-  - **ContactSearchPage.tsx** — resume upload → same endpoint
-  - **OnboardingFlow.tsx** — optional resume on completion → same endpoint
+  - **ResumePage.tsx** - `handleUpload` → `fetch(API_BASE_URL + '/api/parse-resume', { method: 'POST', body: formData })`
+  - **AccountSettings.tsx** - resume upload → same endpoint
+  - **ContactSearchPage.tsx** - resume upload → same endpoint
+  - **OnboardingFlow.tsx** - optional resume on completion → same endpoint
 
 **Flow in `parse_resume()`:**
 1. Validate file (`resume` in `request.files`, filename, type via `is_valid_resume_file`).
@@ -75,13 +75,13 @@ So **`resumeParsed` is saved at upload time**; it is **not** generated on-the-fl
 
 | Step | File | Function / detail |
 |------|------|-------------------|
-| 1. Request | `backend/app/routes/resume.py` | `parse_resume()` — receives `POST /api/parse-resume`, file in `request.files['resume']` |
+| 1. Request | `backend/app/routes/resume.py` | `parse_resume()` - receives `POST /api/parse-resume`, file in `request.files['resume']` |
 | 2. File type | `backend/app/services/resume_capabilities.py` | `is_valid_resume_file()`, `get_file_extension()` (used by route) |
 | 3. Text extraction | `backend/app/services/resume_parser.py` | `extract_text_from_file(file, extension)` → for PDF: `extract_text_from_pdf(file)` (PyPDF2); for DOCX: `extract_text_from_docx()` in `app/services/docx_service.py` |
-| 4. Structured parse | `backend/app/utils/users.py` | `parse_resume_info(resume_text)` — builds prompt, calls OpenAI `chat.completions.create`, parses JSON, normalizes shape |
-| 5. Validation | `backend/app/utils/users.py` | `validate_parsed_resume(parsed_info)` — checks name, education, experience, skills |
-| 6. Storage upload | `backend/app/routes/resume.py` | `upload_resume_to_firebase_storage(user_id, file)` — Firebase Storage `resumes/{user_id}/{filename}` |
-| 7. Firestore save | `backend/app/routes/resume.py` | `save_resume_to_firebase(user_id, resume_text, resume_url, parsed_info, resume_metadata)` — sets `resumeParsed`, `resumeText`, `resumeUrl`, etc. on `users/{user_id}` |
+| 4. Structured parse | `backend/app/utils/users.py` | `parse_resume_info(resume_text)` - builds prompt, calls OpenAI `chat.completions.create`, parses JSON, normalizes shape |
+| 5. Validation | `backend/app/utils/users.py` | `validate_parsed_resume(parsed_info)` - checks name, education, experience, skills |
+| 6. Storage upload | `backend/app/routes/resume.py` | `upload_resume_to_firebase_storage(user_id, file)` - Firebase Storage `resumes/{user_id}/{filename}` |
+| 7. Firestore save | `backend/app/routes/resume.py` | `save_resume_to_firebase(user_id, resume_text, resume_url, parsed_info, resume_metadata)` - sets `resumeParsed`, `resumeText`, `resumeUrl`, etc. on `users/{user_id}` |
 
 **Frontend (example):**
 - **ResumePage.tsx**: `handleUpload` → `fetch('/api/parse-resume', { body: formData })` → on success, `result.data` is `parsed_info`; page can set local state and/or refetch user doc; Firestore already has `resumeParsed` from backend save.
@@ -90,7 +90,7 @@ So **`resumeParsed` is saved at upload time**; it is **not** generated on-the-fl
 
 ## 6. Is there an LLM that “reorganizes” or “improves” the resume during parsing?
 
-**Yes — a single LLM is used for parsing**, and it’s the only place where raw text is turned into structured content. That’s **`parse_resume_info()`** in **`backend/app/utils/users.py`**.
+**Yes - a single LLM is used for parsing**, and it’s the only place where raw text is turned into structured content. That’s **`parse_resume_info()`** in **`backend/app/utils/users.py`**.
 
 - It does **not** call a separate “improve” or “reorganize” step; the same call is supposed to both extract and structure.
 - The prompt explicitly tells the model to **extract only**: preserve exact text, keep all bullets, copy exactly, don’t summarize, don’t invent. So **by design** it is not an “improvement” step.
@@ -114,7 +114,7 @@ So **`resumeParsed` is saved at upload time**; it is **not** generated on-the-fl
 
 1. **Upload handler:** `backend/app/routes/resume.py` → `parse_resume()` (`POST /api/parse-resume`).
 2. **PDF text:** PyPDF2 in `backend/app/services/resume_parser.py` → `extract_text_from_pdf()` / `extract_text_from_file()`.
-3. **Structured `resumeParsed`:** One LLM call — `parse_resume_info(resume_text)` in `backend/app/utils/users.py` (OpenAI GPT-4o-mini). Prompt is extraction-only; no separate “improve” step.
+3. **Structured `resumeParsed`:** One LLM call - `parse_resume_info(resume_text)` in `backend/app/utils/users.py` (OpenAI GPT-4o-mini). Prompt is extraction-only; no separate “improve” step.
 4. **Storage:** `resumeParsed` is written to Firestore at upload time in `save_resume_to_firebase()`; pages load it from `users/{uid}.resumeParsed`.
 5. **Full path:** `resume.py` → `extract_text_from_file()` (resume_parser) → `parse_resume_info()` (users) → `validate_parsed_resume()` → `upload_resume_to_firebase_storage()` + `save_resume_to_firebase()`.
 6. **Content changes:** If bullets or wording change, the only place that can do it in this pipeline is the **`parse_resume_info`** LLM in **`backend/app/utils/users.py`** (around the `client.chat.completions.create` call).

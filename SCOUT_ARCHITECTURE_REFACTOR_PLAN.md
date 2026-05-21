@@ -139,7 +139,7 @@
 1. **ContactSearchPage** - Via `PageHeaderActions` → `ScoutHeaderButton`
 2. **DashboardPage** - Via `PageHeaderActions` → `ScoutHeaderButton`
 3. **FirmSearchPage** - Via `PageHeaderActions` → `ScoutHeaderButton`
-4. **CoffeeChatPrepPage** - Via `PageHeaderActions` → `ScoutHeaderButton`
+4. **MeetingPrepPage** - Via `PageHeaderActions` → `ScoutHeaderButton`
 5. **InterviewPrepPage** - Via `PageHeaderActions` → `ScoutHeaderButton`
 
 #### Current Flow for Job Fit Analysis

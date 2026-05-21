@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, ChevronRight, Bell, X, Send, Clock, MessageSquareReply, Loader2, Sparkles, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Bell, X, Send, Clock, MessageSquareReply, Loader2, Lightbulb, Search } from "lucide-react";
 import type { Nudge, ReplyCoachDraft } from "@/services/api";
 
 export interface ReplyDraftItem {
@@ -36,7 +36,7 @@ function StuckStudentCard({ nudge, onDismiss }: { nudge: Nudge; onDismiss: (id: 
   return (
     <div className="bg-emerald-50/60 border border-emerald-200/60 rounded-md px-3 py-2">
       <div className="flex items-start gap-2">
-        <Sparkles className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
+        <Lightbulb className="w-3.5 h-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-xs text-gray-700 leading-relaxed">
             {nudge.generatedMessage}
@@ -142,7 +142,7 @@ export function NudgePanel({
                       <p className="text-xs text-gray-500 truncate">{item.company}</p>
                     )}
                     <p className="text-xs text-blue-600 mt-0.5">
-                      Reply draft ready — {item.draft.replyType}
+                      Reply draft ready - {item.draft.replyType}
                     </p>
                   </div>
                 </div>

@@ -1,8 +1,8 @@
 """
-Networking Roadmap routes — Phase 4.
+Networking Roadmap routes - Phase 4.
 
-GET  /api/networking-roadmap          — Returns cached roadmap or generates new one
-POST /api/networking-roadmap/refresh  — Force regenerate roadmap
+GET  /api/networking-roadmap - Returns cached roadmap or generates new one
+POST /api/networking-roadmap/refresh - Force regenerate roadmap
 """
 from flask import Blueprint, jsonify, request
 

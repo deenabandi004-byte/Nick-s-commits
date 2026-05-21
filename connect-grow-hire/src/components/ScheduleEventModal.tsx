@@ -79,7 +79,7 @@ export function ScheduleEventModal({
     if (prefillContact && isOpen) {
       if (prefillContact.contactName) {
         setContactSearch(prefillContact.contactName);
-        setTitle(`Coffee Chat with ${prefillContact.contactName}`);
+        setTitle(`Meeting with ${prefillContact.contactName}`);
       }
       if (prefillContact.firm) {
         setFirm(prefillContact.firm);
@@ -137,7 +137,7 @@ export function ScheduleEventModal({
     setSelectedContact(contact);
     setContactSearch(`${contact.firstName} ${contact.lastName}`.trim() || contact.email);
     setFirm(contact.company || '');
-    setTitle(`Coffee Chat with ${contact.firstName} ${contact.lastName}`.trim() || contact.email);
+    setTitle(`Meeting with ${contact.firstName} ${contact.lastName}`.trim() || contact.email);
     setShowContactDropdown(false);
   };
 
@@ -338,7 +338,7 @@ export function ScheduleEventModal({
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Coffee Chat with..."
+              placeholder="Meeting with..."
               required
             />
           </div>

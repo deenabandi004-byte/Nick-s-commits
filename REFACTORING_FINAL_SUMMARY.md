@@ -23,7 +23,7 @@ backend/
     │   ├── runs.py                  ✅ 6 routes
     │   ├── enrichment.py            ✅ 2 routes
     │   ├── resume.py                ✅ 1 route
-    │   ├── coffee_chat_prep.py      ✅ 6 routes
+    │   ├── meeting_prep.py      ✅ 6 routes
     │   ├── billing.py               ✅ 9 routes
     │   └── users.py                  ✅ 1 route (placeholder)
     │
@@ -44,14 +44,14 @@ backend/
     │   ├── __init__.py               ✅ Package initialization
     │   ├── contact.py                ✅ Contact utilities
     │   ├── users.py                  ✅ User utilities
-    │   └── coffee_chat_prep.py       ✅ Coffee chat utilities
+    │   └── meeting_prep.py       ✅ Meeting utilities
     │
     └── models/                       ✅ 4 model files (POPULATED)
         ├── __init__.py               ✅ Exports all models
         ├── enums.py                  ✅ Enum definitions (ContactStatus, UserTier, SearchType)
         ├── contact.py                ✅ Contact normalization function
         ├── users.py                  ✅ User data creation & validation
-        └── coffee_chat_prep.py       ✅ Coffee chat prep data models
+        └── meeting_prep.py       ✅ Meeting prep data models
 
 app.py (root)                         ✅ Shim delegating to backend.wsgi
 ```
@@ -94,18 +94,18 @@ from app.models.users import create_user_data, update_user_tier_data
 user_data = create_user_data(uid='123', email='user@example.com', tier='pro')
 ```
 
-### ✅ `models/coffee_chat_prep.py`
+### ✅ `models/meeting_prep.py`
 **Contents:**
-- `create_coffee_chat_prep_data()` - Create prep structure
-- `update_coffee_chat_prep_status()` - Update prep status
+- `create_meeting_prep_data()` - Create prep structure
+- `update_meeting_prep_status()` - Update prep status
 - `validate_prep_status()` - Validate status values
-- `format_coffee_chat_prep_response()` - Format for API response
+- `format_meeting_prep_response()` - Format for API response
 
 **Usage:**
 ```python
-from app.models.coffee_chat_prep import create_coffee_chat_prep_data
+from app.models.meeting_prep import create_meeting_prep_data
 
-prep_data = create_coffee_chat_prep_data(
+prep_data = create_meeting_prep_data(
     linkedin_url='https://linkedin.com/in/...',
     user_id='123',
     user_email='user@example.com'

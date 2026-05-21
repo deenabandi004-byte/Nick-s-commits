@@ -19,7 +19,7 @@
 - `services/reply_generation.py` - Email generation functions
 - `services/directory_search.py` - Directory search logic
 - `services/resume_parser.py` - Resume parsing and PDF extraction
-- `services/pdf_builder.py` - PDF generation for coffee chat preps
+- `services/pdf_builder.py` - PDF generation for meeting preps
 - `services/stripe_client.py` - Stripe webhook handlers
 
 ### Routes (Need to Create/Update)
@@ -32,14 +32,14 @@
 - `routes/runs.py` - Free/Pro tier run endpoints
 - `routes/enrichment.py` - Autocomplete and enrichment
 - `routes/resume.py` - Resume parsing routes
-- `routes/coffee_chat_prep.py` - Coffee chat prep routes
+- `routes/meeting_prep.py` - Meeting prep routes
 - `routes/billing.py` - Stripe and tier management
 - `routes/users.py` - User management routes
 
 ### Utils (Need to Create)
 - `utils/contact.py` - Contact utilities and helpers
 - `utils/users.py` - User utilities
-- `utils/coffee_chat_prep.py` - Coffee chat utilities
+- `utils/meeting_prep.py` - Meeting utilities
 - `utils/enums.py` - Enum utilities (if any)
 
 ### Models (Need to Create/Update)

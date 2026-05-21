@@ -82,7 +82,7 @@ export function useSubscription() {
     return () => clearInterval(interval);
   }, []);
 
-  const incrementUsage = async (feature: 'alumni_search' | 'coffee_chat_prep' | 'interview_prep') => {
+  const incrementUsage = async (feature: 'alumni_search' | 'meeting_prep' | 'interview_prep') => {
     try {
       const auth = getAuth();
       const firebaseUser = auth.currentUser;

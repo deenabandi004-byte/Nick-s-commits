@@ -170,9 +170,9 @@ Following up is crucial if you don't get a response. Use this sequence:
 - **First Follow-Up**: Restate your interest and politely nudge for a response.
 - **Second Follow-Up**: Introduce a new angle or additional information to reignite interest.
 
-## What to Do When They Respond: Preparing for the Coffee Chat
+## What to Do When They Respond: Preparing for the Meeting
 
-Preparing for your coffee chat is as critical as securing it. Here's what to do:
+Preparing for your meeting is as critical as securing it. Here's what to do:
 
 ### 10-Question Preparation Checklist
 1. Research their current projects

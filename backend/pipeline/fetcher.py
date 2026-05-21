@@ -323,7 +323,7 @@ def _fetch_all_ashby() -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
-# Fantastic.jobs (RapidAPI active-jobs-db) fetcher — category-based strategy
+# Fantastic.jobs (RapidAPI active-jobs-db) fetcher - category-based strategy
 # ---------------------------------------------------------------------------
 
 FANTASTICJOBS_BASE_URL = "https://active-jobs-db.p.rapidapi.com/active-ats-24h"

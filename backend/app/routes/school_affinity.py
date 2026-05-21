@@ -1,5 +1,5 @@
 """
-School affinity endpoint — returns top companies where alumni of a given school work,
+School affinity endpoint - returns top companies where alumni of a given school work,
 powered by PDL people search with Firestore caching (30-day TTL).
 """
 from flask import Blueprint, request, jsonify

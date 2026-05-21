@@ -6,7 +6,7 @@ After running Tailor with the LPL job description and clicking **Apply**, verify
 
 - Run Tailor with the LPL Financial (or target) JD.
 - Accept all suggestions (Summary, Experience, Skills, etc.).
-- Click **Apply** — resume should update and switch to Editor.
+- Click **Apply** - resume should update and switch to Editor.
 
 ## 2. Offerloop role – all 5 original bullets preserved
 

@@ -145,7 +145,7 @@ export function PageLoadingBar({ isLoading }: PageLoadingBarProps) {
 }
 
 /**
- * Stepped progress bar for multi-stage operations like Coffee Chat Prep
+ * Stepped progress bar for multi-stage operations like Meeting Prep
  */
 interface Step {
   id: string;

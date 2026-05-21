@@ -1,4 +1,4 @@
-# Pricing Overhaul — Launch Checklist
+# Pricing Overhaul - Launch Checklist
 
 Punch list to finish the pricing rework. Branch: `pricing-overhaul` (4 commits ahead of `main`).
 
@@ -14,7 +14,7 @@ What's already done is in `docs/pricing-recommendations.md`. This doc tracks wha
 - Trial split: 30 days for `.edu`, 14 days otherwise
 - Stripe subscription metadata: `studentLockIn` flag set at checkout
 - Public `/pricing` page with two toggles (Monthly/Annual + 🎓 .edu Student Price)
-- Pro = single agent + unlimited coffee chat; Elite = multi-agent (up to 5)
+- Pro = single agent + unlimited meeting; Elite = multi-agent (up to 5)
 - Monthly credit-refill cron (safety net for annual subs)
 - Comparison table, FAQ, money-back banner all updated
 - Frontend constant-drift fixed
@@ -54,7 +54,7 @@ VITE_STRIPE_PRO_ANNUAL_PRICE_ID=price_xxx
 VITE_STRIPE_ELITE_ANNUAL_PRICE_ID=price_xxx
 ```
 
-The list-price ($29 / $59) IDs are not used yet by checkout — see section 3a if you want to wire them.
+The list-price ($29 / $59) IDs are not used yet by checkout - see section 3a if you want to wire them.
 
 ### 1c. Confirm webhook endpoint still points at production
 
@@ -62,19 +62,19 @@ In Stripe → Developers → Webhooks: verify the endpoint URL is `https://offer
 
 ---
 
-## 2. Backend code work (I can do these — they need Stripe Price IDs to exist first)
+## 2. Backend code work (I can do these - they need Stripe Price IDs to exist first)
 
 ### 2a. Map annual Price IDs to tier in `get_tier_from_price_id`
 
 **File:** `backend/app/services/stripe_client.py:12`
 
-Current function only knows about `STRIPE_PRO_PRICE_ID` and `STRIPE_ELITE_PRICE_ID`. When annual subscriptions arrive at the webhook, the price ID won't match — current code defaults to `'pro'`, which means **an Elite annual customer would get Pro credits**. Critical to fix before going live with annual.
+Current function only knows about `STRIPE_PRO_PRICE_ID` and `STRIPE_ELITE_PRICE_ID`. When annual subscriptions arrive at the webhook, the price ID won't match - current code defaults to `'pro'`, which means **an Elite annual customer would get Pro credits**. Critical to fix before going live with annual.
 
 Update to also check `STRIPE_PRO_ANNUAL_PRICE_ID` and `STRIPE_ELITE_ANNUAL_PRICE_ID`.
 
 ### 2b. Backfill `isStudent` on existing users
 
-**Why:** the `.edu` detection only fires for *new* signups. ~300 existing users have no `isStudent` field — `loadUserData` defaults them to `false`, so they'd get the 14-day trial badge and lose the student-price-for-life claim.
+**Why:** the `.edu` detection only fires for *new* signups. ~300 existing users have no `isStudent` field - `loadUserData` defaults them to `false`, so they'd get the 14-day trial badge and lose the student-price-for-life claim.
 
 **Fix:** a one-off Firestore migration script:
 
@@ -108,7 +108,7 @@ Two real mismatches between what the UI now claims and what backend enforces:
 | Feature | UI says | `backend/app/config.py` says |
 |---|---|---|
 | Smart filters on Free | yes | `'smart_filters': False` at line 190 |
-| Custom email templates on Free | yes | unclear — `personalized_templates: False` at line 194, but that field may be for the resume-personalized variant, not user-created template library |
+| Custom email templates on Free | yes | unclear - `personalized_templates: False` at line 194, but that field may be for the resume-personalized variant, not user-created template library |
 
 **Action:**
 - Flip Free's `'smart_filters'` to `True` (line 190 in `backend/app/config.py`)
@@ -138,7 +138,7 @@ The toggle to show list price exists in the UI, but checkout still uses the stud
 
 ### 3b. Hide the .edu toggle for non-student logged-in users
 
-If a logged-in user has `isStudent: false`, the toggle gives them a misleading hint that toggling on saves them money — but they can't actually unlock the student price without re-signing-up with .edu. Could hide the toggle or disable it for verified non-students. Defer.
+If a logged-in user has `isStudent: false`, the toggle gives them a misleading hint that toggling on saves them money - but they can't actually unlock the student price without re-signing-up with .edu. Could hide the toggle or disable it for verified non-students. Defer.
 
 ### 3c. Pro → Elite upgrade smoke test
 
@@ -157,7 +157,7 @@ Run locally with `python3 backend/wsgi.py` + `cd connect-grow-hire && npm run de
 - [ ] Click "Start Free Trial" while logged out → redirects to `/signin?next=/pricing&plan=pro`
 - [ ] Annual toggle pill says **"2 MONTHS FREE"**, switching shows $12.42/mo (Pro) and $29.08/mo (Elite)
 - [ ] Backend log shows `Monthly credit refill thread registered (first run in 1 hour)`
-- [ ] Logged-in `.edu` user sees subtitle: *"Welcome, student — your .edu unlocks ~50% off and a 30-day free trial."*
+- [ ] Logged-in `.edu` user sees subtitle: *"Welcome, student - your .edu unlocks ~50% off and a 30-day free trial."*
 - [ ] After Stripe SKUs created + env vars set: annual checkout completes → user gets correct tier + 30-day trial
 - [ ] Webhook delivers an annual `invoice.paid` event → user credits refill to tier max (not double-charged, not skipped)
 
@@ -165,10 +165,10 @@ Run locally with `python3 backend/wsgi.py` + `cd connect-grow-hire && npm run de
 
 ## 5. Marketing / doc updates (low priority, do post-launch)
 
-- [ ] **`CLAUDE.md`** Tier & Credit System section (~line 200) — table still shows old 300/1500/3000 credits and old contact caps. Update to match.
-- [ ] **`connect-grow-hire/public/llms.txt`** — if it lists pricing/tier features for AI crawlers, sync.
-- [ ] **`/compare/*` SEO landing pages** — they have public pricing. Sweep for old $19.99 / 1,500 credits / interview prep / founder kickoff mentions.
-- [ ] **Helmet meta descriptions** on auth-gated pages mention pricing — re-check.
+- [ ] **`CLAUDE.md`** Tier & Credit System section (~line 200) - table still shows old 300/1500/3000 credits and old contact caps. Update to match.
+- [ ] **`connect-grow-hire/public/llms.txt`** - if it lists pricing/tier features for AI crawlers, sync.
+- [ ] **`/compare/*` SEO landing pages** - they have public pricing. Sweep for old $19.99 / 1,500 credits / interview prep / founder kickoff mentions.
+- [ ] **Helmet meta descriptions** on auth-gated pages mention pricing - re-check.
 
 ---
 

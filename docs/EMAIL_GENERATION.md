@@ -18,17 +18,17 @@
 
 | ID | Name | Description |
 |----|------|-------------|
-| `casual` | Casual | Relaxed and friendly — like texting a friend of a friend |
-| `professional` | Professional | Polished and respectful — safe for senior executives |
-| `short_direct` | Short & Direct | Under 50 words — get to the point fast |
-| `warm_enthusiastic` | Warm & Enthusiastic | Genuinely excited — great for people you admire |
-| `bold_confident` | Bold & Confident | Stand out in the inbox — memorable and direct |
+| `casual` | Casual | Relaxed and friendly - like texting a friend of a friend |
+| `professional` | Professional | Polished and respectful - safe for senior executives |
+| `short_direct` | Short & Direct | Under 50 words - get to the point fast |
+| `warm_enthusiastic` | Warm & Enthusiastic | Genuinely excited - great for people you admire |
+| `bold_confident` | Bold & Confident | Stand out in the inbox - memorable and direct |
 
 ### Purpose Presets (from `email_templates.py`)
 
 | ID | Name | Description |
 |----|------|-------------|
-| `networking` | Networking | Coffee chats and informational interviews |
+| `networking` | Networking | Meetings and informational interviews |
 | `referral` | Referral Request | Ask for a referral to a specific role at their company |
 | `follow_up` | Follow-Up | Follow up on a previous email or meeting |
 | `sales` | Sales / Partnership | Pitch a product or propose a partnership |
@@ -53,11 +53,11 @@ like [your major] - always fill in actual values or omit gracefully.
 
 ```
 You write personalized emails. Follow the user's custom instructions and style exactly. Do not add
-networking rules, resume mentions, or coffee chat asks unless the instructions say so. Return only
+networking rules, resume mentions, or meeting asks unless the instructions say so. Return only
 valid JSON.
 ```
 
-### User Prompt Template (Networking — Full Reproduction)
+### User Prompt Template (Networking - Full Reproduction)
 
 ```
 You write professional, warm networking emails for college students reaching out to industry professionals.
@@ -110,7 +110,7 @@ Contact 0:
 - LinkedIn: {LinkedIn}
 - Work Summary: {WorkSummary}
 - Education: {EducationTop}
-- Personalization anchor: {anchor_type} — {anchor_value}
+- Personalization anchor: {anchor_type} - {anchor_value}
 - Personalize by: Mentioning their role/company, asking about their experience, showing genuine interest in their work
 
 [Repeat for each contact...]
@@ -170,7 +170,7 @@ Make them conversational and specific:
 NOT these generic ones:
 - "Networking request"
 - "Introduction"
-- "Coffee chat request"
+- "Meeting request"
 - "Hope to connect"
 
 ===== CRITICAL =====
@@ -212,7 +212,7 @@ STYLE INSTRUCTIONS:
 STYLE INSTRUCTIONS:
 - STRICT: Keep the entire email body under 50 words (excluding greeting and sign-off)
 - Get to the point in the first sentence
-- One specific question or ask — nothing else
+- One specific question or ask - nothing else
 - No filler, no pleasantries beyond "Hi [Name],"
 - Every word must earn its place
 - Sign off with just "Thanks," then name
@@ -237,7 +237,7 @@ STYLE INSTRUCTIONS:
 - Use one vivid or surprising word/phrase that makes the email stick
 - Don't be apologetic ("Sorry to bother you", "I know you're busy")
 - State what you bring to the conversation, not just what you want
-- Keep it punchy — short paragraphs, no walls of text
+- Keep it punchy - short paragraphs, no walls of text
 - Sign off with "Thanks," then name
 ```
 
@@ -245,7 +245,7 @@ STYLE INSTRUCTIONS:
 
 **Networking:**
 ```
-Write a personalized networking email requesting an informational interview or coffee chat.
+Write a personalized networking email requesting an informational interview or meeting.
 
 The email should:
 - Introduce the sender as a student interested in the recipient's field
@@ -276,7 +276,7 @@ The email should:
 Write a brief, warm follow-up email to someone who hasn't responded to a previous outreach or to follow up after a meeting/call.
 
 The email should:
-- Be SHORT — 2-3 sentences max
+- Be SHORT - 2-3 sentences max
 - Reference the previous interaction naturally without guilt-tripping
 - Add one small piece of new value (a relevant article, company news, or brief update on sender's progress)
 - Restate the ask lightly without being pushy
@@ -289,10 +289,10 @@ Write a concise, compelling sales or partnership outreach email.
 
 The email should:
 - Lead with a specific pain point or opportunity relevant to the recipient's role/organization
-- Introduce the product/service in ONE sentence — what it does and who it's for
+- Introduce the product/service in ONE sentence - what it does and who it's for
 - Include one concrete proof point (users, results, traction) if available from sender context
 - Make a specific, low-friction ask (15-min demo, quick call, or reply)
-- Do NOT sound like a mass email — reference something specific about their organization
+- Do NOT sound like a mass email - reference something specific about their organization
 - Do NOT include a resume attachment line
 - Close with sender's name and title/role
 ```
@@ -302,51 +302,51 @@ The email should:
 ## Input Data Used in Prompts
 
 ### From PDL Contact Object
-- `FirstName`, `LastName` — recipient name
-- `Title` — job title (e.g., "Software Engineer")
-- `Company` — current company
-- `City`, `State` — location
-- `Email` — best email address
-- `LinkedIn` — LinkedIn URL
-- `WorkSummary` — previous companies text (e.g., "Previously at Google, Microsoft")
-- `EducationTop` — education summary
-- `experience[]` — structured work history (for career transition detection)
+- `FirstName`, `LastName` - recipient name
+- `Title` - job title (e.g., "Software Engineer")
+- `Company` - current company
+- `City`, `State` - location
+- `Email` - best email address
+- `LinkedIn` - LinkedIn URL
+- `WorkSummary` - previous companies text (e.g., "Previously at Google, Microsoft")
+- `EducationTop` - education summary
+- `experience[]` - structured work history (for career transition detection)
 
 ### From User Profile (Firestore)
-- `name` — sender's full name
-- `email` — sender's email
-- `university` / `school` — sender's university (shortened via `get_university_shorthand()`)
-- `major` — sender's major
-- `year` — graduation year
-- `resumeText` — extracted resume text
-- `resumeFileName` — uploaded resume filename
+- `name` - sender's full name
+- `email` - sender's email
+- `university` / `school` - sender's university (shortened via `get_university_shorthand()`)
+- `major` - sender's major
+- `year` - graduation year
+- `resumeText` - extracted resume text
+- `resumeFileName` - uploaded resume filename
 
 ### Resume Parsing
 - `extract_text_from_pdf()` / `extract_text_from_file()` in `resume_parser.py`
 - Uses PyPDF2 for PDF text extraction
 - `extract_user_info_from_resume_priority()` extracts: name, university, major, year, key_experiences, skills, achievements
-- `extract_experience_summary()` — summarizes work experience
-- `extract_hometown_from_resume()` — hometown for commonality detection
-- `extract_companies_from_resume()` — previous companies
+- `extract_experience_summary()` - summarizes work experience
+- `extract_hometown_from_resume()` - hometown for commonality detection
+- `extract_companies_from_resume()` - previous companies
 
 ---
 
 ## Anchor Priority System
 
-The email generation uses an "anchor" — a personalization hook based on the contact's background.
+The email generation uses an "anchor" - a personalization hook based on the contact's background.
 
 ### Priority Order (highest first):
 
-1. **Career Transition** (priority 1) — `_detect_career_transition()`
+1. **Career Transition** (priority 1) - `_detect_career_transition()`
    - Detects if contact changed industries (e.g., engineering → consulting)
    - Requires 2+ entries in `experience[]` array
    - Anchor text: e.g., "transitioned from engineering to consulting"
 
-2. **Tenure** (priority 2) — `_detect_tenure()`
+2. **Tenure** (priority 2) - `_detect_tenure()`
    - Detects if contact recently joined current company (<3 years)
    - Anchor text: e.g., "recently joined" or "early in your time"
 
-3. **Title/Company** (priority 3) — fallback
+3. **Title/Company** (priority 3) - fallback
    - Uses job title and company name as the anchor
    - Always available
 
@@ -462,7 +462,7 @@ Deduplicates if GPT added multiple sign-offs.
 
 `_load_user_gmail_creds()`:
 1. Loads credentials from Firestore
-2. Checks expiry — if expired:
+2. Checks expiry - if expired:
    - If `refresh_token` exists: calls `creds.refresh(Request())`
    - Saves refreshed credentials back to Firestore
    - If refresh fails with `invalid_grant`: raises exception (user must re-authenticate)
@@ -486,7 +486,7 @@ Deduplicates if GPT added multiple sign-offs.
 ## Batch Email Generation
 
 ### API Endpoint
-`POST /api/runs/search` — searches contacts AND generates emails in one call.
+`POST /api/runs/search` - searches contacts AND generates emails in one call.
 
 ### Flow
 1. Search contacts via PDL (`contact_search_optimized()`)
@@ -559,14 +559,14 @@ apostrophe.
 ```
 
 ### Approach Styles (randomly selected per email)
-- `direct_confident` — Professional, assertive
-- `warm_personable` — Friendly, conversational
-- `enthusiastic_specific` — High energy, specific
-- `brief_respectful` — Short, punchy
-- `story_driven` — Opens with hook
+- `direct_confident` - Professional, assertive
+- `warm_personable` - Friendly, conversational
+- `enthusiastic_specific` - High energy, specific
+- `brief_respectful` - Short, punchy
+- `story_driven` - Opens with hook
 
 ### Functions
-- `generate_recruiter_emails()` — batch generation for recruiter list
-- `generate_single_email()` — single personalized email
-- `build_resume_summary()` — summarizes resume for prompt context
-- `plain_to_html()` — converts plain text to HTML for Gmail
+- `generate_recruiter_emails()` - batch generation for recruiter list
+- `generate_single_email()` - single personalized email
+- `build_resume_summary()` - summarizes resume for prompt context
+- `plain_to_html()` - converts plain text to HTML for Gmail

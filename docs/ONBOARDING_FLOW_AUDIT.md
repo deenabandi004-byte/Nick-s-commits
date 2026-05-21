@@ -1,4 +1,4 @@
-# Onboarding Flow — Full Audit
+# Onboarding Flow - Full Audit
 
 ## 1. Onboarding Flow
 
@@ -89,7 +89,7 @@ So “completion” is: Firestore `users/{uid}.needsOnboarding === false` plus c
 
 So in code, **new web users are supposed to land on `/onboarding`** either after Gmail OAuth (via `/signin?connected=gmail`) or directly from SignIn when Gmail is already connected.
 
-### After onboarding completes — where they go and what prevents seeing onboarding again
+### After onboarding completes - where they go and what prevents seeing onboarding again
 
 - **In OnboardingFlow.tsx:**  
   - `completeOnboarding(finalData)` updates Firestore and context with `needsOnboarding: false`.  
@@ -133,7 +133,7 @@ So in code, **new web users are supposed to land on `/onboarding`** either after
 
 ## 4. The Bug
 
-### Trace: brand new user signing up (web) — step by step
+### Trace: brand new user signing up (web) - step by step
 
 1. User on `/` or `/signin` → clicks “Create account” / “Continue with Google”.
 2. `handleGoogleAuth()` → `signIn({ prompt: "consent" })` in context.
@@ -145,7 +145,7 @@ So in code, **new web users are supposed to land on `/onboarding`** either after
 
 **Where the redirect “should” fire:** In that same `useEffect` when `justConnectedGmail` is true and `user` is set (with `needsOnboarding: true`). So the redirect **should** fire. If new web users still don’t see onboarding, possible causes include: race (user not yet set when effect runs), or another code path (e.g. different `return_path` from OAuth, or frontend redirect URI differing from `/signin` in some env).
 
-### Trace: extension user — step by step
+### Trace: extension user - step by step
 
 1. User opens extension popup, clicks “Sign in” (or equivalent).
 2. `handleLogin()` in popup.js: `chrome.identity.getAuthToken({ interactive: true })` → Google token.
@@ -187,9 +187,9 @@ So onboarding is skipped for extension users because:
 | **connect-grow-hire/src/contexts/FirebaseAuthContext.tsx** | Sets `needsOnboarding` for new users (web), provides `completeOnboarding()`, `loadUserData` reads `needsOnboarding`. | OK for web |
 | **connect-grow-hire/src/pages/SignIn.tsx** | After `signIn()` uses `next` and Gmail status to navigate to `/onboarding` or `/home`; after Gmail return uses `user?.needsOnboarding` for redirect. | OK |
 | **connect-grow-hire/src/services/firebaseApi.ts** | `UserData.needsOnboarding` type; `saveProfessionalInfo` sets `needsOnboarding: false`. | OK |
-| **backend/app/routes/auth_extension.py** | Creates Firestore user for extension sign-in using `create_user_data()`; does not set `needsOnboarding`. | **Broken** — new extension users never get onboarding flag |
-| **backend/app/models/users.py** | `create_user_data()` builds user payload; no `needsOnboarding` field. | **Broken** — used by extension auth |
-| **chrome-extension/popup.js** | Extension auth via `/api/auth/google-extension`; no onboarding check, no redirect to web app. | **Gap** — never sends new users to onboarding |
+| **backend/app/routes/auth_extension.py** | Creates Firestore user for extension sign-in using `create_user_data()`; does not set `needsOnboarding`. | **Broken** - new extension users never get onboarding flag |
+| **backend/app/models/users.py** | `create_user_data()` builds user payload; no `needsOnboarding` field. | **Broken** - used by extension auth |
+| **chrome-extension/popup.js** | Extension auth via `/api/auth/google-extension`; no onboarding check, no redirect to web app. | **Gap** - never sends new users to onboarding |
 
 ---
 
@@ -282,16 +282,16 @@ So onboarding is skipped for extension users because:
 
 ## 7. Recommended fixes
 
-1. **Backend — extension-created users**  
+1. **Backend - extension-created users**  
    - In **auth_extension.py**, when creating the Firestore user doc, set **`needsOnboarding: True`** in the payload (e.g. add it to the dict passed to `user_ref.set()` after calling `create_user_data()`, or add a parameter to `create_user_data()` and use it in the model).  
    - This ensures that when an extension-only user later visits the website and signs in, they will be redirected to onboarding.
 
-2. **Extension — optional**  
+2. **Extension - optional**  
    - Have `/api/auth/google-extension` return **`needsOnboarding`** in the response (from the created/updated user doc).  
    - In the extension, after first-time sign-in, if `needsOnboarding === true`, open a tab to `https://www.offerloop.ai/onboarding` (or `/signin` so the web app can redirect based on the flag).  
    - This makes extension-first users see onboarding without having to open the site manually.
 
-3. **Web — optional**  
+3. **Web - optional**  
    - If you still see new web users missing onboarding, add a short delay or an explicit “wait for user” before running the post–Gmail OAuth redirect in SignIn, or ensure the redirect runs after a second render when `user` is guaranteed to be set.
 
 Implementing (1) is the minimum to fix “extension users skip onboarding” when they later use the web; (2) improves first-time experience for extension-only users.

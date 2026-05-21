@@ -1,22 +1,22 @@
-# Offerloop — AI-Powered Networking Platform
+# Offerloop - AI-Powered Networking Platform
 
 ## Project Overview
 
-Offerloop is a full-stack AI-powered professional networking platform built for college students. It automates the most time-consuming parts of career networking: discovering contacts, writing personalized outreach emails, preparing for coffee chats and interviews, and managing follow-ups.
+Offerloop is a full-stack AI-powered professional networking platform built for college students. It automates the most time-consuming parts of career networking: discovering contacts, writing personalized outreach emails, preparing for meetings and interviews, and managing follow-ups.
 
 **Core Features:**
-- **Automated Contact Discovery** — Search for professionals by job title, company, location, and alumni network using People Data Labs (PDL)
-- **AI Email Generation** — GPT-4o-mini generates personalized networking emails with anchor-based personalization (career transitions, tenure, title/company)
-- **Coffee Chat Prep** — AI-generated prep notes with talking points, company research, and conversation starters
-- **Interview Prep** — AI-powered interview question generation with YouTube/Reddit/Glassdoor content aggregation
-- **Resume Workshop** — Upload, parse, score (ATS), optimize, and tailor resumes with AI
-- **Cover Letter Workshop** — AI-generated cover letters tailored to job descriptions
-- **Gmail Integration** — OAuth2 connection for creating drafts and sending emails directly
-- **Outbox & Tracking** — Track email status, replies, and follow-ups
-- **Scout AI Assistant** — In-app AI chatbot for career guidance and platform help
-- **Firm Search** — Company research with detailed overviews, culture insights, and recruiting timelines
+- **Automated Contact Discovery** - Search for professionals by job title, company, location, and alumni network using People Data Labs (PDL)
+- **AI Email Generation** - GPT-4o-mini generates personalized networking emails with anchor-based personalization (career transitions, tenure, title/company)
+- **Meeting Prep** - AI-generated prep notes with talking points, company research, and conversation starters
+- **Interview Prep** - AI-powered interview question generation with YouTube/Reddit/Glassdoor content aggregation
+- **Resume Workshop** - Upload, parse, score (ATS), optimize, and tailor resumes with AI
+- **Cover Letter Workshop** - AI-generated cover letters tailored to job descriptions
+- **Gmail Integration** - OAuth2 connection for creating drafts and sending emails directly
+- **Outbox & Tracking** - Track email status, replies, and follow-ups
+- **Scout AI Assistant** - In-app AI chatbot for career guidance and platform help
+- **Firm Search** - Company research with detailed overviews, culture insights, and recruiting timelines
 
-**Team:** Sid (CTO), Nick Wittig (CEO), Rylan Bohnett (CMO) — all USC class of 2027.
+**Team:** Sid (CTO), Nick Wittig (CEO), Rylan Bohnett (CMO) - all USC class of 2027.
 
 **Stage:** UC LAUNCH accelerator Spring 2026, New Venture Seed Competition competitor.
 
@@ -30,11 +30,11 @@ Offerloop is a full-stack AI-powered professional networking platform built for 
 | **Backend** | Python Flask, Gunicorn, Flask-CORS, Flask-Limiter |
 | **Database** | Firebase Firestore (NoSQL). Legacy SQLite (`contacts.db`) for contact directory |
 | **Auth** | Firebase Authentication (Google OAuth + email/password) |
-| **Contact Search** | People Data Labs (PDL) v5 API — person search, company clean, location clean |
+| **Contact Search** | People Data Labs (PDL) v5 API - person search, company clean, location clean |
 | **Email Generation** | OpenAI GPT-4o-mini (temperature 0.75, max_tokens 4000) |
-| **Email Delivery** | Gmail API OAuth2 — draft creation, sending, reply tracking |
-| **Payments** | Stripe — subscriptions, checkout sessions, customer portal, webhooks |
-| **Email Enrichment** | Hunter.io — email verification and discovery |
+| **Email Delivery** | Gmail API OAuth2 - draft creation, sending, reply tracking |
+| **Payments** | Stripe - subscriptions, checkout sessions, customer portal, webhooks |
+| **Email Enrichment** | Hunter.io - email verification and discovery |
 | **Web Scraping** | SerpAPI (Google search), Jina AI (content extraction), YouTube Transcript API |
 | **PDF Generation** | WeasyPrint, ReportLab, PyPDF2, @react-pdf/renderer (frontend) |
 | **Analytics** | PostHog (event tracking, user identification) |
@@ -56,7 +56,7 @@ Offerloop/
 ├── contacts.db                             # Legacy SQLite database for contact directory
 │
 ├── backend/                                # Python Flask REST API
-│   ├── wsgi.py                             # CANONICAL entry point — app factory, 32+ blueprint registration
+│   ├── wsgi.py                             # CANONICAL entry point - app factory, 32+ blueprint registration
 │   ├── app.py                              # Deprecated entry point (use wsgi.py)
 │   ├── email_templates.py                  # Email style/purpose presets (casual, professional, short_direct, etc.)
 │   ├── requirements.txt                    # Python dependencies (Flask, OpenAI, firebase-admin, stripe, etc.)
@@ -73,10 +73,10 @@ Offerloop/
 │   │   ├── logging_config.py               # Logging setup
 │   │   │
 │   │   ├── routes/                         # Flask Blueprints (32+ registered in wsgi.py)
-│   │   │   ├── health.py                   # GET /api/health — health check
-│   │   │   ├── runs.py                     # POST /api/runs/search — main contact search + email generation
+│   │   │   ├── health.py                   # GET /api/health - health check
+│   │   │   ├── runs.py                     # POST /api/runs/search - main contact search + email generation
 │   │   │   ├── runs_hunter.py              # Hunter.io email enrichment routes
-│   │   │   ├── emails.py                   # POST /api/emails/generate-and-draft — email generation with Gmail drafts
+│   │   │   ├── emails.py                   # POST /api/emails/generate-and-draft - email generation with Gmail drafts
 │   │   │   ├── email_template.py           # Email template CRUD routes
 │   │   │   ├── contacts.py                 # Contact CRUD (save, update, delete, bulk operations)
 │   │   │   ├── directory.py                # Contact directory/library management
@@ -89,7 +89,7 @@ Offerloop/
 │   │   │   ├── resume_workshop.py          # Resume optimization, ATS scoring, tailoring
 │   │   │   ├── resume_pdf_patch.py         # Resume PDF patching/editing
 │   │   │   ├── cover_letter_workshop.py    # Cover letter generation and management
-│   │   │   ├── coffee_chat_prep.py         # Coffee chat prep generation (OpenAI + web research)
+│   │   │   ├── meeting_prep.py         # Meeting prep generation (OpenAI + web research)
 │   │   │   ├── interview_prep.py           # Interview prep generation (Glassdoor, YouTube, Reddit)
 │   │   │   ├── billing.py                  # Stripe checkout, webhooks, portal, tier info, credit checks
 │   │   │   ├── users.py                    # User profile endpoints (get, update, professional info)
@@ -125,7 +125,7 @@ Offerloop/
 │   │   │   ├── pdf_builder.py              # PDF generation (WeasyPrint/ReportLab)
 │   │   │   ├── pdf_patcher.py              # PDF patching/editing
 │   │   │   ├── docx_service.py             # DOCX generation
-│   │   │   ├── coffee_chat.py              # Coffee chat prep business logic
+│   │   │   ├── meeting.py              # Meeting prep business logic
 │   │   │   ├── prompt_parser.py            # NLP prompt → structured search params
 │   │   │   ├── prompt_pdl_search.py        # Prompt-to-PDL search execution
 │   │   │   ├── contact_search_optimized.py # Optimized contact search pipeline
@@ -157,12 +157,12 @@ Offerloop/
 │   │   │   ├── enums.py                    # Enum definitions
 │   │   │   ├── users.py                    # User models
 │   │   │   ├── contact.py                  # Contact models
-│   │   │   └── coffee_chat_prep.py         # Coffee chat prep models
+│   │   │   └── meeting_prep.py         # Meeting prep models
 │   │   │
 │   │   └── utils/                          # Utility modules
 │   │       ├── users.py                    # User info extraction from resumes
 │   │       ├── contact.py                  # Contact utility functions (clean_email_text)
-│   │       ├── coffee_chat_prep.py         # Commonality detection
+│   │       ├── meeting_prep.py         # Commonality detection
 │   │       ├── validation.py               # Request validation (Pydantic models)
 │   │       ├── exceptions.py               # Custom exceptions (ValidationError, InsufficientCreditsError, etc.)
 │   │       ├── retry.py                    # Retry decorator with backoff
@@ -198,7 +198,7 @@ Offerloop/
 │       │   ├── InterviewPrepPage.tsx       # Interview prep (61KB)
 │       │   ├── ResumeWorkshopPage.tsx      # Resume workshop (64KB)
 │       │   ├── CoverLetterPage.tsx         # Cover letter generator (56KB)
-│       │   ├── CoffeeChatPrepPage.tsx      # Coffee chat prep (47KB)
+│       │   ├── MeetingPrepPage.tsx      # Meeting prep (47KB)
 │       │   ├── JobBoardPage.tsx            # Job board (108KB)
 │       │   ├── AccountSettings.tsx         # Settings & subscription (107KB)
 │       │   ├── Pricing.tsx                 # Pricing page (34KB)

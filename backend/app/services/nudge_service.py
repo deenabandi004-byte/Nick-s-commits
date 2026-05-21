@@ -37,7 +37,7 @@ DEFAULT_FOLLOWUP_DAYS = 7
 # Max nudges per user per day (frequency cap)
 MAX_NUDGES_PER_USER_PER_DAY = 3
 
-# Distributed lock TTL (seconds) — prevents duplicate scans across Gunicorn workers
+# Distributed lock TTL (seconds) - prevents duplicate scans across Gunicorn workers
 LOCK_TTL_SECONDS = 3600  # 1 hour
 
 # Max contacts to process in parallel
@@ -48,7 +48,7 @@ NUDGE_TTL_DAYS = 30
 
 
 # ---------------------------------------------------------------------------
-# Distributed lock (Firestore transaction — atomic, no TOCTOU race)
+# Distributed lock (Firestore transaction - atomic, no TOCTOU race)
 # ---------------------------------------------------------------------------
 
 def _acquire_lock(db) -> bool:
@@ -115,7 +115,7 @@ def _update_healthcheck(
             "contactsScanned": int(contacts_scanned),
             "nudgesGenerated": int(nudges_generated),
             "errorCount": int(errors),
-            # Kept for operator visibility — not part of the contract.
+            # Kept for operator visibility - not part of the contract.
             "usersScanned": int(users_scanned),
         })
     except Exception as e:
@@ -150,7 +150,7 @@ def _get_eligible_contacts(db, uid: str, followup_days: int = DEFAULT_FOLLOWUP_D
         )
         docs = list(query.stream())
     except Exception:
-        # Fallback if composite index doesn't exist yet — scan all contacts
+        # Fallback if composite index doesn't exist yet - scan all contacts
         logger.warning("Firestore index missing for emailGeneratedAt range query on uid=%s, falling back to full scan", uid)
         docs = list(contacts_ref.stream())
 
@@ -247,7 +247,7 @@ def _generate_nudge_text(contact: dict, user_data: dict, news_hook: str = "") ->
 
     prompt = f"""You are helping a college student follow up on a networking email they sent {days_elapsed} days ago that hasn't received a reply.
 
-STUDENT (the sender — these are the ONLY facts about the student):
+STUDENT (the sender - these are the ONLY facts about the student):
 - Name: {user_name}
 - University: {user_school or 'not specified'}
 - Major: {user_major or 'not specified'}
@@ -406,7 +406,7 @@ def _cleanup_old_nudges(db, uid: str):
     deleted = 0
     try:
         for status in ("dismissed", "acted_on"):
-            # Single-field equality — no composite index required.
+            # Single-field equality - no composite index required.
             candidates = list(
                 nudges_ref
                 .where("status", "==", status)
@@ -436,8 +436,8 @@ def _cleanup_old_nudges(db, uid: str):
 # Copy variations by subtype
 STUCK_STUDENT_COPY = {
     "new_no_emails": "Ready to send your first email? Here are 3 great people to start with.",
-    "new_no_replies": "First emails are tough — let's try a different angle. Here are 3 new contacts.",
-    "established_inactive": "Let's get you back on track — here are 3 contacts worth reaching out to this week.",
+    "new_no_replies": "First emails are tough - let's try a different angle. Here are 3 new contacts.",
+    "established_inactive": "Let's get you back on track - here are 3 contacts worth reaching out to this week.",
 }
 
 

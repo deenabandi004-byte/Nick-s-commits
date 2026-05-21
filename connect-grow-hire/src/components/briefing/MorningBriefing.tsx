@@ -7,7 +7,7 @@ import {
   Target,
   Search,
   Mail,
-  Sparkles,
+  Sun,
   ChevronRight,
   ArrowUpRight,
   TrendingUp,
@@ -132,7 +132,7 @@ function pickTodayFocus(data: BriefingData): {
   onClick: () => void;
   navigate: ReturnType<typeof useNavigate>;
 } | null {
-  // Filled in by the caller — placeholder shape.
+  // Filled in by the caller - placeholder shape.
   return null;
 }
 
@@ -209,7 +209,7 @@ function HeroCard({
           letterSpacing: isNumeric ? "-0.02em" : "-0.01em",
         }}
       >
-        {loading ? "—" : number}
+        {loading ? " - " : number}
       </span>
       <span
         style={{
@@ -255,7 +255,7 @@ function PipelineBar({
   const activePct = (active / total) * 100;
   const needsPct = (needsAttention / total) * 100;
   const donePct = (done / total) * 100;
-  // Muted palette — a touch of blue lives in the "active" segment so the
+  // Muted palette - a touch of blue lives in the "active" segment so the
   // pipeline still has some life, while the rest stays in warm/cool greys.
   const COLORS = {
     active: "#5B7799",       // muted slate-blue (the one bit of color)
@@ -448,7 +448,7 @@ function AskScoutChips({
     return out.slice(0, 4);
   }, [data]);
 
-  // Muted blue for Scout-area accents — present but never pops.
+  // Muted blue for Scout-area accents - present but never pops.
   const SCOUT_BLUE = "#5B7799";
   return (
     <div
@@ -530,7 +530,7 @@ function EmptyWelcome({ onGoToSearch }: { onGoToSearch: () => void }) {
         background: "var(--surface)",
       }}
     >
-      <Sparkles style={{ width: 28, height: 28, color: "#3B82F6", margin: "0 auto 12px" }} />
+      <Sun style={{ width: 28, height: 28, color: "#3B82F6", margin: "0 auto 12px" }} />
       <h3 style={{ fontSize: 16, fontWeight: 600, margin: "0 0 8px", color: "var(--ink)" }}>
         Your briefing fills in as you network
       </h3>
@@ -643,7 +643,7 @@ export function MorningBriefing() {
   const isPro = data.meta.tier === "pro" || data.meta.tier === "elite";
   const firstName = (user as any)?.firstName || (user as any)?.name?.split(" ")?.[0] || "";
 
-  // Today's focus — the single most actionable next step.
+  // Today's focus - the single most actionable next step.
   let focusTitle: string;
   let focusCaption: string;
   let focusOnClick: () => void;
@@ -652,7 +652,7 @@ export function MorningBriefing() {
     focusTitle = first.contactName || "Reply";
     focusCaption = first.company
       ? `replied · at ${first.company}`
-      : "replied — draft a response";
+      : "replied - draft a response";
     focusOnClick = () => goToContact(first.contactId);
   } else if (data.followUps.length > 0) {
     const first = data.followUps[0];
@@ -669,7 +669,7 @@ export function MorningBriefing() {
     focusOnClick = () => goToSearch();
   } else {
     focusTitle = "Find more contacts";
-    focusCaption = "your inbox is quiet — keep building";
+    focusCaption = "your inbox is quiet - keep building";
     focusOnClick = () => goToSearch();
   }
 
@@ -703,12 +703,12 @@ export function MorningBriefing() {
               ? `${whatsNew.text} ${whatsNew.sinceLabel}.`
               : data.replies.length + data.followUps.length > 0
                 ? "Here's what's outstanding."
-                : "Inbox is quiet — let's queue up the next moves."}
+                : "Inbox is quiet - let's queue up the next moves."}
           </p>
         </div>
       </div>
 
-      {/* Hero row — 3 cards */}
+      {/* Hero row - 3 cards */}
       <div
         style={{
           display: "grid",
@@ -770,10 +770,10 @@ export function MorningBriefing() {
         />
       )}
 
-      {/* Ask Scout chips — context-grounded */}
+      {/* Ask Scout chips - context-grounded */}
       <AskScoutChips data={data} onAsk={openPanelWithMessage} />
 
-      {/* Recruiting calendar — pushed below, smaller, fully muted */}
+      {/* Recruiting calendar - pushed below, smaller, fully muted */}
       {data.deadlines.length > 0 && (
         <div
           style={{

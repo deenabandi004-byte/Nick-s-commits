@@ -1,8 +1,8 @@
-# Coffee Chat Prep -- Audit Report
+# Meeting Prep -- Audit Report
 
 ## Feature Overview
 
-Coffee Chat Prep lets users paste a LinkedIn URL to generate a one-page PDF prep sheet for an upcoming coffee chat. The pipeline enriches the profile via PDL, fetches company/industry news via SerpAPI, generates a similarity summary and tailored questions via GPT-4o-mini, renders a ReportLab PDF, and uploads it to Firebase Storage. Costs 15 credits per prep. Tier limits: Free=3/mo, Pro=10/mo, Elite=unlimited.
+Meeting Prep lets users paste a LinkedIn URL to generate a one-page PDF prep sheet for an upcoming meeting. The pipeline enriches the profile via PDL, fetches company/industry news via SerpAPI, generates a similarity summary and tailored questions via GPT-4o-mini, renders a ReportLab PDF, and uploads it to Firebase Storage. Costs 15 credits per prep. Tier limits: Free=3/mo, Pro=10/mo, Elite=unlimited.
 
 ---
 
@@ -11,34 +11,34 @@ Coffee Chat Prep lets users paste a LinkedIn URL to generate a one-page PDF prep
 ### Backend
 | File | Purpose |
 |------|---------|
-| `backend/app/routes/coffee_chat_prep.py` | 6 API endpoints (create, status, download, history, all, delete) + background processing pipeline |
-| `backend/app/services/coffee_chat.py` | SERP news research, article summarization, industry overview, hometown inference |
+| `backend/app/routes/meeting_prep.py` | 6 API endpoints (create, status, download, history, all, delete) + background processing pipeline |
+| `backend/app/services/meeting.py` | SERP news research, article summarization, industry overview, hometown inference |
 | `backend/app/services/pdl_client.py` | PDL Person Enrichment API integration (`enrich_linkedin_profile` at line 3057) |
-| `backend/app/services/pdf_builder.py` | ReportLab PDF generation (`generate_coffee_chat_pdf` at line 34) |
-| `backend/app/utils/coffee_chat_prep.py` | AI prompts: similarity summary + question generation |
-| `backend/app/models/coffee_chat_prep.py` | Data models & validation |
+| `backend/app/services/pdf_builder.py` | ReportLab PDF generation (`generate_meeting_pdf` at line 34) |
+| `backend/app/utils/meeting_prep.py` | AI prompts: similarity summary + question generation |
+| `backend/app/models/meeting_prep.py` | Data models & validation |
 | `backend/app/utils/users.py` | `parse_resume_info()` for user context extraction |
-| `backend/app/config.py` | `COFFEE_CHAT_CREDITS = 15`, tier configs |
+| `backend/app/config.py` | `MEETING_CREDITS = 15`, tier configs |
 | `backend/wsgi.py` | Blueprint registration (line 109) |
 
 ### Frontend
 | File | Purpose |
 |------|---------|
-| `connect-grow-hire/src/pages/CoffeeChatPrepPage.tsx` | Main page: input LinkedIn URL, poll status, display results, download PDF |
-| `connect-grow-hire/src/pages/CoffeeChatLibrary.tsx` | Library view of all generated preps |
-| `connect-grow-hire/src/services/api.ts` | 6 API methods: `createCoffeeChatPrep`, `getCoffeeChatPrepStatus`, `downloadCoffeeChatPDF`, `getAllCoffeeChatPreps`, `getCoffeeChatHistory`, `deleteCoffeeChatPrep` |
+| `connect-grow-hire/src/pages/MeetingPrepPage.tsx` | Main page: input LinkedIn URL, poll status, display results, download PDF |
+| `connect-grow-hire/src/pages/MeetingLibrary.tsx` | Library view of all generated preps |
+| `connect-grow-hire/src/services/api.ts` | 6 API methods: `createMeetingPrep`, `getCoffeeChatPrepStatus`, `downloadMeetingPDF`, `getAllCoffeeChatPreps`, `getMeetingHistory`, `deleteMeetingPrep` |
 | `connect-grow-hire/src/components/AppSidebar.tsx` | Nav link under PREPARE section |
-| `connect-grow-hire/src/components/Dashboard.tsx` | Dashboard metric: coffee chat count + time saved |
-| `connect-grow-hire/src/contexts/TourContext.tsx` | Tour step for coffee chat prep |
+| `connect-grow-hire/src/components/Dashboard.tsx` | Dashboard metric: meeting count + time saved |
+| `connect-grow-hire/src/contexts/TourContext.tsx` | Tour step for meeting prep |
 | `connect-grow-hire/src/hooks/useSubscription.ts` | Usage tracking (`coffeeChatPrepsUsed`) |
 | `connect-grow-hire/src/utils/featureAccess.ts` | Tier-based access control |
-| `connect-grow-hire/src/lib/constants.ts` | `COFFEE_CHAT_CREDITS = 15`, tier limits |
+| `connect-grow-hire/src/lib/constants.ts` | `MEETING_CREDITS = 15`, tier limits |
 | `connect-grow-hire/src/data/scout-knowledge.ts` | Scout chatbot knowledge entry |
-| `connect-grow-hire/src/components/demo/CoffeeChatDemoPlaceholder.tsx` | Placeholder demo component |
+| `connect-grow-hire/src/components/demo/MeetingDemoPlaceholder.tsx` | Placeholder demo component |
 | `connect-grow-hire/src/components/ProductTour.tsx` | Feature showcase with video |
 | `connect-grow-hire/src/components/gates/UsageMeter.tsx` | Usage meter display |
-| `connect-grow-hire/src/lib/analytics.ts` | Event tracking for coffee chat actions |
-| `connect-grow-hire/src/App.tsx` | Route definitions: `/coffee-chat-prep`, `/coffee-chat-library` |
+| `connect-grow-hire/src/lib/analytics.ts` | Event tracking for meeting actions |
+| `connect-grow-hire/src/App.tsx` | Route definitions: `/meeting-prep`, `/meeting-library` |
 
 ---
 
@@ -48,7 +48,7 @@ Coffee Chat Prep lets users paste a LinkedIn URL to generate a one-page PDF prep
 User pastes LinkedIn URL
         |
         v
-POST /api/coffee-chat-prep
+POST /api/meeting-prep
         |
         v
 [Background Thread Spawned]
@@ -56,7 +56,7 @@ POST /api/coffee-chat-prep
   Step 1: PDL Person Enrichment API
         |  -> enrich_linkedin_profile(url)
         |  -> extract_contact_from_pdl_person_enhanced()
-        |  -> Transform to coffee_chat_data dict (13 fields)
+        |  -> Transform to meeting_data dict (13 fields)
         |
   Step 2: SerpAPI News Research
         |  -> fetch_serp_research(company, division, office, industry, job_title)
@@ -73,11 +73,11 @@ POST /api/coffee-chat-prep
         |  -> Regex + PDL location fallback
         |
   Step 5: AI Content Generation (GPT-4o-mini)
-        |  -> generate_coffee_chat_similarity(user_data, contact_data) -- 45-60 word paragraph
-        |  -> generate_coffee_chat_questions(contact_data, user_data) -- up to 8 questions
+        |  -> generate_meeting_similarity(user_data, contact_data) -- 45-60 word paragraph
+        |  -> generate_meeting_questions(contact_data, user_data) -- up to 8 questions
         |
   Step 6: PDF Generation (ReportLab)
-        |  -> generate_coffee_chat_pdf() -- 1 page, 5 sections
+        |  -> generate_meeting_pdf() -- 1 page, 5 sections
         |
   Step 7: Upload to Firebase Storage
         |  -> coffee_chat_preps/{user_id}/{prep_id}.pdf
@@ -87,7 +87,7 @@ POST /api/coffee-chat-prep
   Step 9: Increment usage counter
         |
         v
-Frontend polls GET /api/coffee-chat-prep/{prepId}
+Frontend polls GET /api/meeting-prep/{prepId}
 until status = "completed"
 ```
 
@@ -95,20 +95,20 @@ until status = "completed"
 
 ## PDL Usage: 8 of 20+ fields used
 
-The `enrich_linkedin_profile()` function calls `extract_contact_from_pdl_person_enhanced()` which pulls many PDL fields, but then **discards most of them** during the transform to coffee chat format at line 3114.
+The `enrich_linkedin_profile()` function calls `extract_contact_from_pdl_person_enhanced()` which pulls many PDL fields, but then **discards most of them** during the transform to meeting format at line 3114.
 
-| PDL Field | Extracted? | Passed to Coffee Chat? | Used in AI Prompt? | Used in PDF? | Notes |
+| PDL Field | Extracted? | Passed to Meeting? | Used in AI Prompt? | Used in PDF? | Notes |
 |-----------|-----------|----------------------|-------------------|-------------|-------|
 | `first_name` | Yes | Yes (firstName) | Yes | Yes | Core field |
 | `last_name` | Yes | Yes (lastName) | Yes | Yes | Core field |
-| `experience` (array) | Yes | **Partially** -- only WorkSummary string | **No** -- only as flat string | Yes (if raw array present) | Full career history extracted but flattened to 1-line WorkSummary. PDF tries to use raw `experience` array but coffee_chat_data only has `workExperience: [WorkSummary]` |
+| `experience` (array) | Yes | **Partially** -- only WorkSummary string | **No** -- only as flat string | Yes (if raw array present) | Full career history extracted but flattened to 1-line WorkSummary. PDF tries to use raw `experience` array but meeting_data only has `workExperience: [WorkSummary]` |
 | `education` (array) | Yes | **Partially** -- only EducationTop string | Yes (flat string) | Yes (if raw array present) | Same issue: rich education data flattened to single string |
 | `location` (locality, region) | Yes | Yes (city, state, location) | Yes | Yes | |
 | `emails` (array) | Yes | Yes (email) | No | Yes | Only best email selected |
-| `interests` (array) | Yes | **No** -- `interests: []` hardcoded empty! | No | No | **CRITICAL GAP**: Extracted in `extract_contact_from_pdl_person_enhanced` but explicitly set to `[]` in coffee chat transform (line 3127) |
+| `interests` (array) | Yes | **No** -- `interests: []` hardcoded empty! | No | No | **CRITICAL GAP**: Extracted in `extract_contact_from_pdl_person_enhanced` but explicitly set to `[]` in meeting transform (line 3127) |
 | `summary` | Yes (for volunteer extraction) | No | No | No | Only scanned for volunteer keywords, not passed through |
 | `profiles` (LinkedIn) | Yes | Yes (linkedinUrl) | No | Yes | |
-| `phone_numbers` | Yes | No | No | No | Extracted but not passed to coffee chat |
+| `phone_numbers` | Yes | No | No | No | Extracted but not passed to meeting |
 | `linkedin_connections` | Yes | No | No | No | Available but unused |
 | `inferred_years_experience` | Yes (in WorkSummary) | Embedded in WorkSummary string | No | Indirectly | Not a standalone field |
 | `skills` (array) | **No** | **No** | **No** | Yes (checks for it but won't find it) | PDF builder checks `contact_data.get('skills', [])` at line 247 but PDL skills are never extracted or passed |
@@ -125,10 +125,10 @@ The `enrich_linkedin_profile()` function calls `extract_contact_from_pdl_person_
 
 ### Key Data Loss Points
 
-1. **Line 3114-3128 (`enrich_linkedin_profile`)**: The transform to `coffee_chat_data` discards most of the rich `enriched` dict. Only 13 fields survive.
-2. **`interests: []` hardcoded**: PDL interests are extracted by `extract_contact_from_pdl_person_enhanced` but the coffee chat transform explicitly sets `interests: []`.
+1. **Line 3114-3128 (`enrich_linkedin_profile`)**: The transform to `meeting_data` discards most of the rich `enriched` dict. Only 13 fields survive.
+2. **`interests: []` hardcoded**: PDL interests are extracted by `extract_contact_from_pdl_person_enhanced` but the meeting transform explicitly sets `interests: []`.
 3. **`skills` never extracted**: PDF builder looks for skills but they're never in the data.
-4. **`experience` flattened**: Full career timeline with dates, companies, titles is compressed to a single WorkSummary string. The PDF builder tries to use a raw `experience` array but the coffee chat data only has `workExperience: ["Current X at Y. Previously at Z"]`.
+4. **`experience` flattened**: Full career timeline with dates, companies, titles is compressed to a single WorkSummary string. The PDF builder tries to use a raw `experience` array but the meeting data only has `workExperience: ["Current X at Y. Previously at Z"]`.
 5. **`education` flattened**: Same issue -- rich education array compressed to one string.
 6. **`industry` fabricated**: Real PDL industry field never extracted. Falls back to `Group` which is "{Company} {FirstWord} Team" -- meaningless.
 
@@ -228,13 +228,13 @@ Fine for what it does, but heavily filtered -- often returns empty.
 ## Top 10 Gaps (Prioritized)
 
 ### 1. Data Loss in PDL Transform (Critical)
-`enrich_linkedin_profile()` extracts rich data then discards 60%+ during the coffee chat transform. Skills, interests, full experience timeline, full education array, industry, company metadata -- all lost. Fix: pass raw PDL data through or build a richer transform.
+`enrich_linkedin_profile()` extracts rich data then discards 60%+ during the meeting transform. Skills, interests, full experience timeline, full education array, industry, company metadata -- all lost. Fix: pass raw PDL data through or build a richer transform.
 
 ### 2. Skills Never Reach PDF (Critical)
-PDF builder has code to display skills (`contact_data.get('skills', [])`) but skills are never extracted from PDL or included in the coffee chat data dict. Always shows nothing.
+PDF builder has code to display skills (`contact_data.get('skills', [])`) but skills are never extracted from PDL or included in the meeting data dict. Always shows nothing.
 
 ### 3. Interests Hardcoded Empty (Critical)
-Line 3127: `'interests': []`. PDL interests are available and extracted elsewhere in the same function but explicitly zeroed out for coffee chat. These would massively improve similarity matching and icebreakers.
+Line 3127: `'interests': []`. PDL interests are available and extracted elsewhere in the same function but explicitly zeroed out for meeting. These would massively improve similarity matching and icebreakers.
 
 ### 4. Industry Field Fabricated (High)
 The "industry" context falls back to `Group` which is generated as "{Company} {FirstWordOfTitle} Team" -- e.g., "Goldman Sachs Vice Team". PDL provides real `industry` and `job_company_industry` fields that are never extracted.

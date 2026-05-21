@@ -1,4 +1,4 @@
-// Agent settings slide-over — opens from gear icon on dashboard.
+// Agent settings slide-over - opens from gear icon on dashboard.
 
 import { useState } from "react";
 import { Label } from "@/components/ui/label";

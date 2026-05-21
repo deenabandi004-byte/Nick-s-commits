@@ -14,28 +14,7 @@ import { VideoDemo } from '@/components/VideoDemo';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { StickyCTA } from '@/components/StickyCTA';
-import { 
-  Loader2, 
-  AlertCircle, 
-  FileText, 
-  Download, 
-  ChevronDown,
-  ChevronUp,
-  Upload,
-  Eye,
-  ArrowRight,
-  X,
-  Link,
-  Briefcase,
-  Building2,
-  MapPin,
-  Wrench,
-  Sparkles,
-  BarChart3,
-  FolderOpen,
-  CheckCircle,
-  Copy
-} from 'lucide-react';
+import { Loader2, AlertCircle, FileText, Download, ChevronDown, ChevronUp, Upload, Eye, ArrowRight, X, Link, Briefcase, Building2, MapPin, Wrench, BarChart3, FolderOpen, CheckCircle, Copy } from 'lucide-react';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { toast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
@@ -1404,7 +1383,7 @@ export default function ResumeWorkshopPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-[3px] p-8 max-w-md text-center shadow-2xl">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-8 h-8 text-gray-600 animate-pulse" />
+              <FileText className="w-8 h-8 text-gray-600 animate-pulse" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
               Tailoring your resume...

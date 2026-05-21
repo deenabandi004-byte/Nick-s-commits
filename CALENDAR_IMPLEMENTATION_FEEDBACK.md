@@ -193,7 +193,7 @@ DTSTAMP:${formatICSDate(new Date())}
 DTSTART:${formatICSDate(startDate)}
 DTEND:${formatICSDate(endDate)}
 SUMMARY:${event.title}
-DESCRIPTION:Coffee chat with ${event.contactName} at ${event.firm}${event.notes ? `\\n\\nNotes: ${event.notes}` : ''}
+DESCRIPTION:Meeting with ${event.contactName} at ${event.firm}${event.notes ? `\\n\\nNotes: ${event.notes}` : ''}
 LOCATION:${event.meetingLink || event.type === 'in-person' ? 'TBD' : ''}
 STATUS:${event.status.toUpperCase()}
 END:VEVENT

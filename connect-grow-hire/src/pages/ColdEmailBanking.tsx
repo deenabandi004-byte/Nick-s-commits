@@ -10,7 +10,7 @@ const faqData = [
   },
   {
     question: "Should I email analysts, associates, or MDs at investment banks?",
-    answer: "Focus on analysts and associates first — they're closest to the recruiting process and most likely to respond. First-year analysts remember what it was like to recruit and can give you the most tactical advice. Once you've had a few conversations, ask for introductions to more senior bankers."
+    answer: "Focus on analysts and associates first - they're closest to the recruiting process and most likely to respond. First-year analysts remember what it was like to recruit and can give you the most tactical advice. Once you've had a few conversations, ask for introductions to more senior bankers."
   },
   {
     question: "What's the ideal cold email length for investment banking networking?",
@@ -22,15 +22,15 @@ const faqData = [
   },
   {
     question: "What if a banker doesn't respond to my cold email?",
-    answer: "Send one follow-up after 5-7 business days. Keep it to 2-3 sentences: reference your original email, reiterate your ask, and add a new angle if possible. If they still don't respond, move on — there are plenty of bankers to network with. Offerloop's tracker shows you who hasn't replied so you can prioritize follow-ups."
+    answer: "Send one follow-up after 5-7 business days. Keep it to 2-3 sentences: reference your original email, reiterate your ask, and add a new angle if possible. If they still don't respond, move on - there are plenty of bankers to network with. Offerloop's tracker shows you who hasn't replied so you can prioritize follow-ups."
   }
 ];
 
 const howToSteps = [
-  { name: "Find", text: "Search Offerloop's 2.2 billion contact database to find analysts and associates at Goldman Sachs, JPMorgan, Morgan Stanley, and every major bank — filtered by group, office, and school." },
+  { name: "Find", text: "Search Offerloop's 2.2 billion contact database to find analysts and associates at Goldman Sachs, JPMorgan, Morgan Stanley, and every major bank - filtered by group, office, and school." },
   { name: "Understand", text: "Review each banker's background: their group, deal experience, career path, and any shared connections like alma mater or hometown." },
   { name: "Reach", text: "Generate a personalized cold email with Offerloop's AI. Each email is unique, concise, and references specific details from the banker's profile. Send directly through Gmail." },
-  { name: "Track", text: "Monitor your entire IB networking pipeline in Offerloop's Network Tracker — see who you've emailed, who replied, and who you have calls scheduled with." }
+  { name: "Track", text: "Monitor your entire IB networking pipeline in Offerloop's Network Tracker - see who you've emailed, who replied, and who you have calls scheduled with." }
 ];
 
 const ColdEmailBanking = () => {
@@ -92,13 +92,13 @@ const ColdEmailBanking = () => {
           How do I cold email an analyst at Goldman Sachs or JPMorgan?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          The most effective cold emails to IB analysts have three components: a shared connection point, genuine curiosity about their specific group, and a concrete ask. Lead with your strongest link — a shared university, mutual contact, or hometown. Then reference their specific group (TMT, Healthcare, M&A) rather than just the firm name. Close with a request for a 15-minute phone call at their convenience.
+          The most effective cold emails to IB analysts have three components: a shared connection point, genuine curiosity about their specific group, and a concrete ask. Lead with your strongest link - a shared university, mutual contact, or hometown. Then reference their specific group (TMT, Healthcare, M&A) rather than just the firm name. Close with a request for a 15-minute phone call at their convenience.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Timing matters. Avoid Monday mornings (deal reviews) and Friday evenings. Tuesday through Thursday, sent between 7-9 AM in their time zone, tends to perform best. Keep the email under 80 words — analysts read everything on their phones.
+          Timing matters. Avoid Monday mornings (deal reviews) and Friday evenings. Tuesday through Thursday, sent between 7-9 AM in their time zone, tends to perform best. Keep the email under 80 words - analysts read everything on their phones.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop finds verified email addresses for analysts and associates across every major bank. Search by firm, coverage group, office, and university — then generate a personalized email in seconds that references their specific background.
+          Offerloop finds verified email addresses for analysts and associates across every major bank. Search by firm, coverage group, office, and university - then generate a personalized email in seconds that references their specific background.
         </p>
       </section>
 
@@ -108,10 +108,10 @@ const ColdEmailBanking = () => {
           What's the difference between networking at bulge brackets vs. elite boutiques?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Bulge bracket banks (Goldman Sachs, JPMorgan, Morgan Stanley, Bank of America) have larger analyst classes and more structured recruiting. Your networking is about standing out among hundreds of candidates. Focus on building multiple touchpoints within your target group — speak to 3-5 people in the same division.
+          Bulge bracket banks (Goldman Sachs, JPMorgan, Morgan Stanley, Bank of America) have larger analyst classes and more structured recruiting. Your networking is about standing out among hundreds of candidates. Focus on building multiple touchpoints within your target group - speak to 3-5 people in the same division.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Elite boutiques (Evercore, Centerview, PJT, Lazard, Moelis) have smaller classes and more relationship-driven recruiting. Every conversation matters more. Your emails should demonstrate deeper knowledge of their deal flow and positioning. Since these firms are smaller, you're more likely to be remembered — positively or negatively.
+          Elite boutiques (Evercore, Centerview, PJT, Lazard, Moelis) have smaller classes and more relationship-driven recruiting. Every conversation matters more. Your emails should demonstrate deeper knowledge of their deal flow and positioning. Since these firms are smaller, you're more likely to be remembered - positively or negatively.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
           Offerloop covers both. Search for bankers across bulge brackets and boutiques alike, and the AI adapts its email tone based on the firm's culture and the recipient's seniority level.
@@ -127,10 +127,10 @@ const ColdEmailBanking = () => {
           Banking recruiting requires tracking dozens or hundreds of conversations across multiple firms and groups. Without a system, you'll forget who you've emailed, miss follow-ups, and lose track of relationships you've already built.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Most students rely on spreadsheets, but they break down quickly. You need to track the person's name, firm, group, email date, response status, call date, key takeaways, and referrals — across 50-100+ contacts. That's a lot of manual data entry on top of an already demanding academic schedule.
+          Most students rely on spreadsheets, but they break down quickly. You need to track the person's name, firm, group, email date, response status, call date, key takeaways, and referrals - across 50-100+ contacts. That's a lot of manual data entry on top of an already demanding academic schedule.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop's Network Tracker was built specifically for this problem. Every email you send through Offerloop is automatically tracked with pipeline stages — Sent, Replied, Scheduled, Completed. You can see your entire networking funnel at a glance and know exactly who needs a follow-up.
+          Offerloop's Network Tracker was built specifically for this problem. Every email you send through Offerloop is automatically tracked with pipeline stages - Sent, Replied, Scheduled, Completed. You can see your entire networking funnel at a glance and know exactly who needs a follow-up.
         </p>
       </section>
 
@@ -169,7 +169,7 @@ const ColdEmailBanking = () => {
       <section className="px-6 py-20" style={{ background: '#FAFBFF' }}>
         <div className="text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.15, color: '#0F172A', marginBottom: '16px' }}>
-            Start networking with AI — try Offerloop free
+            Start networking with AI - try Offerloop free
           </h2>
           <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '28px' }}>
             Search 2.2B contacts. Generate personalized emails. Track every conversation.

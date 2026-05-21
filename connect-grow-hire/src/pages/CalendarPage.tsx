@@ -42,7 +42,7 @@ export default function CalendarPage() {
                     lineHeight: 1.5,
                   }}
                 >
-                  View and manage your scheduled events, coffee chats, and follow-up reminders.
+                  View and manage your scheduled events, meetings, and follow-up reminders.
                 </p>
                 
                 {/* Calendar Component */}

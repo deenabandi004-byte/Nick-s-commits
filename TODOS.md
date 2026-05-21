@@ -31,10 +31,10 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **Why:** The two files currently maintain their own keyword maps and they've already drifted (4 categories vs 6). When Phase 2 writes `industry` into composite segment keys, a classifier mismatch will silently miss segment lookups. Extract once, fix the divergence at the source.
 - **Pros:** Eliminates a class of silent bugs. Single canonical industry taxonomy. Makes Q2.6 cardinality math reliable.
 - **Cons:** Touches 2 existing files, needs migration of all callers in one PR to avoid temporary inconsistency.
-- **Context:** Surfaced by /plan-eng-review on 2026-04-09 (Issue 6) while resolving the 8 Phase 2 sub-design questions. Buckets: `{investment_banking, consulting, private_equity, venture_capital, tech, finance, other}` — 7 total. Order matters: specific firms before generic keywords.
+- **Context:** Surfaced by /plan-eng-review on 2026-04-09 (Issue 6) while resolving the 8 Phase 2 sub-design questions. Buckets: `{investment_banking, consulting, private_equity, venture_capital, tech, finance, other}` - 7 total. Order matters: specific firms before generic keywords.
 - **Effort:** S (human: ~2 hrs / CC: ~15 min)
 - **Priority:** P1 (blocking Phase 2)
-- **Depends on:** nothing — pure refactor.
+- **Depends on:** nothing - pure refactor.
 
 ### P1: Email quality eval suite (Phase 2 prerequisite)
 - **What:** A pytest-based eval suite in `backend/tests/eval_email_generation.py` that takes a frozen set of contact + user fixtures, runs `reply_generation.py` against them, and compares outputs against a baseline. Required for the Phase 2 prompt change in Q2.7.
@@ -75,7 +75,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **Why:** All three daemons die silently on unhandled exceptions. Currently no detection or recovery. At 300 users this is annoying; at 3,000 it's an outage. Three daemons × silent failure = operational time bomb.
 - **Pros:** Reduces operational risk for all three daemons with one watchdog. Self-healing. Small code footprint.
 - **Cons:** Adds complexity to wsgi.py. Healthcheck itself could fail. Restart-in-process may not recover from zombie state.
-- **Context:** Gmail watch renewal already has this bug (flagged in CLAUDE.md). Nudge scanner added the second daemon. Queue scanner will add the third. A single watchdog thread that checks all three timestamps every hour and attempts restart covers all daemons. Upgraded from P2 to P1 on 2026-04-09 during /plan-eng-review — the risk compounds non-linearly.
+- **Context:** Gmail watch renewal already has this bug (flagged in CLAUDE.md). Nudge scanner added the second daemon. Queue scanner will add the third. A single watchdog thread that checks all three timestamps every hour and attempts restart covers all daemons. Upgraded from P2 to P1 on 2026-04-09 during /plan-eng-review - the risk compounds non-linearly.
 - **Effort:** S (human: ~3 hrs / CC: ~15 min)
 - **Priority:** P1
 - **Depends on:** Phase 1 nudge scanner shipped, Phase 2 queue scanner shipped.
@@ -96,7 +96,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **What:** When users hit "Approve All" on the weekly queue, spread Gmail draft sends across 2-3 days instead of creating all 5 drafts simultaneously. Users can optionally schedule send times.
 - **Why:** Sending 5 cold emails in the same 30-second window looks like spam. Staggering improves reply rates and reduces account flagging risk.
 - **Pros:** Better reply rates, more natural outreach pattern, reduces Gmail sender reputation risk
-- **Cons:** Adds send-timing state management (scheduled sends table, cron job, retry logic). Problem barely exists at 5 contacts per week — this is preemptive.
+- **Cons:** Adds send-timing state management (scheduled sends table, cron job, retry logic). Problem barely exists at 5 contacts per week - this is preemptive.
 - **Context:** Deferred from Phase 1 cherry-pick ceremony. Revisit once Phase 1 usage data shows whether approve-all behavior is common enough to matter. If users approve contacts individually over days, the problem self-solves.
 - **Effort:** S (human: ~4 hrs / CC: ~30 min)
 - **Priority:** P2
@@ -106,7 +106,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **What:** Dashboard showing queue approval rate, reply rate comparison vs manual search, week-over-week retention, most-approved contact attributes
 - **Why:** Validates the flywheel thesis ("per-student taste model compounds") with real numbers. Answers "is the learning loop working?"
 - **Pros:** Data-driven Phase 3 decisions, debugging tool for selection algorithm
-- **Cons:** Needs Phase 2 reply tracking to be operational first — nothing meaningful to show until then
+- **Cons:** Needs Phase 2 reply tracking to be operational first - nothing meaningful to show until then
 - **Context:** Deferred from cherry-pick ceremony. Becomes valuable once Phase 2 reply data accumulates.
 - **Effort:** M (human: ~1 week / CC: ~45 min)
 - **Priority:** P2
@@ -126,7 +126,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **What:** After Phase 1 ships, extract a reusable `<BottomSheet>` component from the queue dismiss modal into `connect-grow-hire/src/components/ui/bottom-sheet.tsx`. Wraps Radix Dialog with the mobile bottom-sheet variant (`rounded-t-xl rounded-b-none fixed inset-x-0 bottom-0`) and falls back to centered modal at `sm:` and up. Migrate any other hand-rolled mobile modals to use it.
 - **Why:** Pass 6 of /plan-design-review specced a mobile bottom sheet for the dismiss modal. shadcn/ui has no bottom-sheet primitive, so Phase 1 will hand-roll it inside the queue. Other surfaces (email compose, upgrade modal, notifications) would benefit from the same pattern and will drift if each reinvents it. Shared primitive prevents that.
 - **Pros:** Eliminates future drift. One mobile modal pattern across the app. Easier to maintain. Sets the mobile modal bar for future surfaces.
-- **Cons:** Premature abstraction if no second caller materializes. Phase 1 proves the need first — extracting after shipping is the safer path.
+- **Cons:** Premature abstraction if no second caller materializes. Phase 1 proves the need first - extracting after shipping is the safer path.
 - **Context:** Surfaced during /plan-design-review Pass 6 (Responsive & Accessibility) on 2026-04-09. Extract-after-shipping rather than design-upfront because the queue is the first known consumer. Wait for a second caller before generalizing further.
 - **Effort:** S (human: ~4 hrs / CC: ~25 min)
 - **Priority:** P3
@@ -137,24 +137,24 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **Why:** Pass 6 of /plan-design-review locked a detailed ARIA spec (live regions, focus ring helper, state announcements, 44px touch targets). There is currently no automated check to catch regressions. Any subsequent PR could drop an aria-label, break focus order, or regress a touch target, and nobody would notice until a screen-reader user complains. A11y debt compounds invisibly.
 - **Pros:** Locks the Pass 6 spec against regression. Catches issues in CI, not production. Dev-mode axe-core gives immediate feedback during implementation. Sets the a11y bar for all future tracker work.
 - **Cons:** Requires Playwright setup (currently no frontend test framework per CLAUDE.md). Non-trivial initial investment. Playwright adds CI time.
-- **Context:** Surfaced during /plan-design-review Pass 6 (Responsive & Accessibility) on 2026-04-09. Phase 1 ships the full ARIA spec but no automation to defend it. Frontend has zero test framework today — this TODO is the forcing function to add one. Scope the first Playwright test to just the queue tab; expand to other tracker tabs after it proves out.
+- **Context:** Surfaced during /plan-design-review Pass 6 (Responsive & Accessibility) on 2026-04-09. Phase 1 ships the full ARIA spec but no automation to defend it. Frontend has zero test framework today - this TODO is the forcing function to add one. Scope the first Playwright test to just the queue tab; expand to other tracker tabs after it proves out.
 - **Effort:** M (human: ~1 week / CC: ~1 hr)
 - **Priority:** P2
 - **Depends on:** Phase 1 queue shipped with ARIA spec. Playwright setup (net-new for this repo).
 
 ### P2: Migrate Tracker Cards to ContactCardBase Primitives (2026-04-09)
 - **What:** Refactor the existing Pipeline tab cards, Nudge tab cards, and `CurrentPositionCard` in NetworkTracker to use the new ContactCardBase primitives (`<ContactAvatar>`, `<ContactIdentity>`, `<CardAccentBorder>`, `<StatusLine>`) that Phase 1 queue introduces. Delete the old bespoke card markup.
-- **Why:** Phase 1 queue ships the primitives but deliberately does NOT migrate the existing tracker cards (scope lock from /plan-design-review). This leaves two parallel card rendering systems: the new primitives for queue, the old bespoke JSX for Pipeline/Nudges. Drift risk is real — any visual tweak has to be made in two places, and over time the systems will diverge (spacing, colors, warmth treatment, border accents).
+- **Why:** Phase 1 queue ships the primitives but deliberately does NOT migrate the existing tracker cards (scope lock from /plan-design-review). This leaves two parallel card rendering systems: the new primitives for queue, the old bespoke JSX for Pipeline/Nudges. Drift risk is real - any visual tweak has to be made in two places, and over time the systems will diverge (spacing, colors, warmth treatment, border accents).
 - **Pros:** Single source of truth for card styling. Eliminates drift. Future card changes ship once, apply everywhere. Design system consistency. Makes the next /design-review much easier to satisfy.
 - **Cons:** Touches high-traffic tracker code. Requires visual regression testing across Pipeline, Nudges, and the new queue. Non-trivial diff (every card call site).
-- **Context:** Surfaced during /plan-design-review Pass 5 (Design System Alignment) on 2026-04-09. Phase 1 scope was explicitly locked to queue-only — migrating existing cards would have doubled the review surface. Deferring was the right call, but the work must not rot. Do this immediately after Phase 1 ships and before Phase 2 learning-loop work starts touching tracker UI.
+- **Context:** Surfaced during /plan-design-review Pass 5 (Design System Alignment) on 2026-04-09. Phase 1 scope was explicitly locked to queue-only - migrating existing cards would have doubled the review surface. Deferring was the right call, but the work must not rot. Do this immediately after Phase 1 ships and before Phase 2 learning-loop work starts touching tracker UI.
 - **Effort:** S (human: ~1 day / CC: ~45 min)
 - **Priority:** P2
 - **Depends on:** Phase 1 queue shipped with ContactCardBase primitives exported from `connect-grow-hire/src/components/tracker/shared/ContactCardBase.tsx`.
 
 ### P2: "Why This Contact?" AI Reasoning Card (2026-04-09)
 - **What:** Expandable panel on each queue card showing the AI's actual reasoning in plain English: "Selected because: USC alumni (2019), same industry as your Goldman target, recently promoted to VP." Toggles open on click, collapsed by default.
-- **Why:** Pass 3 of /plan-design-review flagged that warmth badges carry all the "why" in Phase 1. A single "warm" pill is thin signal. A real reasoning card makes the AI's judgment legible, 10x's trust, and closes the loop on "earn autonomy through behavior" — users see the logic, agree or disagree, and the approve/dismiss signal becomes more meaningful training data.
+- **Why:** Pass 3 of /plan-design-review flagged that warmth badges carry all the "why" in Phase 1. A single "warm" pill is thin signal. A real reasoning card makes the AI's judgment legible, 10x's trust, and closes the loop on "earn autonomy through behavior" - users see the logic, agree or disagree, and the approve/dismiss signal becomes more meaningful training data.
 - **Pros:** Highest-leverage trust builder in Phase 2. Makes the learning loop feel alive. Converts skeptical dismissals into informed dismissals. Unlocks the "Progressive Coach" emotional arc.
 - **Cons:** Requires Phase 2 structured reasoning signals (warmth sub-scores, filter match weights, historical approval patterns). Phase 1 warmth scoring returns signals list but not ranked explanations. Needs prompt engineering to render signals as plain-English sentences without slop.
 - **Context:** Surfaced during /plan-design-review Pass 3 (User Journey & Emotional Arc) on 2026-04-09. Phase 1 ships with warmth badges only as a trust proxy. Phase 2 learning loop adds the structured signals needed to author the reasoning card. Component slots into existing ContactCardBase below the email preview.
@@ -166,7 +166,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **What:** Replace fixed Tuesday-morning cadence with per-user optimal timing based on engagement patterns, recruiting season, and target firm application windows
 - **Why:** Engagement timing precision becomes meaningful at 500+ users with enough data to personalize per-student
 - **Pros:** Higher engagement per queue, better alignment with recruiting cycles
-- **Cons:** Destroys habit/predictability thesis at current scale. Cross-model review explicitly challenged this — fixed cadence wins until 500+ users.
+- **Cons:** Destroys habit/predictability thesis at current scale. Cross-model review explicitly challenged this - fixed cadence wins until 500+ users.
 - **Context:** Deferred per cross-model agreement. Revisit ONLY when user count > 500 and data shows cycle-to-cycle engagement drop under fixed cadence.
 - **Effort:** L (human: ~2 weeks / CC: ~2 hrs)
 - **Priority:** P3
@@ -179,21 +179,21 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **Cons:** Takes ~1 hr to instrument both flows. Requires a dashboard to visualize. PostHog already integrated so no new dependency.
 - **Context:** Surfaced during /plan-eng-review outside voice pass on 2026-04-09. The design doc's "40% approval rate" target was made up because no one knows what the manual baseline is. This fixes that. Ship in parallel with Phase 1 queue so both accumulate data from day 1.
 - **Effort:** S (human: ~4 hrs / CC: ~25 min)
-- **Priority:** P1 — ship in parallel with Phase 1 queue
+- **Priority:** P1 - ship in parallel with Phase 1 queue
 - **Depends on:** Nothing. Can ship today.
 
 ### P1: Blocklist Management UI (2026-04-09)
 - **What:** Settings surface showing the user's queue blocklist (companies + titles they dismissed) with the ability to remove entries. Lives at `/account-settings` or as a new `Queue preferences` page. New endpoint: `DELETE /api/queue/preferences/blocklist/:type/:value`.
 - **Why:** Phase 1 writes to a blocklist on every dismissal, but users have zero visibility into what's in it. If a student changes their mind about Goldman Sachs 3 months later, they have no way to undo the block. Silent over-rejection bug waiting to happen.
-- **Pros:** User control = trust. Cheap to build once the backend is in place. Prevents "why am I not seeing any Goldman contacts" support tickets. Companion to the exact-match semantics decision — together they give users real agency.
+- **Pros:** User control = trust. Cheap to build once the backend is in place. Prevents "why am I not seeing any Goldman contacts" support tickets. Companion to the exact-match semantics decision - together they give users real agency.
 - **Cons:** Needs a UI, needs DELETE endpoint. Minor scope expansion beyond Phase 1.
 - **Context:** Surfaced by outside voice during /plan-eng-review on 2026-04-09. Original blocklist decision used substring match (§2.4) and was revised to exact-match-on-normalized via outside voice challenge (§OV.2). Exact-match + no visibility is better than substring + no visibility, but exact-match + visibility is the real answer. Phase 1.5 = ship within 2 weeks of Phase 1.
 - **Effort:** S (human: ~4 hrs / CC: ~25 min)
-- **Priority:** P1 — Phase 1.5, ship within 2 weeks of Phase 1
+- **Priority:** P1 - Phase 1.5, ship within 2 weeks of Phase 1
 - **Depends on:** Phase 1 queue preferences document shipped.
 
 ### P2: Job-Change Detection Nudges (2026-04-09)
-- **What:** Scan `users/{uid}/contacts/` for saved contacts whose PDL pdlId matches but whose current job title/company differs from what's stored. Surface as a Nudges-tab entry: "Sarah just moved from Goldman Sachs Analyst to JPMorgan VP — want to congratulate her?"
+- **What:** Scan `users/{uid}/contacts/` for saved contacts whose PDL pdlId matches but whose current job title/company differs from what's stored. Surface as a Nudges-tab entry: "Sarah just moved from Goldman Sachs Analyst to JPMorgan VP - want to congratulate her?"
 - **Why:** Job changes are the highest-signal reason to re-engage a warm contact. The queue's dedup query would silently filter out a job-changed contact (email match wins, new pdlId lost), so this was carved out as a separate feature rather than bolted into queue dedup.
 - **Pros:** Unique re-engagement surface, compounds with nudge infrastructure, genuinely novel insight for students. Piggybacks on existing nudge scanner daemon.
 - **Cons:** Requires PDL re-enrichment of saved contacts (credit cost), Nudges tab UI changes, needs rate limiting so we don't spam students with 50 job changes at once.
@@ -204,7 +204,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 
 ### P2: pdlId Backfill Migration for Existing Contacts (2026-04-09)
 - **What:** One-time migration script that walks `users/{uid}/contacts/` across all users, for each contact without a `pdlId` field, re-queries PDL by email and writes the returned pdlId back to the doc. Runs once post-deploy, then a weekly cleanup job.
-- **Why:** Section 2 Issue 1 of the queue eng review locked pdlId plumbing forward for new contacts, but historical contacts remain without pdlId. The §2.1 decision added email fallback to handle this, but fallback isn't a fix — it's a workaround. A real backfill closes the gap permanently and is a precondition for the Phase 2 job-change detection feature above.
+- **Why:** Section 2 Issue 1 of the queue eng review locked pdlId plumbing forward for new contacts, but historical contacts remain without pdlId. The §2.1 decision added email fallback to handle this, but fallback isn't a fix - it's a workaround. A real backfill closes the gap permanently and is a precondition for the Phase 2 job-change detection feature above.
 - **Pros:** Clean dedup guarantees, eliminates a permanent dual-path, enables Phase 2 features that need pdlId on all contacts.
 - **Cons:** Costs PDL credits (~1 credit/contact × total existing contact count). Migration needs careful batching to avoid hammering PDL. Some emails won't resolve (PDL doesn't have them) leaving gaps anyway.
 - **Context:** Surfaced during /plan-eng-review Section 2 Issue 1 on 2026-04-09. Deferred from Phase 1 because email fallback handles the short term. Capture the reasoning because Phase 2 job-change detection and the queue learning loop both want pdlId everywhere.
@@ -216,7 +216,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 
 ### P2: /hiring-manager-tracker Post-Ship Audit
 - **What:** After Find the Humans ships on Job Board cards, audit whether the standalone `/hiring-manager-tracker` page is still being used, whether it overlaps with Find the Humans (which auto-saves to contacts), and whether to consolidate it into the tracker or delete it.
-- **Why:** Find the Humans keeps `/find?tab=hiring-managers` as an escape hatch (Approach B locked during 2026-04-09 CEO review). But the separate `/hiring-manager-tracker` page is now a third surface that does similar work. Three places to find hiring managers is one too many — users will get confused and engineers will drift three codepaths apart.
+- **Why:** Find the Humans keeps `/find?tab=hiring-managers` as an escape hatch (Approach B locked during 2026-04-09 CEO review). But the separate `/hiring-manager-tracker` page is now a third surface that does similar work. Three places to find hiring managers is one too many - users will get confused and engineers will drift three codepaths apart.
 - **Pros:** Simpler product surface, less code drift, clearer mental model.
 - **Cons:** Deleting a page always has a long tail of bookmarks and tour references. Audit first, decide later.
 - **Context:** Surfaced during /plan-ceo-review of the Find the Humans design doc on 2026-04-09. Scope was HOLD, so this was deferred. The audit should include: analytics on /hiring-manager-tracker page views, grep for internal links/router references, user-facing announcements mentioning it.
@@ -226,7 +226,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 
 ### P2: Dedup /find-recruiter and /find-hiring-manager Endpoints
 - **What:** `/find-recruiter` and `/find-hiring-manager` in `backend/app/routes/job_board.py` are ~95% duplicate code (parser, credit logic, request flow). Their services (`find_recruiters()`, `find_hiring_manager()` in `recruiter_finder.py`) likely have similar duplication. Refactor into a single shared path parameterized by `role_type`.
-- **Why:** Find the Humans is now the second user-facing feature riding `/find-recruiter`. The /find HM tab rides `/find-hiring-manager`. Two load-bearing consumers of duplicated code is the moment to dedupe — bugs will otherwise need to be fixed twice, and the two paths will drift.
+- **Why:** Find the Humans is now the second user-facing feature riding `/find-recruiter`. The /find HM tab rides `/find-hiring-manager`. Two load-bearing consumers of duplicated code is the moment to dedupe - bugs will otherwise need to be fixed twice, and the two paths will drift.
 - **Pros:** One codepath, one test surface, easier to add future improvements (receipts, warmth scoring, enrichment) to both flows.
 - **Cons:** Refactoring a 1325-line service is risky without strong tests. `recruiter_finder.py` has limited test coverage today.
 - **Context:** Discovered during /plan-ceo-review of Find the Humans on 2026-04-09 (Premise Failure #4). The duplication was known but acceptable until this plan made it load-bearing twice. Adding this TODO now captures the dedup pressure before a third caller appears.
@@ -251,7 +251,7 @@ Deferred work tracked across reviews. Items added by /plan-ceo-review.
 - **Why:** This is a pre-existing risk in the recruiter flow (not introduced by Find the Humans), but Find the Humans makes it more visible because the button is on every job card and users will click it often. A single failure = a support ticket. At scale, a P2 becomes a P1.
 - **Pros:** Trust preservation, fewer support tickets, cleaner reliability story.
 - **Cons:** Firestore doesn't have multi-document transactions spanning credit doc + contacts subcollection in the way you'd want. Compensating-refund pattern is simpler but needs careful idempotency.
-- **Context:** Surfaced during /plan-ceo-review of Find the Humans on 2026-04-09 Section 4 (Data Flow). The existing recruiter flow has this problem today — Find the Humans doesn't regress it, but the design review declined to fix it in this PR to stay HOLD SCOPE.
+- **Context:** Surfaced during /plan-ceo-review of Find the Humans on 2026-04-09 Section 4 (Data Flow). The existing recruiter flow has this problem today - Find the Humans doesn't regress it, but the design review declined to fix it in this PR to stay HOLD SCOPE.
 - **Effort:** M (human: ~2 days / CC: ~30 min)
 - **Priority:** P2
 - **Depends on:** None.

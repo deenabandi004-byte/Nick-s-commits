@@ -5,7 +5,7 @@ import { AppHeader } from "@/components/AppHeader";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
 import { useScout } from "@/contexts/ScoutContext";
 import {
-  Search, Linkedin, Send, Loader2, Sparkles, ArrowRight,
+  Search, Linkedin, Send, Loader2, Lightbulb, ArrowRight,
   User, Check, CheckCircle,
   FileText, Upload, Mail, Inbox, AlertCircle, X, ExternalLink, ChevronRight
 } from "lucide-react";
@@ -225,7 +225,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         return pending;
       }
     } catch {
-      // Private mode / disabled storage — just fall through to empty
+      // Private mode / disabled storage - just fall through to empty
     }
     return "";
   });
@@ -242,7 +242,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
 
   // Search state
   const [isSearching, setIsSearching] = useState(false);
-  // Rotation seed — drives randomization in the right-rail recommendations so
+  // Rotation seed - drives randomization in the right-rail recommendations so
   // users who click Network multiple times get fresh suggestions each pass.
   // Initialized to a random page-load value, incremented every search submission.
   const [rotationSeed, setRotationSeed] = useState(() => Math.floor(Math.random() * 1_000_000));
@@ -257,7 +257,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   const [resultMessage, setResultMessage] = useState<string>("");
   // Backend signals when its retry chain dropped filters to find matches. We
   // surface this honestly above the result list so the user knows the system
-  // worked harder for them — and which constraints loosened — instead of
+  // worked harder for them - and which constraints loosened - instead of
   // pretending the original specific query yielded those people.
   const [broadenedDimensions, setBroadenedDimensions] = useState<string[]>([]);
   const [companyContext, setCompanyContext] = useState<string>("");
@@ -291,7 +291,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   // locations, target industries, extracted roles. Sourced from the user's profile
   // so completions feel like the system already knows them.
   const [profileCompletionTokens, setProfileCompletionTokens] = useState<string[]>([]);
-  // Structured profile facts — used by QuickStarters to assemble click-to-fill
+  // Structured profile facts - used by QuickStarters to assemble click-to-fill
   // queries that match the user's actual targets. Mirrors the personalization
   // chips on the Profile page.
   const [profileFacts, setProfileFacts] = useState<{
@@ -348,7 +348,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       hints.push("Try a company name, role, or school");
       if (hints.length > 0) setProfileHints(hints);
 
-      // Build profile completion tokens — used to bias the ghost-text autocomplete
+      // Build profile completion tokens - used to bias the ghost-text autocomplete
       // toward strings the user has already told us they care about.
       const tokens: string[] = [];
       for (const f of firms) if (typeof f === 'string') tokens.push(f);
@@ -371,7 +371,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     }).catch(() => {});
   }, [user?.uid, isDevPreview]);
 
-  // Typewriter examples — derived from profile hints, with fallback list
+  // Typewriter examples - derived from profile hints, with fallback list
   const typewriterExamples = useMemo(() => {
     const filtered = profileHints.filter((h) =>
       !h.toLowerCase().startsWith('paste') &&
@@ -420,7 +420,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   }, [twPhase, typedText, twIdx, typewriterExamples, inputFocused, searchPrompt]);
 
   // Typewriter shows when input is blurred + empty (greeting state). Once the
-  // user focuses or types, it gets out of the way — the QuickStarters row
+  // user focuses or types, it gets out of the way - the QuickStarters row
   // below the input takes over the "what could I try?" job.
   const showAnimatedPlaceholder = !searchPrompt && !inputFocused;
   // Ghost-text autocomplete: predicts the rest of the word/phrase the user is typing
@@ -652,12 +652,12 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
 
   // Helper function to trigger Scout on 0 results. Forwards the parsed query +
   // retry-chain context so the backend can generate concrete refined prompts
-  // ("try Mediobanca instead — Bocconi pipeline") rather than generic title
+  // ("try Mediobanca instead - Bocconi pipeline") rather than generic title
   // alternatives. The extra signals are optional; the backend falls through to
   // the legacy structured path if any are missing.
   //
-  // Critical: we ALSO pass `tried_prompts` — the list of prompts that have
-  // already failed in this session — so Scout doesn't recommend a refined
+  // Critical: we ALSO pass `tried_prompts` - the list of prompts that have
+  // already failed in this session - so Scout doesn't recommend a refined
   // prompt the user just clicked through and bombed on. The LLM is instructed
   // to never suggest one of these. List is rolling, 24h, 30 most recent.
   const triggerScoutForNoResults = useCallback(
@@ -678,7 +678,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           .slice(0, 30)
           .map(([p]) => p);
       } catch {
-        // Non-fatal — localStorage may be disabled.
+        // Non-fatal - localStorage may be disabled.
       }
       openPanelWithSearchHelp({
         searchType: 'contact',
@@ -1245,7 +1245,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             results: result.contacts?.length || 0,
             ts: Date.now(),
           });
-          // De-dup by prompt — keep the most recent occurrence only.
+          // De-dup by prompt - keep the most recent occurrence only.
           const seen = new Set<string>();
           const deduped = arr.filter((e) => {
             const k = e.prompt.toLowerCase();
@@ -1259,13 +1259,13 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           );
         }
       } catch {
-        // Non-fatal — localStorage may be disabled.
+        // Non-fatal - localStorage may be disabled.
       }
 
       // Track empty-result (school, company) pairs in localStorage so the
       // right rail can deprioritize firms we already know are thin for the
       // user's school (e.g. Bocconi × Morgan Stanley). We only persist when
-      // the retry chain bottomed out at level >= 4 — meaning even after
+      // the retry chain bottomed out at level >= 4 - meaning even after
       // dropping the company filter we still found no new alumni in the
       // role family. That's the strongest signal the firm × school combo
       // is unreachable via PDL.
@@ -1297,7 +1297,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           localStorage.setItem('ofl_thin_pairs', JSON.stringify(trimmed));
         }
       } catch {
-        // Non-fatal — localStorage may be disabled in private browsing.
+        // Non-fatal - localStorage may be disabled in private browsing.
       }
       setCompanyContext((result as any)?.parsed_query?.company_context || "");
       setSearchSuggestions((result as any)?.suggestions || []);
@@ -1306,7 +1306,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       // Open Scout with refined-prompt suggestions in two cases:
       //   - genuine zero results (nothing to surface)
       //   - all matches already saved AND the chain had to broaden (retry >= 2,
-      //     i.e. title/industry got dropped) — that's the "I want fresh contacts
+      //     i.e. title/industry got dropped) - that's the "I want fresh contacts
       //     and the system gave me what it could" moment where suggestions
       //     genuinely help.
       const retryLevelFromServer = Number((result as any)?.retry_level_used ?? 0);
@@ -1333,7 +1333,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             localStorage.setItem('ofl_tried_prompts', JSON.stringify(trimmed));
           }
         } catch {
-          // Non-fatal — localStorage may be disabled.
+          // Non-fatal - localStorage may be disabled.
         }
       }
 
@@ -1372,7 +1372,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         }
       }
 
-      // Backend already saves contacts to Firestore (runs.py save loop) — no frontend save needed
+      // Backend already saves contacts to Firestore (runs.py save loop) - no frontend save needed
 
       setLastSearchStats({
         successful_drafts: 0,
@@ -1384,7 +1384,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       const savedCount = alreadySavedFromServer.length;
       const newCount = result.contacts.length;
       if (newCount === 0 && savedCount === 0) {
-        // Genuine no-results — Scout panel already opened above; a short toast
+        // Genuine no-results - Scout panel already opened above; a short toast
         // confirms the outcome without claiming "Contacts Found!".
         toast({
           title: "No matching contacts found",
@@ -1405,8 +1405,8 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         toast({
           title: "Contacts Found!",
           description: savedCount > 0
-            ? `Found ${newCount + savedCount} contacts (${newCount} new, ${savedCount} already saved) — view in your Outbox.`
-            : `Found ${newCount} contacts — view them in your Outbox to start outreach.`,
+            ? `Found ${newCount + savedCount} contacts (${newCount} new, ${savedCount} already saved) - view in your Outbox.`
+            : `Found ${newCount} contacts - view them in your Outbox to start outreach.`,
           duration: 5000,
         });
       }
@@ -1482,7 +1482,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     }
   };
 
-  // Unified submit handler — routes to LinkedIn import or search
+  // Unified submit handler - routes to LinkedIn import or search
   const handleSubmit = () => {
     const input = searchPrompt.trim();
     if (!input) return;
@@ -1572,7 +1572,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   // --- Embedded content (rendered inside FindPage wrapper) ---
   const embeddedContent = (
     <>
-      {/* Gmail hint — subtle inline text, not a warning banner */}
+      {/* Gmail hint - subtle inline text, not a warning banner */}
       {gmailConnected === false && !gmailBannerDismissed && (
         <div style={{ maxWidth: '860px', margin: '0 auto', padding: '8px 32px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
           <span style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)' }}>
@@ -1631,7 +1631,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             }}
           >
             <div className="flex items-center gap-3">
-              <Sparkles className="w-4 h-4 text-[#3B82F6]" />
+              <Lightbulb className="w-4 h-4 text-[#3B82F6]" />
               <span className="text-sm text-[#6B7280]">
                 Targeting <span className="font-medium text-[#0F172A]">{currentFitContext.job_title}</span> at {currentFitContext.company || 'target companies'}
               </span>
@@ -1650,7 +1650,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           </div>
         )}
 
-        {/* Hero search bar — full-width prompt. Company Alternatives sidebar is
+        {/* Hero search bar - full-width prompt. Company Alternatives sidebar is
             absolutely positioned in the empty space to the right of the form (outside
             the prompt bubble) so the prompt keeps its full width for typing. */}
         <div style={{ marginTop: 0, marginBottom: 16, position: 'relative' }}>
@@ -1671,13 +1671,13 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               }}
               className="hover:border-[#3B82F6] hover:bg-white focus-within:border-[#2563EB] focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.12)]"
             >
-              {/* Row 1 — search icon + input + LinkedIn pill */}
+              {/* Row 1 - search icon + input + LinkedIn pill */}
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                 <Search style={{ width: 16, height: 16, flexShrink: 0, color: '#3B82F6', marginTop: 1 }} />
               <div style={{ flex: 1, position: 'relative' }}>
                 {/* Pseudo-element styling for the transparent input:
-                    - ::placeholder — keep it visible despite color:transparent on the host
-                    - ::selection — keep selected text transparent (the visible rendering
+                    - ::placeholder - keep it visible despite color:transparent on the host
+                    - ::selection - keep selected text transparent (the visible rendering
                       lives in the overlay above; without this rule, the input's selected
                       text re-emerges and double-renders against the overlay). */}
                 <style>{`.ofl-search-input::placeholder{color:var(--warm-ink-tertiary,#9C9590);opacity:1;}.ofl-search-input::selection{color:transparent;background:rgba(59,130,246,0.20);}.ofl-search-input::-moz-selection{color:transparent;background:rgba(59,130,246,0.20);}`}</style>
@@ -1695,7 +1695,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                     setSearchPrompt(next);
                     setLinkedInError(null);
                     setLinkedInSuccess(null);
-                    // Auto-grow vertically as the user types — keeps long queries readable.
+                    // Auto-grow vertically as the user types - keeps long queries readable.
                     const el = e.currentTarget;
                     el.style.height = 'auto';
                     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
@@ -1723,7 +1723,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                   }}
                   onFocus={() => setInputFocused(true)}
                   onBlur={() => setInputFocused(false)}
-                  // Native placeholder is intentionally empty — the typewriter overlay below
+                  // Native placeholder is intentionally empty - the typewriter overlay below
                   // owns ALL placeholder rendering (focused or not), so we don't double-show.
                   placeholder={undefined}
                   disabled={isSearching || linkedInLoading}
@@ -1745,7 +1745,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                     minHeight: 21, // matches one line at fontSize 14 × lineHeight 1.5
                   }}
                 />
-                {/* Typewriter placeholder overlay — types + deletes between examples in quotes */}
+                {/* Typewriter placeholder overlay - types + deletes between examples in quotes */}
                 {showAnimatedPlaceholder && (
                   <div
                     style={{
@@ -1767,7 +1767,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                     Paste a LinkedIn URL, or try &lsquo;<span>{typedText}</span><span className="ofl-twcaret">|</span>&rsquo;…
                   </div>
                 )}
-                {/* Combined text overlay — typed text in primary ink + optional ghost suffix
+                {/* Combined text overlay - typed text in primary ink + optional ghost suffix
                     in faded ink. Both rendered in the same DOM node so they share font metrics
                     and align pixel-perfect with each other (no offset between typed and ghost). */}
                 {searchPrompt && !showAnimatedPlaceholder && (
@@ -1838,7 +1838,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               )}
               </div>
 
-              {/* Role-variations pill row — Grammarly-style, sits directly below the
+              {/* Role-variations pill row - Grammarly-style, sits directly below the
                   typed sentence. Hover any pill to preview the swap, click to commit. */}
               <div style={{ paddingLeft: 26, marginTop: 16 }}>
                 <RoleVariations
@@ -1860,7 +1860,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 />
               </div>
 
-              {/* Row 2 — bottom of the prompt box. When the user has focus-but-empty,
+              {/* Row 2 - bottom of the prompt box. When the user has focus-but-empty,
                   this slot shows the click-to-fill quick-starters (mental starting line).
                   When the user has typed something, dimension chips take over. */}
               <div style={{ marginTop: 'auto', paddingLeft: 26, paddingTop: 18 }}>
@@ -1880,7 +1880,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                           try {
                             el.setSelectionRange(seed.length, seed.length);
                           } catch {
-                            // Safari may throw on hidden/transparent inputs — non-fatal.
+                            // Safari may throw on hidden/transparent inputs - non-fatal.
                           }
                         }
                       });
@@ -1904,7 +1904,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               </div>
             </div>
 
-            {/* RIGHT — Company Alternatives, absolutely positioned in the empty space
+            {/* RIGHT - Company Alternatives, absolutely positioned in the empty space
                 outside the form's max-width container. Doesn't affect the prompt's
                 full-width layout. */}
             <div
@@ -1933,7 +1933,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 }
                 onClearPreview={() => setPreviewSwap(null)}
                 onAppendCompany={(company) => {
-                  // No specific company in the prompt yet — append "at <company>"
+                  // No specific company in the prompt yet - append "at <company>"
                   // so the search picks up the user's intent.
                   setSearchPrompt((prev) => {
                     const trimmed = prev.replace(/\s+$/, '');
@@ -1983,7 +1983,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           </div>
         )}
 
-        {/* Quantity slider — always visible, hidden for LinkedIn */}
+        {/* Quantity slider - always visible, hidden for LinkedIn */}
         {!isLinkedInUrl(searchPrompt) && (
           <div style={{ marginBottom: 16 }}>
             <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 500, letterSpacing: '.05em', marginBottom: 8 }}>
@@ -2087,7 +2087,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           )}
         </button>
 
-        {/* Resume upload card — shown when no results and no resume */}
+        {/* Resume upload card - shown when no results and no resume */}
         {!hasResults && !isSearching && !savedResumeUrl && (
           <div
             className="max-sm:flex-col max-sm:items-start"
@@ -2119,7 +2119,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 Upload your resume for better matches
               </div>
               <div style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)', lineHeight: 1.5 }}>
-                We'll find people who hired for roles like yours — and tailor your outreach automatically.
+                We'll find people who hired for roles like yours - and tailor your outreach automatically.
               </div>
             </div>
             <button
@@ -2143,7 +2143,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           </div>
         )}
 
-        {/* Resume status — compact indicator when resume is already uploaded */}
+        {/* Resume status - compact indicator when resume is already uploaded */}
         {savedResumeUrl && savedResumeFileName && !hasResults && !isSearching && (
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
             <button
@@ -2167,9 +2167,9 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           </div>
         )}
 
-        {/* Suggestion cards — visible whenever the input doesn't have focus and there
+        {/* Suggestion cards - visible whenever the input doesn't have focus and there
             are no results yet. Includes the case where the user has typed content and
-            then clicked away — the recs surface immediately as a discovery panel. */}
+            then clicked away - the recs surface immediately as a discovery panel. */}
         <AnimatePresence initial={false}>
           {!hasResults && !isSearching && (
             <motion.div
@@ -2225,13 +2225,13 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 {lastResults.length + alreadySavedResults.length} {(lastResults.length + alreadySavedResults.length) === 1 ? 'result' : 'results'} found
               </div>
               <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                {lastResults.length > 0 ? `${lastResults.length} new — saved to your tracker automatically` : ''}
+                {lastResults.length > 0 ? `${lastResults.length} new - saved to your tracker automatically` : ''}
                 {lastResults.length > 0 && alreadySavedResults.length > 0 ? ' · ' : ''}
                 {alreadySavedResults.length > 0 ? `${alreadySavedResults.length} already in your tracker` : ''}
               </span>
             </div>
 
-            {/* Backend message — persistent inline callout for "all already saved" or adjacency explanation.
+            {/* Backend message - persistent inline callout for "all already saved" or adjacency explanation.
                 Shows when there are no new contacts to explain why and what to do next. */}
             {resultMessage && lastResults.length === 0 && (
               <div style={{
@@ -2248,7 +2248,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               </div>
             )}
 
-            {/* Broadening notice — shown when the backend retry chain dropped one
+            {/* Broadening notice - shown when the backend retry chain dropped one
                 or more constraints to find these contacts. Tells the user honestly
                 that the system expanded its search rather than pretending the
                 original specific query yielded these people. */}
@@ -2284,9 +2284,9 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                     gap: 6,
                   }}
                 >
-                  <Sparkles style={{ width: 12, height: 12, color: 'var(--brand-blue, #3B82F6)', flexShrink: 0 }} />
+                  <Lightbulb style={{ width: 12, height: 12, color: 'var(--brand-blue, #3B82F6)', flexShrink: 0 }} />
                   <span>
-                    Expanded by loosening {phrase} — your exact match was thin, so we surfaced the closest alternates.
+                    Expanded by loosening {phrase} - your exact match was thin, so we surfaced the closest alternates.
                   </span>
                 </div>
               );
@@ -2323,7 +2323,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               </div>
             )}
 
-            {/* Company context hint — explains when search intent was reinterpreted */}
+            {/* Company context hint - explains when search intent was reinterpreted */}
             {companyContext && (
               <div style={{
                 padding: '8px 12px',
@@ -2427,7 +2427,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                     <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>
                       {[title, company].filter(Boolean).join(' at ')}
                     </div>
-                    {/* Briefing line — "Why this person" */}
+                    {/* Briefing line - "Why this person" */}
                     {c.briefing && (
                       <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3, lineHeight: 1.3 }}>
                         {c.briefing}
@@ -2849,7 +2849,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 {!['contact-search', 'import', 'contact-library'].includes(activeTab) && 'Find'}
               </h1>
               <p className="text-sm text-[#6B7280] leading-relaxed">
-                {(activeTab === 'contact-search' || activeTab === 'import') && 'Search by name, role, or company — or paste a LinkedIn URL.'}
+                {(activeTab === 'contact-search' || activeTab === 'import') && 'Search by name, role, or company - or paste a LinkedIn URL.'}
                 {activeTab === 'contact-library' && 'Everyone you find lands here. Track status, view emails, and export.'}
                 {!['contact-search', 'import', 'contact-library'].includes(activeTab) && 'Discover professionals at your target companies.'}
               </p>

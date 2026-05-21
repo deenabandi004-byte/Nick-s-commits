@@ -40,7 +40,7 @@ const HOW_IT_WORKS_TABS = [
   },
   {
     icon: Coffee,
-    label: 'Walk into every coffee chat ready',
+    label: 'Walk into every meeting ready',
     description:
       "Before every call, we generate an extremely detailed PDF: their career path, commonalities between you, and exactly what to ask. Walk in like you've already met them.",
   },
@@ -110,7 +110,7 @@ const ForStudents = () => {
         }
       `}</style>
 
-      {/* NAVBAR — centered pill, matches landing */}
+      {/* NAVBAR - centered pill, matches landing */}
       <div className="fixed top-0 left-0 right-0 z-50 flex justify-center" style={{ padding: '12px 24px 8px' }}>
         <header
           className="flex items-center justify-between w-full h-12 px-5 md:px-6"
@@ -440,7 +440,7 @@ const ForStudents = () => {
           </p>
         </div>
 
-        {/* Inline responsive layout — flips to 2 columns on desktop */}
+        {/* Inline responsive layout - flips to 2 columns on desktop */}
         <style>{`
           @media (min-width: 900px) {
             .how-it-works-grid {
@@ -508,7 +508,7 @@ const ForStudents = () => {
               We hated it.
             </p>
             <p style={{ margin: '0 0 22px' }}>
-              Then we'd walk into the library and see everyone else doing the same thing. Same tabs open. Same look on their face. Hundreds of hours of tedious work just to land a few coffee chats.
+              Then we'd walk into the library and see everyone else doing the same thing. Same tabs open. Same look on their face. Hundreds of hours of tedious work just to land a few meetings.
             </p>
             <p style={{ margin: '0 0 22px' }}>
               So we built this.

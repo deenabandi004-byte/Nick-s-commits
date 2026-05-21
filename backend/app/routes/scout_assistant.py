@@ -19,10 +19,10 @@ from app.utils.async_runner import run_async
 
 scout_assistant_bp = Blueprint("scout_assistant", __name__, url_prefix="/api/scout-assistant")
 
-# User context cache — avoids 2 Firestore reads per message within 5 minutes
+# User context cache - avoids 2 Firestore reads per message within 5 minutes
 # 60s TTL: profile rarely changes, but recent_searches / recent_coffee_chat_preps
 # / contacts.recent are activity-driven and feel stale at 5 min. 1 minute is the
-# sweet spot — Scout reflects what the user just did without re-querying every
+# sweet spot - Scout reflects what the user just did without re-querying every
 # turn of a single conversation.
 _user_context_cache = TTLCache(maxsize=500, ttl=60)
 
@@ -166,7 +166,7 @@ def _fetch_user_context(uid: str) -> dict:
     except Exception as e:
         print(f"[ScoutAssistant] Failed to fetch contacts summary: {e}")
 
-    # Recent search history — what the user has been looking for lately. The
+    # Recent search history - what the user has been looking for lately. The
     # client also passes this in user_memory (localStorage), but pulling from
     # Firestore here means Scout knows about searches done on other devices.
     try:
@@ -192,7 +192,7 @@ def _fetch_user_context(uid: str) -> dict:
     except Exception as e:
         print(f"[ScoutAssistant] Failed to fetch search history: {e}")
 
-    # Recent coffee chat / interview prep — signals the user is actively
+    # Recent meeting / interview prep - signals the user is actively
     # preparing for specific people, which Scout should reference.
     try:
         ccp_ref = (
@@ -213,9 +213,9 @@ def _fetch_user_context(uid: str) -> dict:
         if ccp_items:
             user_context["recent_coffee_chat_preps"] = ccp_items
     except Exception as e:
-        print(f"[ScoutAssistant] Failed to fetch coffee chat preps: {e}")
+        print(f"[ScoutAssistant] Failed to fetch meeting preps: {e}")
 
-    # Account age — gives Scout a sense of whether this is a brand-new user
+    # Account age - gives Scout a sense of whether this is a brand-new user
     # ("welcome to Offerloop") or a repeat user ("you've been here a while").
     try:
         created = user_data.get("createdAt") or user_data.get("created_at")
@@ -479,7 +479,7 @@ def scout_assistant_chat_stream():
                 data = item.get("data", {})
                 yield f"event: {event}\ndata: {json.dumps(data)}\n\n"
         except GeneratorExit:
-            # Client disconnected — thread will clean up naturally
+            # Client disconnected - thread will clean up naturally
             pass
 
     return Response(

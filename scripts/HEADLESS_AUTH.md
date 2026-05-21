@@ -60,7 +60,7 @@ command returns, so the watchdog fires and kills the server about 15 seconds lat
 Chromium dies with the server.
 
 **Fix:** Set `BROWSE_PARENT_PID=0` before `$B connect`. The server already supports
-this flag (it's how `$B pair-agent` stays alive for remote agents — see
+this flag (it's how `$B pair-agent` stays alive for remote agents - see
 `cli.ts:988`). The server treats `0` as "don't run the watchdog."
 
 ```bash
@@ -80,13 +80,13 @@ export BROWSE_PARENT_PID=0
 once, the next `$B` command loses it.
 
 **Root cause:** Headless mode in gstack uses `chromium.launch()` with an ephemeral
-context (`browser-manager.ts:146-202`). No persistent user data dir — localStorage
+context (`browser-manager.ts:146-202`). No persistent user data dir - localStorage
 and IndexedDB are wiped on every server restart. And the server restarts often
 because of Bug 1 above.
 
 **Also:** `$B state save` looks like it should help, but it only persists cookies
 and URLs, not localStorage (see `meta-commands.ts:565`: "V1: cookies + URLs only
-(not localStorage — breaks on load-before-navigate)"). Firebase doesn't use cookies
+(not localStorage - breaks on load-before-navigate)"). Firebase doesn't use cookies
 for auth, so this is a dead end.
 
 **Fix:** Use headed mode with the persistent profile
@@ -213,12 +213,12 @@ Some upgrades migrate or reset the Chromium profile. Just re-run the script.
 For pure headless on GitHub Actions or similar, the persistent-profile trick
 doesn't apply. Options:
 
-1. **Cache the profile dir as a GHA artifact** — works but you still need a human
+1. **Cache the profile dir as a GHA artifact** - works but you still need a human
    to do the initial OAuth once, and the cached profile needs periodic refresh.
 2. **Dev-only `/api/dev/sign-in-as` route** that takes a secret and a UID and
-   returns a Firebase custom token — then call `signInWithCustomToken` client-side.
+   returns a Firebase custom token - then call `signInWithCustomToken` client-side.
    Clean for CI, but requires backend + FE glue.
-3. **Firebase emulator** — run the auth emulator in CI and sign in with fixture
+3. **Firebase emulator** - run the auth emulator in CI and sign in with fixture
    users. Heaviest lift, cleanest isolation.
 
 None of these are currently wired up. Ping me if CI headless becomes a real need
@@ -228,8 +228,8 @@ and we'll pick one.
 
 ## Files touched
 
-- `scripts/browse-auth.sh` — the one-shot auth script
-- `scripts/HEADLESS_AUTH.md` — this file
+- `scripts/browse-auth.sh` - the one-shot auth script
+- `scripts/HEADLESS_AUTH.md` - this file
 
 No changes to the frontend, backend, or the gstack tool itself. This is pure
 tooling layered on top of gstack's existing headed mode.

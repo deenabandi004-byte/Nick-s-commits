@@ -58,13 +58,13 @@
 ### Resume Routes (1 route)
 - ✅ `POST /api/parse-resume` → Parse resume PDF and extract info
 
-### Coffee Chat Prep Routes (6 routes)
-- ✅ `POST /api/coffee-chat-prep` → Create coffee chat prep
-- ✅ `GET /api/coffee-chat-prep/history` → Get prep history
-- ✅ `GET /api/coffee-chat-prep/all` → Get all preps
-- ✅ `GET /api/coffee-chat-prep/<prep_id>` → Get prep status
-- ✅ `DELETE /api/coffee-chat-prep/<prep_id>` → Delete prep
-- ✅ `GET /api/coffee-chat-prep/<prep_id>/download` → Download PDF
+### Meeting Prep Routes (6 routes)
+- ✅ `POST /api/meeting-prep` → Create meeting prep
+- ✅ `GET /api/meeting-prep/history` → Get prep history
+- ✅ `GET /api/meeting-prep/all` → Get all preps
+- ✅ `GET /api/meeting-prep/<prep_id>` → Get prep status
+- ✅ `DELETE /api/meeting-prep/<prep_id>` → Delete prep
+- ✅ `GET /api/meeting-prep/<prep_id>/download` → Download PDF
 
 ### Billing Routes (9 routes)
 - ✅ `GET /api/tier-info` → Get tier information
@@ -103,7 +103,7 @@ backend/
 │   │   ├── runs.py             ✅ Free/Pro tier search routes
 │   │   ├── enrichment.py      ✅ Autocomplete/enrichment routes
 │   │   ├── resume.py           ✅ Resume parsing routes
-│   │   ├── coffee_chat_prep.py ✅ Coffee chat prep routes
+│   │   ├── meeting_prep.py ✅ Meeting prep routes
 │   │   ├── billing.py          ✅ Stripe/billing routes
 │   │   └── users.py            ✅ User routes (placeholder)
 │   │
@@ -124,14 +124,14 @@ backend/
 │   │   ├── __init__.py         ✅ Package initialization
 │   │   ├── contact.py          ✅ Contact utilities (email cleaning, hometown)
 │   │   ├── users.py            ✅ User utilities (university, resume parsing)
-│   │   └── coffee_chat_prep.py ✅ Coffee chat utilities
+│   │   └── meeting_prep.py ✅ Meeting utilities
 │   │
 │   └── models/                 ✅ Model files
 │       ├── __init__.py         ✅ Package initialization
 │       ├── enums.py            ✅ Enum definitions
 │       ├── contact.py           ✅ Contact normalization
 │       ├── users.py             ✅ User models (placeholder)
-│       └── coffee_chat_prep.py  ✅ Coffee chat models (placeholder)
+│       └── meeting_prep.py  ✅ Meeting models (placeholder)
 │
 └── app.py (root)               ✅ Shim file delegating to backend.wsgi
 ```
@@ -162,7 +162,7 @@ backend/
 - ✅ `TIER_CONFIGS` - Free and Pro tier configurations
 - ✅ `PDL_METRO_AREAS` - Metro area mappings
 - ✅ `GMAIL_SCOPES` - Gmail OAuth scopes
-- ✅ `COFFEE_CHAT_CREDITS` - Credit cost for coffee chat
+- ✅ `MEETING_CREDITS` - Credit cost for meeting
 - ✅ `RESUME_LINE` - Standard resume attachment line
 - ✅ `PDL_BASE_URL` - PDL API base URL
 - ✅ `DB_PATH` - SQLite database path

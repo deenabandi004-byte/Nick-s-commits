@@ -705,7 +705,7 @@ def import_contacts():
         # Add warnings for partial failures so the frontend can inform the user
         warnings = []
         if email_gen_failed:
-            warnings.append(f"Email generation failed — {len(contacts_for_drafting)} contacts were saved without email drafts.")
+            warnings.append(f"Email generation failed - {len(contacts_for_drafting)} contacts were saved without email drafts.")
         elif drafts_failed > 0:
             warnings.append(f"{drafts_failed} email draft(s) could not be created. Contacts were saved.")
         if warnings:

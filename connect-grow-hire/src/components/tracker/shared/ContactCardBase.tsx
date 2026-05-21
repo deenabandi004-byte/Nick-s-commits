@@ -2,7 +2,7 @@
  * Shared contact card primitives used by both the Pipeline (existing
  * ContactCard.tsx) and the Agentic Queue (QueueContactCard.tsx).
  *
- * These are additive — the legacy ContactCard is not refactored to use them
+ * These are additive - the legacy ContactCard is not refactored to use them
  * yet. The goal is to avoid drift between the two card variants (avatar
  * coloring, identity block, accent border) while leaving existing code
  * untouched.

@@ -156,7 +156,7 @@ WRITING GUIDELINES:
 
 {"SUBJECT LINE GUIDANCE FOR TARGETED OUTREACH:" if is_targeted_outreach else ""}
 {"- Include the role or company naturally: 'Quick question about BA roles at McKinsey' or 'Fellow Trojan exploring consulting'" if is_targeted_outreach else ""}
-{"- Avoid generic subjects like 'Coffee chat request' or 'Quick question'" if is_targeted_outreach else ""}
+{"- Avoid generic subjects like 'Meeting request' or 'Quick question'" if is_targeted_outreach else ""}
 
 FORMATTING:
 - Start with "Hi [FirstName],"
@@ -325,7 +325,7 @@ I'm a Data Science and Economics major at USC specifically
 exploring business analyst opportunities. Your path to 
 McKinsey's analytics practice caught my attention.
 
-I've been applying analytical skills to real problems—
+I've been applying analytical skills to real problems - 
 recently built a data pipeline for a startup that identified 
 $50K in cost savings. I'd love to hear how you positioned 
 your quantitative background for consulting, especially 
@@ -380,7 +380,7 @@ USC | Class of 2025
    - Lead with alumni connection, then pivot to role interest
    
 4. **Multiple contacts, different relevance**:
-   - Each email should adapt—PM at target company vs. PM elsewhere
+   - Each email should adapt - PM at target company vs. PM elsewhere
 
 ---
 

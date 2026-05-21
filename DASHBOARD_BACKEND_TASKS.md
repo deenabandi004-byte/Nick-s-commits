@@ -9,7 +9,7 @@ This document outlines all backend tasks needed to support the home page (Dashbo
 - **Outbox API** - `/api/outbox/threads` and `/api/outbox/threads/<id>/regenerate` ✅
 - **Activity Logging** - Firestore-based activity logging ✅
 - **Goals Management** - Firestore-based goals storage ✅
-- **Coffee Chat Preps** - Full CRUD operations ✅
+- **Meeting Preps** - Full CRUD operations ✅
 - **Interview Preps** - Full CRUD operations ✅
 - **Firm Search** - Search and history endpoints ✅
 - **Contact Management** - Firestore-based contact storage ✅
@@ -30,7 +30,7 @@ This document outlines all backend tasks needed to support the home page (Dashbo
 {
   "contactsFound": 156,
   "firmsSearched": 42,
-  "coffeeChatsCreated": 12,
+  "meetingsCreated": 12,
   "repliesReceived": 68,
   "responseRate": 0.68,
   "totalTimeSavedHours": 24.5,
@@ -42,10 +42,10 @@ This document outlines all backend tasks needed to support the home page (Dashbo
 **Implementation Notes:**
 - Calculate `contactsFound` from user's contacts collection
 - Calculate `firmsSearched` from firm search history
-- Calculate `coffeeChatsCreated` from coffee chat preps
+- Calculate `meetingsCreated` from meeting preps
 - Calculate `repliesReceived` from contacts with `hasUnreadReply=true` or `threadStatus='new_reply'`
 - Calculate `responseRate` as replies / contacts with emails sent
-- Calculate `totalTimeSavedHours` using formula: (contacts * 20min + firms * 2min + coffeeChats * 30min) / 60
+- Calculate `totalTimeSavedHours` using formula: (contacts * 20min + firms * 2min + meetings * 30min) / 60
 - Calculate `interviewPrepsCreated` from interview prep history
 - Filter `interviewPrepsThisMonth` by current month
 
@@ -67,7 +67,7 @@ This document outlines all backend tasks needed to support the home page (Dashbo
 {
   "contactsGenerated": 12,
   "firmsSearched": 5,
-  "coffeeChatsCreated": 3,
+  "meetingsCreated": 3,
   "interviewPrepsCreated": 2,
   "totalActivities": 22
 }
@@ -148,7 +148,7 @@ This document outlines all backend tasks needed to support the home page (Dashbo
 - For each goal, calculate current progress based on:
   - `contacts`: Count contacts created within goal period
   - `firms`: Count firm search activities within goal period
-  - `coffeeChats`: Count coffee chat prep activities within goal period
+  - `meetings`: Count meeting prep activities within goal period
   - `outreach`: Count contacts with `firstContactDate` within goal period and status != 'Not Contacted'
 - Calculate percentage: `(current / target) * 100`
 
@@ -325,7 +325,7 @@ This document outlines all backend tasks needed to support the home page (Dashbo
 
 **Endpoint:** `GET /api/dashboard/calendar/events`
 
-**Purpose:** Get calendar events (coffee chats, follow-ups, etc.)
+**Purpose:** Get calendar events (meetings, follow-ups, etc.)
 
 **Response:**
 ```json
@@ -333,7 +333,7 @@ This document outlines all backend tasks needed to support the home page (Dashbo
   "events": [
     {
       "id": "event123",
-      "title": "Coffee Chat with Sarah Chen",
+      "title": "Meeting with Sarah Chen",
       "firm": "Goldman Sachs",
       "date": "2025-12-05",
       "time": "14:00",
@@ -355,7 +355,7 @@ This document outlines all backend tasks needed to support the home page (Dashbo
 ```
 
 **Implementation Notes:**
-- **Events**: Query contacts with scheduled coffee chats (need to add `scheduledDate`, `scheduledTime` fields to contacts)
+- **Events**: Query contacts with scheduled meetings (need to add `scheduledDate`, `scheduledTime` fields to contacts)
 - **Follow-up reminders**: Contacts contacted 3+ days ago with no reply
 - Return formatted for calendar component
 

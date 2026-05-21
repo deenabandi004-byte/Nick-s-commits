@@ -709,11 +709,11 @@ body {
 }
 
 /* ============================================
-   COFFEE CHAT PREP STYLES
+   MEETING PREP STYLES
    ============================================ */
 
-/* Coffee Chat Loading */
-.coffee-chat-loading {
+/* Meeting Loading */
+.meeting-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -721,25 +721,25 @@ body {
   margin-top: 12px;
 }
 
-.coffee-chat-loading p {
+.meeting-loading p {
   font-size: 14px;
   color: #6B7280;
   text-align: center;
 }
 
-/* Coffee Chat Results */
-.coffee-chat-results {
+/* Meeting Results */
+.meeting-results {
   margin-top: 12px;
 }
 
-.coffee-chat-results .result-card {
+.meeting-results .result-card {
   background: #F0FDF4;
   border: 1px solid #BBF7D0;
   border-radius: 12px;
   padding: 16px;
 }
 
-.coffee-chat-results .result-header {
+.meeting-results .result-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -748,39 +748,39 @@ body {
   border-bottom: 1px solid #BBF7D0;
 }
 
-.coffee-chat-results .result-name {
+.meeting-results .result-name {
   font-weight: 600;
   color: #059669;
   font-size: 15px;
 }
 
-.coffee-chat-results .result-contact {
+.meeting-results .result-contact {
   font-size: 14px;
   color: #374151;
   margin-bottom: 12px;
 }
 
-.coffee-chat-results .result-links {
+.meeting-results .result-links {
   font-size: 13px;
 }
 
-.coffee-chat-results .result-links p {
+.meeting-results .result-links p {
   margin: 6px 0;
   color: #4B5563;
 }
 
-.coffee-chat-results .result-links a {
+.meeting-results .result-links a {
   color: #3B82F6;
   text-decoration: none;
   font-weight: 500;
 }
 
-.coffee-chat-results .result-links a:hover {
+.meeting-results .result-links a:hover {
   text-decoration: underline;
 }
 
-/* Coffee Chat hint under button */
-.coffee-chat-hint {
+/* Meeting hint under button */
+.meeting-hint {
   font-size: 11px;
   color: #6B7280;
   margin: 6px 0 0;
@@ -788,16 +788,16 @@ body {
   line-height: 1.3;
 }
 
-.coffee-chat-hint-disabled {
+.meeting-hint-disabled {
   color: #9CA3AF;
 }
 
-/* Coffee Chat Error */
-.coffee-chat-error {
+/* Meeting Error */
+.meeting-error {
   margin-top: 12px;
 }
 
-.coffee-chat-error .error-message {
+.meeting-error .error-message {
   color: #DC2626;
   font-size: 14px;
   padding: 12px;

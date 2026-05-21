@@ -2,23 +2,23 @@
 
 ## Offerloop Voice & Positioning
 
-**Product:** Offerloop — AI-powered professional networking platform for college students breaking into competitive industries.
+**Product:** Offerloop - AI-powered professional networking platform for college students breaking into competitive industries.
 
 **Target Launch:** UC LAUNCH Spring 2026, NVSC
 
 **Team:**
-- Nick (CEO) — USC 2027
-- Sid (CTO) — USC 2027
-- Rylan (CMO) — USC 2027
+- Nick (CEO) - USC 2027
+- Sid (CTO) - USC 2027
+- Rylan (CMO) - USC 2027
 
 **Voice Principles:**
 - Warm, confident, student-to-professional tone
 - Not corporate, not overly casual
-- Shows genuine curiosity — never transactional
+- Shows genuine curiosity - never transactional
 - Research-backed personalization, not mass-email templates
 - Emails should sound like they were written by a real student, not a bot
 
-**Tagline Positioning:** Offerloop helps students network smarter — find the right people, send the right emails, and prep for the right conversations.
+**Tagline Positioning:** Offerloop helps students network smarter - find the right people, send the right emails, and prep for the right conversations.
 
 ---
 
@@ -26,7 +26,7 @@
 
 | Segment | Description | Primary Features |
 |---------|-------------|-----------------|
-| **College students** | Undergrads/grads breaking into consulting, banking, tech, etc. | Contact Search, Email Drafting, Coffee Chat Prep |
+| **College students** | Undergrads/grads breaking into consulting, banking, tech, etc. | Contact Search, Email Drafting, Meeting Prep |
 | **Career pivoters** | Students exploring unfamiliar industries | Interview Prep, Firm Search, Resume Workshop |
 | **Alumni networkers** | Students leveraging school connections | Alumni-filtered search, shared-school personalization |
 | **Job seekers** | Students actively applying to roles | Application Lab, Resume Tailor, Cover Letters |
@@ -41,7 +41,7 @@ All styles are defined in `backend/email_templates.py` → `EMAIL_STYLE_PRESETS`
 
 #### 1. `casual`
 **Name:** Casual
-**Description:** Relaxed and friendly — like texting a friend of a friend
+**Description:** Relaxed and friendly - like texting a friend of a friend
 
 ```
 STYLE INSTRUCTIONS:
@@ -56,7 +56,7 @@ STYLE INSTRUCTIONS:
 
 #### 2. `professional`
 **Name:** Professional
-**Description:** Polished and respectful — safe for senior executives
+**Description:** Polished and respectful - safe for senior executives
 
 ```
 STYLE INSTRUCTIONS:
@@ -70,13 +70,13 @@ STYLE INSTRUCTIONS:
 
 #### 3. `short_direct`
 **Name:** Short & Direct
-**Description:** Under 50 words — get to the point fast
+**Description:** Under 50 words - get to the point fast
 
 ```
 STYLE INSTRUCTIONS:
 - STRICT: Keep the entire email body under 50 words (excluding greeting and sign-off)
 - Get to the point in the first sentence
-- One specific question or ask — nothing else
+- One specific question or ask - nothing else
 - No filler, no pleasantries beyond "Hi [Name],"
 - Every word must earn its place
 - Sign off with just "Thanks," then name
@@ -84,7 +84,7 @@ STYLE INSTRUCTIONS:
 
 #### 4. `warm_enthusiastic`
 **Name:** Warm & Enthusiastic
-**Description:** Genuinely excited — great for people you admire
+**Description:** Genuinely excited - great for people you admire
 
 ```
 STYLE INSTRUCTIONS:
@@ -98,7 +98,7 @@ STYLE INSTRUCTIONS:
 
 #### 5. `bold_confident`
 **Name:** Bold & Confident
-**Description:** Stand out in the inbox — memorable and direct
+**Description:** Stand out in the inbox - memorable and direct
 
 ```
 STYLE INSTRUCTIONS:
@@ -107,7 +107,7 @@ STYLE INSTRUCTIONS:
 - Use one vivid or surprising word/phrase that makes the email stick
 - Don't be apologetic ("Sorry to bother you", "I know you're busy")
 - State what you bring to the conversation, not just what you want
-- Keep it punchy — short paragraphs, no walls of text
+- Keep it punchy - short paragraphs, no walls of text
 - Sign off with "Thanks," then name
 ```
 
@@ -117,7 +117,7 @@ All purposes are defined in `backend/email_templates.py` → `EMAIL_PURPOSE_PRES
 
 #### 1. `networking` (default)
 **Name:** Networking
-**Description:** Coffee chats and informational interviews
+**Description:** Meetings and informational interviews
 
 - Introduce sender as a student interested in recipient's field
 - Reference something specific about recipient's background or company
@@ -191,7 +191,7 @@ Approved patterns:
 Banned patterns:
 - "Networking request"
 - "Introduction"
-- "Coffee chat request"
+- "Meeting request"
 - "Hope to connect"
 
 ### Custom Subject Lines
@@ -255,7 +255,7 @@ From the email requirements block:
 
 ### Formatting Rules
 
-1. Use "I came across your background at [Company]" — NOT "I'm reaching out because I noticed"
+1. Use "I came across your background at [Company]" - NOT "I'm reaching out because I noticed"
 2. ALWAYS mention sender's major
 3. Show interest in COMPANY's work, not just generic "your work"
 4. Ask TWO questions
@@ -292,9 +292,9 @@ The anchor system ensures each email contains exactly ONE personalized hook. Def
 
 | Priority | Type | Detection | Example Value |
 |----------|------|-----------|---------------|
-| 1 (highest) | `transition` | `_detect_career_transition()` — checks if current vs previous job spans different industries | "transitioned into consulting" |
-| 2 | `tenure` | `_detect_tenure()` — checks if current role started within 3 years | "recently joined at Google" |
-| 3 (fallback) | `title` | `_build_title_anchor()` — uses current title + company | "Software Engineer at Google" |
+| 1 (highest) | `transition` | `_detect_career_transition()` - checks if current vs previous job spans different industries | "transitioned into consulting" |
+| 2 | `tenure` | `_detect_tenure()` - checks if current role started within 3 years | "recently joined at Google" |
+| 3 (fallback) | `title` | `_build_title_anchor()` - uses current title + company | "Software Engineer at Google" |
 
 **Selection:** `_select_anchor()` picks highest-priority (lowest number) anchor.
 
@@ -319,13 +319,13 @@ The anchor system ensures each email contains exactly ONE personalized hook. Def
 
 ### Commonality Detection
 
-`detect_commonality()` from `app/utils/coffee_chat_prep.py`:
+`detect_commonality()` from `app/utils/meeting_prep.py`:
 
 | Type | Trigger | Prompt Injection |
 |------|---------|-----------------|
-| `university` | Sender + recipient share school | "Both attended {school} — emphasize the alumni connection naturally" |
-| `hometown` | Sender + recipient share hometown | "Both from {hometown} — mention the shared hometown connection" |
-| `company` | Sender + recipient worked at same company | "Both worked at {company} — reference the shared experience" |
+| `university` | Sender + recipient share school | "Both attended {school} - emphasize the alumni connection naturally" |
+| `hometown` | Sender + recipient share hometown | "Both from {hometown} - mention the shared hometown connection" |
+| `company` | Sender + recipient worked at same company | "Both worked at {company} - reference the shared experience" |
 
 ### Strong Connection Tracking
 
@@ -338,7 +338,7 @@ Alumni and shared-company contacts are flagged as `has_strong_connection = True`
 | Feature | Free | Pro | Elite |
 |---------|------|-----|-------|
 | Email generation | Yes (basic) | Yes (resume-enhanced) | Yes (all features) |
-| Resume-enhanced emails | No | Yes — `fit_context` with strengths, talking points, keywords | Yes |
+| Resume-enhanced emails | No | Yes - `fit_context` with strengths, talking points, keywords | Yes |
 | Custom templates | Basic | Full style + purpose presets | Full + personalized templates |
 | Batch size | 1 email/search | Up to 5 | Up to 15 |
 | Custom subject lines | No | Yes | Yes |
@@ -424,15 +424,15 @@ After email generation, if Gmail is connected:
 2. If `email_body_mentions_resume()` → attaches resume PDF
 3. `gmailDraftId` stored on contact document
 4. Compose URL generated: `https://mail.google.com/mail/?authuser={email}#drafts/{draftId}`
-5. Feature flag: `CREATE_GMAIL_DRAFTS` in config.py (currently `False` — returns compose links instead)
+5. Feature flag: `CREATE_GMAIL_DRAFTS` in config.py (currently `False` - returns compose links instead)
 
 ---
 
 ## Marketing Agent Integration Points
 
 ### For Email Automation
-- **Template API:** `GET /api/email-templates/presets` — returns all available styles and purposes
-- **Email Generation:** `POST /api/runs/search` — generates emails as part of search flow
+- **Template API:** `GET /api/email-templates/presets` - returns all available styles and purposes
+- **Email Generation:** `POST /api/runs/search` - generates emails as part of search flow
 - **Template Storage:** `users/{uid}.emailTemplate` Firestore field stores user's default template config:
   ```
   {
@@ -446,11 +446,11 @@ After email generation, if Gmail is connected:
   ```
 
 ### For Outreach Tracking
-- **Outbox:** `GET /api/outbox/entries` — all sent/drafted emails
-- **Reply Detection:** `POST /api/outbox/check-replies` — bulk Gmail thread check
+- **Outbox:** `GET /api/outbox/entries` - all sent/drafted emails
+- **Reply Detection:** `POST /api/outbox/check-replies` - bulk Gmail thread check
 - **Status Flow:** Draft → Sent → Replied / No Response
 
 ### For Content Generation
-- **Coffee Chat Prep:** `POST /api/coffee-chat-prep/generate` — generates prep notes
-- **Interview Prep:** `POST /api/interview-prep/generate` — generates interview prep
-- **Scout AI:** `POST /api/scout-assistant/chat` — conversational career guidance
+- **Meeting Prep:** `POST /api/meeting-prep/generate` - generates prep notes
+- **Interview Prep:** `POST /api/interview-prep/generate` - generates interview prep
+- **Scout AI:** `POST /api/scout-assistant/chat` - conversational career guidance

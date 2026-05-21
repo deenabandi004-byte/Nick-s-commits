@@ -1,9 +1,9 @@
 ---
 title: "Networking Email Templates for College Students (Copy + Paste for Any Situation)"
 date: "2026-03-13"
-description: "15 networking email templates for college students — cold outreach, alumni emails, follow-ups, and thank you notes that get responses."
+description: "15 networking email templates for college students - cold outreach, alumni emails, follow-ups, and thank you notes that get responses."
 slug: "networking-email-templates-college-students"
-keywords: "networking email templates college students, cold email templates, coffee chat email"
+keywords: "networking email templates college students, cold email templates, meeting email"
 faqSchema:
   - question: "How long should a networking email be for a college student?"
     answer: "Keep networking emails under 150 words. Professionals are busy, and short emails show you respect their time. Include one sentence about who you are, one to two sentences about why you are reaching out to them specifically, and one sentence with a clear ask (usually a 15-minute call). Anything longer than a phone screen's worth of text will hurt your response rate."
@@ -12,7 +12,7 @@ faqSchema:
   - question: "Should I use my university email or personal email for networking?"
     answer: "Always use your university (.edu) email address. It immediately establishes your credibility as a student and makes it easy for the recipient to verify who you are. Personal Gmail or Yahoo addresses look unprofessional and are more likely to be filtered as spam."
   - question: "How many networking emails should I send per week as a college student?"
-    answer: "During active recruiting season, aim for 15 to 25 personalized emails per week across your target firms and industries. This typically results in 3 to 6 coffee chats per week, which is a manageable volume alongside coursework. Quality matters more than quantity, so never sacrifice personalization for volume."
+    answer: "During active recruiting season, aim for 15 to 25 personalized emails per week across your target firms and industries. This typically results in 3 to 6 meetings per week, which is a manageable volume alongside coursework. Quality matters more than quantity, so never sacrifice personalization for volume."
   - question: "What should I do if someone does not respond to my networking email?"
     answer: "Send one follow-up email 5 to 7 days after your initial message. Keep it short: reference your previous email and reiterate your ask. If there is still no response after the follow-up, move on. Do not send more than two total emails to someone who has not replied. Some people are simply too busy, and that is not a reflection of your email quality."
 ---
@@ -29,9 +29,9 @@ Before diving into templates, here are the principles that separate emails that 
 
 **Use your .edu email.** Always send from your university email address. It establishes credibility instantly and reduces the chance of landing in spam.
 
-## Coffee Chat Request Templates
+## Meeting Request Templates
 
-### Template 1: Alumni Coffee Chat
+### Template 1: Alumni Meeting
 
 > **Subject:** [University] '[Grad Year] student, would love 15 min
 >
@@ -44,7 +44,7 @@ Before diving into templates, here are the principles that separate emails that 
 > Best,
 > [Your Name]
 
-### Template 2: Shared Interest Coffee Chat
+### Template 2: Shared Interest Meeting
 
 > **Subject:** Fellow [club/major/interest] and aspiring [industry] professional
 >
@@ -57,7 +57,7 @@ Before diving into templates, here are the principles that separate emails that 
 > Best,
 > [Your Name]
 
-### Template 3: Post-Event Coffee Chat
+### Template 3: Post-Event Meeting
 
 > **Subject:** Great meeting you at [Event Name]
 >
@@ -70,7 +70,7 @@ Before diving into templates, here are the principles that separate emails that 
 > Best,
 > [Your Name]
 
-### Template 4: Referral-Based Coffee Chat
+### Template 4: Referral-Based Meeting
 
 > **Subject:** [Mutual connection] suggested I reach out
 >
@@ -83,7 +83,7 @@ Before diving into templates, here are the principles that separate emails that 
 > Best,
 > [Your Name]
 
-### Template 5: Career Pivot Coffee Chat
+### Template 5: Career Pivot Meeting
 
 > **Subject:** [University] student exploring [Industry], your path from [Previous Role] is inspiring
 >
@@ -191,7 +191,7 @@ Before diving into templates, here are the principles that separate emails that 
 > Best,
 > [Your Name]
 
-### Template 13: IB Follow-Up After Coffee Chat
+### Template 13: IB Follow-Up After Meeting
 
 > **Subject:** Thank you for your time, [First Name]
 >
@@ -361,7 +361,7 @@ Always use your university (.edu) email address. It immediately establishes your
 
 ### How many networking emails should I send per week as a college student?
 
-During active recruiting season, aim for 15 to 25 personalized emails per week across your target firms and industries. This typically results in 3 to 6 coffee chats per week, which is a manageable volume alongside coursework. Quality matters more than quantity, so never sacrifice personalization for volume.
+During active recruiting season, aim for 15 to 25 personalized emails per week across your target firms and industries. This typically results in 3 to 6 meetings per week, which is a manageable volume alongside coursework. Quality matters more than quantity, so never sacrifice personalization for volume.
 
 ### What should I do if someone does not respond to my networking email?
 

@@ -27,7 +27,7 @@ const initialCreditsByTier = (tier: "free" | "pro" | "elite") => {
 };
 
 // .edu detection runs at signup. Once verified, persists on the user doc
-// forever — used by Stripe (lifetime student price lock) and trial length.
+// forever - used by Stripe (lifetime student price lock) and trial length.
 const isEduEmail = (email: string | null | undefined): boolean => {
   if (!email) return false;
   const lower = email.toLowerCase().trim();
@@ -290,7 +290,7 @@ const signIn = async (opts?: SignInOptions): Promise<NextRoute> => {
 
   const updateCredits = async (newCredits: number) => {
     if (!user) return;
-    // Only update local state — the backend already wrote the correct value to Firestore.
+    // Only update local state - the backend already wrote the correct value to Firestore.
     // Skipping the redundant Firestore write saves 50-200ms per credit deduction.
     setUser({ ...user, credits: newCredits });
   };

@@ -3,7 +3,7 @@ import chromeExtensionWalkthrough from '@/assets/Chrome extension walkthrough.mp
 import coverletter2 from '@/assets/coverletter2.mp4';
 import hiringmanager2 from '@/assets/hiringmanager2.mp4';
 import interviewprep from '@/assets/interviewprep.mp4';
-import coffeechat2extension from '@/assets/coffeechat2extension.mp4';
+import meeting2extension from '@/assets/meeting2extension.mp4';
 
 interface Feature {
   id: number;
@@ -40,7 +40,7 @@ const features: Feature[] = [
   {
     id: 4,
     text: "Prepare for Convo's",
-    videoSrc: coffeechat2extension,
+    videoSrc: meeting2extension,
     color: '#F97316', // orange
   },
 ];

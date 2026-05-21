@@ -1,4 +1,4 @@
-# Scout Feature — Full Audit Report
+# Scout Feature - Full Audit Report
 
 **Date:** 2026-03-06
 **Scope:** `backend/app/routes/scout.py`, `backend/app/routes/scout_assistant.py`, `backend/app/services/scout_service.py` (3,488 lines), `backend/app/services/scout_assistant_service.py` (1,068 lines), `backend/app/services/pdf_builder.py`, `backend/app/templates/`
@@ -22,7 +22,7 @@ Registered in `wsgi.py` at lines 22, 31, 114, 123.
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
-| `/api/scout/chat` | POST | Main chat — URL parsing, job search, research, conversation |
+| `/api/scout/chat` | POST | Main chat - URL parsing, job search, research, conversation |
 | `/api/scout/analyze-job` | POST | Deep job fit analysis with resume |
 | `/api/scout/firm-assist` | POST | Firm search assistant (query gen, refine, recommend, research) |
 | `/api/scout/health` | GET | Health check |
@@ -30,13 +30,13 @@ Registered in `wsgi.py` at lines 22, 31, 114, 123.
 | `/api/scout-assistant/search-help` | POST | Failed search recovery (alternative suggestions) |
 | `/api/scout-assistant/health` | GET | Health check |
 
-### Request Lifecycle — Scout Chat (Job Search)
+### Request Lifecycle - Scout Chat (Job Search)
 
 ```
 POST /api/scout/chat {"message": "python jobs in SF", "context": {"user_resume": {...}}}
   |
   v
-scout.py:scout_chat() — asyncio.run() blocks Flask worker
+scout.py:scout_chat() - asyncio.run() blocks Flask worker
   |
   v
 scout_service.handle_chat(message, context)
@@ -76,7 +76,7 @@ JSON response to frontend
 
 ### Firebase Operations
 
-**None.** Scout services do not read from or write to Firestore directly. User data (resume, context) is passed in the request body. This means Scout has no persistence layer — all state is client-managed.
+**None.** Scout services do not read from or write to Firestore directly. User data (resume, context) is passed in the request body. This means Scout has no persistence layer - all state is client-managed.
 
 ---
 
@@ -84,7 +84,7 @@ JSON response to frontend
 
 ### Complete API Inventory
 
-#### OpenAI (gpt-4o-mini) — 17 call sites
+#### OpenAI (gpt-4o-mini) - 17 call sites
 
 | Purpose | Function | Line | Timeout | Max Tokens | Called Per Request |
 |---------|----------|------|---------|------------|-------------------|
@@ -109,7 +109,7 @@ JSON response to frontend
 **Estimated cost per request:** $0.001-0.01 (gpt-4o-mini pricing)
 **Max OpenAI calls per single Scout chat:** 3 (intent classify + job titles + fit analysis)
 
-#### Jina Reader API — 1 call site
+#### Jina Reader API - 1 call site
 
 | Purpose | Function | Line | Timeout |
 |---------|----------|------|---------|
@@ -117,7 +117,7 @@ JSON response to frontend
 
 Content truncated to 15,000 chars. Used for URL parsing and optional job fit enrichment.
 
-#### SERP API (SerpApi) — 2 call sites
+#### SERP API (SerpApi) - 2 call sites
 
 | Purpose | Function | Line | Engine | Results |
 |---------|----------|------|--------|---------|
@@ -134,9 +134,9 @@ Content truncated to 15,000 chars. Used for URL parsing and optional job fit enr
 | URL parse results | 1 hour | URL string |
 | SERP job search results | 30 min | Query string |
 | Resume-generated job titles | 1 hour | SHA-256 of resume text |
-| Research SERP queries | **NOT CACHED** | — |
-| Job fit analysis | **NOT CACHED** | — |
-| Firm assist responses | **NOT CACHED** | — |
+| Research SERP queries | **NOT CACHED** | - |
+| Job fit analysis | **NOT CACHED** | - |
+| Firm assist responses | **NOT CACHED** | - |
 
 ---
 
@@ -156,31 +156,31 @@ Content truncated to 15,000 chars. Used for URL parsing and optional job fit enr
 
 ### Critical Performance Issues
 
-**Issue P1 — `asyncio.run()` blocks Flask worker** (Critical)
+**Issue P1 - `asyncio.run()` blocks Flask worker** (Critical)
 - Location: `scout.py:41,101,165` and `scout_assistant.py:75,165`
 - Every Scout request creates a new event loop and blocks the Flask worker for the full duration. With 4 Gunicorn sync workers, 4 simultaneous Scout requests fully saturate the server for all other users.
 - Fix: Use `--worker-class=gthread --threads 4` in Gunicorn, or move to background tasks with polling.
 
-**Issue P2 — 3 sequential SERP calls** (Critical)
+**Issue P2 - 3 sequential SERP calls** (Critical)
 - Location: `scout_service.py:1151-1161`
 - Resume-based search calls `_search_jobs()` three times sequentially (9-18s total).
-- Fix: Use `asyncio.gather()` to parallelize — cuts to 3-6s.
+- Fix: Use `asyncio.gather()` to parallelize - cuts to 3-6s.
 
-**Issue P3 — Static knowledge prompt rebuilt every request** (Warning)
+**Issue P3 - Static knowledge prompt rebuilt every request** (Warning)
 - Location: `scout_assistant_service.py:167-543`, called at line 629
 - `_build_knowledge_prompt()` returns ~4KB of static Markdown, rebuilt on every chat message.
 - Fix: Cache at module level.
 
-**Issue P4 — `TTLCache` unbounded and not thread-safe** (Warning)
+**Issue P4 - `TTLCache` unbounded and not thread-safe** (Warning)
 - Location: `scout_service.py:145-166`
 - No max size (unbounded memory growth). No `threading.Lock` (unsafe under `--threads`).
 - Fix: Add LRU eviction + lock.
 
-**Issue P5 — `asyncio.get_event_loop()` deprecated** (Warning)
+**Issue P5 - `asyncio.get_event_loop()` deprecated** (Warning)
 - Location: `scout_service.py:1571,2018`
 - Fix: Replace with `asyncio.get_running_loop()`.
 
-**Issue P6 — Indented JSON in prompts wastes tokens** (Warning)
+**Issue P6 - Indented JSON in prompts wastes tokens** (Warning)
 - Location: `scout_service.py:806,914,2777,3018`
 - `json.dumps(user_resume, indent=2)[:4000]` is 30-40% larger than compact JSON, and slicing can produce malformed JSON.
 - Fix: Use `separators=(',',':')` and truncate at field boundaries.
@@ -204,25 +204,25 @@ Content truncated to 15,000 chars. Used for URL parsing and optional job fit enr
 
 ### Issues Found
 
-**Issue E1 — SERP failures are silent** (Warning)
+**Issue E1 - SERP failures are silent** (Warning)
 - Location: `scout_service.py:1693-1696`
 - SERP exceptions return `[]` with no indication to the user that the API failed vs. no results exist.
 - Fix: Distinguish "API error, retry" from "no results found".
 
-**Issue E2 — Two OpenAI calls have no timeout** (Warning)
+**Issue E2 - Two OpenAI calls have no timeout** (Warning)
 - Location: `scout_assistant_service.py:858-887,967-997`
 - `_handle_contact_search_help` and `_handle_firm_search_help` can hang indefinitely.
 - Fix: Add `asyncio.wait_for(..., timeout=10.0)`.
 
-**Issue E3 — Malformed JSON from OpenAI handled but not validated** (Warning)
+**Issue E3 - Malformed JSON from OpenAI handled but not validated** (Warning)
 - Location: `scout_service.py:980-989,1038-1041`
 - JSON parse errors are caught and code attempts to strip markdown fences, but required fields are not validated after parsing. Missing fields silently become `None`.
 
-**Issue E4 — Partial failure not communicated** (Info)
+**Issue E4 - Partial failure not communicated** (Info)
 - Location: `scout_service.py:1102-1176`
 - If `_generate_job_titles_from_resume()` fails, the system silently falls back to the user's original query. User doesn't know they got generic results instead of resume-matched results.
 
-**Issue E5 — Malformed fallback PDFs** (Warning)
+**Issue E5 - Malformed fallback PDFs** (Warning)
 - Location: `pdf_builder.py:152-155`, `scout_service.py:3476-3481`
 - Error fallback writes `b"%PDF-1.4\n..."` which is not a valid PDF. Most readers will fail to open it.
 - Fix: Return an HTTP error instead of a broken PDF.
@@ -243,22 +243,22 @@ Content truncated to 15,000 chars. Used for URL parsing and optional job fit enr
 
 **Comparison with other features:**
 - Contact Search: checks credits, deducts before operation, enforces tier
-- Coffee Chat Prep: checks 15 credits, deducts before generation, enforces tier
+- Meeting Prep: checks 15 credits, deducts before generation, enforces tier
 - Email Templates: checks credits, deducts per generation
 
-**Impact:** Any user (including unauthenticated — see Security) can make unlimited OpenAI + SERP API calls at zero cost to them.
+**Impact:** Any user (including unauthenticated - see Security) can make unlimited OpenAI + SERP API calls at zero cost to them.
 
 ### Issues
 
-**Issue CR1 — No credit deduction anywhere in Scout** (Critical)
+**Issue CR1 - No credit deduction anywhere in Scout** (Critical)
 - No calls to credit-tracking functions in any Scout route or service.
 - Fix: Add credit checks and deduction before expensive operations.
 
-**Issue CR2 — No tier enforcement** (Critical)
+**Issue CR2 - No tier enforcement** (Critical)
 - No `@require_tier(['pro'])` on any Scout endpoint.
 - Fix: Add tier decorator if Scout is a paid feature.
 
-**Issue CR3 — No credit reversal mechanism** (Warning)
+**Issue CR3 - No credit reversal mechanism** (Warning)
 - Even when credits are eventually added, there's no mechanism to refund credits on partial failure.
 
 ---
@@ -269,34 +269,34 @@ Content truncated to 15,000 chars. Used for URL parsing and optional job fit enr
 
 Scout has two PDF paths:
 
-1. **Coffee Chat Prep** — `pdf_builder.py:generate_coffee_chat_pdf_v2()` uses WeasyPrint + Jinja2 template `coffee_chat_prep.html`
-2. **Resume PDF** — `scout_service.py:format_resume_pdf()` (lines 3382-3481) uses WeasyPrint + Jinja2 template `resume.html`, duplicating the same stderr suppression pattern
+1. **Meeting Prep** - `pdf_builder.py:generate_meeting_pdf_v2()` uses WeasyPrint + Jinja2 template `meeting_prep.html`
+2. **Resume PDF** - `scout_service.py:format_resume_pdf()` (lines 3382-3481) uses WeasyPrint + Jinja2 template `resume.html`, duplicating the same stderr suppression pattern
 
 ### Issues
 
-**Issue PDF1 — Duplicate PDF code** (Warning)
+**Issue PDF1 - Duplicate PDF code** (Warning)
 - `scout_service.py:3382-3481` duplicates the WeasyPrint stderr suppression pattern from `pdf_builder.py:136-144`.
-- `format_resume_pdf` is never called from any Scout route — it's dead code.
+- `format_resume_pdf` is never called from any Scout route - it's dead code.
 - Fix: Delete from `ScoutService`; if needed elsewhere, move to `pdf_builder.py`.
 
-**Issue PDF2 — Template variables not null-safe** (Warning)
-- `coffee_chat_prep.html:115` — `contact.fullName` rendered without fallback (blank if missing)
-- `coffee_chat_prep.html:116` — `contact.jobTitle` and `contact.company` joined with `·`, no fallback
-- `coffee_chat_prep.html:126` — `user.university` shows "None" if missing
-- `coffee_chat_prep.html:264` — `research.company_news[:2]` crashes if `company_news` is `None`
-- `coffee_chat_prep.html:283` — `contact.firstName` used directly in follow-up email template
-- Fix: Add `{{ field or "—" }}` guards, and validate arrays before slicing.
+**Issue PDF2 - Template variables not null-safe** (Warning)
+- `meeting_prep.html:115` - `contact.fullName` rendered without fallback (blank if missing)
+- `meeting_prep.html:116` - `contact.jobTitle` and `contact.company` joined with `·`, no fallback
+- `meeting_prep.html:126` - `user.university` shows "None" if missing
+- `meeting_prep.html:264` - `research.company_news[:2]` crashes if `company_news` is `None`
+- `meeting_prep.html:283` - `contact.firstName` used directly in follow-up email template
+- Fix: Add `{{ field or " - " }}` guards, and validate arrays before slicing.
 
-**Issue PDF3 — Questions array items not validated** (Warning)
-- `pdf_builder.py:108` — `questions_categories` defaults to `[]` but individual items are not validated for required `name` and `questions` keys.
+**Issue PDF3 - Questions array items not validated** (Warning)
+- `pdf_builder.py:108` - `questions_categories` defaults to `[]` but individual items are not validated for required `name` and `questions` keys.
 - Fix: Validate structure before passing to template.
 
-**Issue PDF4 — Strategy parsing fragile** (Info)
-- `pdf_builder.py:54-69` — Regex requires exact `**DO THIS**` and `**AVOID THIS**` formatting from OpenAI. If format varies, sections silently empty out.
+**Issue PDF4 - Strategy parsing fragile** (Info)
+- `pdf_builder.py:54-69` - Regex requires exact `**DO THIS**` and `**AVOID THIS**` formatting from OpenAI. If format varies, sections silently empty out.
 - Fix: Use structured JSON output from OpenAI instead of parsing markdown.
 
-**Issue PDF5 — Google Fonts require internet** (Info)
-- `coffee_chat_prep.html:6` — Loads Inter and Playfair Display from Google Fonts. If network unavailable during PDF generation, fonts fall back unpredictably.
+**Issue PDF5 - Google Fonts require internet** (Info)
+- `meeting_prep.html:6` - Loads Inter and Playfair Display from Google Fonts. If network unavailable during PDF generation, fonts fall back unpredictably.
 
 ---
 
@@ -304,31 +304,31 @@ Scout has two PDF paths:
 
 ### Critical Issues
 
-**Issue S1 — No authentication on 3 Scout endpoints** (Critical)
+**Issue S1 - No authentication on 3 Scout endpoints** (Critical)
 - Location: `scout.py:15,59,118`
 - `/api/scout/chat`, `/api/scout/analyze-job`, `/api/scout/firm-assist` have NO `@require_firebase_auth` decorator.
 - Any anonymous internet user can call these endpoints and burn OpenAI/SERP/Jina API quota.
 - Compare: `scout_assistant.py` correctly applies `@require_firebase_auth`.
 - Fix: Add `@require_firebase_auth` to all three handlers.
 
-**Issue S2 — No user data scoping** (Critical)
+**Issue S2 - No user data scoping** (Critical)
 - Location: `scout_service.py:190-218`
 - `handle_chat()` accepts `user_resume` in the request body with no verification that the resume belongs to the authenticated user. User A could pass User B's resume data.
 - Fix: Fetch resume from Firestore using the authenticated `user_id` instead of trusting the request body.
 
-**Issue S3 — PII logged without sanitization** (Warning)
+**Issue S3 - PII logged without sanitization** (Warning)
 - Location: `scout_service.py:222,1113,1115,1122,1133` and many more
 - Prints user locations, resume content lengths, extracted job details, and intent data to stdout.
 - Example: `print(f"[Scout] DEBUG: resume_location from user_resume: {resume_location}")`
 - Fix: Remove DEBUG prints. Use structured logging with PII redaction.
 
-**Issue S4 — Context injection / prompt injection risk** (Warning)
+**Issue S4 - Context injection / prompt injection risk** (Warning)
 - Location: `scout_service.py:194-217`
 - `context` dict from the request is passed directly into OpenAI prompts (e.g., `json.dumps(context.get('recent_topics', []))` at line 424).
 - A malicious user could craft context values that manipulate LLM behavior.
 - Fix: Sanitize and validate context structure before including in prompts.
 
-**Issue S5 — Resume data not size-validated** (Warning)
+**Issue S5 - Resume data not size-validated** (Warning)
 - Location: `scout_service.py:806,914`
 - Resume JSON is serialized and truncated by string slice (`[:4000]`), but there's no upfront validation of resume size or structure.
 - Fix: Validate resume size and required fields before processing.
@@ -342,7 +342,7 @@ Scout has two PDF paths:
 | Location | Lines | Description |
 |----------|-------|-------------|
 | `scout_service.py:format_resume_pdf()` | 3382-3481 | 100-line PDF method never called from Scout routes |
-| `scout_service.py:2117-2135` | 19 lines | Duplicate job-search heuristic in `_handle_conversation` (dead — intent already classified) |
+| `scout_service.py:2117-2135` | 19 lines | Duplicate job-search heuristic in `_handle_conversation` (dead - intent already classified) |
 | `scout_service.py:1113` | 1 line | `pass  # debug removed` |
 
 ### Functions Too Large
@@ -362,7 +362,7 @@ Scout has two PDF paths:
 |---------|----------|-------|
 | Inline imports | `scout_service.py:1135,1277` | `from app.utils.users import extract_hometown_from_resume` inside function bodies |
 | Debug prints vs logging | `scout_service.py:1113-1133` | `print()` statements mixed with no `logger` usage in Scout |
-| OpenAI client init | `scout_service.py:178-180` | Created at import time — crashes app if `OPENAI_API_KEY` missing |
+| OpenAI client init | `scout_service.py:178-180` | Created at import time - crashes app if `OPENAI_API_KEY` missing |
 | Firm assist response shape | `scout_service.py:3218-3225` | `suggestions` dict has different keys per action type, no typed schema |
 
 ---

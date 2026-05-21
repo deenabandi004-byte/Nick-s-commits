@@ -26,7 +26,7 @@ _EMPTY_STRUCTURED = {
     "title_variations": [],
 }
 
-# Manual TTL cache for parsed prompts — same pattern as company_search.py
+# Manual TTL cache for parsed prompts - same pattern as company_search.py
 _parse_cache: dict[str, tuple[float, dict]] = {}
 _parse_cache_lock = threading.Lock()
 _PARSE_CACHE_TTL = 3600   # 1 hour
@@ -69,31 +69,31 @@ def parse_search_prompt_structured(prompt: str) -> Dict[str, Any]:
             else:
                 del _parse_cache[cache_key]
 
-    print("[PromptParser] Cache miss — calling OpenAI")
+    print("[PromptParser] Cache miss - calling OpenAI")
 
     system_prompt = """You are a contact search query parser. Extract structured search parameters from a user's natural language prompt for finding professional contacts.
 
 RULES:
 1. Extract companies, locations, schools, and seniority when mentioned.
-2. For EACH company mentioned, generate the REAL job titles that actual employees at that company have on LinkedIn — not job posting titles, not generic titles. Use company-specific naming:
+2. For EACH company mentioned, generate the REAL job titles that actual employees at that company have on LinkedIn - not job posting titles, not generic titles. Use company-specific naming:
    - Amazon: use "SDE", "Software Development Engineer", not "Software Engineer".
    - Google: use "Software Engineer", "Product Manager", not "SDE".
    - Meta: use "Software Engineer" with team suffixes where relevant, "Product Manager".
-   - Finance: "Investment Banking Analyst", "Investment Banking Associate" — match the seniority the user specified.
+   - Finance: "Investment Banking Analyst", "Investment Banking Associate" - match the seniority the user specified.
 3. Title variations should primarily use domain-qualified titles (e.g., "Investment Banking Analyst", "Software Engineer"). ALSO include the standalone generic version as a fallback at the end of the list (e.g., "Analyst", "Engineer", "Associate"). Many real LinkedIn profiles only have the generic title, so including both ensures broad coverage.
 4. Include seniority only when combined with the domain: e.g. "investment banking associate", "software engineering manager".
-5. RESPECT the seniority level the user specified. If they say "analysts", generate analyst-level titles ONLY — do NOT add senior titles like "Vice President", "Managing Director", "Partner", "Principal" unless the user explicitly asks for them. If they say "bankers" (generic), include all levels. If they say "associates", include associate-level only. Match the user's intent.
+5. RESPECT the seniority level the user specified. If they say "analysts", generate analyst-level titles ONLY - do NOT add senior titles like "Vice President", "Managing Director", "Partner", "Principal" unless the user explicitly asks for them. If they say "bankers" (generic), include all levels. If they say "associates", include associate-level only. Match the user's intent.
 6. Include closely related roles: if user says "PM", include "Product Manager", "Technical Program Manager", "Program Manager".
 7. Expand shorthand:
    - "FAANG" → Google, Apple, Meta, Amazon, Netflix
    - "Big 4" → Deloitte, PwC, EY, KPMG
    - "MBB" → McKinsey, Bain, BCG
 8. Expand location shorthand: "NYC" → "New York", "SF" → "San Francisco", "LA" → "Los Angeles", "DC" → "Washington".
-9. Set confidence to "low" ONLY when the prompt has no specifics at all — no job titles/roles, no companies, no schools, and no location. Examples of LOW confidence: "find me people", "help", "good contacts". Examples of HIGH confidence: "Software engineers from USC" (title + school), "Product managers in NYC" (title + location), "People at Google" (company), "USC alumni in consulting" (school + industry). If the prompt has at least one of: title_variations, companies, schools, or locations, set confidence to "high".
+9. Set confidence to "low" ONLY when the prompt has no specifics at all - no job titles/roles, no companies, no schools, and no location. Examples of LOW confidence: "find me people", "help", "good contacts". Examples of HIGH confidence: "Software engineers from USC" (title + school), "Product managers in NYC" (title + location), "People at Google" (company), "USC alumni in consulting" (school + industry). If the prompt has at least one of: title_variations, companies, schools, or locations, set confidence to "high".
 10. title_variations must be a flat, deduplicated list of ALL job titles across all companies for use in search.
-11. When a company is specified, generate title variations that people ACTUALLY use at that company, not generic industry titles. Think about what the company does and what titles exist there. If the user's role description doesn't match what the company does, interpret the user's INTENT — they probably want to connect with people in a related function at that company. Examples:
+11. When a company is specified, generate title variations that people ACTUALLY use at that company, not generic industry titles. Think about what the company does and what titles exist there. If the user's role description doesn't match what the company does, interpret the user's INTENT - they probably want to connect with people in a related function at that company. Examples:
    - "Investment bankers at Bain" → Bain is a consulting firm, not an investment bank. The user likely wants finance-related or client-facing roles at Bain. Generate titles like: "Consultant", "Associate Consultant", "Manager", "Senior Manager", "Partner".
-   - "Investment banking analysts at Goldman Sachs" → Goldman IS an investment bank. User said "analysts" so generate analyst-level only: "Investment Banking Analyst", "Analyst", "Financial Analyst". Do NOT include "Vice President" or "Managing Director" — the user specified the seniority.
+   - "Investment banking analysts at Goldman Sachs" → Goldman IS an investment bank. User said "analysts" so generate analyst-level only: "Investment Banking Analyst", "Analyst", "Financial Analyst". Do NOT include "Vice President" or "Managing Director" - the user specified the seniority.
    - "Investment bankers at Goldman Sachs" → User said "bankers" (generic), so include all levels: "Investment Banking Analyst", "Investment Banking Associate", "Vice President", "Managing Director", "Analyst".
    - "Engineers at McKinsey" → McKinsey is a consulting firm that does have engineers. Generate: "Software Engineer", "Data Engineer", "Engineering Manager".
    Always think about what titles actually exist at the specified company before generating variations.

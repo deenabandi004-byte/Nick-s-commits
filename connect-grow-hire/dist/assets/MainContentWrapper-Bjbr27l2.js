@@ -1,1 +1,0 @@
-import{j as e}from"./vendor-react-4vhOoxV2.js";import{c as r}from"./index-nGYglU4-.js";function a({children:l,className:o}){return e.jsx("div",{className:"flex-1 flex flex-col p-1.5 sm:p-3 min-h-0",children:e.jsx("div",{className:r("flex-1 flex flex-col rounded-2xl shadow-sm overflow-hidden min-h-0",o),style:{background:"var(--elev, #FFFFFF)"},children:l})})}export{a as M};

@@ -13,7 +13,7 @@ import {
   Lightbulb,
   LayoutTemplate,
   CheckCircle,
-  Sparkles,
+  TrendingUp,
   Upload,
   AlertCircle,
 } from 'lucide-react';
@@ -152,7 +152,7 @@ export function ResumeOptimizationModal({
       case 'template_rebuild':
         return <LayoutTemplate className="w-5 h-5" />;
       default:
-        return <Sparkles className="w-5 h-5" />;
+        return <TrendingUp className="w-5 h-5" />;
     }
   };
 
@@ -322,7 +322,7 @@ export function ResumeOptimizationModal({
               'Optimizing...'
             ) : (
               <>
-                <Sparkles className="w-4 h-4 mr-2" />
+                <TrendingUp className="w-4 h-4 mr-2" />
                 Optimize (20 credits)
               </>
             )}

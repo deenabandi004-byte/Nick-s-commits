@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 # ============================================================================
 
 class TestNormalizeLocationString:
-    """Tests for normalize_location_string — alias resolution."""
+    """Tests for normalize_location_string - alias resolution."""
 
     def test_city_alias_nyc(self):
         from app.services.company_search import normalize_location_string
@@ -72,7 +72,7 @@ class TestNormalizeLocationString:
 # ============================================================================
 
 class TestLocationsMatch:
-    """Tests for locations_match — normalized string comparison."""
+    """Tests for locations_match - normalized string comparison."""
 
     def test_exact_match(self):
         from app.services.company_search import locations_match
@@ -104,7 +104,7 @@ class TestLocationsMatch:
 # ============================================================================
 
 class TestNormalizeLocation:
-    """Tests for normalize_location — parsing location strings to structured dicts."""
+    """Tests for normalize_location - parsing location strings to structured dicts."""
 
     def test_city_state(self):
         from app.services.company_search import normalize_location
@@ -151,7 +151,7 @@ class TestNormalizeLocation:
 # ============================================================================
 
 class TestFirmLocationMatches:
-    """Tests for firm_location_matches — filtering firms by location."""
+    """Tests for firm_location_matches - filtering firms by location."""
 
     def test_matching_city(self):
         from app.services.company_search import firm_location_matches
@@ -196,7 +196,7 @@ class TestFirmLocationMatches:
 # ============================================================================
 
 class TestTransformSerpCompany:
-    """Tests for transform_serp_company_to_firm — SERP result normalization."""
+    """Tests for transform_serp_company_to_firm - SERP result normalization."""
 
     def test_basic_transform(self):
         from app.services.company_search import transform_serp_company_to_firm

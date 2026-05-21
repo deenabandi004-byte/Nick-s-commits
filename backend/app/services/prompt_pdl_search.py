@@ -152,7 +152,7 @@ def _build_job_clause(job_titles: List[str], strict: bool, require_fallback: boo
         }
 
     # Loose: tokenize the primary title but require most tokens to match
-    # PDL doesn't support minimum_should_match — use must for required tokens
+    # PDL doesn't support minimum_should_match - use must for required tokens
     primary = titles[0]
     tokens = [t.strip() for t in primary.replace(",", " ").split() if t.strip()]
     if not tokens:
@@ -198,7 +198,7 @@ def _build_location_clause(location_values: List[str], strict: bool) -> Dict[str
     if not primary:
         return {"term": {"location_country": "united states"}}
 
-    # P1 FIX: Detect international locations — don't force US country filter
+    # P1 FIX: Detect international locations - don't force US country filter
     is_international = any(indicator in primary for indicator in _INTERNATIONAL_INDICATORS)
 
     location_should = [

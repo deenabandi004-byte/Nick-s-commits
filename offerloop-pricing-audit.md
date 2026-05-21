@@ -1,4 +1,4 @@
-# COMPLETE PRICING TIER AUDIT — OFFERLOOP
+# COMPLETE PRICING TIER AUDIT - OFFERLOOP
 
 Perform an exhaustive audit of the entire codebase to verify all pricing tier features are correctly implemented and enforced at every layer: Firebase, Stripe, Flask backend, and React frontend. Flag every inconsistency, missing enforcement, hardcoded value, or security gap.
 
@@ -15,7 +15,7 @@ Perform an exhaustive audit of the entire codebase to verify all pricing tier fe
 | Gmail integration | ✅ Included |
 | Directory saves | ✅ All contacts |
 | Alumni searches | 10 (lifetime cap) |
-| Coffee Chat Prep | 1 (lifetime, NOT monthly) |
+| Meeting Prep | 1 (lifetime, NOT monthly) |
 | Interview Prep | 1 (lifetime, NOT monthly) |
 | Exports | ❌ DISABLED (CSV + Gmail bulk draft blocked) |
 | Batch size | 1 (or minimal) |
@@ -23,9 +23,9 @@ Perform an exhaustive audit of the entire codebase to verify all pricing tier fe
 ### PRO TIER ($14.99 → $9.99/month student pricing)
 | Feature | Limit |
 |---------|-------|
-| Credits | 1,500 (~100 contacts) — refreshes monthly |
+| Credits | 1,500 (~100 contacts) - refreshes monthly |
 | Full Firm Search | ✅ UNLOCKED |
-| Coffee Chat Prep | 10/month (resets on billing cycle) |
+| Meeting Prep | 10/month (resets on billing cycle) |
 | Interview Prep | 5/month (resets on billing cycle) |
 | Smart filters | ✅ School/major/career filters |
 | Directory saving | ✅ Unlimited |
@@ -36,8 +36,8 @@ Perform an exhaustive audit of the entire codebase to verify all pricing tier fe
 ### ELITE TIER ($34.99/month)
 | Feature | Limit |
 |---------|-------|
-| Credits | 3,000 (~200 contacts) — refreshes monthly |
-| Coffee Chat Prep | ♾️ UNLIMITED |
+| Credits | 3,000 (~200 contacts) - refreshes monthly |
+| Meeting Prep | ♾️ UNLIMITED |
 | Interview Prep | ♾️ UNLIMITED |
 | Priority queue | ✅ For contact generation |
 | Personalized templates | ✅ Tailored to resume |
@@ -65,7 +65,7 @@ export const TIER_LIMITS = {
   free: {
     credits: 300,
     alumniSearches: 10,
-    coffeeChatPrep: 1,
+    meetingPrep: 1,
     interviewPrep: 1,
     exportEnabled: false,
     fullFirmSearch: false,
@@ -77,7 +77,7 @@ export const TIER_LIMITS = {
   pro: {
     credits: 1500,
     alumniSearches: Infinity,
-    coffeeChatPrep: 10,
+    meetingPrep: 10,
     interviewPrep: 5,
     exportEnabled: true,
     fullFirmSearch: true,
@@ -89,7 +89,7 @@ export const TIER_LIMITS = {
   elite: {
     credits: 3000,
     alumniSearches: Infinity,
-    coffeeChatPrep: Infinity,
+    meetingPrep: Infinity,
     interviewPrep: Infinity,
     exportEnabled: true,
     fullFirmSearch: true,
@@ -112,7 +112,7 @@ TIER_LIMITS = {
     'free': {
         'credits': 300,
         'alumni_searches': 10,
-        'coffee_chat_prep': 1,
+        'meeting_prep': 1,
         'interview_prep': 1,
         'export_enabled': False,
         'full_firm_search': False,
@@ -124,7 +124,7 @@ TIER_LIMITS = {
     'pro': {
         'credits': 1500,
         'alumni_searches': -1,  # unlimited
-        'coffee_chat_prep': 10,
+        'meeting_prep': 10,
         'interview_prep': 5,
         'export_enabled': True,
         'full_firm_search': True,
@@ -136,7 +136,7 @@ TIER_LIMITS = {
     'elite': {
         'credits': 3000,
         'alumni_searches': -1,  # unlimited
-        'coffee_chat_prep': -1,  # unlimited
+        'meeting_prep': -1,  # unlimited
         'interview_prep': -1,  # unlimited
         'export_enabled': True,
         'full_firm_search': True,
@@ -196,7 +196,7 @@ Find where user documents are created/structured. Verify schema includes:
   // Feature usage tracking
   alumniSearchesUsed: number,
   
-  coffeeChatPrep: {
+  meetingPrep: {
     used: number,
     limit: number,
     lastResetDate: timestamp
@@ -239,7 +239,7 @@ Locate and audit these functions:
 - [ ] Handles downgrades (Pro→Free, Elite→Pro)
 
 #### Monthly Reset Cron/Scheduled Function
-- [ ] Resets Pro coffee chat prep to 0, limit stays 10
+- [ ] Resets Pro meeting prep to 0, limit stays 10
 - [ ] Resets Pro interview prep to 0, limit stays 5
 - [ ] Resets Elite if any caps exist
 - [ ] Refreshes monthly credits
@@ -315,7 +315,7 @@ Find Stripe webhook endpoint and verify handling of:
 #### `invoice.paid`
 - [ ] Triggers monthly refresh
 - [ ] Resets credits to tier amount
-- [ ] Resets usage counters (coffee chat, interview prep)
+- [ ] Resets usage counters (meeting, interview prep)
 - [ ] Updates currentPeriodEnd
 
 #### `invoice.payment_failed`
@@ -426,7 +426,7 @@ def check_feature_limit(feature):
 - [ ] Free tier: blocks after 10 searches
 - [ ] Pro/Elite: unlimited
 
-#### `/api/coffee-chat-prep`
+#### `/api/meeting-prep`
 - [ ] Checks usage against limit
 - [ ] Free: 1 lifetime
 - [ ] Pro: 10/month
@@ -468,7 +468,7 @@ Find where credit costs are defined:
 CREDIT_COSTS = {
     'contact_search': 15,      # per contact found
     'email_generation': 0,     # included
-    'coffee_chat_prep': 0,     # uses feature limit, not credits
+    'meeting_prep': 0,     # uses feature limit, not credits
     'interview_prep': 0,       # uses feature limit, not credits
 }
 ```
@@ -490,7 +490,7 @@ interface User {
   tier: 'free' | 'pro' | 'elite';
   credits: number;
   
-  coffeeChatPrep: {
+  meetingPrep: {
     used: number;
     limit: number;
   };
@@ -518,20 +518,20 @@ interface User {
 
 ### 5.2 Component-by-Component Audit
 
-#### `CoffeeChatPrep.tsx` / `CoffeeChatPrep.jsx`
+#### `MeetingPrep.tsx` / `MeetingPrep.jsx`
 
 ```tsx
 // Should show remaining uses
-<p>{user.coffeeChatPrep.limit - user.coffeeChatPrep.used} remaining</p>
+<p>{user.meetingPrep.limit - user.meetingPrep.used} remaining</p>
 
 // Should block when limit reached
-{user.coffeeChatPrep.used >= user.coffeeChatPrep.limit && user.tier !== 'elite' && (
-  <UpgradePrompt feature="Coffee Chat Prep" />
+{user.meetingPrep.used >= user.meetingPrep.limit && user.tier !== 'elite' && (
+  <UpgradePrompt feature="Meeting Prep" />
 )}
 
 // Button should be disabled at limit
 <Button 
-  disabled={user.coffeeChatPrep.used >= user.coffeeChatPrep.limit && user.tier !== 'elite'}
+  disabled={user.meetingPrep.used >= user.meetingPrep.limit && user.tier !== 'elite'}
   onClick={handleGenerate}
 >
   Generate
@@ -539,7 +539,7 @@ interface User {
 ```
 
 #### `InterviewPrep.tsx` / `InterviewPrep.jsx`
-- Same pattern as Coffee Chat Prep
+- Same pattern as Meeting Prep
 - Free: 1 max, Pro: 5 max, Elite: unlimited
 
 #### `ContactSearch.tsx` / `Search.tsx`
@@ -642,13 +642,13 @@ const handleExportCSV = () => {
 
 Verify upgrade prompts appear when:
 - [ ] Free user hits credit limit
-- [ ] Free user hits Coffee Chat Prep limit (after 1)
+- [ ] Free user hits Meeting Prep limit (after 1)
 - [ ] Free user hits Interview Prep limit (after 1)
 - [ ] Free user hits alumni search limit (after 10)
 - [ ] Free user clicks export
 - [ ] Free user tries Full Firm Search
 - [ ] Free user tries smart filters
-- [ ] Pro user hits Coffee Chat limit (after 10)
+- [ ] Pro user hits Meeting limit (after 10)
 - [ ] Pro user hits Interview Prep limit (after 5)
 
 Each prompt should:
@@ -758,8 +758,8 @@ Handle:
 
 Verify Free tier limits don't reset:
 - [ ] No monthly reset for Free users
-- [ ] Coffee Chat and Interview Prep are ONE-TIME for Free
-- [ ] If Free user used their 1 Coffee Chat, it stays used forever unless they upgrade
+- [ ] Meeting and Interview Prep are ONE-TIME for Free
+- [ ] If Free user used their 1 Meeting, it stays used forever unless they upgrade
 
 **🚩 FLAG:** Race conditions, client-side only validation, tier tampering possible, incorrect Free tier reset.
 
@@ -771,7 +771,7 @@ Verify Free tier limits don't reset:
 
 Dashboard/UI should show:
 - Credits: `"X / 300"` (Free) or `"X / 1500"` (Pro) or `"X / 3000"` (Elite)
-- Coffee Chat: `"X / 1 used"` (Free) or `"X / 10 this month"` (Pro) or `"Unlimited"` (Elite)
+- Meeting: `"X / 1 used"` (Free) or `"X / 10 this month"` (Pro) or `"Unlimited"` (Elite)
 - Interview Prep: `"X / 1 used"` (Free) or `"X / 5 this month"` (Pro) or `"Unlimited"` (Elite)
 - Alumni Searches: `"X / 10 used"` (Free) or `"Unlimited"` (Pro/Elite)
 
@@ -784,7 +784,7 @@ For Pro/Elite:
 ### 8.3 Consistent Terminology
 
 Verify same terms used everywhere:
-- "Coffee Chat Prep" not "Coffee Chat" or "Coffee Chat Generator"
+- "Meeting Prep" not "Meeting" or "Meeting Generator"
 - "Interview Prep" not "Interview Preparation" or "Mock Interview"
 - "Full Firm Search" not "Company Search" or "Firm Lookup"
 
@@ -819,8 +819,8 @@ Create or verify existence of tests for:
 ### E2E Tests
 - [ ] Free user cannot export
 - [ ] Free user cannot use Full Firm Search
-- [ ] Free user blocked after 1 Coffee Chat Prep
-- [ ] Pro user blocked after 10 Coffee Chat Preps
+- [ ] Free user blocked after 1 Meeting Prep
+- [ ] Pro user blocked after 10 Meeting Preps
 - [ ] Elite user has unlimited access
 - [ ] Credits deducted correctly
 - [ ] Usage counters increment

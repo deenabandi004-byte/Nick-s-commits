@@ -172,7 +172,7 @@ So: **single-thread sync** runs on open; **batch-sync** runs on page load (stale
 A contact appears in Outbox when it has **either** a Gmail thread ID **or** a draft ID/URL. Those are set by:
 
 - **Find People → “Generate and draft”** (`POST /api/emails/generate-and-draft` in `emails.py`): Creates Gmail drafts for selected contacts and writes to Firestore `gmailDraftId`, `gmailMessageId`, `gmailDraftUrl`, `emailSubject`, `emailBody`, `pipelineStage: "draft_created"`, and optionally `gmailThreadId` if the API returns it.
-- **Bulk draft creation** (e.g. from runs or other flows that call `create_gmail_draft_for_user` / `create_drafts_batch` in `gmail_client.py`): Same idea — create draft, then save contact with draft and thread IDs where available.
+- **Bulk draft creation** (e.g. from runs or other flows that call `create_gmail_draft_for_user` / `create_drafts_batch` in `gmail_client.py`): Same idea - create draft, then save contact with draft and thread IDs where available.
 - **Regenerate reply** (Outbox): Creates a **new** Gmail draft (the reply) and updates the same contact with the new draft IDs and `suggestedReply`; the contact already had `gmailThreadId` from the first sent email.
 
 So: **drafts and threads are created elsewhere**; Outbox only **lists**, **syncs**, and **updates** those contacts and adds **reply-generation** on top.
@@ -194,7 +194,7 @@ Outbox itself does not call the webhook; it benefits from the fact that contacts
 
 ### 9.1 Outbox page (`Outbox.tsx`)
 
-- **Layout**: Two columns — left: list of threads (tabs, search, sort); right: selected thread detail.
+- **Layout**: Two columns - left: list of threads (tabs, search, sort); right: selected thread detail.
 - **Data**:
   - `getOutboxThreads()` → list of threads (with optional pagination params).
   - `getOutboxStats()` → stats for cards and tab counts.

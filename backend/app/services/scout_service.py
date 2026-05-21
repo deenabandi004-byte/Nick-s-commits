@@ -469,7 +469,7 @@ class ScoutService:
         ]
         for pattern in research_patterns:
             if re.search(pattern, message, re.IGNORECASE):
-                # Extract company if mentioned — try multiple patterns
+                # Extract company if mentioned - try multiple patterns
                 company_match = re.search(r'\bat\s+([A-Z][A-Za-z0-9\s&]+)', message)
                 if company_match:
                     extracted["company"] = company_match.group(1).strip()
@@ -737,7 +737,7 @@ Return format:
             import logging
             logging.getLogger(__name__).warning("Firecrawl failed, falling back to Jina", exc_info=True)
 
-        # DEPRECATED: remove in Phase 8 — Jina Reader fallback
+        # DEPRECATED: remove in Phase 8 - Jina Reader fallback
         client = None
         try:
             client = await self._get_http_client()
@@ -1712,7 +1712,7 @@ Return JSON only:
             except Exception as _pplx_err:
                 print(f"[Scout] Perplexity job search failed, falling back to SerpAPI: {_pplx_err}")
 
-            # DEPRECATED: remove in Phase 8 — SerpAPI fallback
+            # DEPRECATED: remove in Phase 8 - SerpAPI fallback
             # Use Google Jobs engine for better results
             search = GoogleSearch({
             "engine": "google_jobs",
@@ -1870,8 +1870,8 @@ Return JSON only:
         # Common patterns in job listing titles
         # "Software Engineer - Google" or "Software Engineer at Google"
         patterns = [
-            r'^(.+?)\s*[-–—]\s*(.+?)(?:\s*[-–—]\s*(.+))?$',  # Title - Company - Location
-            r'^(.+?)\s+at\s+(.+?)(?:\s*[-–—,]\s*(.+))?$',   # Title at Company - Location
+            r'^(.+?)\s*[-– - ]\s*(.+?)(?:\s*[-– - ]\s*(.+))?$',  # Title - Company - Location
+            r'^(.+?)\s+at\s+(.+?)(?:\s*[-– - ,]\s*(.+))?$',   # Title at Company - Location
             r'^(.+?)\s*\|\s*(.+?)(?:\s*\|\s*(.+))?$',       # Title | Company | Location
         ]
         
@@ -2180,7 +2180,7 @@ If you can infer specific titles they should try, list them.
         except Exception as _pplx_err:
             print(f"[Scout] Perplexity research failed, falling back to SerpAPI: {_pplx_err}")
 
-        # DEPRECATED: remove in Phase 8 — SerpAPI fallback
+        # DEPRECATED: remove in Phase 8 - SerpAPI fallback
         if not research_context:
             try:
                 search = GoogleSearch({
@@ -2429,9 +2429,9 @@ If you can extract job search fields from the conversation, mention them."""
         ]
         
         # If title has dash, intelligently choose which part is the actual role
-        if ' - ' in title or ' – ' in title or ' — ' in title:
+        if ' - ' in title or ' – ' in title or ' - ' in title:
             # Try different dash types
-            for dash in [' - ', ' – ', ' — ']:
+            for dash in [' - ', ' – ', ' - ']:
                 if dash in title:
                     parts = [p.strip() for p in title.split(dash)]
                     
@@ -2512,7 +2512,7 @@ If you can extract job search fields from the conversation, mention them."""
             title = re.sub(r'\s*\([^)]+\)', '', title).strip()
         
         # Remove trailing department/team indicators
-        title = re.sub(r'\s*[-–—]\s*[A-Z][^a-z]*$', '', title)  # Remove " - MSL FAIR" type patterns
+        title = re.sub(r'\s*[-– - ]\s*[A-Z][^a-z]*$', '', title)  # Remove " - MSL FAIR" type patterns
         title = re.sub(r',\s*[A-Z][^,]+$', '', title)  # Remove ", Team Name" at end
         
         # Final cleanup - remove extra spaces
@@ -3155,7 +3155,7 @@ Return JSON:
                 "status": "ok",
                 "message": "I'd need to see your resume to give personalized recommendations. "
                           "Make sure your resume is uploaded in Account Settings.\n\n"
-                          "In the meantime, I can tell you about any of the firms in your results—just ask!",
+                          "In the meantime, I can tell you about any of the firms in your results - just ask!",
                 "action_type": "recommend_firms",
             }
         
@@ -3421,7 +3421,7 @@ Click "View Contacts" on any firm to find people to reach out to. I'd prioritize
 Ask me about any firm's culture, interview process, or what they look for.
 
 **3. Prep Your Outreach**
-Once you find contacts, use Coffee Chat Prep to prepare for conversations.
+Once you find contacts, use Meeting Prep to prepare for conversations.
 
 **Quick actions:**
 • "Find contacts at {firm_names[0] if firm_names else 'Goldman Sachs'}"

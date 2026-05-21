@@ -1,4 +1,4 @@
-// AgentSetup — thin wrapper around AgentSetupInline with app chrome.
+// AgentSetup - thin wrapper around AgentSetupInline with app chrome.
 
 import { useNavigate } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";

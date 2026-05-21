@@ -19,7 +19,7 @@
 | Feature | Current | New Design |
 |---------|---------|------------|
 | **Credits** | 150 credits (10 emails) | 300 credits (~20 contacts) |
-| **Features** | • 150 credits<br>• Estimated time saved: 250 minutes<br>• Try out platform risk free<br>• Limited Features | • 300 credits (~20 contacts)<br>• Basic contact search + AI email drafts<br>• Gmail integration<br>• Directory saves all contacts<br>• 1 Coffee Chat Prep + 1 Interview Prep<br>• Exports disabled |
+| **Features** | • 150 credits<br>• Estimated time saved: 250 minutes<br>• Try out platform risk free<br>• Limited Features | • 300 credits (~20 contacts)<br>• Basic contact search + AI email drafts<br>• Gmail integration<br>• Directory saves all contacts<br>• 1 Meeting Prep + 1 Interview Prep<br>• Exports disabled |
 | **Button Text** | "Start for free" | "Start for Free" |
 
 ---
@@ -34,7 +34,7 @@
 | **Visual Style** | Simple border: `border-2 border-blue-500/50` | Gradient border wrapper with shadow effect |
 | **Hover Effect** | `hover:scale-[1.02]` | `hover:scale-[1.07]` |
 | **Scale** | Normal | `scale-105` (always scaled up) |
-| **Features** | • 1800 credits<br>• Estimated time saved: 2500 minutes<br>• Everything in free plus:<br>• Directory permanently saves<br>• Priority Support<br>• Advanced features | • 1,500 credits (~100 contacts)<br>• Everything in Free, plus:<br>• Full Firm Search<br>• Smart school/major/career filters<br>• 10 Coffee Chat Preps/month<br>• 5 Interview Preps/month<br>• Unlimited directory saving<br>• Bulk drafting + Export unlocked (CSV & Gmail)<br>• Estimated time saved: ~2,500 minutes/month |
+| **Features** | • 1800 credits<br>• Estimated time saved: 2500 minutes<br>• Everything in free plus:<br>• Directory permanently saves<br>• Priority Support<br>• Advanced features | • 1,500 credits (~100 contacts)<br>• Everything in Free, plus:<br>• Full Firm Search<br>• Smart school/major/career filters<br>• 10 Meeting Preps/month<br>• 5 Interview Preps/month<br>• Unlimited directory saving<br>• Bulk drafting + Export unlocked (CSV & Gmail)<br>• Estimated time saved: ~2,500 minutes/month |
 | **Button Text** | "Start now" | "Upgrade to Pro" |
 | **Price Font Size** | `text-3xl` | `text-4xl` |
 
@@ -47,7 +47,7 @@
 | **Existence** | ❌ Does not exist | ✅ New tier |
 | **Price** | N/A | **$34.99/month** |
 | **Credits** | N/A | 3,000 credits (~200 contacts) |
-| **Features** | N/A | • 3,000 credits (~200 contacts)<br>• Everything in Pro, plus:<br>• Unlimited Coffee Chat Prep<br>• Unlimited Interview Prep<br>• Priority queue for contact generation<br>• Personalized outreach templates (tailored to resume)<br>• Weekly personalized firm insights<br>• Early access to new AI tools<br>• Estimated time saved: ~5,000 minutes/month |
+| **Features** | N/A | • 3,000 credits (~200 contacts)<br>• Everything in Pro, plus:<br>• Unlimited Meeting Prep<br>• Unlimited Interview Prep<br>• Priority queue for contact generation<br>• Personalized outreach templates (tailored to resume)<br>• Weekly personalized firm insights<br>• Early access to new AI tools<br>• Estimated time saved: ~5,000 minutes/month |
 | **Button Text** | N/A | "Go Elite" |
 
 ---

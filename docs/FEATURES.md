@@ -79,18 +79,18 @@
 - Reply checking via `check_for_replies()` in `gmail_client.py`
 
 **API Endpoints:**
-- `GET /api/outbox/entries` — list outbox entries
-- `PUT /api/outbox/entries/{id}` — update entry status
-- `POST /api/outbox/check-replies` — bulk reply check
+- `GET /api/outbox/entries` - list outbox entries
+- `PUT /api/outbox/entries/{id}` - update entry status
+- `POST /api/outbox/check-replies` - bulk reply check
 
 ---
 
-## Coffee Chat Prep
+## Meeting Prep
 
-**Description:** AI-generated preparation notes for coffee chats with professionals.
+**Description:** AI-generated preparation notes for meetings with professionals.
 
 **User Flow:**
-1. Navigate to `/coffee-chat-prep`
+1. Navigate to `/meeting-prep`
 2. Enter contact info (name, title, company, LinkedIn URL)
 3. Backend generates comprehensive prep:
    - Company overview and recent news
@@ -102,7 +102,7 @@
 
 **API Calls:** OpenAI (content generation), SerpAPI/Jina (web research for company/person info)
 
-**Credit Cost:** 15 credits (`COFFEE_CHAT_CREDITS`)
+**Credit Cost:** 15 credits (`MEETING_CREDITS`)
 
 **Tier Limits:**
 - Free: 3 lifetime
@@ -140,10 +140,10 @@
 - Elite: Unlimited
 
 **Backend Services:**
-- `services/interview_prep/glassdoor_scraper.py` — Glassdoor interview data
-- `services/interview_prep/content_processor.py` — content processing
-- `services/interview_prep/question_extractor.py` — question extraction
-- `services/interview_prep/pdf_generator.py` — PDF generation
+- `services/interview_prep/glassdoor_scraper.py` - Glassdoor interview data
+- `services/interview_prep/content_processor.py` - content processing
+- `services/interview_prep/question_extractor.py` - question extraction
+- `services/interview_prep/pdf_generator.py` - PDF generation
 
 **Firestore Path:** `users/{uid}/interview-preps/{docId}`
 
@@ -168,22 +168,22 @@
 - **Tailor Tab:** Customize resume for specific job postings
 
 **API Endpoints:**
-- `POST /api/resume/upload` — upload and parse
-- `POST /api/resume/score` — ATS scoring
-- `POST /api/resume/optimize` — AI optimization
-- `POST /api/resume/tailor` — tailor to job description
-- `POST /api/resume/patch-pdf` — apply edits to PDF
+- `POST /api/resume/upload` - upload and parse
+- `POST /api/resume/score` - ATS scoring
+- `POST /api/resume/optimize` - AI optimization
+- `POST /api/resume/tailor` - tailor to job description
+- `POST /api/resume/patch-pdf` - apply edits to PDF
 
 **Backend Services:**
-- `services/resume_parser.py` / `resume_parser_v2.py` — text extraction
-- `services/resume_optimizer_v2.py` — AI optimization
-- `services/ats_scorer.py` — ATS score calculation
-- `services/pdf_patcher.py` — PDF editing
-- `services/pdf_builder.py` — PDF generation
+- `services/resume_parser.py` / `resume_parser_v2.py` - text extraction
+- `services/resume_optimizer_v2.py` - AI optimization
+- `services/ats_scorer.py` - ATS score calculation
+- `services/pdf_patcher.py` - PDF editing
+- `services/pdf_builder.py` - PDF generation
 
 **Firestore Paths:**
-- `users/{uid}/resume_library/{docId}` — saved resumes
-- `users/{uid}/resume_scores/{docId}` — ATS scores
+- `users/{uid}/resume_library/{docId}` - saved resumes
+- `users/{uid}/resume_scores/{docId}` - ATS scores
 
 ---
 
@@ -214,17 +214,17 @@
 5. Conversation history persisted
 
 **Frontend Components:**
-- `ScoutSidePanel.tsx` — slide-out panel
-- `ScoutChatbot.tsx` — chat interface
-- `ScoutContext.tsx` — state management
+- `ScoutSidePanel.tsx` - slide-out panel
+- `ScoutChatbot.tsx` - chat interface
+- `ScoutContext.tsx` - state management
 
 **Backend Routes:**
-- `routes/scout.py` — recruiter finder functionality
-- `routes/scout_assistant.py` — AI chat endpoints
+- `routes/scout.py` - recruiter finder functionality
+- `routes/scout_assistant.py` - AI chat endpoints
 
 **Firestore Path:** `users/{uid}/scoutConversations/{convId}`
 
-**Knowledge Base:** `data/scout-knowledge.ts` — static knowledge for quick answers
+**Knowledge Base:** `data/scout-knowledge.ts` - static knowledge for quick answers
 
 ---
 
@@ -283,7 +283,7 @@
 **Steps:**
 1. Welcome (`/onboarding` → `OnboardingWelcome`)
 2. Profile setup (`OnboardingProfile`)
-3. Academic info (`OnboardingAcademics`) — university, major, year
+3. Academic info (`OnboardingAcademics`) - university, major, year
 4. Location preferences (`OnboardingLocationPreferences`)
 
 **Data Collected:** name, university, major, graduation year, target industries, target roles, location preferences

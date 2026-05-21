@@ -1,5 +1,5 @@
 """
-Search Suggestions route — returns smart suggestions based on user profile.
+Search Suggestions route - returns smart suggestions based on user profile.
 """
 from flask import Blueprint, request, jsonify
 from app.extensions import require_firebase_auth

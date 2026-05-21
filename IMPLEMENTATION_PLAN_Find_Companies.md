@@ -1,4 +1,4 @@
-# Implementation Plan — Find → Companies redesign + Personalization Layer
+# Implementation Plan - Find → Companies redesign + Personalization Layer
 
 **Target repo:** `connect-grow-hire/` (React + Vite + TypeScript + Tailwind, shadcn/ui)
 **Design reference:** `Find - Companies Aesthetic Improvements.html` in the design project
@@ -8,7 +8,7 @@ Work in the phase order below. Do not skip phases. Commit after each phase, run 
 
 ---
 
-## Phase 0 — Schema + demonym table (backend, no UI change)
+## Phase 0 - Schema + demonym table (backend, no UI change)
 
 **Goal:** Build the data layer the Personalization Layer depends on. No user-visible change.
 
@@ -23,18 +23,18 @@ interface SchoolDoc {
   name: string;                  // "USC"
   fullName: string;              // "University of Southern California"
   city: string;                  // "Los Angeles"
-  color: string;                 // "#990000" — hex, single brand color
-  seal: string;                  // "SC" — 1–4 char monogram for the stamp
+  color: string;                 // "#990000" - hex, single brand color
+  seal: string;                  // "SC" - 1–4 char monogram for the stamp
   demonym: string | null;        // "Trojans" or null
   demonymConfidence: 'high' | 'medium' | 'low' | 'none';
   demonymProfessional: boolean;  // does it read well in "Where X have landed"
   reviewedBy: string | null;     // admin user id who approved
   reviewedAt: Timestamp | null;
-  sampleSentence: string;        // "Where Trojans have landed" — for QA
+  sampleSentence: string;        // "Where Trojans have landed" - for QA
 }
 ```
 
-**`users` doc — add fields:**
+**`users` doc - add fields:**
 ```ts
 // add to existing user doc
 personalization: {
@@ -65,7 +65,7 @@ Create `scripts/seed_demonyms.ts`:
   - "low" = technically correct but nobody leads with it professionally (Redlands Bulldogs, Reed Griffins)
   - "none" = no commonly accepted demonym (some small colleges)
   ```
-- Write results to `data/demonyms_seed.json` — **do not write straight to prod**
+- Write results to `data/demonyms_seed.json` - **do not write straight to prod**
 
 ### 0.3 Human review UI (admin-only)
 
@@ -81,7 +81,7 @@ Add `/admin/demonyms` route behind admin auth:
 
 ---
 
-## Phase 1 — Tokens + feature flag (no visual change when flag is off)
+## Phase 1 - Tokens + feature flag (no visual change when flag is off)
 
 **Goal:** Drop in new CSS variables and the flag wrapper.
 
@@ -106,7 +106,7 @@ Add `/admin/demonyms` route behind admin auth:
 
 ---
 
-## Phase 2 — Personalization primitives
+## Phase 2 - Personalization primitives
 
 **Goal:** Build the four reusable pieces the redesigned page (and eventually every page) will consume.
 
@@ -148,23 +148,23 @@ if (variant === 'companies') {
     ? { lead: `Where ${s.demonym} have`, accent: 'landed.' }
     : { lead: `Where your ${s.name} network`, accent: 'went.' };
 }
-// ... people variant omitted for brevity — same pattern
+// ... people variant omitted for brevity - same pattern
 ```
 
-### 2.5 `<PageTitle />` — revise existing
+### 2.5 `<PageTitle />` - revise existing
 
 Existing component stays, but accepts `lead` + `accent` props driven by `useSchoolTitle()`. Scribble SVG stays.
 
 ### 2.6 `<ScoutNote />`
 - Cream card, Instrument Serif italic body
-- Props: `{ firstName, schoolName, resumeHook?, demonymOrAlumni }` — the demonymOrAlumni is computed in parent
-- Never pass in a raw "Trojans" string — always compute via the confidence gate
+- Props: `{ firstName, schoolName, resumeHook?, demonymOrAlumni }` - the demonymOrAlumni is computed in parent
+- Never pass in a raw "Trojans" string - always compute via the confidence gate
 
 **Acceptance:** Storybook stories for each primitive. Unit test: `useSchoolTitle` returns "Bulldogs" title when Redlands has confidence changed to `high` in a test fixture, and falls back to "your Redlands network" otherwise.
 
 ---
 
-## Phase 3 — Find → Companies page rebuild
+## Phase 3 - Find → Companies page rebuild
 
 **Goal:** Replace the current `FirmSearchPage` contents (when embedded in Find tab) with the **Editorial Index** direction from the canvas.
 
@@ -175,7 +175,7 @@ From the current Find Companies panel, delete:
 - "Have somewhere in mind?" empty search-box widget
 - Redundant "Search companies" button
 - "Browse by category" three-tile grid
-- Any orange "Best match" badge (replace with the `◆` diamond mark — single-color, oxblood)
+- Any orange "Best match" badge (replace with the `◆` diamond mark - single-color, oxblood)
 
 ### 3.2 Build
 
@@ -209,7 +209,7 @@ New page structure (single scrolling column, max-width 760px):
 ### 3.3 Data
 
 - Recommendations come from the existing firm-search backend. Extend the response with:
-  - `scoutSentence: string` — pre-computed server-side (or via a lightweight client LLM call at request time), referencing the user's school *by name* and any resume specifics
+  - `scoutSentence: string` - pre-computed server-side (or via a lightweight client LLM call at request time), referencing the user's school *by name* and any resume specifics
   - `sector: string`
   - `city: string` (uppercased in display)
 - Hard rule in the sentence generator: never output a demonym. The title is the only place demonyms appear. Sentences always use school name.
@@ -224,7 +224,7 @@ New page structure (single scrolling column, max-width 760px):
 
 ---
 
-## Phase 4 — Visual QA matrix
+## Phase 4 - Visual QA matrix
 
 Before merging, verify across at least **six** test users in a dev fixture:
 
@@ -233,15 +233,15 @@ Before merging, verify across at least **six** test users in a dev fixture:
 | Deena | USC | Where Trojans have *landed.* |
 | Marcus | Michigan | Where Wolverines have *landed.* |
 | Jordan | Redlands | Where your Redlands network *went.* |
-| — | Reed | Where your Reed network *went.* (even though demonym=Griffins, confidence=low) |
-| — | Macalester | Where your Macalester network *went.* |
-| — | (no school set) | Existing no-school empty state |
+| - | Reed | Where your Reed network *went.* (even though demonym=Griffins, confidence=low) |
+| - | Macalester | Where your Macalester network *went.* |
+| - | (no school set) | Existing no-school empty state |
 
 For each: seal color, angle text, Scout note opening line, archive sentence language. Take screenshots; attach to the PR.
 
 ---
 
-## Phase 5 — Rollout
+## Phase 5 - Rollout
 
 1. Ship with flag **off** in prod. Enable for your own account first.
 2. Enable for Redlands pilot cohort (query by `user.schoolId === "redlands"`).
@@ -252,8 +252,8 @@ For each: seal color, angle text, Scout note opening line, archive sentence lang
 
 ## Explicitly out of scope for this PR
 
-- Letterhead and Atlas directions from the canvas — park those as follow-ups
-- Re-skinning My Network, Tracker, Coffee Chats
+- Letterhead and Atlas directions from the canvas - park those as follow-ups
+- Re-skinning My Network, Tracker, Meetings
 - The Hiring Managers tab redesign
 - Marketing pages
 
@@ -274,12 +274,12 @@ For each: seal color, angle text, Scout note opening line, archive sentence lang
 - `src/styles/tokens.css`
 
 **Modified:**
-- `src/pages/FindPage.tsx` — inject `<PersonalizationStrip />` above title
-- `src/pages/FirmSearchPage.tsx` — remove old widgets, render new ArchiveList
-- `src/components/PageTitle.tsx` — accept `lead` / `accent` props
-- `src/App.tsx` — wire feature flag to `<body data-find-v2>`
-- `index.html` — fonts
-- `tailwind.config.ts` — token extensions if using Tailwind classes
+- `src/pages/FindPage.tsx` - inject `<PersonalizationStrip />` above title
+- `src/pages/FirmSearchPage.tsx` - remove old widgets, render new ArchiveList
+- `src/components/PageTitle.tsx` - accept `lead` / `accent` props
+- `src/App.tsx` - wire feature flag to `<body data-find-v2>`
+- `index.html` - fonts
+- `tailwind.config.ts` - token extensions if using Tailwind classes
 
 ---
 
@@ -299,6 +299,6 @@ For each: seal color, angle text, Scout note opening line, archive sentence lang
 >
 > Work phase by phase (0 → 5). Commit after each phase. After each phase, run existing tests, show me a diff summary, and wait for approval before starting the next.
 >
-> Start with Phase 0 — schema additions + the seeder script + the admin review UI. Do not touch any UI outside `/admin/demonyms` in Phase 0. Do not proceed to Phase 1 until I approve the seeded demonym data.
+> Start with Phase 0 - schema additions + the seeder script + the admin review UI. Do not touch any UI outside `/admin/demonyms` in Phase 0. Do not proceed to Phase 1 until I approve the seeded demonym data.
 >
 > Gate everything behind `VITE_FLAG_FIND_COMPANIES_V2`, default false. Ship with it off.

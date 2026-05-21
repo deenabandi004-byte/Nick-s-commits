@@ -25,7 +25,7 @@ from app.extensions import get_db
 _ERROR_RECOVERY_LINES = [
     "Try again in a sec?",
     "Want to try rephrasing that?",
-    "Give it another shot — I should be back.",
+    "Give it another shot - I should be back.",
 ]
 
 # ============================================================================
@@ -56,9 +56,9 @@ PAGES = {
         "description": "Find recruiters and hiring managers at target companies.",
         "creditCost": "15 credits per contact",
     },
-    "coffeeChatPrep": {
-        "route": "/coffee-chat-prep",
-        "name": "Coffee Chat Prep",
+    "meetingPrep": {
+        "route": "/meeting-prep",
+        "name": "Meeting Prep",
         "description": "Generate comprehensive preparation materials for networking conversations. Includes talking points, questions, and company research.",
         "creditCost": "15 credits per prep",
     },
@@ -130,7 +130,7 @@ PAGES = {
 CREDIT_COSTS = {
     "Contact Search": "15 credits per contact",
     "Firm Search": "5 credits per firm",
-    "Coffee Chat Prep": "15 credits per prep",
+    "Meeting Prep": "15 credits per prep",
     "Interview Prep": "25 credits per prep",
     "Resume Optimization (Job Board)": "20 credits per optimization",
     "Cover Letter (Job Board)": "15 credits per letter",
@@ -141,9 +141,9 @@ CREDIT_COSTS = {
 }
 
 TIERS = {
-    "Free": "$0/month - 300 credits/month (~20 contacts), up to 3 contacts per search, 3 Coffee Chat Preps (LIFETIME), 2 Interview Preps (LIFETIME), 10 alumni searches (lifetime), NO Firm Search, NO resume-matched emails, NO exports",
-    "Pro": "$14.99/month - 1,500 credits/month (~100 contacts), up to 8 contacts per search, 10 Coffee Chat Preps/month, 5 Interview Preps/month, unlimited alumni searches, Full Firm Search, resume-matched emails, smart filters, bulk drafting, CSV export",
-    "Elite": "$34.99/month - 3,000 credits/month (~200 contacts), up to 15 contacts per search, UNLIMITED Coffee Chat Preps, UNLIMITED Interview Preps, everything in Pro, priority queue, personalized templates, weekly insights, early access",
+    "Free": "$0/month - 300 credits/month (~20 contacts), up to 3 contacts per search, 3 Meeting Preps (LIFETIME), 2 Interview Preps (LIFETIME), 10 alumni searches (lifetime), NO Firm Search, NO resume-matched emails, NO exports",
+    "Pro": "$14.99/month - 1,500 credits/month (~100 contacts), up to 8 contacts per search, 10 Meeting Preps/month, 5 Interview Preps/month, unlimited alumni searches, Full Firm Search, resume-matched emails, smart filters, bulk drafting, CSV export",
+    "Elite": "$34.99/month - 3,000 credits/month (~200 contacts), up to 15 contacts per search, UNLIMITED Meeting Preps, UNLIMITED Interview Preps, everything in Pro, priority queue, personalized templates, weekly insights, early access",
 }
 
 ROUTE_KEYWORDS = {
@@ -151,7 +151,7 @@ ROUTE_KEYWORDS = {
     "/contact-search": ["contact", "search", "find contacts", "networking", "outreach", "email", "people", "professionals", "find people"],
     "/firm-search": ["firm", "company", "companies", "employers", "find firms", "search companies", "find companies"],
     "/recruiter-spreadsheet": ["recruiter", "hiring manager", "find recruiters", "find hiring managers"],
-    "/coffee-chat-prep": ["coffee chat", "coffee prep", "networking prep", "informational", "prepare for coffee chat"],
+    "/meeting-prep": ["meeting", "coffee prep", "networking prep", "informational", "prepare for meeting"],
     "/interview-prep": ["interview prep", "interview preparation", "prepare for interview"],
     "/write/resume": ["resume", "resume workshop", "resume optimization", "tailor resume", "fix resume"],
     "/write/cover-letter": ["cover letter", "generate cover letter"],
@@ -173,7 +173,7 @@ def _build_knowledge_prompt() -> str:
     lines = [
         "## OFFERLOOP PLATFORM",
         "",
-        "Offerloop is an AI-powered networking and recruiting platform for students and professionals. It automates finding contacts, writing outreach emails, and preparing for conversations—saving hours of manual work.",
+        "Offerloop is an AI-powered networking and recruiting platform for students and professionals. It automates finding contacts, writing outreach emails, and preparing for conversations - saving hours of manual work.",
         "",
         "**Target users:** Students and professionals recruiting for internships and full-time roles, especially in investment banking, consulting, technology, and finance.",
         "",
@@ -187,7 +187,7 @@ def _build_knowledge_prompt() -> str:
         "- **Find Hiring Managers** (`/recruiter-spreadsheet`) - Find recruiters and hiring managers at target companies",
         "",
         "### PREPARE Section",
-        "- **Coffee Chat Prep** (`/coffee-chat-prep`) - Generate prep materials for networking conversations",
+        "- **Meeting Prep** (`/meeting-prep`) - Generate prep materials for networking conversations",
         "- **Interview Prep** (`/interview-prep`) - Generate interview guides with questions and company insights",
         "",
         "### WRITE Section",
@@ -219,7 +219,7 @@ def _build_knowledge_prompt() -> str:
     lines.append("|---------|---------|-------|")
     lines.append("| Contact Search | 15 per contact | Free: 3 max, Pro: 8 max, Elite: 15 max per search |")
     lines.append("| Firm Search | 5 per firm | PRO+ ONLY. Batch sizes: 5, 10, 20, 40 |")
-    lines.append("| Coffee Chat Prep | 15 per prep | Free: 3 lifetime, Pro: 10/month, Elite: unlimited |")
+    lines.append("| Meeting Prep | 15 per prep | Free: 3 lifetime, Pro: 10/month, Elite: unlimited |")
     lines.append("| Interview Prep | 25 per prep | Free: 2 lifetime, Pro: 5/month, Elite: unlimited |")
     lines.append("| Resume Optimization (Job Board) | 20 per optimization | |")
     lines.append("| Cover Letter (Job Board) | 15 per letter | |")
@@ -234,8 +234,8 @@ def _build_knowledge_prompt() -> str:
         "",
         "## SUBSCRIPTION TIERS",
         "",
-        "- **Free** ($0/mo): 300 credits, 3 contacts/search, 3 coffee chats + 2 interview preps LIFETIME, 10 alumni searches. No Firm Search, exports, or resume-matched emails.",
-        "- **Pro** ($14.99/mo): 1,500 credits, 8 contacts/search, 10 coffee chats + 5 interview preps/month, unlimited alumni, Firm Search, smart filters, bulk drafts, CSV export.",
+        "- **Free** ($0/mo): 300 credits, 3 contacts/search, 3 meetings + 2 interview preps LIFETIME, 10 alumni searches. No Firm Search, exports, or resume-matched emails.",
+        "- **Pro** ($14.99/mo): 1,500 credits, 8 contacts/search, 10 meetings + 5 interview preps/month, unlimited alumni, Firm Search, smart filters, bulk drafts, CSV export.",
         "- **Elite** ($34.99/mo): 3,000 credits, 15 contacts/search, UNLIMITED preps, priority queue, personalized templates, weekly insights.",
         "",
         "Credits reset monthly on billing date. Do NOT roll over. Manage subscription at Pricing → Manage Subscription.",
@@ -250,7 +250,7 @@ def _build_user_memory_prompt(user_memory: Optional[Dict[str, Any]]) -> str:
     user already tried and bombed on, school×company combos PDL has failed at)
     into a system-prompt section. This is what gives Scout cross-session memory:
     the chat thread is durable, but THIS block carries signals about what the
-    user has already tried OUTSIDE the chat — so Scout doesn't recommend
+    user has already tried OUTSIDE the chat - so Scout doesn't recommend
     actions that already proved dead.
     """
     if not user_memory or not isinstance(user_memory, dict):
@@ -278,7 +278,7 @@ def _build_user_memory_prompt(user_memory: Optional[Dict[str, Any]]) -> str:
         lines = [f"  - \"{p}\"" for p in tried[:15] if isinstance(p, str) and p.strip()]
         if lines:
             parts.append(
-                "PROMPTS THE USER ALREADY TRIED THIS SESSION AND GOT ZERO RESULTS — "
+                "PROMPTS THE USER ALREADY TRIED THIS SESSION AND GOT ZERO RESULTS - "
                 "do not suggest these:\n" + "\n".join(lines)
             )
 
@@ -287,11 +287,11 @@ def _build_user_memory_prompt(user_memory: Optional[Dict[str, Any]]) -> str:
         lines = [f"  - {p}" for p in thin[:20] if isinstance(p, str) and p.strip()]
         if lines:
             parts.append(
-                "SCHOOL×COMPANY COMBOS THIS USER HAS ALREADY EXHAUSTED IN PDL — "
+                "SCHOOL×COMPANY COMBOS THIS USER HAS ALREADY EXHAUSTED IN PDL - "
                 "don't recommend these pairings:\n" + "\n".join(lines)
             )
 
-    # Briefing snapshot — lets Scout reference outstanding items concretely.
+    # Briefing snapshot - lets Scout reference outstanding items concretely.
     snap = user_memory.get("briefing_snapshot")
     if isinstance(snap, dict):
         snap_lines: List[str] = []
@@ -331,7 +331,7 @@ def _build_user_memory_prompt(user_memory: Optional[Dict[str, Any]]) -> str:
             )
         if snap_lines:
             parts.append(
-                "BRIEFING SNAPSHOT (what's outstanding for this user RIGHT NOW — "
+                "BRIEFING SNAPSHOT (what's outstanding for this user RIGHT NOW - "
                 "reference these specifically when the user asks 'what should I do today' "
                 "or similar):\n" + "\n".join(snap_lines)
             )
@@ -349,7 +349,7 @@ def _build_system_prompt(user_name: str, tier: str, credits: int, max_credits: i
 
     # Diagnostic so we can confirm user_context flowed through. The number of
     # populated keys + whether the rendered section is non-empty tells us
-    # whether the LLM is being given the data — if these print zero/empty and
+    # whether the LLM is being given the data - if these print zero/empty and
     # Scout still claims access, that's a Firestore read issue, not a prompt
     # issue. If these print real values and Scout STILL gaslights, that's an
     # LLM compliance problem to harden the prompt against.
@@ -361,14 +361,14 @@ def _build_system_prompt(user_name: str, tier: str, credits: int, max_credits: i
 
     # The user_context section can be empty if the user has zero profile data.
     # In that case we don't want the "you HAVE the profile" framing dangling
-    # without anything below it — that's worse than no framing. Render the
+    # without anything below it - that's worse than no framing. Render the
     # access-rule preamble ONLY when the section actually carries data.
     profile_access_rule = ""
     if user_context_section.strip():
         profile_access_rule = (
-            "\n\nCRITICAL RULE — PROFILE ACCESS: You have full visibility into the user's "
+            "\n\nCRITICAL RULE - PROFILE ACCESS: You have full visibility into the user's "
             "profile (academics, goals, target firms, location, resume, recent searches, "
-            "saved contacts, coffee chat preps). The data is rendered in the USER PROFILE "
+            "saved contacts, meeting preps). The data is rendered in the USER PROFILE "
             "& RECENT ACTIVITY section below. NEVER say \"I can't view your profile\", "
             "\"I can't access your profile\", \"I don't have visibility into...\", or any "
             "variation of that. If a specific field is empty, say so plainly (\"I don't see "
@@ -378,9 +378,9 @@ def _build_system_prompt(user_name: str, tier: str, credits: int, max_credits: i
 
     routes_list = "\n".join([f"  {route}" for route in ROUTE_KEYWORDS.keys()])
 
-    return f"""You are Scout, the built-in assistant for Offerloop — a networking platform that helps college students connect with professionals for career opportunities.
+    return f"""You are Scout, the built-in assistant for Offerloop - a networking platform that helps college students connect with professionals for career opportunities.
 
-CRITICAL RULE: When users mention "contacts at Google", "contacts from Goldman", "my contacts at [any company]", or similar — they ALWAYS mean their saved networking contacts on Offerloop at that company. NEVER interpret this as Google Contacts, Gmail contacts, or phone contacts. This is the #1 most common query you receive. Always search/show their saved Offerloop contacts.{profile_access_rule}
+CRITICAL RULE: When users mention "contacts at Google", "contacts from Goldman", "my contacts at [any company]", or similar - they ALWAYS mean their saved networking contacts on Offerloop at that company. NEVER interpret this as Google Contacts, Gmail contacts, or phone contacts. This is the #1 most common query you receive. Always search/show their saved Offerloop contacts.{profile_access_rule}
 
 ## Who you are
 You're a knowledgeable teammate, not a help doc. You know the platform inside and out, you're genuinely rooting for the user to land great connections, and you keep things moving. You're direct, a little warm, and never patronizing. Think: a friend who happens to know every feature.
@@ -389,13 +389,13 @@ You're a knowledgeable teammate, not a help doc. You know the platform inside an
 
 Default length: 2–4 sentences. Enough to be helpful, short enough to feel like a chat.
 
-When the user asks "how does X work?" or "tell me more": You can go longer — up to a short paragraph. Match the depth of the question.
+When the user asks "how does X work?" or "tell me more": You can go longer - up to a short paragraph. Match the depth of the question.
 
-Acknowledge before answering. Start with a brief, natural lead-in that shows you heard them. Vary these — never repeat the same one twice in a row. Examples of the kind of thing you might say (don't use these verbatim every time):
+Acknowledge before answering. Start with a brief, natural lead-in that shows you heard them. Vary these - never repeat the same one twice in a row. Examples of the kind of thing you might say (don't use these verbatim every time):
 - "Good question."
 - "So for that…"
 - "Here's how that works."
-- "Yeah — so…"
+- "Yeah - so…"
 - "Sure thing."
 
 Never do:
@@ -403,7 +403,7 @@ Never do:
 - Use corporate filler ("I'd be happy to help you with that!")
 - List steps with bullet points unless the user explicitly asks for steps
 - Repeat the user's question back to them
-- Say "I understand" or "I see" — just answer
+- Say "I understand" or "I see" - just answer
 
 ## Turn-taking
 
@@ -412,27 +412,27 @@ When the request is clear: Answer directly.
 When the request is ambiguous: Ask ONE short follow-up question before answering. Examples:
 - "Are you looking for full-time roles or internships?"
 - "Do you want people at a specific company, or anyone in that field?"
-- "Are you trying to cold email them or set up a coffee chat?"
+- "Are you trying to cold email them or set up a meeting?"
 
 Never ask more than one clarifying question at a time.
 
 ## Navigation
 
-Offer, don't command. When suggesting navigation, phrase it as a suggestion in the message text. You MUST still populate the navigate_to field (and optionally action_buttons, auto_populate) in your JSON response — the conversational tone is about the message wording, not about removing JSON fields.
+Offer, don't command. When suggesting navigation, phrase it as a suggestion in the message text. You MUST still populate the navigate_to field (and optionally action_buttons, auto_populate) in your JSON response - the conversational tone is about the message wording, not about removing JSON fields.
 - Good message: "Want me to take you to Contact Search so you can try that?"
-- Good message: "I can take you to Firm Search — want to go?"
+- Good message: "I can take you to Firm Search - want to go?"
 - Bad message: "Head to Contact Search."
 - Bad message: "Navigate to Settings > Gmail."
 
 When there are multiple possible actions, present them as a choice:
-- "I can take you to Contact Search to find people, or Firm Search to look up the company first — which sounds more useful right now?"
+- "I can take you to Contact Search to find people, or Firm Search to look up the company first - which sounds more useful right now?"
 
 ## Context awareness
 
 The user's current page is provided in USER CONTEXT below. Use it naturally in your replies when relevant:
 - If they're on Contact Search: "Since you're already on Contact Search, you can…"
-- If they're on Firm Search: "You're on Firm Search — want help narrowing this down?"
-- If they're on the Job Board: "Looks like you're browsing jobs — want tips on finding contacts at these companies?"
+- If they're on Firm Search: "You're on Firm Search - want help narrowing this down?"
+- If they're on the Job Board: "Looks like you're browsing jobs - want tips on finding contacts at these companies?"
 - If they ask about a feature and they're already on that page, acknowledge it instead of telling them to navigate there.
 Don't force it. If the current page isn't relevant to the question, ignore it.
 
@@ -447,14 +447,14 @@ You can help with:
 - Finding firms and understanding firm profiles
 - Understanding credits, plans (Free / Pro / Elite), and billing
 - Connecting Gmail and sending emails
-- Coffee chat prep and interview prep features
+- Meeting prep and interview prep features
 - Job Board and how to use it
 - General "what should I do?" career networking questions on the platform
 
 If someone asks about something outside the platform, give a brief helpful answer if you can, but gently steer back: "That's a bit outside what I cover, but here's a quick thought…"
 
 ## Your name
-You're Scout. Use it sparingly — in your greeting and maybe once more if it feels natural. Don't sign off every message.
+You're Scout. Use it sparingly - in your greeting and maybe once more if it feels natural. Don't sign off every message.
 
 USER CONTEXT:
 - Name: {user_name}
@@ -473,8 +473,8 @@ AUTO-POPULATE INSTRUCTIONS:
 
 When the user provides ANY searchable field (company, job title, location, or industry), you MUST include auto_populate and set navigate_to. Don't wait for "perfect" input.
 
-Contact search (navigate_to: "/contact-search"): auto_populate: {{"search_type": "contact", "job_title": "...", "company": "...", "location": "..."}} — use "" for unspecified fields.
-Firm search (navigate_to: "/firm-search"): auto_populate: {{"search_type": "firm", "industry": "...", "location": "..."}} — use "" for unspecified fields.
+Contact search (navigate_to: "/contact-search"): auto_populate: {{"search_type": "contact", "job_title": "...", "company": "...", "location": "..."}} - use "" for unspecified fields.
+Firm search (navigate_to: "/firm-search"): auto_populate: {{"search_type": "firm", "industry": "...", "location": "..."}} - use "" for unspecified fields.
 For other routes or no criteria: auto_populate is null.
 
 RESPONSE FORMAT:
@@ -504,7 +504,7 @@ def _build_user_context_prompt(user_context: Dict[str, Any]) -> str:
     if not user_context:
         return ""
 
-    # The top-of-prompt CRITICAL RULE — PROFILE ACCESS handles the gaslighting
+    # The top-of-prompt CRITICAL RULE - PROFILE ACCESS handles the gaslighting
     # guard. Here we just need the data section; keep the header simple and
     # let the rule above carry the behavioral weight.
     parts = ["\n\n## USER PROFILE & RECENT ACTIVITY"]
@@ -604,7 +604,7 @@ def _build_user_context_prompt(user_context: Dict[str, Any]) -> str:
             if target.strip():
                 ccp_lines.append(f"  • {target.strip()}")
         if ccp_lines:
-            parts.append("- Coffee chat preps generated:\n" + "\n".join(ccp_lines))
+            parts.append("- Meeting preps generated:\n" + "\n".join(ccp_lines))
 
     age = user_context.get("account_age_days")
     if isinstance(age, (int, float)):
@@ -622,13 +622,13 @@ def _build_user_context_prompt(user_context: Dict[str, Any]) -> str:
         return ""
 
     parts.append("")
-    parts.append("BEHAVIORAL RULE — USE THIS CONTEXT:")
+    parts.append("BEHAVIORAL RULE - USE THIS CONTEXT:")
     parts.append("When the user asks you to do something and doesn't specify details available in their profile, "
                  "USE THE PROFILE DATA. For example:")
     parts.append('- "Find me contacts at Rivian" → Use their preferred location and target role from goals')
     parts.append('- "Write an email for a data engineer" → Use their email template style and resume context')
     parts.append('- "What companies should I target?" → Reference their dream companies and target industries')
-    parts.append('- "Look at my profile" → Read the data above and respond — do NOT ask them to share what\'s there')
+    parts.append('- "Look at my profile" → Read the data above and respond - do NOT ask them to share what\'s there')
     parts.append("Only ask follow-up questions when the profile genuinely doesn't have the needed information.")
     parts.append("If the user references a person they're prepping for or just saved, reference them by name from the lists above.")
 
@@ -693,7 +693,7 @@ SCOUT_TOOLS = [
                     "purpose": {
                         "type": "string",
                         "description": "Purpose of the email",
-                        "enum": ["networking", "referral", "coffee_chat", "follow_up", "thank_you"],
+                        "enum": ["networking", "referral", "meeting", "follow_up", "thank_you"],
                     },
                 },
                 "required": ["recipient_company"],
@@ -847,7 +847,7 @@ class ScoutAssistantService:
         # Handle empty message
         if not message:
             return ScoutAssistantResponse(
-                message=f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout — I know the platform inside and out. What are you trying to do right now?",
+                message=f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout - I know the platform inside and out. What are you trying to do right now?",
                 navigate_to=None,
                 action_buttons=[],
             ).to_dict()
@@ -891,7 +891,7 @@ class ScoutAssistantService:
                 contacts_info = json.dumps(pre_loaded, indent=None)
                 messages.append({
                     "role": "user",
-                    "content": f"{message}\n\n[SAVED OFFERLOOP CONTACTS — these are the user's saved networking contacts. Summarize them in your response. Do NOT confuse with Google/Gmail contacts.]\n{contacts_info}",
+                    "content": f"{message}\n\n[SAVED OFFERLOOP CONTACTS - these are the user's saved networking contacts. Summarize them in your response. Do NOT confuse with Google/Gmail contacts.]\n{contacts_info}",
                 })
             else:
                 messages.append({"role": "user", "content": message})
@@ -900,7 +900,7 @@ class ScoutAssistantService:
             if research_context:
                 messages.append({
                     "role": "user",
-                    "content": f"{message}\n\n[REAL-TIME RESEARCH DATA — use this to give a detailed, specific answer. Cite sources when relevant.]\n{research_context}",
+                    "content": f"{message}\n\n[REAL-TIME RESEARCH DATA - use this to give a detailed, specific answer. Cite sources when relevant.]\n{research_context}",
                 })
             else:
                 messages.append({"role": "user", "content": message})
@@ -964,14 +964,14 @@ class ScoutAssistantService:
             return [t for t in SCOUT_TOOLS if t["function"]["name"] == "generate_email_preview"]
         if intent == "strategy":
             return [t for t in SCOUT_TOOLS if t["function"]["name"] == "suggest_networking_strategy"]
-        # "general" — no tools, fastest path
+        # "general" - no tools, fastest path
         return None
 
     async def _preload_contacts(self, uid: str, message: str) -> Optional[Dict[str, Any]]:
         """Pre-load contacts matching the user's query to avoid a tool call."""
         # Extract a rough filter from the message
         args: Dict[str, Any] = {}
-        # Try to extract company name — look for "at <company>"
+        # Try to extract company name - look for "at <company>"
         at_match = re.search(r'\bat\s+(\w[\w&.\' -]+)', message, re.IGNORECASE)
         if at_match:
             args["company"] = at_match.group(1).strip()
@@ -1183,7 +1183,7 @@ class ScoutAssistantService:
         """Stream a chat response, pushing SSE events to the provided queue.
 
         IMPORTANT: This runs in a NEW event loop (background thread). We must
-        create fresh async HTTP clients here — the ones from __init__ are bound
+        create fresh async HTTP clients here - the ones from __init__ are bound
         to the main event loop and will hang/fail in this context.
 
         Events pushed:
@@ -1205,7 +1205,7 @@ class ScoutAssistantService:
         conversation_history = conversation_history or []
 
         if not message:
-            greeting = f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout — I know the platform inside and out. What are you trying to do right now?"
+            greeting = f"Hey{', ' + user_name if user_name != 'there' else ''}! I'm Scout - I know the platform inside and out. What are you trying to do right now?"
             await queue.put({"event": "done", "data": {
                 "message": greeting, "navigate_to": None, "action_buttons": [], "auto_populate": None,
             }})
@@ -1241,7 +1241,7 @@ class ScoutAssistantService:
                 contacts_info = json.dumps(pre_loaded, indent=None)
                 messages.append({
                     "role": "user",
-                    "content": f"{message}\n\n[SAVED OFFERLOOP CONTACTS — these are the user's saved networking contacts. Summarize them in your response. Do NOT confuse with Google/Gmail contacts.]\n{contacts_info}",
+                    "content": f"{message}\n\n[SAVED OFFERLOOP CONTACTS - these are the user's saved networking contacts. Summarize them in your response. Do NOT confuse with Google/Gmail contacts.]\n{contacts_info}",
                 })
             else:
                 messages.append({"role": "user", "content": message})
@@ -1251,7 +1251,7 @@ class ScoutAssistantService:
             if research_context:
                 messages.append({
                     "role": "user",
-                    "content": f"{message}\n\n[REAL-TIME RESEARCH DATA — use this to give a detailed, specific answer. Cite sources when relevant.]\n{research_context}",
+                    "content": f"{message}\n\n[REAL-TIME RESEARCH DATA - use this to give a detailed, specific answer. Cite sources when relevant.]\n{research_context}",
                 })
             else:
                 messages.append({"role": "user", "content": message})
@@ -1293,7 +1293,7 @@ class ScoutAssistantService:
                     "tool_used": tool_used,
                 }})
             else:
-                # No tools — stream directly
+                # No tools - stream directly
                 full_text = await self._stream_llm(messages, system_prompt, queue)
 
                 # Check if the model accidentally returned JSON instead of plain text
@@ -1302,7 +1302,7 @@ class ScoutAssistantService:
                     try:
                         parsed_json = json.loads(clean_text)
                         if "message" in parsed_json:
-                            # Model returned JSON — extract the message and metadata directly
+                            # Model returned JSON - extract the message and metadata directly
                             msg_text = parsed_json["message"]
                             metadata = {
                                 "message": msg_text,
@@ -1455,7 +1455,7 @@ Only set navigate_to if the response suggests navigation. Only set auto_populate
             return navigate_to
         valid_routes = [
             "/dashboard", "/contact-search", "/firm-search", "/recruiter-spreadsheet",
-            "/job-board", "/coffee-chat-prep", "/interview-prep", "/application-lab",
+            "/job-board", "/meeting-prep", "/interview-prep", "/application-lab",
             "/write/resume", "/write/cover-letter", "/outbox", "/calendar",
             "/contact-directory", "/hiring-manager-tracker", "/company-tracker",
             "/pricing", "/account-settings",
@@ -1636,7 +1636,7 @@ Return JSON: {{"subject": "...", "body": "...", "recipient_name": "{recipient_na
         except Exception as e:
             print(f"[ScoutAssistant] Email preview generation failed: {e}")
             return json.dumps({
-                "subject": f"Reaching out — {purpose}",
+                "subject": f"Reaching out - {purpose}",
                 "body": f"Hi {recipient_name},\n\nI'm reaching out because I'm very interested in {recipient_company}. I'd love to learn more about your experience. Would you be open to a brief conversation?\n\nBest regards",
                 "recipient_name": recipient_name,
                 "recipient_company": recipient_company,
@@ -1668,7 +1668,7 @@ USER PROFILE:
 FOCUS: {focus}
 {f'TARGET COMPANY: {target_company}' if target_company else ''}
 
-Give 3-5 specific, actionable suggestions. Be concrete — mention specific companies, roles, or approaches based on their profile.
+Give 3-5 specific, actionable suggestions. Be concrete - mention specific companies, roles, or approaches based on their profile.
 Return JSON: {{"strategy": "A brief strategy summary", "suggestions": ["suggestion 1", "suggestion 2", ...]}}"""
 
         try:
@@ -1692,7 +1692,7 @@ Return JSON: {{"strategy": "A brief strategy summary", "suggestions": ["suggesti
                 "strategy": "Focus on building connections at your dream companies through alumni outreach.",
                 "suggestions": [
                     "Start with alumni from your university at target companies",
-                    "Use coffee chat requests to learn about company culture",
+                    "Use meeting requests to learn about company culture",
                     "Follow up within 48 hours of every conversation",
                 ],
             })
@@ -1768,7 +1768,7 @@ Return JSON: {{"strategy": "A brief strategy summary", "suggestions": ["suggesti
             label_map = {"title": "broadened the role", "industry": "dropped the industry filter",
                          "location": "dropped the location filter", "company": "dropped the company filter"}
             tried = [label_map.get(d, d) for d in broadened_dimensions]
-            already_tried_lines.append(f"Backend already {', then '.join(tried)} — still empty.")
+            already_tried_lines.append(f"Backend already {', then '.join(tried)} - still empty.")
         if retry_level_used >= 5:
             already_tried_lines.append("Even searching school-only returned no alumni in this role family.")
 
@@ -1785,17 +1785,17 @@ YOUR JOB
 Generate exactly 3 alternative natural-language search prompts the student should try. Each prompt must be:
 - Self-contained (works as a standalone PDL search)
 - Specific enough to be routable (mentions a concrete company OR concrete role family)
-- A meaningful CHANGE from the original — not just rewording
+- A meaningful CHANGE from the original - not just rewording
 - Sorted from most-likely-to-succeed to least
 
 PRINCIPLES (use these to pick alternatives)
 1. PDL coverage gaps you should WORK AROUND:
    - International schools (Bocconi, HEC, INSEAD) × US-centric firms (Goldman, JPMorgan, MBB) often yield zero. Suggest the student try EU/regional firms with strong school pipelines (Mediobanca, Rothschild, Lazard for Bocconi; Kearney, Roland Berger, Oliver Wyman for European consulting).
-   - Boutique/small firms have thin PDL coverage — pivot to bulge-bracket or top-tier alternates.
+   - Boutique/small firms have thin PDL coverage - pivot to bulge-bracket or top-tier alternates.
 2. If a specific company was already tried and broadened past, REMOVE the company and search by school + role family ("Bocconi alumni in consulting").
 3. If a specific location was tried and broadened past, REMOVE the location.
 4. If only a school was specified, suggest school + role-family or school + concrete-firm pairings the school is known for.
-5. Each suggestion needs a one-sentence rationale grounded in school/firm/region pipelines — not generic.
+5. Each suggestion needs a one-sentence rationale grounded in school/firm/region pipelines - not generic.
 
 OUTPUT FORMAT (strict JSON)
 {
@@ -1830,7 +1830,7 @@ VOICE: direct, warm, no fluff. Don't say "I'm sorry" or "unfortunately." Lead wi
         if cleaned_tried:
             forbidden_block = "\n  ".join(f'- "{p}"' for p in cleaned_tried)
             user_message_parts.append(
-                "DO NOT suggest any of these — the user already ran them in this session "
+                "DO NOT suggest any of these - the user already ran them in this session "
                 "and they returned zero results:\n  " + forbidden_block
             )
         user_message_parts.append("Generate 3 refined prompts that are NOT in the forbidden list above.")
@@ -1925,12 +1925,12 @@ VOICE: direct, warm, no fluff. Don't say "I'm sorry" or "unfortunately." Lead wi
         
         system_prompt = """You are Scout, a helpful assistant that suggests alternative job titles when a contact search fails.
 
-TONE (match Scout's main personality — direct, warm, helpful):
+TONE (match Scout's main personality - direct, warm, helpful):
 When a search returns no results, your tone should match Scout's main personality: direct, warm, helpful.
 1. Briefly acknowledge the miss (don't just say "No results found")
 2. Suggest 2-3 specific alternatives
 3. Offer to help adjust
-Example openings: "That combo didn't return anything — here's what I'd try next:" / "No luck with that search. A few things that usually help:" / "Hmm, nothing came back. Here's what I'd tweak:"
+Example openings: "That combo didn't return anything - here's what I'd try next:" / "No luck with that search. A few things that usually help:" / "Hmm, nothing came back. Here's what I'd tweak:"
 After listing alternatives, close with something like: "Want me to adjust the search for you?" or "Want to try one of these?"
 Do NOT just list alternatives without context. Always acknowledge, suggest, then offer.
 
@@ -1989,7 +1989,7 @@ Keep the message to 1-2 sentences. Be specific about the company if known."""
             content = response.choices[0].message.content
             parsed = json.loads(content)
 
-            message = parsed.get("message", f"That combo didn't return anything — here's what I'd try next:")
+            message = parsed.get("message", f"That combo didn't return anything - here's what I'd try next:")
             suggestions = parsed.get("suggestions", [])
             recommended = parsed.get("recommended_title", suggestions[0] if suggestions else job_title)
 
@@ -2010,7 +2010,7 @@ Keep the message to 1-2 sentences. Be specific about the company if known."""
             # Fallback suggestions based on common patterns
             fallback_suggestions = self._get_fallback_job_title_suggestions(job_title, company)
             return {
-                "message": f"That combo didn't return anything — here's what I'd try next. Want me to adjust the search for you?",
+                "message": f"That combo didn't return anything - here's what I'd try next. Want me to adjust the search for you?",
                 "suggestions": fallback_suggestions,
                 "auto_populate": {
                     "job_title": fallback_suggestions[0] if fallback_suggestions else job_title,
@@ -2035,7 +2035,7 @@ Keep the message to 1-2 sentences. Be specific about the company if known."""
         
         system_prompt = """You are Scout, a helpful assistant that suggests alternatives when a firm search fails.
 
-TONE (match Scout's main personality — direct, warm, helpful):
+TONE (match Scout's main personality - direct, warm, helpful):
 When a search returns no results, your tone should match Scout's main personality: direct, warm, helpful.
 1. Briefly acknowledge the miss (don't just say "No firms found")
 2. Suggest 2-3 specific alternatives

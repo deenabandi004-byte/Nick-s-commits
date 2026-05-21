@@ -1,5 +1,5 @@
 """
-Extension telemetry — receives scraper health logs from the Chrome extension.
+Extension telemetry - receives scraper health logs from the Chrome extension.
 Logs are stored in-memory for the current process and periodically summarized.
 """
 from flask import Blueprint, jsonify, request
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 extension_logs_bp = Blueprint("extension_logs", __name__)
 
-# In-memory counters (reset on deploy). Lightweight — no Firestore writes.
+# In-memory counters (reset on deploy). Lightweight - no Firestore writes.
 _scraper_stats = defaultdict(lambda: {"success": 0, "fail": 0, "fields": defaultdict(int)})
 
 

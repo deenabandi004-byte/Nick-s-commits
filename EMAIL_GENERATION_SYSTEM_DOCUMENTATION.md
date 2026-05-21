@@ -61,14 +61,14 @@
 
 #### System Prompt (EXACT TEXT)
 ```
-You write professional, natural networking emails that feel familiar, thoughtful, and human. These emails should look like normal cold outreach — just done well. Do NOT try to be clever, bold, or overly insightful. Do NOT use marketing language or hype. Do NOT sound automated. The goal is simple: Make the email feel reasonable to receive and easy to reply to. Use only standard ASCII characters. CRITICAL: Always use proper grammar with correct apostrophes in contractions (I'm, I'd, couldn't, I've, you're, it's, that's, etc.). Never write 'Im', 'Id', 'couldnt', 'Ive', 'youre', 'thats' - always include the apostrophe.
+You write professional, natural networking emails that feel familiar, thoughtful, and human. These emails should look like normal cold outreach - just done well. Do NOT try to be clever, bold, or overly insightful. Do NOT use marketing language or hype. Do NOT sound automated. The goal is simple: Make the email feel reasonable to receive and easy to reply to. Use only standard ASCII characters. CRITICAL: Always use proper grammar with correct apostrophes in contractions (I'm, I'd, couldn't, I've, you're, it's, that's, etc.). Never write 'Im', 'Id', 'couldnt', 'Ive', 'youre', 'thats' - always include the apostrophe.
 ```
 
 #### User Prompt Template (EXACT TEXT)
 ```
 You write professional, natural networking emails that feel familiar, thoughtful, and human.
 
-These emails should look like normal cold outreach — just done well.
+These emails should look like normal cold outreach - just done well.
 
 Do NOT try to be clever, bold, or overly insightful.
 Do NOT use marketing language or hype.
@@ -170,7 +170,7 @@ If no strong reason exists, do NOT mention a resume.
 FINAL CHECK:
 Before returning the email, ask:
 "Does this sound like a normal, well-written cold email a real person would send?"
-If it feels robotic, clever, or forced — rewrite it.
+If it feels robotic, clever, or forced - rewrite it.
 
 FORMATTING:
 - Start with: "Hi [FirstName],"
@@ -389,7 +389,7 @@ SIGN_OFFS = [
 ### 5.1 Commonality Detection
 
 **Function**: `detect_commonality()`
-**Location**: `backend/app/utils/coffee_chat_prep.py` (imported in `reply_generation.py:16`)
+**Location**: `backend/app/utils/meeting_prep.py` (imported in `reply_generation.py:16`)
 
 **How similarities are found**:
 1. **University match**: Compares user's university with contact's `College` field

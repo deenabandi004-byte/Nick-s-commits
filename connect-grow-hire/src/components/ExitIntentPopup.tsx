@@ -45,7 +45,7 @@ const ExitIntentPopup = () => {
 
         <div className="px-6 pt-6 pb-2 text-center">
           <h2 className="text-xl font-semibold text-gray-900 sm:text-2xl">
-            Wait — before you go
+            Wait - before you go
           </h2>
           <p className="mt-2 text-sm text-gray-500 sm:text-base">
             Grab the free Cold Email Playbook used by students who landed at McKinsey, Goldman &amp; Google.

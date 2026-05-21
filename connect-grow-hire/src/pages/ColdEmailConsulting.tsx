@@ -6,23 +6,23 @@ import offerloopLogo from '../assets/offerloop_logo2.png';
 const faqData = [
   {
     question: "What's the best subject line for a cold email to a consultant?",
-    answer: "Keep it specific and personal. Subject lines like 'Fellow [University] Student — Quick Question on [Office/Practice]' or '[Mutual Connection] Suggested I Reach Out' consistently get higher open rates than generic lines like 'Networking Request.' Mention something concrete that connects you to the recipient."
+    answer: "Keep it specific and personal. Subject lines like 'Fellow [University] Student - Quick Question on [Office/Practice]' or '[Mutual Connection] Suggested I Reach Out' consistently get higher open rates than generic lines like 'Networking Request.' Mention something concrete that connects you to the recipient."
   },
   {
     question: "How long should my cold email to a McKinsey consultant be?",
-    answer: "Under 100 words. Consultants are busy and often read emails on their phone between meetings. Your email should have a one-sentence intro, one sentence about why you're reaching out to them specifically, and a clear ask — typically a 15-minute phone call. Offerloop's AI drafts emails at this ideal length automatically."
+    answer: "Under 100 words. Consultants are busy and often read emails on their phone between meetings. Your email should have a one-sentence intro, one sentence about why you're reaching out to them specifically, and a clear ask - typically a 15-minute phone call. Offerloop's AI drafts emails at this ideal length automatically."
   },
   {
     question: "Should I email partners or analysts at consulting firms?",
-    answer: "Start with analysts and associates who are 1-3 years into their career — they remember what recruiting was like and are more likely to respond. As you build confidence, reach out to engagement managers and principals. Offerloop lets you filter contacts by seniority level so you can target the right people."
+    answer: "Start with analysts and associates who are 1-3 years into their career - they remember what recruiting was like and are more likely to respond. As you build confidence, reach out to engagement managers and principals. Offerloop lets you filter contacts by seniority level so you can target the right people."
   },
   {
     question: "How many consultants should I cold email per week?",
-    answer: "Aim for 10-15 personalized outreach emails per week during recruiting season. Quality matters more than quantity — a well-researched, personalized email to 10 people will outperform a generic template sent to 50. Offerloop helps you maintain quality at volume by generating unique emails for each contact."
+    answer: "Aim for 10-15 personalized outreach emails per week during recruiting season. Quality matters more than quantity - a well-researched, personalized email to 10 people will outperform a generic template sent to 50. Offerloop helps you maintain quality at volume by generating unique emails for each contact."
   },
   {
     question: "Is it okay to follow up if a consultant doesn't respond?",
-    answer: "Yes — one follow-up after 5-7 business days is appropriate and expected. Keep it short: reference your original email, reiterate your ask, and make it easy to say yes. Don't follow up more than once. Offerloop's Network Tracker helps you see who hasn't responded so you know exactly when to follow up."
+    answer: "Yes - one follow-up after 5-7 business days is appropriate and expected. Keep it short: reference your original email, reiterate your ask, and make it easy to say yes. Don't follow up more than once. Offerloop's Network Tracker helps you see who hasn't responded so you know exactly when to follow up."
   }
 ];
 
@@ -30,7 +30,7 @@ const howToSteps = [
   { name: "Find", text: "Search Offerloop's database of 2.2 billion contacts to find consultants at McKinsey, BCG, Bain, Deloitte, and other firms filtered by office, practice area, and university." },
   { name: "Understand", text: "Review each consultant's professional background, career trajectory, and shared connections to identify personalization angles for your outreach." },
   { name: "Reach", text: "Generate a personalized cold email using Offerloop's AI, which drafts unique messages based on the consultant's profile and your background. Send directly through Gmail." },
-  { name: "Track", text: "Monitor responses in Offerloop's Network Tracker with pipeline stages — Sent, Replied, Scheduled, Completed — so you never lose track of a conversation." }
+  { name: "Track", text: "Monitor responses in Offerloop's Network Tracker with pipeline stages - Sent, Replied, Scheduled, Completed - so you never lose track of a conversation." }
 ];
 
 const ColdEmailConsulting = () => {
@@ -82,7 +82,7 @@ const ColdEmailConsulting = () => {
           How to Cold Email Consultants at <span style={{ color: '#3B82F6' }}>McKinsey, BCG & Bain</span>
         </h1>
         <p style={{ fontSize: '17px', lineHeight: 1.7, color: '#64748B', maxWidth: '620px' }}>
-          Cold emailing is the most effective way to build a consulting network before recruiting season. Here's how top students land coffee chats at MBB and Big 4 firms — and how Offerloop makes it effortless.
+          Cold emailing is the most effective way to build a consulting network before recruiting season. Here's how top students land meetings at MBB and Big 4 firms - and how Offerloop makes it effortless.
         </p>
       </section>
 
@@ -92,13 +92,13 @@ const ColdEmailConsulting = () => {
           How do I cold email a McKinsey consultant?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          The best cold emails to McKinsey consultants follow a simple formula: personalized opening, specific reason for reaching out, and a low-commitment ask. Start by mentioning a shared connection — your university, a club, or a specific project they worked on. Then explain why you're interested in consulting and their firm specifically. End with a clear ask for a 15-minute phone call.
+          The best cold emails to McKinsey consultants follow a simple formula: personalized opening, specific reason for reaching out, and a low-commitment ask. Start by mentioning a shared connection - your university, a club, or a specific project they worked on. Then explain why you're interested in consulting and their firm specifically. End with a clear ask for a 15-minute phone call.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
           Avoid opening with "I hope this email finds you well" or "I'm a student at X interested in consulting." Every student says that. Instead, reference something specific: their practice area, a case study their team published, or their career path from your shared alma mater.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop automates the hardest part — finding verified email addresses and generating personalized emails. Search for McKinsey consultants by office location, practice area, or university, and Offerloop's AI drafts a unique email for each person based on their background and yours. Read our full <Link to="/blog/cold-email-mckinsey-consultant" style={{ color: '#2563EB', textDecoration: 'underline' }}>McKinsey cold email guide</Link> for step-by-step examples.
+          Offerloop automates the hardest part - finding verified email addresses and generating personalized emails. Search for McKinsey consultants by office location, practice area, or university, and Offerloop's AI drafts a unique email for each person based on their background and yours. Read our full <Link to="/blog/cold-email-mckinsey-consultant" style={{ color: '#2563EB', textDecoration: 'underline' }}>McKinsey cold email guide</Link> for step-by-step examples.
         </p>
       </section>
 
@@ -111,10 +111,10 @@ const ColdEmailConsulting = () => {
           Response rates for consulting networking emails average 15-25% when done well. The difference between emails that get responses and those that don't comes down to three factors: personalization, brevity, and a specific ask.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Personalization means referencing something unique about the recipient — not just their firm name. Mention their specific office, the practice group they joined, or a shared extracurricular. Brevity means keeping it under 100 words. A specific ask means "Would you have 15 minutes for a quick call next week?" not "I'd love to learn more about your experience."
+          Personalization means referencing something unique about the recipient - not just their firm name. Mention their specific office, the practice group they joined, or a shared extracurricular. Brevity means keeping it under 100 words. A specific ask means "Would you have 15 minutes for a quick call next week?" not "I'd love to learn more about your experience."
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
-          Offerloop's AI analyzes each contact's professional background to find the best personalization angle. It generates emails that feel hand-written — because the content is unique to each recipient — but takes seconds instead of 20 minutes per email.
+          Offerloop's AI analyzes each contact's professional background to find the best personalization angle. It generates emails that feel hand-written - because the content is unique to each recipient - but takes seconds instead of 20 minutes per email.
         </p>
       </section>
 
@@ -124,10 +124,10 @@ const ColdEmailConsulting = () => {
           How many people should I reach out to during consulting recruiting?
         </h2>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          Students who successfully break into MBB typically have 15-30 networking conversations before their interviews. That means reaching out to 60-100+ people, since not everyone will respond. Starting early — at least 3 months before application deadlines — gives you time to build relationships without rushing.
+          Students who successfully break into MBB typically have 15-30 networking conversations before their interviews. That means reaching out to 60-100+ people, since not everyone will respond. Starting early - at least 3 months before application deadlines - gives you time to build relationships without rushing.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569', marginBottom: '16px' }}>
-          The biggest bottleneck isn't sending emails — it's finding the right people and writing personalized messages for each one. Most students spend 15-20 minutes per email researching someone's background and crafting a message. At 100 emails, that's 25-30 hours just on outreach.
+          The biggest bottleneck isn't sending emails - it's finding the right people and writing personalized messages for each one. Most students spend 15-20 minutes per email researching someone's background and crafting a message. At 100 emails, that's 25-30 hours just on outreach.
         </p>
         <p style={{ fontSize: '15px', lineHeight: 1.8, color: '#475569' }}>
           Offerloop compresses that timeline dramatically. Search for consultants at BCG, Bain, Deloitte, or any firm, and generate personalized emails in seconds. Track every conversation in the Network Tracker so you always know who you've contacted, who replied, and who you need to follow up with.
@@ -169,7 +169,7 @@ const ColdEmailConsulting = () => {
       <section className="px-6 py-20" style={{ background: '#FAFBFF' }}>
         <div className="text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
           <h2 style={{ fontFamily: "'Lora', Georgia, serif", fontSize: 'clamp(28px, 4vw, 40px)', fontWeight: 400, lineHeight: 1.15, color: '#0F172A', marginBottom: '16px' }}>
-            Start networking with AI — try Offerloop free
+            Start networking with AI - try Offerloop free
           </h2>
           <p style={{ fontSize: '15px', color: '#64748B', marginBottom: '28px' }}>
             Search 2.2B contacts. Generate personalized emails. Track every conversation.

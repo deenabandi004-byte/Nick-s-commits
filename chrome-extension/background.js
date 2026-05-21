@@ -351,9 +351,9 @@ async function handleLogScraperResult(request) {
         url_pattern: request.urlPattern || '',
         timestamp: new Date().toISOString(),
       }),
-    }, 5000); // Short 5s timeout — this is best-effort
+    }, 5000); // Short 5s timeout - this is best-effort
   } catch (e) {
-    // Silently ignore — this is telemetry, not critical
+    // Silently ignore - this is telemetry, not critical
     console.log('[Offerloop Background] Scraper log failed (non-critical):', e.message);
   }
 }

@@ -95,7 +95,7 @@ class TestPersistWarmthOnSend:
         db.collection.assert_not_called()
 
     def test_firestore_error_does_not_raise(self):
-        """_persist_warmth_on_send must never raise — it swallows exceptions."""
+        """_persist_warmth_on_send must never raise - it swallows exceptions."""
         db, ref = _mock_db_with_contact("uid1", "test@example.com", {})
         ref.update.side_effect = Exception("Firestore down")
 

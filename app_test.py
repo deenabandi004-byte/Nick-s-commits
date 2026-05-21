@@ -46,7 +46,7 @@ I hope you're doing well! My name is [Your Name], and I'm currently a [Your year
 
 I'm very interested in {contact.get('Title', '').lower() if contact.get('Title') else 'your field'} and would really appreciate the chance to learn more about your journey and any advice you may have. If you're open to it, would you be available for a quick 15–20 minute chat sometime this or next week?
 
-Thanks so much in advance — I'd love to hear your perspective!
+Thanks so much in advance - I'd love to hear your perspective!
 
 Warmly,
 [Your Full Name]"""

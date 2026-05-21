@@ -5,7 +5,7 @@ Scores contacts by relevance to the user based on shared identity,
 career relevance, and data richness signals. Pure functions, no API calls.
 """
 
-from app.utils.coffee_chat_prep import detect_commonality
+from app.utils.meeting_prep import detect_commonality
 from app.utils.contact_analysis import _detect_career_transition, _detect_tenure
 from app.utils.industry_classifier import INDUSTRY_KEYWORDS, normalize_career_track
 from app.utils.users import get_university_shorthand

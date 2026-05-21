@@ -325,7 +325,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
   if (step === 'upload') {
     return (
       <div>
-        {/* Main Upload Card — matches LinkedIn tab card styling */}
+        {/* Main Upload Card - matches LinkedIn tab card styling */}
         <div 
           style={{
             maxWidth: '560px',
@@ -343,7 +343,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
             Upload a CSV or Excel file to find emails, generate drafts, and save contacts to your library.
           </p>
 
-          {/* Drop zone — clean, no dashed border */}
+          {/* Drop zone - clean, no dashed border */}
           <div className="max-w-xl mx-auto">
             <div
               onDragOver={handleDragOver}
@@ -423,10 +423,10 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
             {/* Expandable guidelines */}
             {showGuidelines && (
               <div className="mt-4 text-left bg-[#FAFBFF] rounded-[3px] p-4 text-xs text-gray-600 space-y-1.5">
-                <p><span className="font-medium text-gray-700">15 credits per contact</span> — includes email lookup & AI draft</p>
-                <p><span className="font-medium text-gray-700">Duplicates auto-skipped</span> — matching email or LinkedIn URL</p>
-                <p><span className="font-medium text-gray-700">Minimum requirements</span> — name, email, or LinkedIn URL</p>
-                <p><span className="font-medium text-gray-700">Supported formats</span> — CSV, XLSX, XLS files</p>
+                <p><span className="font-medium text-gray-700">15 credits per contact</span> - includes email lookup & AI draft</p>
+                <p><span className="font-medium text-gray-700">Duplicates auto-skipped</span> - matching email or LinkedIn URL</p>
+                <p><span className="font-medium text-gray-700">Minimum requirements</span> - name, email, or LinkedIn URL</p>
+                <p><span className="font-medium text-gray-700">Supported formats</span> - CSV, XLSX, XLS files</p>
               </div>
             )}
 
@@ -456,7 +456,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
             )}
           </div>
 
-          {/* Alternative actions — subtle text links */}
+          {/* Alternative actions - subtle text links */}
           <div className="mt-10 pt-6 border-t border-[#EEF2F8]">
             <p className="text-xs text-gray-400 mb-2">Or try another way</p>
             <div className="flex items-center justify-center gap-4 text-sm">
@@ -557,7 +557,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
                   </p>
                   <p className="text-sm text-gray-600">
                     {previewData.credits.can_afford 
-                      ? `${previewData.valid_rows} contacts × ${previewData.credits.cost_per_contact} credits each — includes email lookup & AI draft`
+                      ? `${previewData.valid_rows} contacts × ${previewData.credits.cost_per_contact} credits each - includes email lookup & AI draft`
                       : `You can import up to ${previewData.credits.max_affordable} contacts with your current credits`
                     }
                   </p>
@@ -572,7 +572,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
                 <ul className="text-sm text-gray-600 space-y-1">
                   <li>{previewData.enrichment.contacts_with_email} contacts already have emails</li>
                   <li>{previewData.enrichment.contacts_needing_enrichment_total} contacts will be enriched via LinkedIn (email lookup)</li>
-                  <li>{previewData.enrichment.contacts_unenrichable} contacts have no email or LinkedIn — imported as-is</li>
+                  <li>{previewData.enrichment.contacts_unenrichable} contacts have no email or LinkedIn - imported as-is</li>
                   {previewData.enrichment.contacts_needing_enrichment_total > (previewData.enrichment.enrichment_cap ?? 50) && (
                     <li className="text-amber-700 font-medium">Up to {previewData.enrichment.enrichment_cap ?? 50} contacts will be enriched per import</li>
                   )}
@@ -640,9 +640,9 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {contact.firstName} {contact.lastName}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{contact.email || '—'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{contact.company || '—'}</td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{contact.jobTitle || '—'}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{contact.email || ' - '}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{contact.company || ' - '}</td>
+                          <td className="px-4 py-3 text-sm text-gray-600">{contact.jobTitle || ' - '}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -662,7 +662,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
             {/* Loading note when importing */}
             {isLoading && (
               <p className="text-sm text-gray-500 text-center mb-4">
-                This may take a minute — we&apos;re looking up emails and drafting messages.
+                This may take a minute - we&apos;re looking up emails and drafting messages.
               </p>
             )}
 
@@ -714,16 +714,16 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
       detailRows.push({ label: 'Email drafts created', value: importResult.drafts!.created, accent: true });
     }
     if ((importResult.skipped?.invalid ?? 0) > 0) {
-      detailRows.push({ label: 'Skipped — invalid rows', value: importResult.skipped.invalid, accent: false });
+      detailRows.push({ label: 'Skipped - invalid rows', value: importResult.skipped.invalid, accent: false });
     }
     if ((importResult.skipped?.duplicate ?? 0) > 0) {
-      detailRows.push({ label: 'Skipped — duplicates', value: importResult.skipped.duplicate, accent: false });
+      detailRows.push({ label: 'Skipped - duplicates', value: importResult.skipped.duplicate, accent: false });
     }
     if ((importResult.skipped?.no_credits ?? 0) > 0) {
-      detailRows.push({ label: 'Skipped — no credits', value: importResult.skipped.no_credits, accent: false });
+      detailRows.push({ label: 'Skipped - no credits', value: importResult.skipped.no_credits, accent: false });
     }
     if ((importResult.enrichment?.failed ?? 0) > 0) {
-      detailRows.push({ label: 'LinkedIn lookups — no email found', value: importResult.enrichment!.failed, accent: false });
+      detailRows.push({ label: 'LinkedIn lookups - no email found', value: importResult.enrichment!.failed, accent: false });
     }
     if ((importResult.enrichment?.capped ?? 0) > 0) {
       detailRows.push({ label: 'Exceeded enrichment limit', value: importResult.enrichment!.capped, accent: false });

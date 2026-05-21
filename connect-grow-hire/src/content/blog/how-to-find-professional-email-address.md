@@ -1,7 +1,7 @@
 ---
 title: "How to Find Anyone's Professional Email Address (Free Methods That Work)"
 date: "2026-03-20"
-description: "6 ways to find a professional's email address for free — including tools, formulas, and how to verify before you send."
+description: "6 ways to find a professional's email address for free - including tools, formulas, and how to verify before you send."
 slug: "how-to-find-professional-email-address"
 keywords: "how to find professional email address"
 schema: "HowTo"

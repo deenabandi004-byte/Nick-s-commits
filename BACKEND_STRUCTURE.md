@@ -21,7 +21,7 @@ backend/
     │   ├── runs.py            # Free/Pro tier searches
     │   ├── enrichment.py     # Autocomplete/enrichment
     │   ├── resume.py          # Resume parsing
-    │   ├── coffee_chat_prep.py # Coffee chat preps
+    │   ├── meeting_prep.py # Meeting preps
     │   ├── billing.py         # Stripe/billing
     │   └── users.py           # User management
     │
@@ -42,14 +42,14 @@ backend/
     │   ├── __init__.py
     │   ├── contact.py         # Contact utilities
     │   ├── users.py           # User utilities
-    │   └── coffee_chat_prep.py # Coffee chat utilities
+    │   └── meeting_prep.py # Meeting utilities
     │
     └── models/                # Data models & schemas (4 files)
         ├── __init__.py        # Exports all models
         ├── enums.py           # Enum definitions
         ├── contact.py         # Contact normalization
         ├── users.py           # User data models
-        └── coffee_chat_prep.py # Coffee chat prep models
+        └── meeting_prep.py # Meeting prep models
 ```
 
 ---
@@ -86,12 +86,12 @@ backend/app/__pycache__/
 - `validate_user_tier()` - Validate tier values
 - `get_default_credits_for_tier()` - Get default credits
 
-### ✅ `models/coffee_chat_prep.py`
+### ✅ `models/meeting_prep.py`
 **Functions:**
-- `create_coffee_chat_prep_data()` - Create prep structure
-- `update_coffee_chat_prep_status()` - Update prep status
+- `create_meeting_prep_data()` - Create prep structure
+- `update_meeting_prep_status()` - Update prep status
 - `validate_prep_status()` - Validate status values
-- `format_coffee_chat_prep_response()` - Format API response
+- `format_meeting_prep_response()` - Format API response
 
 ### ✅ `models/contact.py`
 **Functions:**

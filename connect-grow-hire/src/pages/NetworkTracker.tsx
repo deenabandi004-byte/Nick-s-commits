@@ -202,7 +202,7 @@ export default function NetworkTracker() {
         if ("error" in res) throw new Error(res.error);
         return res;
       }
-      // No draft text — just mark as acted_on
+      // No draft text - just mark as acted_on
       return apiService.updateNudge(nudge.id, "acted_on");
     },
     onSuccess: (data) => {
@@ -292,7 +292,7 @@ export default function NetworkTracker() {
                 </button>
               </div>
 
-              {/* Stats row — use local bucket counts when searching, backend stats otherwise */}
+              {/* Stats row - use local bucket counts when searching, backend stats otherwise */}
               {(statsData || contacts.length > 0) && (
                 <div className="flex items-center gap-4 mt-3 text-sm">
                   <span className={`font-semibold ${(searchQuery ? needsAttention.length : statsData?.needsAttentionCount || 0) > 0 ? "text-orange-600" : "text-gray-500"}`}>
@@ -382,7 +382,7 @@ export default function NetworkTracker() {
                       </div>
                     </TabsContent>
 
-                    {/* Suggested For You tab — Agentic Queue */}
+                    {/* Suggested For You tab - Agentic Queue */}
                     <TabsContent value="queue" className="flex-1 overflow-y-auto m-0">
                       <QueuePanel isActive={activeTab === "queue"} />
                     </TabsContent>

@@ -46,7 +46,7 @@ This document catalogs all available data fields for email personalization, orga
 |------------|--------|---------------|-------------|-------|
 | `City` | PDL `location.locality` | "San Francisco" | **Medium** | Often present |
 | `State` | PDL `location.region` | "California" | **Medium** | Often present |
-| `Hometown` | Inferred from education | "Los Angeles, CA" | **Low** | Only for coffee chat prep |
+| `Hometown` | Inferred from education | "Los Angeles, CA" | **Low** | Only for meeting prep |
 
 #### Education Fields
 | Field Name | Source | Example Value | Reliability | Notes |
@@ -324,7 +324,7 @@ skills = {
 
 ### 3.5 Commonality Detection
 
-**Function:** `backend/app/utils/coffee_chat_prep.py::detect_commonality()`
+**Function:** `backend/app/utils/meeting_prep.py::detect_commonality()`
 
 **Checks:**
 1. **University** (strongest): Compares `user_info.university` with `contact.College` + `contact.EducationTop`

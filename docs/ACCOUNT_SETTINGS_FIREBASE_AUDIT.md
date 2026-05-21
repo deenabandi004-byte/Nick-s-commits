@@ -1,4 +1,4 @@
-# Account Settings Page — Full Firebase Audit
+# Account Settings Page - Full Firebase Audit
 
 This document traces the Account Settings page structure, data load/save flow, state management, and potential causes for "changes don't persist."
 
@@ -234,7 +234,7 @@ So: **same document as load** (`users/{uid}`), **only `updateDoc`**, and payload
 
 ---
 
-## 5. Why Saves Might Not Persist — Bug Hypotheses
+## 5. Why Saves Might Not Persist - Bug Hypotheses
 
 ### A. Document doesn’t exist
 

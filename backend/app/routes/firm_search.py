@@ -453,7 +453,7 @@ def search_firms_async():
                     return
 
                 if not firms:
-                    # Successful search but no results — not a failure
+                    # Successful search but no results - not a failure
                     empty_result = {
                         'success': True,
                         'firms': [],
@@ -787,7 +787,7 @@ def delete_firm():
             batch.commit()
             print(f"  ✅ Committed final batch of {batch_count} updates")
         
-        # Firestore batch commits are strongly consistent — no verification/retry needed
+        # Firestore batch commits are strongly consistent - no verification/retry needed
         
         return jsonify({
             'success': True,

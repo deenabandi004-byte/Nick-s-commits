@@ -591,6 +591,13 @@ export default function DashboardPage() {
     return out;
   })();
 
+  /* ---- hero quick links (top-right of the blue band) ---- */
+  const heroLinks = [
+    { label: "Find People", to: "/find" },
+    { label: "Prep for next Call", to: "/meeting-prep" },
+    { label: "See Who's Responded", to: "/tracker" },
+  ];
+
   /* ---- tools (demoted chip row) ---- */
   const tools = [
     { icon: <Mail className="h-3.5 w-3.5" />, label: "Tracker", to: "/tracker" },
@@ -634,10 +641,25 @@ export default function DashboardPage() {
                   style={{ background: "radial-gradient(circle,rgba(255,255,255,0.20),transparent 70%)" }}
                 />
                 <div className="relative px-6 py-5 sm:px-8">
-                  <h1 className="font-serif text-[30px] leading-tight text-white sm:text-[34px]">
-                    Hi {firstNameOf(user?.name)}
-                  </h1>
-                  <p className="mt-0.5 text-[14px] text-white/80">{statusLine}</p>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h1 className="font-serif text-[30px] leading-tight text-white sm:text-[34px]">
+                        Hi {firstNameOf(user?.name)}
+                      </h1>
+                      <p className="mt-0.5 text-[14px] text-white/80">{statusLine}</p>
+                    </div>
+                    <nav className="hidden flex-shrink-0 items-center gap-1 pt-1 sm:flex">
+                      {heroLinks.map((l) => (
+                        <button
+                          key={l.label}
+                          onClick={() => navigate(l.to)}
+                          className="rounded-md px-2.5 py-1 text-[12.5px] font-semibold text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+                        >
+                          {l.label}
+                        </button>
+                      ))}
+                    </nav>
+                  </div>
 
                   {/* new users get a get-started nudge above the metrics */}
                   {isNewUser && (
@@ -645,7 +667,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="text-[13.5px] font-semibold text-white">Get started</p>
                         <p className="mt-0.5 text-[13px] text-white/75">
-                          Run your first loop to start tracking your outreach here.
+                          Put tasks on autopilot, walk away and get a text when the work's done.
                         </p>
                       </div>
                       <Button

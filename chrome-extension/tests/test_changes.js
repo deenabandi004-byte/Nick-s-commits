@@ -138,7 +138,7 @@ assert(totalMinutes > 5, `Total polling time (${totalMinutes.toFixed(1)} min) > 
 assert(totalMinutes < 20, `Total polling time (${totalMinutes.toFixed(1)} min) < 20 min`);
 
 // Compare with old approach: 200 * 2000ms = 400s = 6.67 min, 200 requests
-// New approach: ~60 requests over ~15 min — much less network load
+// New approach: ~60 requests over ~15 min - much less network load
 const oldRequests = 200;
 const newRequests = 60;
 assert(newRequests < oldRequests, `New approach uses fewer requests (${newRequests} vs ${oldRequests})`);
@@ -269,7 +269,7 @@ async function testFetchWithTimeout() {
         reject(err);
       });
     }
-    // Never resolves on its own — simulates a hanging request
+    // Never resolves on its own - simulates a hanging request
   });
   try {
     await fetchWithTimeout('https://example.com', {}, 100);

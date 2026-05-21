@@ -39,7 +39,7 @@ export function UsageMeter({
       <div className="flex items-center justify-between text-sm">
         <span className="text-slate-600 dark:text-slate-400">
           {feature === 'alumniSearches' && 'Alumni Searches'}
-          {feature === 'coffeeChatPreps' && 'Coffee Chat Preps'}
+          {feature === 'coffeeChatPreps' && 'Meeting Preps'}
           {feature === 'interviewPreps' && 'Interview Preps'}
         </span>
         <span className={`font-medium ${isLow ? 'text-orange-600 dark:text-orange-400' : 'text-slate-700 dark:text-slate-300'}`}>

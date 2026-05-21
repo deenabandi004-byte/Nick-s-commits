@@ -29,7 +29,7 @@ The application is in good shape with proper architecture, security measures, an
    - Found in:
      - `backend/app/routes/gmail_oauth.py` - Multiple debug prints
      - `backend/app/services/pdl_client.py` - Debug logging
-     - `backend/app/routes/coffee_chat_prep.py` - Print statements
+     - `backend/app/routes/meeting_prep.py` - Print statements
      - `connect-grow-hire/src/pages/Index.tsx:121` - Console.log
      - `connect-grow-hire/src/pages/Pricing.tsx` - Multiple console.error/console.log
      - `connect-grow-hire/src/hooks/useFeatureGate.ts` - Console.error
@@ -158,7 +158,7 @@ The application is in good shape with proper architecture, security measures, an
 6. ✅ `runs` - Contact search (free/pro tiers)
 7. ✅ `enrichment` - Contact enrichment
 8. ✅ `resume` - Resume parsing
-9. ✅ `coffee_chat_prep` - Coffee chat preparation
+9. ✅ `meeting_prep` - Meeting preparation
 10. ✅ `interview_prep` - Interview preparation
 11. ✅ `billing` - Stripe billing
 12. ✅ `users` - User management

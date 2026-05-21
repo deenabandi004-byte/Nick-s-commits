@@ -61,7 +61,7 @@ export interface ParsedResume {
   name: string;
   contact: ParsedResumeContact;
   objective: string;
-  /** Editor uses array; backend may return single object — normalize on load/save */
+  /** Editor uses array; backend may return single object - normalize on load/save */
   education: ParsedResumeEducationEntry[];
   experience: ParsedResumeExperienceEntry[];
   projects: ParsedResumeProjectEntry[];

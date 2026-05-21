@@ -182,7 +182,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
     buildArchive();
   }, [user?.uid]);
 
-  // Validation — discovery-first. Any non-trivial query (3+ chars) is a valid
+  // Validation - discovery-first. Any non-trivial query (3+ chars) is a valid
   // search. The previous rule required 20+ chars AND a location keyword,
   // which made "Apple" or "fintech in NYC" fail. The Companies tab is for
   // exploration; we don't want to gatekeep behind sentence-shaped prompts.
@@ -396,7 +396,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
     let eventSource: EventSource | null = null;
 
     try {
-      // Start async search — returns immediately with searchId
+      // Start async search - returns immediately with searchId
       const { searchId } = await apiService.searchFirmsAsync(q, batchSize);
 
       // Open SSE stream for real-time progress
@@ -434,7 +434,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
               loadHistory();
             } else if (result.firms?.length === 0) {
               setFirmSuggestions(result.suggestions || []);
-              setError('Hmm, nothing matched that exactly. Try broadening to just the city or industry — or ask Scout.');
+              setError('Hmm, nothing matched that exactly. Try broadening to just the city or industry - or ask Scout.');
               openPanelWithSearchHelp({
                 searchType: 'firm',
                 failedSearchParams: { industry: q, location: '', size: '' },
@@ -460,7 +460,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
         });
 
         // EventSource native error (connection failure)
-        // Do NOT fall back to sync search — the async search is already running
+        // Do NOT fall back to sync search - the async search is already running
         // and would double-charge credits. Instead, poll the status endpoint.
         let sseFallbackStarted = false;
         eventSource!.onerror = () => {
@@ -729,7 +729,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
   const handleHistoryClick = (item: SearchHistoryItem) => {
     setQuery(item.query);
     setShowHistory(false);
-    // Don't auto-fire search — let user review the query and click "Find Companies" manually
+    // Don't auto-fire search - let user review the query and click "Find Companies" manually
   };
 
   // Handle Enter key
@@ -965,7 +965,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                             </div>
                           </div>
 
-                          {/* Recent searches — compact toggle */}
+                          {/* Recent searches - compact toggle */}
                           {searchHistory.length > 0 && (
                             <div>
                               <button

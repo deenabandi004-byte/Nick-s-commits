@@ -17,13 +17,13 @@ const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 const STRIPE_PRO_PRICE_ID = "price_1ScLXrERY2WrVHp1bYgdMAu4"; // Pro $14.99/mo
 const STRIPE_ELITE_PRICE_ID = "price_1ScLcfERY2WrVHp1c5rcONJ3"; // Elite $34.99/mo
 
-// Annual Stripe price IDs — set these in env when annual SKUs are created in Stripe dashboard.
+// Annual Stripe price IDs - set these in env when annual SKUs are created in Stripe dashboard.
 // Until then, annual CTA falls back to monthly checkout.
 const STRIPE_PRO_ANNUAL_PRICE_ID = (import.meta.env.VITE_STRIPE_PRO_ANNUAL_PRICE_ID as string | undefined) || null;
 const STRIPE_ELITE_ANNUAL_PRICE_ID = (import.meta.env.VITE_STRIPE_ELITE_ANNUAL_PRICE_ID as string | undefined) || null;
 const ANNUAL_ENABLED = Boolean(STRIPE_PRO_ANNUAL_PRICE_ID && STRIPE_ELITE_ANNUAL_PRICE_ID);
 
-// Display prices — student is the real price, list is the public anchor (used for strikethrough)
+// Display prices - student is the real price, list is the public anchor (used for strikethrough)
 const PRICES = {
   pro: { listMonthly: 29, studentMonthly: 14.99, studentAnnual: 149 },
   elite: { listMonthly: 59, studentMonthly: 34.99, studentAnnual: 349 },
@@ -141,7 +141,7 @@ const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus | null>(null);
   const [billingCadence, setBillingCadence] = useState<'monthly' | 'annual'>('monthly');
-  // showStudentPrice is a visual toggle for the public pricing page — it lets visitors
+  // showStudentPrice is a visual toggle for the public pricing page - it lets visitors
   // SEE the .edu discount before signing up. Actual checkout still uses the student
   // Stripe Price IDs (only ones wired); list-price checkout will be wired when
   // STRIPE_*_LIST_PRICE_ID env vars are added.
@@ -328,7 +328,7 @@ const Pricing = () => {
   };
 
   const handleUpgrade = async (planType: 'free' | 'pro' | 'elite', fromFeature?: string) => {
-    // Public pricing page — visitors without an account get bounced to sign-in
+    // Public pricing page - visitors without an account get bounced to sign-in
     // and brought back to /pricing with the plan they tapped pre-selected.
     if (!user) {
       navigate(`/signin?next=/pricing&plan=${planType}`);
@@ -382,7 +382,7 @@ const Pricing = () => {
       const API_URL = BACKEND_URL;
 
       // Select price ID based on tier + billing cadence.
-      // Annual price IDs come from env vars — if not set, fall back to monthly so checkout still works.
+      // Annual price IDs come from env vars - if not set, fall back to monthly so checkout still works.
       const useAnnual = billingCadence === 'annual' && ANNUAL_ENABLED;
       const priceId = tier === 'elite'
         ? (useAnnual ? STRIPE_ELITE_ANNUAL_PRICE_ID! : STRIPE_ELITE_PRICE_ID)
@@ -453,12 +453,12 @@ const Pricing = () => {
   return (
     <div style={{ background: '#FAFBFF', minHeight: '100vh' }}>
       <Helmet>
-        <title>Offerloop Pricing — Student Plans for College Networking</title>
+        <title>Offerloop Pricing - Student Plans for College Networking</title>
         <meta name="description" content="Students save ~50% with a .edu email. Pro $14.99/mo, Elite $34.99/mo, plus annual plans. Offerloop helps college students network into consulting, investment banking, and tech." />
         <link rel="canonical" href="https://offerloop.ai/pricing" />
       </Helmet>
 
-      {/* Pill header — logged-out (marketing) visitors only. In-app pricing keeps its own nav. */}
+      {/* Pill header - logged-out (marketing) visitors only. In-app pricing keeps its own nav. */}
       {!user && (
         <>
           <div className="fixed top-0 left-0 right-0 z-50 flex justify-center" style={{ padding: '12px 24px 8px' }}>
@@ -539,7 +539,7 @@ const Pricing = () => {
 
       <div className="w-full px-3 py-6 sm:px-6 sm:py-12" style={{ maxWidth: '900px', margin: '0 auto' }}>
 
-        {/* Back Navigation — in-app (logged-in) visitors only. Marketing visitors use the pill header. */}
+        {/* Back Navigation - in-app (logged-in) visitors only. Marketing visitors use the pill header. */}
         {user && (
           <div className="mb-8 animate-fadeInUp">
             <button
@@ -560,7 +560,7 @@ const Pricing = () => {
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-gray-900">
-                      {isEliteUser ? 'Elite' : 'Pro'} Subscription{subscriptionStatus?.status === 'trialing' ? ' — Free Trial' : ' Active'}
+                      {isEliteUser ? 'Elite' : 'Pro'} Subscription{subscriptionStatus?.status === 'trialing' ? ' - Free Trial' : ' Active'}
                     </h3>
                     {subscriptionStatus?.status === 'trialing' ? (
                       <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Trial</span>
@@ -615,13 +615,13 @@ const Pricing = () => {
             }}
           >
             {isStudent
-              ? `Welcome, student — your .edu unlocks ~50% off and a 30-day free trial.`
+              ? `Welcome, student - your .edu unlocks ~50% off and a 30-day free trial.`
               : `Built for college students. Use a .edu email to unlock ~50% off and a 30-day trial.`}
           </p>
-          {/* Toggles — billing cadence + student-price visual */}
+          {/* Toggles - billing cadence + student-price visual */}
           <div className="flex flex-col items-center gap-4">
 
-            {/* .edu Student Price toggle — the primary discount lever */}
+            {/* .edu Student Price toggle - the primary discount lever */}
             <div className={`
               flex items-center gap-3 px-4 py-3 rounded-full border-2 transition-all
               ${showStudentPrice
@@ -631,7 +631,7 @@ const Pricing = () => {
             `}>
               <span className="text-base">🎓</span>
               <span className={`text-sm font-semibold ${showStudentPrice ? 'text-blue-900' : 'text-gray-600'}`}>
-                {showStudentPrice ? 'Showing .edu student price — save ~50%' : 'Show .edu student price (~50% off)'}
+                {showStudentPrice ? 'Showing .edu student price - save ~50%' : 'Show .edu student price (~50% off)'}
               </span>
               <button
                 onClick={() => setShowStudentPrice(!showStudentPrice)}
@@ -714,7 +714,7 @@ const Pricing = () => {
               <FeatureItem>AI email drafting</FeatureItem>
               <FeatureItem>Custom email templates</FeatureItem>
               <FeatureItem>Gmail integration + outreach tracking</FeatureItem>
-              <FeatureItem>Coffee Chat Prep</FeatureItem>
+              <FeatureItem>Meeting Prep</FeatureItem>
               <FeatureItem>Smart filters</FeatureItem>
               <DisabledFeatureItem>Find Hiring Managers</DisabledFeatureItem>
               <DisabledFeatureItem>Bulk drafting + Export</DisabledFeatureItem>
@@ -948,7 +948,7 @@ const Pricing = () => {
               30 Days Free with .edu (14 Otherwise) · 7-Day Money-Back Guarantee
             </h3>
             <p className="text-sm text-gray-600">
-              Students with a .edu email get a full 30-day Pro trial — no credit card.
+              Students with a .edu email get a full 30-day Pro trial - no credit card.
               Non-student trial is 14 days. After that, not satisfied within 7 days? Full refund, no questions asked.
             </p>
           </div>
@@ -971,7 +971,7 @@ const Pricing = () => {
               <tbody className="divide-y divide-gray-100">
                 <ComparisonRow feature="Monthly Credits" free="500" pro="3,000" elite="12,000" />
                 <ComparisonRow feature="Contacts per Search" free="5" pro="15" elite="30" />
-                <ComparisonRow feature="Concurrent Agents" free="—" pro="1" elite="Up to 5" />
+                <ComparisonRow feature="Concurrent Agents" free=" - " pro="1" elite="Up to 5" />
                 <ComparisonRow feature="Find Companies" free="Credit-limited" pro={true} elite={true} />
                 <ComparisonRow feature="Find Hiring Managers" free={false} pro={true} elite={true} />
                 <ComparisonRow feature="Email Outreach Tracking" free={true} pro={true} elite={true} />
@@ -994,17 +994,17 @@ const Pricing = () => {
           <div>
             <FAQItem
               question="How does the free trial work?"
-              answer="If you sign up with a .edu email, you get 30 days of full Pro access — no credit card required. Without .edu, the trial is 14 days. Either way you can cancel anytime, and at the end of the trial you drop to the Free plan automatically (no surprise charges)."
+              answer="If you sign up with a .edu email, you get 30 days of full Pro access - no credit card required. Without .edu, the trial is 14 days. Either way you can cancel anytime, and at the end of the trial you drop to the Free plan automatically (no surprise charges)."
               isProminent={true}
             />
             <FAQItem
               question="What's the .edu student discount?"
-              answer="The student price is the price you see — roughly 50% off the public list rate. As long as you signed up with a verified .edu email, you keep that student price for life, even after you graduate."
+              answer="The student price is the price you see - roughly 50% off the public list rate. As long as you signed up with a verified .edu email, you keep that student price for life, even after you graduate."
               isProminent={true}
             />
             <FAQItem
               question="What happens when I run out of credits?"
-              answer="Searches pause until your plan renews (the 1st of the next month) or you upgrade. No waiting, no emails — just upgrade when you're ready. All your saved contacts and drafts stay put."
+              answer="Searches pause until your plan renews (the 1st of the next month) or you upgrade. No waiting, no emails - just upgrade when you're ready. All your saved contacts and drafts stay put."
               isProminent={true}
             />
             <FAQItem
@@ -1013,20 +1013,20 @@ const Pricing = () => {
               isProminent={true}
             />
             <FAQItem
-              question="Monthly vs annual — which should I pick?"
-              answer="Annual saves ~17% — that's roughly two months free. If you're committed to recruiting for the year, annual is the better deal. If you're testing it out, start monthly and switch later."
+              question="Monthly vs annual - which should I pick?"
+              answer="Annual saves ~17% - that's roughly two months free. If you're committed to recruiting for the year, annual is the better deal. If you're testing it out, start monthly and switch later."
             />
             <FAQItem
               question="Do credits roll over?"
-              answer="Nope, they reset on the 1st of each month. Use 'em or lose 'em — but honestly, most students use them up well before the month is over during peak recruiting."
+              answer="Nope, they reset on the 1st of each month. Use 'em or lose 'em - but honestly, most students use them up well before the month is over during peak recruiting."
             />
             <FAQItem
               question="What if I don't have a .edu email?"
-              answer="You can still sign up and use Offerloop — you'll just get the 14-day trial instead of 30 days and pay the public list price. Already a paid alumni? Reach out and we'll verify your old school manually."
+              answer="You can still sign up and use Offerloop - you'll just get the 14-day trial instead of 30 days and pay the public list price. Already a paid alumni? Reach out and we'll verify your old school manually."
             />
             <FAQItem
               question="How do I cancel?"
-              answer="Cancel anytime from your subscription page. You keep access until the end of your billing period — no tricks."
+              answer="Cancel anytime from your subscription page. You keep access until the end of your billing period - no tricks."
             />
           </div>
         </div>

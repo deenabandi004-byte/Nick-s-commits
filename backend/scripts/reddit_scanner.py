@@ -1,8 +1,8 @@
 """
-Reddit opportunity scanner — finds high-intent threads relevant to Offerloop
+Reddit opportunity scanner - finds high-intent threads relevant to Offerloop
 and sends ranked results to Telegram.
 
-No Reddit API key or OAuth required — uses public JSON endpoints only.
+No Reddit API key or OAuth required - uses public JSON endpoints only.
 
 Usage:
     python scripts/reddit_scanner.py              # one-shot scan
@@ -51,13 +51,13 @@ KEYWORD_GROUPS = {
         "feature": "Contact Search + Email Drafting",
         "emoji": "📧",
     },
-    "coffee_chat": {
+    "meeting": {
         "keywords": [
-            "coffee chat", "informational interview", "what to ask",
+            "meeting", "informational interview", "what to ask",
             "meeting with professional", "talk to alumni", "alumni outreach",
             "networking call", "phone screen prep",
         ],
-        "feature": "Coffee Chat Prep",
+        "feature": "Meeting Prep",
         "emoji": "☕",
     },
     "resume": {
@@ -118,7 +118,7 @@ MIN_SCORE     = 1
 MIN_COMMENTS  = 0
 MAX_AGE_HOURS = 24
 MAX_RESULTS   = 10
-REQUEST_DELAY = 2   # seconds between requests — be polite
+REQUEST_DELAY = 2   # seconds between requests - be polite
 
 SEEN_FILE = Path(__file__).parent / ".reddit_seen.json"
 
@@ -128,7 +128,7 @@ HEADERS = {
 }
 
 # ---------------------------------------------------------------------------
-# Reddit fetch (no auth — public JSON endpoints)
+# Reddit fetch (no auth - public JSON endpoints)
 # ---------------------------------------------------------------------------
 
 def _fetch_listing(url: str) -> list[dict]:
@@ -269,7 +269,7 @@ def send_telegram(message: str) -> bool:
     chat_id = os.getenv("TELEGRAM_CHAT_ID")
 
     if not token or not chat_id:
-        print("[WARN] TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set — printing to console:\n")
+        print("[WARN] TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID not set - printing to console:\n")
         print(message)
         return False
 
@@ -312,7 +312,7 @@ def format_telegram_message(results: list[dict]) -> str:
         return "🔍 <b>Reddit Scan Complete</b>\n\nNo new high-intent threads found this cycle."
 
     now   = datetime.now(timezone.utc).strftime("%H:%M UTC")
-    lines = [f"🔍 <b>Reddit Scan — {now}</b>\n", f"Found <b>{len(results)}</b> relevant threads:\n"]
+    lines = [f"🔍 <b>Reddit Scan - {now}</b>\n", f"Found <b>{len(results)}</b> relevant threads:\n"]
 
     for i, r in enumerate(results, 1):
         features      = " ".join(m["emoji"] for m in r["keyword_matches"])
@@ -320,7 +320,7 @@ def format_telegram_message(results: list[dict]) -> str:
         lines.append(
             f"{'━' * 30}\n"
             f"{r['priority']} #{i}\n"
-            f"<b>r/{r['subreddit']}</b> — {r['score']}↑ | {r['num_comments']} comments | {r['age_hours']}h ago\n\n"
+            f"<b>r/{r['subreddit']}</b> - {r['score']}↑ | {r['num_comments']} comments | {r['age_hours']}h ago\n\n"
             f"<b>{_escape_html(r['title'])}</b>\n"
             f"{r['url']}\n\n"
             f"{features} Relevant to: <i>{feature_names}</i>\n"

@@ -46,7 +46,7 @@
 **Files:**
 - `backend/app/services/auth.py` - Added `deduct_credits_atomic()` function
 - `backend/app/routes/firm_search.py` - Updated to use atomic deduction
-- `backend/app/routes/coffee_chat_prep.py` - Updated to use atomic deduction
+- `backend/app/routes/meeting_prep.py` - Updated to use atomic deduction
 - `backend/app/routes/interview_prep.py` - Updated to use atomic deduction
 
 **Implementation:**

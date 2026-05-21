@@ -1020,32 +1020,32 @@ function initElements() {
 }
 
 // ============================================
-// COFFEE CHAT PREP WORKFLOW (aligned with website)
+// MEETING PREP WORKFLOW (aligned with website)
 // ============================================
 
-const COFFEE_CHAT_CREDITS = 15; // Must match backend config
-let coffeeChatPollInterval = null;
+const MEETING_CREDITS = 15; // Must match backend config
+let meetingPollInterval = null;
 
-function updateCoffeeChatButtonState() {
-  const btn = document.getElementById('coffeeChatBtn');
-  const hint = document.getElementById('coffeeChatHint');
+function updateMeetingButtonState() {
+  const btn = document.getElementById('meetingBtn');
+  const hint = document.getElementById('meetingHint');
   const credits = currentState.credits;
-  const hasEnough = credits !== null && credits !== undefined && credits >= COFFEE_CHAT_CREDITS;
+  const hasEnough = credits !== null && credits !== undefined && credits >= MEETING_CREDITS;
   if (btn) {
     btn.disabled = !hasEnough;
-    btn.title = hasEnough ? '' : `Need ${COFFEE_CHAT_CREDITS} credits. Check Account Settings for resume.`;
+    btn.title = hasEnough ? '' : `Need ${MEETING_CREDITS} credits. Check Account Settings for resume.`;
   }
   if (hint) {
     hint.textContent = hasEnough
-      ? `Uses ${COFFEE_CHAT_CREDITS} credits • PDF saved to Library`
-      : `Need ${COFFEE_CHAT_CREDITS} credits • Upload resume in Account Settings`;
-    hint.className = hasEnough ? 'coffee-chat-hint' : 'coffee-chat-hint coffee-chat-hint-disabled';
+      ? `Uses ${MEETING_CREDITS} credits • PDF saved to Library`
+      : `Need ${MEETING_CREDITS} credits • Upload resume in Account Settings`;
+    hint.className = hasEnough ? 'meeting-hint' : 'meeting-hint meeting-hint-disabled';
   }
 }
 
-// Coffee Chat Prep handler - Full workflow (matches website behavior)
-async function handleCoffeeChatPrep() {
-  const btn = document.getElementById('coffeeChatBtn');
+// Meeting Prep handler - Full workflow (matches website behavior)
+async function handleMeetingPrep() {
+  const btn = document.getElementById('meetingBtn');
   
   // Get current LinkedIn URL
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -1053,22 +1053,22 @@ async function handleCoffeeChatPrep() {
   
   // Validate we're on a LinkedIn profile
   if (!linkedinUrl || !linkedinUrl.match(/linkedin\.com\/in\//)) {
-    showCoffeeChatError('Please navigate to a LinkedIn profile first');
+    showMeetingError('Please navigate to a LinkedIn profile first');
     return;
   }
   
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
   if (!authData.authToken) {
-    showCoffeeChatError('Please sign in to use this feature');
+    showMeetingError('Please sign in to use this feature');
     return;
   }
   
   // Pre-flight: check credits (match website)
   const credits = currentState.credits;
-  if (credits === null || credits === undefined || credits < COFFEE_CHAT_CREDITS) {
-    showCoffeeChatError(
-      `You need ${COFFEE_CHAT_CREDITS} credits to generate a coffee chat prep. ` +
+  if (credits === null || credits === undefined || credits < MEETING_CREDITS) {
+    showMeetingError(
+      `You need ${MEETING_CREDITS} credits to generate a meeting prep. ` +
       (credits != null ? `You have ${credits} credits.` : 'Check your balance in Account Settings.')
     );
     return;
@@ -1077,15 +1077,15 @@ async function handleCoffeeChatPrep() {
   // Show loading state
   btn.classList.add('loading');
   btn.disabled = true;
-  hideCoffeeChatResults();
-  hideCoffeeChatError();
-  showCoffeeChatLoading('Starting Coffee Chat Prep...');
+  hideMeetingResults();
+  hideMeetingError();
+  showMeetingLoading('Starting Meeting Prep...');
   
   try {
     // Step 1: Start the prep
-    console.log('[Offerloop Popup] Starting Coffee Chat Prep for:', linkedinUrl);
+    console.log('[Offerloop Popup] Starting Meeting Prep for:', linkedinUrl);
     
-    const startResponse = await fetch(`${API_BASE_URL}/api/coffee-chat-prep`, {
+    const startResponse = await fetch(`${API_BASE_URL}/api/meeting-prep`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1098,7 +1098,7 @@ async function handleCoffeeChatPrep() {
     
     if (!startResponse.ok) {
       // Map backend errors to friendly messages (same as website)
-      let message = errorData.error || 'Failed to start Coffee Chat Prep';
+      let message = errorData.error || 'Failed to start Meeting Prep';
       if (errorData.needsResume) {
         message = 'Please upload your resume in Account Settings first.';
       } else if (errorData.credits_needed != null) {
@@ -1119,24 +1119,24 @@ async function handleCoffeeChatPrep() {
     }
     
     // Step 2: Poll for completion
-    pollCoffeeChatStatus(prepId, authData.authToken, btn);
+    pollMeetingStatus(prepId, authData.authToken, btn);
     
   } catch (error) {
-    console.error('[Offerloop Popup] Coffee Chat Prep error:', error);
-    showCoffeeChatError(error.message || 'Something went wrong. Please try again.');
-    hideCoffeeChatLoading();
+    console.error('[Offerloop Popup] Meeting Prep error:', error);
+    showMeetingError(error.message || 'Something went wrong. Please try again.');
+    hideMeetingLoading();
     btn.classList.remove('loading');
-    updateCoffeeChatButtonState();
+    updateMeetingButtonState();
   }
 }
 
-function pollCoffeeChatStatus(prepId, authToken, btn) {
+function pollMeetingStatus(prepId, authToken, btn) {
   let attempts = 0;
   const maxAttempts = 200; // ~6.5 minutes (match website: 200 * 2 seconds)
   
   // Clear any existing poll
-  if (coffeeChatPollInterval) {
-    clearInterval(coffeeChatPollInterval);
+  if (meetingPollInterval) {
+    clearInterval(meetingPollInterval);
   }
   
   const statusMessages = {
@@ -1147,25 +1147,25 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
     'extracting_hometown': 'Extracting location...',
     'generating_content': 'Generating content...',
     'generating_pdf': 'Generating PDF...',
-    'completed': 'Coffee Chat Prep ready!',
+    'completed': 'Meeting Prep ready!',
     'failed': 'Generation failed'
   };
   
-  coffeeChatPollInterval = setInterval(async () => {
+  meetingPollInterval = setInterval(async () => {
     attempts++;
     
     if (attempts > maxAttempts) {
-      clearInterval(coffeeChatPollInterval);
-      coffeeChatPollInterval = null;
-      hideCoffeeChatLoading();
-      showCoffeeChatError('Prep is taking longer than expected. Check the Coffee Chat Library for results.');
+      clearInterval(meetingPollInterval);
+      meetingPollInterval = null;
+      hideMeetingLoading();
+      showMeetingError('Prep is taking longer than expected. Check the Meeting Library for results.');
       btn.classList.remove('loading');
-      updateCoffeeChatButtonState();
+      updateMeetingButtonState();
       return;
     }
     
     try {
-      const statusResponse = await fetch(`${API_BASE_URL}/api/coffee-chat-prep/${prepId}`, {
+      const statusResponse = await fetch(`${API_BASE_URL}/api/meeting-prep/${prepId}`, {
         headers: {
           'Authorization': `Bearer ${authToken}`
         }
@@ -1180,19 +1180,19 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
       
       // Update loading message based on status
       const loadingMessage = statusMessages[statusData.status] || 'Processing...';
-      updateCoffeeChatLoadingText(loadingMessage);
+      updateMeetingLoadingText(loadingMessage);
       
       if (statusData.status === 'completed' && statusData.pdfUrl) {
         // Success!
-        clearInterval(coffeeChatPollInterval);
-        coffeeChatPollInterval = null;
+        clearInterval(meetingPollInterval);
+        meetingPollInterval = null;
         
-        hideCoffeeChatLoading();
-        showCoffeeChatResults(statusData);
+        hideMeetingLoading();
+        showMeetingResults(statusData);
         triggerPdfDownload(statusData.pdfUrl, statusData.contactData);
         
         btn.classList.remove('loading');
-        updateCoffeeChatButtonState();
+        updateMeetingButtonState();
         
         // Refresh credits
         try {
@@ -1209,14 +1209,14 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
         
       } else if (statusData.status === 'failed') {
         // Failed
-        clearInterval(coffeeChatPollInterval);
-        coffeeChatPollInterval = null;
+        clearInterval(meetingPollInterval);
+        meetingPollInterval = null;
         
-        hideCoffeeChatLoading();
-        showCoffeeChatError(statusData.error || 'Coffee Chat Prep failed. Please try again.');
+        hideMeetingLoading();
+        showMeetingError(statusData.error || 'Meeting Prep failed. Please try again.');
         
         btn.classList.remove('loading');
-        updateCoffeeChatButtonState();
+        updateMeetingButtonState();
       }
       // If still processing, continue polling
       
@@ -1227,28 +1227,28 @@ function pollCoffeeChatStatus(prepId, authToken, btn) {
   }, 2000); // Poll every 2 seconds
 }
 
-function showCoffeeChatLoading(message) {
-  const loadingDiv = document.getElementById('coffeeChatLoading');
-  const loadingText = document.getElementById('coffeeChatLoadingText');
+function showMeetingLoading(message) {
+  const loadingDiv = document.getElementById('meetingLoading');
+  const loadingText = document.getElementById('meetingLoadingText');
   
-  if (loadingText) loadingText.textContent = message || 'Generating Coffee Chat Prep...';
+  if (loadingText) loadingText.textContent = message || 'Generating Meeting Prep...';
   if (loadingDiv) loadingDiv.classList.remove('hidden');
 }
 
-function hideCoffeeChatLoading() {
-  const loadingDiv = document.getElementById('coffeeChatLoading');
+function hideMeetingLoading() {
+  const loadingDiv = document.getElementById('meetingLoading');
   if (loadingDiv) loadingDiv.classList.add('hidden');
 }
 
-function updateCoffeeChatLoadingText(message) {
-  const loadingText = document.getElementById('coffeeChatLoadingText');
+function updateMeetingLoadingText(message) {
+  const loadingText = document.getElementById('meetingLoadingText');
   if (loadingText) loadingText.textContent = message;
 }
 
-function showCoffeeChatResults(data) {
-  const resultsDiv = document.getElementById('coffeeChatResults');
-  const contactDiv = document.getElementById('coffeeChatContact');
-  const downloadLink = document.getElementById('coffeeChatDownloadLink');
+function showMeetingResults(data) {
+  const resultsDiv = document.getElementById('meetingResults');
+  const contactDiv = document.getElementById('meetingContact');
+  const downloadLink = document.getElementById('meetingDownloadLink');
   
   // Show contact name if available
   if (data.contactData) {
@@ -1276,21 +1276,21 @@ function showCoffeeChatResults(data) {
   if (resultsDiv) resultsDiv.style.display = 'block';
 }
 
-function hideCoffeeChatResults() {
-  const resultsDiv = document.getElementById('coffeeChatResults');
+function hideMeetingResults() {
+  const resultsDiv = document.getElementById('meetingResults');
   if (resultsDiv) resultsDiv.style.display = 'none';
 }
 
-function showCoffeeChatError(message) {
-  const errorDiv = document.getElementById('coffeeChatError');
-  const errorMsg = document.getElementById('coffeeChatErrorMessage');
+function showMeetingError(message) {
+  const errorDiv = document.getElementById('meetingError');
+  const errorMsg = document.getElementById('meetingErrorMessage');
   
   if (errorMsg) errorMsg.textContent = message;
   if (errorDiv) errorDiv.style.display = 'block';
 }
 
-function hideCoffeeChatError() {
-  const errorDiv = document.getElementById('coffeeChatError');
+function hideMeetingError() {
+  const errorDiv = document.getElementById('meetingError');
   if (errorDiv) errorDiv.style.display = 'none';
 }
 
@@ -1308,7 +1308,7 @@ function triggerPdfDownload(pdfUrl, contactData) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
   
-  const filename = `coffee-chat-prep-${sanitizedName}.pdf`;
+  const filename = `meeting-prep-${sanitizedName}.pdf`;
   
   // Use Chrome downloads API
   chrome.downloads.download({
@@ -1328,9 +1328,9 @@ function triggerPdfDownload(pdfUrl, contactData) {
 
 // Clean up polling if popup closes
 window.addEventListener('unload', () => {
-  if (coffeeChatPollInterval) {
-    clearInterval(coffeeChatPollInterval);
-    coffeeChatPollInterval = null;
+  if (meetingPollInterval) {
+    clearInterval(meetingPollInterval);
+    meetingPollInterval = null;
   }
   if (interviewPrepPollInterval) {
     clearInterval(interviewPrepPollInterval);
@@ -1345,8 +1345,8 @@ function initEventListeners() {
   elements.findEmailBtn?.addEventListener('click', handleFindEmail);
   elements.retryBtn?.addEventListener('click', handleRetry);
   
-  // Coffee Chat Prep button
-  document.getElementById('coffeeChatBtn')?.addEventListener('click', handleCoffeeChatPrep);
+  // Meeting Prep button
+  document.getElementById('meetingBtn')?.addEventListener('click', handleMeetingPrep);
 }
 
 // Handle retry - refresh token first, then retry the action
@@ -1454,7 +1454,7 @@ function updateCredits(credits) {
     elements.creditsCount.textContent = credits;
   }
   currentState.credits = credits;
-  updateCoffeeChatButtonState();
+  updateMeetingButtonState();
 }
 
 // Silently refresh the Firebase token using Chrome Identity API
@@ -1825,7 +1825,7 @@ async function initAutofillTab() {
     }
 
     showAutofillSection('main');
-    setAutofillStatus(`${response.ats} form detected — ${response.fields.length} field${response.fields.length !== 1 ? 's' : ''} found`, 'active');
+    setAutofillStatus(`${response.ats} form detected - ${response.fields.length} field${response.fields.length !== 1 ? 's' : ''} found`, 'active');
     renderFieldsPreview(response.fields, response.ats);
     document.getElementById('autofill-fill-btn').disabled = false;
 
@@ -1888,7 +1888,7 @@ async function loadAutofillHistoryCount() {
     const response = await chrome.runtime.sendMessage({ action: 'getAutofillHistory' });
     const count = response?.history?.length || 0;
     countEl.textContent = count === 0
-      ? 'No saved answers yet — answers are saved automatically after each autofill.'
+      ? 'No saved answers yet - answers are saved automatically after each autofill.'
       : `${count} saved answer${count !== 1 ? 's' : ''} from previous applications`;
   } catch (_) {
     countEl.textContent = 'Unable to load history.';
@@ -1968,11 +1968,11 @@ async function init() {
   // Load stored auth state
   await loadAuthState();
   
-  // Update credits display and coffee chat button state
+  // Update credits display and meeting button state
   if (currentState.credits !== null) {
     updateCredits(currentState.credits);
   } else {
-    updateCoffeeChatButtonState();
+    updateMeetingButtonState();
   }
   
   // Check if already logged in

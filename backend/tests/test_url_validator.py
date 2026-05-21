@@ -76,11 +76,11 @@ class TestDomainAllowlist:
     @patch("app.utils.url_validator.socket.getaddrinfo", side_effect=_mock_public_dns)
     def test_extra_domains_parameter(self, _):
         """extra_domains adds to the allowlist for that call."""
-        # Without extra_domains — blocked
+        # Without extra_domains - blocked
         with pytest.raises(UnsafeURLError, match="not in allowlist"):
             validate_fetch_url("https://custom-board.example.com/jobs")
 
-        # With extra_domains — allowed
+        # With extra_domains - allowed
         result = validate_fetch_url(
             "https://custom-board.example.com/jobs",
             extra_domains={"custom-board.example.com"},

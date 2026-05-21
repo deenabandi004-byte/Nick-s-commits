@@ -56,7 +56,7 @@ def _save_user_gmail_creds(uid, creds):
         "refresh_token": getattr(creds, "refresh_token", None),
         "token_uri": creds.token_uri,
         "client_id": creds.client_id,
-        # Do NOT store client_secret per-user — it's an app-level secret read from env vars.
+        # Do NOT store client_secret per-user - it's an app-level secret read from env vars.
         "scopes": creds.scopes,
         "expiry": creds.expiry.isoformat() if getattr(creds, "expiry", None) else None,
         "updatedAt": datetime.utcnow(),  # TODO: deprecated in Python 3.12
@@ -253,7 +253,7 @@ def stop_gmail_watch(uid):
 
 
 def renew_gmail_watch(uid):
-    """Renew Gmail watch (same as start — calling watch() again extends expiration)."""
+    """Renew Gmail watch (same as start - calling watch() again extends expiration)."""
     start_gmail_watch(uid)
     print(f"[gmail_watch] Renewed watch")
 
@@ -987,7 +987,7 @@ def create_gmail_draft_for_user(contact, email_subject, email_body, tier='free',
         
         print(f"[GmailClient] Creating {tier.capitalize()} Gmail draft for contact {contact.get('FirstName', 'Unknown')}")
 
-        # Get the best available email address — prefer work/verified over personal
+        # Get the best available email address - prefer work/verified over personal
         recipient_email = None
         source = None
 
@@ -1305,7 +1305,7 @@ def create_drafts_batch(contacts_with_emails, gmail_service, resume_bytes=None, 
         email_subject = clean_email_text(item['email_subject'])
         email_body = clean_email_text(item['email_body'])
 
-        # Get recipient email — prefer work/verified over personal
+        # Get recipient email - prefer work/verified over personal
         recipient_email = None
         source = None
         if contact.get('WorkEmail') and contact['WorkEmail'] != 'Not available' and '@' in contact['WorkEmail']:

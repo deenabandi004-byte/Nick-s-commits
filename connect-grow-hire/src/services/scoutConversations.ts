@@ -312,7 +312,7 @@ export const generateConversationTitle = async (
 };
 
 // ============================================================================
-// ACTIVE THREAD — single rolling conversation per user
+// ACTIVE THREAD - single rolling conversation per user
 // ============================================================================
 //
 // useScoutChat persists the user's chat to a fixed-ID document at
@@ -329,7 +329,7 @@ export const generateConversationTitle = async (
 const ACTIVE_CONVERSATION_ID = 'active';
 const ACTIVE_MAX_MESSAGES = 60;
 
-/** Lightweight shape — we don't need ScoutMessage's metadata-heavy fields
+/** Lightweight shape - we don't need ScoutMessage's metadata-heavy fields
  *  for the side panel's chat thread persistence. */
 export interface PersistedChatMessage {
   id: string;

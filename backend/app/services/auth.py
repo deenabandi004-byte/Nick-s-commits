@@ -34,13 +34,13 @@ def _check_reset_needed(user_data) -> tuple[bool, int, dict]:
     """
     Pure check: determine if credits need resetting.
     Returns (needs_reset, credit_value, update_fields).
-    Does NOT write to Firestore — caller is responsible for applying updates.
+    Does NOT write to Firestore - caller is responsible for applying updates.
     """
     now = datetime.now()
     last_reset = _parse_datetime(user_data.get('lastCreditReset'))
 
     if not last_reset:
-        # First time — set timestamp, don't reset credits
+        # First time - set timestamp, don't reset credits
         return False, user_data.get('credits', 0), {'lastCreditReset': now.isoformat()}
 
     is_new_month = (now.year > last_reset.year) or (
@@ -143,7 +143,7 @@ def can_access_feature(tier: str, feature: str, user_data: dict, tier_config: di
     # Check usage-based features
     usage_map = {
         'alumni_search': ('alumniSearchesUsed', 'alumni_searches'),
-        'coffee_chat_prep': ('coffeeChatPrepsUsed', 'coffee_chat_preps'),
+        'meeting_prep': ('coffeeChatPrepsUsed', 'coffee_chat_preps'),
         'interview_prep': ('interviewPrepsUsed', 'interview_preps'),
     }
     
@@ -185,7 +185,7 @@ def deduct_credits_atomic(user_id: str, amount: int, operation_name: str = "oper
 
         user_data = user_doc.to_dict()
 
-        # Check reset inside transaction — returns updates to apply atomically
+        # Check reset inside transaction - returns updates to apply atomically
         needs_reset, current_credits, reset_updates = _check_reset_needed(user_data)
 
         if current_credits < amount:
@@ -204,7 +204,7 @@ def deduct_credits_atomic(user_id: str, amount: int, operation_name: str = "oper
         # Include any reset fields (lastCreditReset) in same write
         if reset_updates:
             update_fields.update(reset_updates)
-            # Override credits if reset happened — deduct from reset amount
+            # Override credits if reset happened - deduct from reset amount
             if needs_reset:
                 update_fields['credits'] = new_credits
 
@@ -251,7 +251,7 @@ def refund_credits_atomic(user_id: str, amount: int, operation_name: str = "refu
 
         user_data = user_doc.to_dict()
 
-        # Check reset inside transaction — apply atomically
+        # Check reset inside transaction - apply atomically
         _needs_reset, current_credits, reset_updates = _check_reset_needed(user_data)
 
         new_credits = current_credits + amount

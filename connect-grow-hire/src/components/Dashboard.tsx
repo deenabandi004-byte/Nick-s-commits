@@ -64,7 +64,7 @@ const getActivityRoute = (type: string): string => {
     case 'contactSearch':
       return '/find';
     case 'coffeePrep':
-      return '/coffee-chat-prep';
+      return '/meeting-prep';
     case 'interviewPrep':
       return '/interview-prep';
     default:
@@ -100,7 +100,7 @@ export function Dashboard() {
   // State
   const [contactCount, setContactCount] = useState<number>(0);
   const [firmCount, setFirmCount] = useState<number>(0);
-  const [coffeeChatCount, setCoffeeChatCount] = useState<number>(0);
+  const [meetingCount, setMeetingCount] = useState<number>(0);
   const [weeklySummary, setWeeklySummary] = useState<WeeklySummary | null>(null);
   const [timeSeriesData, setTimeSeriesData] = useState<Array<{ month: string; outreach: number; replies: number }>>([]);
   const [replyStats, setReplyStats] = useState<{ totalReplies: number; responseRate: number; totalSent: number } | null>(null);
@@ -122,10 +122,10 @@ export function Dashboard() {
   const timeSavedHours = useMemo(() => {
     const contactMinutes = contactCount * 20;
     const firmMinutes = firmCount * 2;
-    const coffeeChatMinutes = coffeeChatCount * 30;
-    const totalMinutes = contactMinutes + firmMinutes + coffeeChatMinutes;
+    const meetingMinutes = meetingCount * 30;
+    const totalMinutes = contactMinutes + firmMinutes + meetingMinutes;
     return Math.round((totalMinutes / 60) * 10) / 10;
-  }, [contactCount, firmCount, coffeeChatCount]);
+  }, [contactCount, firmCount, meetingCount]);
 
   const outreachSent = weeklySummary?.contactsGenerated || replyStats?.totalSent || 0;
   const repliesReceived = replyStats?.totalReplies || 0;
@@ -310,18 +310,18 @@ export function Dashboard() {
     // Use needsAttentionCount from tracker stats (contacts needing action)
     const emailsReady = trackerStats?.needsAttentionCount ?? outboxThreads.filter(t => Boolean(t.hasDraft)).length;
 
-    // Coffee chats that need prep
-    const coffeeChatsNeedPrep = coffeeChatCount;
+    // Meetings that need prep
+    const meetingsNeedPrep = meetingCount;
 
     // New company matches
     const newMatches = firmCount > 0 ? firmCount : 0;
 
     return {
       emailsReady,
-      coffeeChatsNeedPrep,
+      meetingsNeedPrep,
       newMatches,
     };
-  }, [outboxThreads, trackerStats, coffeeChatCount, firmCount]);
+  }, [outboxThreads, trackerStats, meetingCount, firmCount]);
 
   // Fetch contacts (needed for follow-up reminders, so fetch first)
   useEffect(() => {
@@ -409,26 +409,26 @@ export function Dashboard() {
     fetchFirmCount();
   }, [user]);
 
-  // Fetch coffee chat count (keep separate due to different error handling)
+  // Fetch meeting count (keep separate due to different error handling)
   useEffect(() => {
-    const fetchCoffeeChatCount = async () => {
+    const fetchMeetingCount = async () => {
       if (!user) {
-        setCoffeeChatCount(0);
+        setMeetingCount(0);
         return;
       }
       try {
         const result = await apiService.getAllCoffeeChatPreps();
         if ('error' in result) {
-          setCoffeeChatCount(0);
+          setMeetingCount(0);
         } else {
-          setCoffeeChatCount(result.preps?.length || 0);
+          setMeetingCount(result.preps?.length || 0);
         }
       } catch (error) {
-        console.error('Failed to fetch coffee chat preps:', error);
-        setCoffeeChatCount(0);
+        console.error('Failed to fetch meeting preps:', error);
+        setMeetingCount(0);
       }
     };
-    fetchCoffeeChatCount();
+    fetchMeetingCount();
   }, [user]);
 
   return (
@@ -620,7 +620,7 @@ export function Dashboard() {
             { icon: <Search className="w-4 h-4" />, label: 'Find People', route: '/find' },
             { icon: <Building2 className="w-4 h-4" />, label: 'Find Companies', route: '/find?tab=companies' },
             { icon: <Mail className="w-4 h-4" />, label: 'Review Outreach', route: '/tracker' },
-            { icon: <Coffee className="w-4 h-4" />, label: 'Prep for Chat', route: '/coffee-chat-prep' },
+            { icon: <Coffee className="w-4 h-4" />, label: 'Prep for Chat', route: '/meeting-prep' },
           ].map((shortcut, i) => (
             <button
               key={i}
@@ -687,11 +687,11 @@ export function Dashboard() {
                 },
                 {
                   icon: <Coffee className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />,
-                  title: `${quickWins.coffeeChatsNeedPrep} coffee chats`,
+                  title: `${quickWins.meetingsNeedPrep} meetings`,
                   description: 'Need quick prep before calls',
                   badge: '5 min',
-                  route: '/coffee-chat-prep',
-                  disabled: quickWins.coffeeChatsNeedPrep === 0,
+                  route: '/meeting-prep',
+                  disabled: quickWins.meetingsNeedPrep === 0,
                 },
                 {
                   icon: <Building2 className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />,
@@ -760,7 +760,7 @@ export function Dashboard() {
                   </p>
                 </div>
               ))}
-              {quickWins.emailsReady === 0 && quickWins.coffeeChatsNeedPrep === 0 && quickWins.newMatches === 0 && (
+              {quickWins.emailsReady === 0 && quickWins.meetingsNeedPrep === 0 && quickWins.newMatches === 0 && (
                 <div 
                   onClick={() => navigate('/find')}
                   className="px-5 py-4 rounded-[12px] transition-all cursor-pointer col-span-full"

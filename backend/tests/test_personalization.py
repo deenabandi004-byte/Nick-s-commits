@@ -43,7 +43,7 @@ class TestPersonalizationEngine:
                 "graduation_year": "2025"
             },
             "history": [],
-            "coffee_chats": []
+            "meetings": []
         }
     
     @pytest.fixture
@@ -55,7 +55,7 @@ class TestPersonalizationEngine:
                 "major": "Computer Science"
             },
             "history": [],
-            "coffee_chats": []
+            "meetings": []
         }
     
     def test_generate_fit_analysis_with_resume(self, engine, sample_user_context_with_resume, sample_job_details):

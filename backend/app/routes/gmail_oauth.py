@@ -188,7 +188,7 @@ def google_oauth_callback():
         try:
             sdoc = db.collection("oauth_state").document(state).get()
             if not sdoc.exists:
-                print(f"[gmail_oauth] State document not found — proceeding without state validation")
+                print(f"[gmail_oauth] State document not found - proceeding without state validation")
                 # Don't return error - try to continue
             else:
                 state_data = sdoc.to_dict() or {}
@@ -206,7 +206,7 @@ def google_oauth_callback():
             traceback.print_exc()
             # Don't fail completely - try to continue
     else:
-        # no state parameter — try to get UID from auth token, otherwise fail
+        # no state parameter - try to get UID from auth token, otherwise fail
         uid = (getattr(request, "firebase_user", {}) or {}).get("uid")
         if not uid:
             redirect_url = get_frontend_redirect_uri()
@@ -224,7 +224,7 @@ def google_oauth_callback():
         profile = gmail_service.users().getProfile(userId="me").execute()
         gmail_email = ((profile or {}).get("emailAddress") or "").strip().lower()
 
-        # Bail early if the profile response didn't include an email — without
+        # Bail early if the profile response didn't include an email - without
         # it we can't persist the integration or do a user lookup, and every
         # downstream step would silently misbehave.
         if not gmail_email:
@@ -266,7 +266,7 @@ def google_oauth_callback():
 
         # 5) Save creds (only if we have a UID)
         if not uid:
-            print("[gmail_oauth] Cannot save Gmail credentials — no UID available")
+            print("[gmail_oauth] Cannot save Gmail credentials - no UID available")
             redirect_url = add_param(redirect_url, "gmail_error", "no_user_id")
             return redirect(redirect_url)
 

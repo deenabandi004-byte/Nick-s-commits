@@ -1,4 +1,4 @@
-# Import Spreadsheet Feature — Complete Report
+# Import Spreadsheet Feature - Complete Report
 
 This document describes how the **Import Spreadsheet** (contact import from CSV/Excel) feature works end-to-end in Offerloop.
 
@@ -47,7 +47,7 @@ All three require **Firebase auth**: `Authorization: Bearer <idToken>`.
 
 ## 3. User Flow (Three Steps)
 
-### Step 1 — Upload
+### Step 1 - Upload
 
 1. User is on Contact Search → Import tab.
 2. User drops or selects a file (`.csv`, `.xlsx`, or `.xls`). Extension is validated in the UI.
@@ -55,7 +55,7 @@ All three require **Firebase auth**: `Authorization: Bearer <idToken>`.
 4. Optional: user can expand **Import guidelines** (credits, duplicates, requirements, formats).
 5. When a file is selected, a **Preview Import** button appears. Clicking it calls the preview API and moves to Step 2.
 
-### Step 2 — Preview & Column Mapping
+### Step 2 - Preview & Column Mapping
 
 1. Frontend sends the **same file** to `POST /api/contacts/import/preview` (multipart, key `file`).
 2. Backend parses the file (see Section 4), auto-maps columns (see Section 5), and returns:
@@ -70,7 +70,7 @@ All three require **Firebase auth**: `Authorization: Bearer <idToken>`.
 4. User can change mappings via dropdowns. Mapping is keyed by column index (string keys in JSON, e.g. `{"0":"firstName","1":"lastName"}`).
 5. User clicks **Import N Contacts** (or “Import N” when capped by credits). Frontend calls `POST /api/contacts/import` with the file and `column_mapping` in the form body.
 
-### Step 3 — Result
+### Step 3 - Result
 
 1. Backend processes each row (see Section 6), creates non-duplicate contacts, deducts 15 credits per created contact.
 2. Response includes `created`, `skipped` (duplicate, invalid, no_credits), `credits.spent` and `credits.remaining`, and the list of created contacts.
@@ -83,8 +83,8 @@ All three require **Firebase auth**: `Authorization: Bearer <idToken>`.
 
 ### Accepted formats
 
-- **.csv** — UTF-8 decoded with `utf-8-sig` (BOM handled).
-- **.xlsx / .xls** — First (active) sheet only; requires `openpyxl`. All cell values are stringified.
+- **.csv** - UTF-8 decoded with `utf-8-sig` (BOM handled).
+- **.xlsx / .xls** - First (active) sheet only; requires `openpyxl`. All cell values are stringified.
 
 Extension is checked on both frontend and backend; other extensions are rejected.
 
@@ -145,9 +145,9 @@ Extension is checked on both frontend and backend; other extensions are rejected
 
 A row is considered **valid** if it has at least one of:
 
-- **(First name AND last name)** — both non-empty after strip.
-- **Email** — non-empty after strip.
-- **LinkedIn URL** — non-empty after strip.
+- **(First name AND last name)** - both non-empty after strip.
+- **Email** - non-empty after strip.
+- **LinkedIn URL** - non-empty after strip.
 
 Rows that don’t meet this are **invalid** and skipped (counted in `skipped_invalid` on import; not created, no credits).
 
@@ -155,9 +155,9 @@ Rows that don’t meet this are **invalid** and skipped (counted in `skipped_inv
 
 Before creating a contact, the backend checks:
 
-1. **By email** — If the row has email, query `users/{userId}/contacts` where `email == row email`; if any doc exists → duplicate.
-2. **By LinkedIn URL** — If not already duplicate and row has LinkedIn URL, query where `linkedinUrl == row linkedinUrl`; if any doc exists → duplicate.
-3. **By first name + last name + company** — If not already duplicate and row has first name, last name, and company, query where `firstName`, `lastName`, and `company` all match; if any doc exists → duplicate.
+1. **By email** - If the row has email, query `users/{userId}/contacts` where `email == row email`; if any doc exists → duplicate.
+2. **By LinkedIn URL** - If not already duplicate and row has LinkedIn URL, query where `linkedinUrl == row linkedinUrl`; if any doc exists → duplicate.
+3. **By first name + last name + company** - If not already duplicate and row has first name, last name, and company, query where `firstName`, `lastName`, and `company` all match; if any doc exists → duplicate.
 
 Duplicates are skipped and counted in `skipped_duplicate`; no credits are deducted.
 

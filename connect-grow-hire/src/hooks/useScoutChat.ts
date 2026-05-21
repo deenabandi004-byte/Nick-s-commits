@@ -16,7 +16,7 @@ import {
 } from '@/services/scoutConversations';
 
 // Local-storage cache key (durable across tabs, reloads, and pre-auth boot).
-// Firestore is the source of truth — this cache exists so the panel hydrates
+// Firestore is the source of truth - this cache exists so the panel hydrates
 // instantly on open before the Firestore round-trip resolves.
 const LOCAL_CACHE_KEY = 'scout_chat_messages_v2';
 
@@ -58,7 +58,7 @@ function readUserMemoryFromLocalStorage(): Record<string, unknown> {
       .map(([k]) => k);
     if (pairList.length) memory.known_thin_school_company_pairs = pairList;
   } catch {}
-  // Briefing snapshot — set by MorningBriefing when the briefing data lands.
+  // Briefing snapshot - set by MorningBriefing when the briefing data lands.
   // Lets Scout answer "what should I do today" with concrete reference to
   // outstanding items even when the user is talking from a different page.
   try {
@@ -66,7 +66,7 @@ function readUserMemoryFromLocalStorage(): Record<string, unknown> {
     if (briefingRaw) {
       const snap = JSON.parse(briefingRaw);
       const ageMs = Date.now() - (snap?.ts || 0);
-      // Snapshot is fresh for 6 hours — beyond that we don't trust it.
+      // Snapshot is fresh for 6 hours - beyond that we don't trust it.
       if (ageMs < 6 * 60 * 60 * 1000 && snap?.data) {
         memory.briefing_snapshot = snap.data;
       }
@@ -136,7 +136,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
   // Determine current page - use override if provided, otherwise use location
   const currentPage = currentPageOverride || location.pathname;
 
-  // Chat state — hydrated synchronously from localStorage so the panel never
+  // Chat state - hydrated synchronously from localStorage so the panel never
   // flashes empty on open; Firestore reconciles below once auth resolves.
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
@@ -173,7 +173,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
         const remote: PersistedChatMessage[] = await loadActiveThread(user.uid);
         if (!remote.length) return;
         // Adopt remote when local is empty or remote is strictly larger.
-        // (Heuristic — full conflict resolution would need vector clocks; the
+        // (Heuristic - full conflict resolution would need vector clocks; the
         //  expected case is single-user, single-thread, so a length compare is
         //  sufficient and avoids dropping messages users care about.)
         const remoteAsChatMessages: ChatMessage[] = remote.map((m) => ({
@@ -195,7 +195,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
 
   // Persist on every change. Two layers:
   //  1. localStorage (synchronous, durable, survives reloads & tab close)
-  //  2. Firestore (async, debounced 600ms — not every keystroke during stream)
+  //  2. Firestore (async, debounced 600ms - not every keystroke during stream)
   useEffect(() => {
     try {
       const toSave = messages.map(({ isStreaming, intent, ...rest }) => rest);
@@ -204,7 +204,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       console.error('[Scout] Local cache write failed:', e);
     }
     if (!user?.uid) return;
-    // Skip while a streaming token is still landing — the next change will
+    // Skip while a streaming token is still landing - the next change will
     // catch the final committed message. Saves bandwidth + Firestore writes.
     if (messages.some((m) => m.isStreaming)) return;
     const handle = setTimeout(() => {
@@ -226,7 +226,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Clear chat — wipes local state, local cache, and the durable Firestore
+  // Clear chat - wipes local state, local cache, and the durable Firestore
   // thread so the user really starts over.
   const clearChat = useCallback(() => {
     setMessages([]);
@@ -248,7 +248,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
 
   // Build request payload. Slices conversation history to the last 6 turns
   // (the previous behavior) AND includes a `user_memory` block so Scout has
-  // context that lives outside the active chat — recent searches, prompts the
+  // context that lives outside the active chat - recent searches, prompts the
   // user already tried and bombed on, school×company combinations PDL has
   // already failed at. This is the substrate that lets Scout "remember" the
   // user across sessions without retraining.
@@ -422,7 +422,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     setMessages(prev => [...prev, assistantMessage]);
   };
 
-  // Send message — tries streaming first, falls back to non-streaming
+  // Send message - tries streaming first, falls back to non-streaming
   const sendMessage = useCallback(async (messageText?: string) => {
     const text = (messageText || input).trim();
     if (!text || isLoading) return;

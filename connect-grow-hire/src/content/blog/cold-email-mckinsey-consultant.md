@@ -1,7 +1,7 @@
 ---
 title: "How to Cold Email a McKinsey Consultant (Templates That Actually Get Responses)"
 date: "2026-03-13"
-description: "The exact cold email templates used by students who landed coffee chats at McKinsey. Includes subject lines, follow-up scripts, and what NOT to say."
+description: "The exact cold email templates used by students who landed meetings at McKinsey. Includes subject lines, follow-up scripts, and what NOT to say."
 slug: "cold-email-mckinsey-consultant"
 keywords: "cold email McKinsey, MBB cold email, consulting networking email"
 faqSchema:
@@ -10,16 +10,16 @@ faqSchema:
   - question: "What is the best subject line for a cold email to a consultant?"
     answer: "The most effective subject lines reference a shared connection or specific context. Examples include 'USC student, quick question about McKinsey Dallas' or 'Fellow Econ major, 15 min on your BCG experience.' Avoid vague subjects like 'Networking' or 'Quick question' with no context."
   - question: "How long should a cold email to a McKinsey consultant be?"
-    answer: "Keep your cold email under 150 words. Consultants are busy and often read emails on their phones between meetings. A concise email with a clear ask (like a 15-minute coffee chat) gets far more responses than a long message explaining your entire career history."
+    answer: "Keep your cold email under 150 words. Consultants are busy and often read emails on their phones between meetings. A concise email with a clear ask (like a 15-minute meeting) gets far more responses than a long message explaining your entire career history."
   - question: "When should I send cold emails to MBB consultants?"
     answer: "Send cold emails Tuesday through Thursday between 8 AM and 10 AM in the recipient's time zone. Avoid Monday mornings (inbox overload) and Friday afternoons (weekend mode). During recruiting season (August through October for full-time, January through March for internships), consultants expect more outreach."
   - question: "How many cold emails should I send during consulting recruiting?"
-    answer: "Plan to send 50 to 100 cold emails across your target firms during a recruiting cycle. Expect a 15 to 25 percent response rate with well-personalized emails. That translates to roughly 10 to 25 coffee chats, which is enough to build meaningful connections at 3 to 5 firms."
+    answer: "Plan to send 50 to 100 cold emails across your target firms during a recruiting cycle. Expect a 15 to 25 percent response rate with well-personalized emails. That translates to roughly 10 to 25 meetings, which is enough to build meaningful connections at 3 to 5 firms."
 ---
 
 ## Why Cold Emailing MBB Consultants Actually Works
 
-Here's something most students don't realize: McKinsey consultants get fewer cold emails than you think, and they respond to more of them than you'd expect. The ones who don't respond aren't ignoring you because they're too important — they're ignoring you because your email looked like everyone else's. This guide fixes that.
+Here's something most students don't realize: McKinsey consultants get fewer cold emails than you think, and they respond to more of them than you'd expect. The ones who don't respond aren't ignoring you because they're too important - they're ignoring you because your email looked like everyone else's. This guide fixes that.
 
 ## Who to Target: Analysts and Associates (1 to 3 Years In)
 
@@ -105,7 +105,7 @@ Keep it simple. Include your full name, university, graduation year, and LinkedI
 
 **Writing too much.** If your email is longer than what fits on a phone screen without scrolling, it is too long. Cut it down to under 150 words.
 
-**Asking for a referral in the first email.** The first email should ask for a conversation, not a favor. Build the relationship first. If the coffee chat goes well, the referral often happens naturally.
+**Asking for a referral in the first email.** The first email should ask for a conversation, not a favor. Build the relationship first. If the meeting goes well, the referral often happens naturally.
 
 **Not following up.** A single follow-up email sent 5 to 7 days after the original message can double your response rate. Keep the follow-up short: "Hi [Name], just wanted to bump this to the top of your inbox. I know you're busy, so even 10 minutes would be great."
 
@@ -118,7 +118,7 @@ Keep it simple. Include your full name, university, graduation year, and LinkedI
 
 ## How Offerloop Automates This Entire Workflow
 
-The whole process of finding the right consultants, digging up their emails, writing something that doesn't sound copy-pasted, and keeping track of who you've contacted — it's a lot. Offerloop handles all of that for you, from contact research to personalized email drafts to follow-up tracking, so you can spend your time on the conversations that actually matter instead of the logistics around them.
+The whole process of finding the right consultants, digging up their emails, writing something that doesn't sound copy-pasted, and keeping track of who you've contacted - it's a lot. Offerloop handles all of that for you, from contact research to personalized email drafts to follow-up tracking, so you can spend your time on the conversations that actually matter instead of the logistics around them.
 
 ## Frequently Asked Questions
 
@@ -140,4 +140,4 @@ Send cold emails Tuesday through Thursday between 8 AM and 10 AM in the recipien
 
 ### How many cold emails should I send during consulting recruiting?
 
-Plan to send 50 to 100 cold emails across your target firms during a recruiting cycle. Expect a 15 to 25 percent response rate with well-personalized emails. That translates to roughly 10 to 25 coffee chats, which is enough to build meaningful connections at 3 to 5 firms.
+Plan to send 50 to 100 cold emails across your target firms during a recruiting cycle. Expect a 15 to 25 percent response rate with well-personalized emails. That translates to roughly 10 to 25 meetings, which is enough to build meaningful connections at 3 to 5 firms.

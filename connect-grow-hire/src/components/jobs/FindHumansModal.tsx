@@ -1,5 +1,5 @@
 /**
- * FindHumansModal — Find the Humans surface.
+ * FindHumansModal - Find the Humans surface.
  *
  *   - Skips JD parser via no_parse=true (uses job card's structured fields).
  *   - source='find_humans' opts the request into the Pro/Elite gate and
@@ -81,7 +81,7 @@ function recruiterLocation(r: Recruiter): string {
   return parts.join(", ");
 }
 
-// Phase 1 receipts have NO href field — they are pure provenance text.
+// Phase 1 receipts have NO href field - they are pure provenance text.
 function ReceiptRow({ receipt }: { receipt: FindHumansReceipt }) {
   const dotClass =
     receipt.strength === "high"
@@ -199,7 +199,7 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
         maxResults: 3,
       });
 
-      // Stale response — caller already moved on.
+      // Stale response - caller already moved on.
       if (token !== requestTokenRef.current) return;
 
       clearStepTimer();
@@ -302,7 +302,7 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
                 currentStepId={loadingStepId}
               />
               <p className="mt-4 text-xs text-gray-500 text-center">
-                Hang tight — usually under 15 seconds.
+                Hang tight - usually under 15 seconds.
               </p>
             </div>
           )}

@@ -20,7 +20,7 @@ function getFaqData(uni: SeoUniversity) {
     },
     {
       question: `What should I say when emailing a ${uni.name} alum?`,
-      answer: `Lead with the shared connection. Mention that you are a current ${uni.name} student, your year, and your major. Reference something specific about their career path that genuinely interests you. Ask for a 15-minute coffee chat, not a referral. The shared alma mater gives you a natural reason to reach out and significantly increases your response rate compared to fully cold outreach.`,
+      answer: `Lead with the shared connection. Mention that you are a current ${uni.name} student, your year, and your major. Reference something specific about their career path that genuinely interests you. Ask for a 15-minute meeting, not a referral. The shared alma mater gives you a natural reason to reach out and significantly increases your response rate compared to fully cold outreach.`,
     },
     {
       question: `When is the best time to start alumni networking at ${uni.name}?`,
@@ -149,7 +149,7 @@ const AlumniGuide = ({ university: uni }: Props) => {
 
         {/* Template 1 */}
         <div className="rounded-[3px] p-6 mb-5" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 1: General Alumni Coffee Chat</p>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 1: General Alumni Meeting</p>
           <div style={{ fontSize: '14px', lineHeight: 1.8, color: '#334155' }}>
             <p style={{ marginBottom: '4px' }}><strong>Subject:</strong> {uni.name} student, would love 15 min on your experience at [Company]</p>
             <p style={{ marginBottom: '12px', color: '#94A3B8', fontSize: '13px' }}>___</p>
@@ -183,7 +183,7 @@ const AlumniGuide = ({ university: uni }: Props) => {
 
         {/* Template 3 */}
         <div className="rounded-[3px] p-6" style={{ background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 3: Referral Request (After a Coffee Chat)</p>
+          <p className="text-sm font-semibold mb-3" style={{ color: '#3B82F6' }}>Template 3: Referral Request (After a Meeting)</p>
           <div style={{ fontSize: '14px', lineHeight: 1.8, color: '#334155' }}>
             <p style={{ marginBottom: '4px' }}><strong>Subject:</strong> Thank you, [First Name], and a quick question</p>
             <p style={{ marginBottom: '12px', color: '#94A3B8', fontSize: '13px' }}>___</p>
@@ -224,9 +224,9 @@ const AlumniGuide = ({ university: uni }: Props) => {
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>IB Cold Emails</p>
             <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Cold email templates for investment banking networking.</p>
           </Link>
-          <Link to="/coffee-chat/mckinsey" style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
-            <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>Coffee Chat Guides</p>
-            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Prep questions and follow-up strategies for coffee chats.</p>
+          <Link to="/meeting/mckinsey" style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
+            <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>Meeting Guides</p>
+            <p style={{ fontSize: '13px', color: '#64748B', lineHeight: 1.5 }}>Prep questions and follow-up strategies for meetings.</p>
           </Link>
           <Link to="/blog" style={{ display: 'block', padding: '20px', borderRadius: '12px', border: '1px solid #E2E8F0', background: '#fff', textDecoration: 'none', transition: 'border-color 0.15s ease' }} onMouseEnter={e => (e.currentTarget.style.borderColor = '#3B82F6')} onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}>
             <p style={{ fontSize: '14px', fontWeight: 600, color: '#0F172A', marginBottom: '6px' }}>Offerloop Blog</p>

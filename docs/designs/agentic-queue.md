@@ -35,9 +35,9 @@ The 10x version: Offerloop becomes the student's autonomous networking agent. It
 - **Free tier teaser card**: Free users see "Suggested For You" tab with 1 **static sample card** (hardcoded fixture, no API call, no credit deduction) showing visible warmth signals but locked actions + upgrade CTA. Zero backend cost.
 
 ## Architecture Decisions (from review + outside voice)
-- **Execution model**: Async job polling (NOT synchronous parallel generation). POST `/api/queue/generate` returns `{ job_id }` immediately; background thread runs PDL + 5 email gens via `concurrent.futures`; frontend polls GET `/api/queue/status/{job_id}`. Matches coffee chat prep pattern. Protects Gunicorn worker pool (4 workers) from being blocked by 10-15 sec queue generations.
+- **Execution model**: Async job polling (NOT synchronous parallel generation). POST `/api/queue/generate` returns `{ job_id }` immediately; background thread runs PDL + 5 email gens via `concurrent.futures`; frontend polls GET `/api/queue/status/{job_id}`. Matches meeting prep pattern. Protects Gunicorn worker pool (4 workers) from being blocked by 10-15 sec queue generations.
 - **Credit deduction timing**: Deduct 15 credits AFTER PDL returns results but BEFORE email generation. Protects against PDL 0-result edge case (no charge if no contacts found) and PDL failures.
-- **Dedup query (Phase 1 hard gate)**: Before insert, query `users/{uid}/contacts/` filtering by `pdlId in [candidates]` AND `email in [candidates]` (batched), filter out matches from queue results. Use named kwargs on `batch_generate_emails` (call site #7 of this 15-param function — known fragility from CLAUDE.md learnings).
+- **Dedup query (Phase 1 hard gate)**: Before insert, query `users/{uid}/contacts/` filtering by `pdlId in [candidates]` AND `email in [candidates]` (batched), filter out matches from queue results. Use named kwargs on `batch_generate_emails` (call site #7 of this 15-param function - known fragility from CLAUDE.md learnings).
 - **Component boundaries**: Extract `QueuePanel.tsx` + `QueueContactCard.tsx` into `src/components/tracker/queue/`. Do NOT inline into NetworkTracker.tsx (already a god component with 3 bucket states; adding queue state inline creates maintenance nightmare).
 - **Tab placement**: "Suggested For You" lives in NetworkTracker as a new tab. Decision: the weekly ritual mental model ("I get my queue on Tuesday in my tracker") outweighs the information-architecture concern about mixing discovery and management.
 - **Queue expiration**: Queues expire after 14 days. Phase 2 daemon runs cleanup. Expired docs keep metadata for learning loop but mark `status: "expired"`.
@@ -49,7 +49,7 @@ The 10x version: Offerloop becomes the student's autonomous networking agent. It
 - Smart cadence / timing precision (Phase 3+, needs 500+ users)
 - Weekly email digest notification via SendGrid (Phase 3, new dependency)
 - "Why this contact?" explanation card (future, low priority)
-- Queue history view — browse past weeks' queues (future, low priority)
+- Queue history view - browse past weeks' queues (future, low priority)
 
 ## GSTACK REVIEW REPORT
 
@@ -58,11 +58,11 @@ The 10x version: Offerloop becomes the student's autonomous networking agent. It
 | CEO Review | `/plan-ceo-review` | Scope & strategy | 3 | CLEAR | SELECTIVE EXPANSION, 4 proposals, 2 accepted, 2 deferred, 0 critical gaps |
 | Outside Voice | Claude subagent | Independent 2nd opinion | 3 | issues_found | 10 findings + 1 strategic question, all resolved |
 | Eng Review | `/plan-eng-review` | Architecture & tests (required) | 2 | CLEAR (PLAN, stale) | 10 issues pre-cherry-picks, needs re-run after scope additions |
-| Design Review | `/plan-design-review` | UI/UX gaps | 0 | — | — |
-| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | — | — |
+| Design Review | `/plan-design-review` | UI/UX gaps | 0 | - | - |
+| DX Review | `/plan-devex-review` | Developer experience gaps | 0 | - | - |
 
 **CROSS-MODEL:** Outside voice surfaced 10 findings. 3 cross-model tensions presented to user (sync vs async execution, tab placement, credit deduction timing). User chose async job polling, kept queue on Tracker tab, accepted deduct-after-PDL. Remaining 7 findings silently applied as obvious fixes (dedup query, component extraction, daemon observability, 14-day expiration, etc.).
 
 **UNRESOLVED:** 0
 
-**VERDICT:** CEO CLEARED — eng review stale, re-run required before implementation (scope expanded with blocklist + free tier teaser after last eng review).
+**VERDICT:** CEO CLEARED - eng review stale, re-run required before implementation (scope expanded with blocklist + free tier teaser after last eng review).

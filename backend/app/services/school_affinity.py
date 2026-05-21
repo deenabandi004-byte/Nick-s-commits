@@ -1,5 +1,5 @@
 """
-School affinity service — queries PDL for alumni of a school working in a field,
+School affinity service - queries PDL for alumni of a school working in a field,
 aggregates by company, and caches in Firestore for 30 days.
 """
 import json
@@ -15,7 +15,7 @@ from app.extensions import get_db
 CACHE_TTL_SECONDS = 30 * 24 * 3600  # 30 days
 PDL_FETCH_LIMIT = 500  # Max profiles to scan (balances cost vs accuracy)
 
-# Title keywords by field — maps user-facing field names to PDL title search terms
+# Title keywords by field - maps user-facing field names to PDL title search terms
 FIELD_TITLE_KEYWORDS: Dict[str, List[str]] = {
     "data scientists": ["data scientist", "data analyst", "machine learning", "data engineer", "analytics"],
     "data science": ["data scientist", "data analyst", "machine learning", "data engineer", "analytics"],
@@ -84,7 +84,7 @@ def _set_firestore_cache(university: str, field: str, companies: list):
 
 def _build_pdl_query(university: str, field: str) -> dict:
     """Build PDL Elasticsearch query for alumni at a school in a given field."""
-    # School name matching — use aliases for broad coverage
+    # School name matching - use aliases for broad coverage
     # Cap at 6 aliases to avoid PDL 400 errors from too many clauses
     aliases = _school_aliases(university)
     if not aliases:
@@ -93,7 +93,7 @@ def _build_pdl_query(university: str, field: str) -> dict:
 
     school_clauses = [{"match": {"education.school.name": alias}} for alias in aliases]
 
-    # Title matching — use field-specific keywords
+    # Title matching - use field-specific keywords
     field_lower = field.lower().strip()
     title_keywords = FIELD_TITLE_KEYWORDS.get(field_lower, [field_lower])
     title_clauses = [{"match": {"job_title": kw}} for kw in title_keywords]
@@ -148,8 +148,8 @@ def _query_pdl(university: str, field: str) -> List[Dict[str, Any]]:
             break
 
         if r.status_code == 400 and total_fetched == 0:
-            # Too many clauses — retry with just the core alias
-            print(f"[SchoolAffinity] PDL 400 — retrying with simplified query")
+            # Too many clauses - retry with just the core alias
+            print(f"[SchoolAffinity] PDL 400 - retrying with simplified query")
             core = university.lower().strip()
             query_obj = {
                 "bool": {
@@ -167,7 +167,7 @@ def _query_pdl(university: str, field: str) -> List[Dict[str, Any]]:
                 print(f"[SchoolAffinity] PDL retry error: {e}")
                 break
         if r.status_code == 404:
-            print(f"[SchoolAffinity] PDL 404 — no results for this query")
+            print(f"[SchoolAffinity] PDL 404 - no results for this query")
             break
         if r.status_code != 200:
             print(f"[SchoolAffinity] PDL error {r.status_code}: {r.text[:200]}")
@@ -200,7 +200,7 @@ def _query_pdl(university: str, field: str) -> List[Dict[str, Any]]:
     if not company_counter:
         return []
 
-    # Build ranked list — top 15 companies by alumni count
+    # Build ranked list - top 15 companies by alumni count
     top_companies = []
     for company_name, count in company_counter.most_common(15):
         entry: Dict[str, Any] = {

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ContactSearchDemoPlaceholder } from './demo/ContactSearchDemoPlaceholder';
 import { FirmSearchDemoPlaceholder } from './demo/FirmSearchDemoPlaceholder';
-import { CoffeeChatDemoPlaceholder } from './demo/CoffeeChatDemoPlaceholder';
+import { MeetingDemoPlaceholder } from './demo/MeetingDemoPlaceholder';
 import { InterviewPrepDemoPlaceholder } from './demo/InterviewPrepDemoPlaceholder';
 import { DashboardDemoPlaceholder } from './demo/DashboardDemoPlaceholder';
 import proSearchVideo from '@/assets/Offerloop Professional Search.mp4';
@@ -11,7 +11,7 @@ import dashboardVideo from '@/assets/Dashboard.mov';
 import contactSearchVideo from '@/assets/Contact Search.mov';
 import firmSearchVideo from '@/assets/FirmSearch.mov';
 import interviewPrepVideo from '@/assets/Interview Prep.mov';
-import coffeeChatVideo from '@/assets/CoffeeChat.mov';
+import meetingVideo from '@/assets/Meeting.mov';
 import TextType from './TextType';
 import Marquee from "react-fast-marquee";
 import DylanRoby from "@/assets/DylanRoby.png";
@@ -103,7 +103,7 @@ export const ProductTour: React.FC = () => {
             <div className="space-y-6">
               <h3 className="text-4xl font-bold text-section-heading mb-4">Contact Search</h3>
               <p className="text-xl text-section-body leading-relaxed">
-                Turn "who should I reach out to?" into a real list — in one click.
+                Turn "who should I reach out to?" into a real list - in one click.
               </p>
             </div>
           </div>
@@ -179,7 +179,7 @@ export const ProductTour: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Feature 5: Coffee Chat Prep - Text on Left, Video on Right */}
+        {/* Feature 5: Meeting Prep - Text on Left, Video on Right */}
         <motion.div
           variants={cardVariants}
           initial="hidden"
@@ -191,9 +191,9 @@ export const ProductTour: React.FC = () => {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             {/* Text - Left Side */}
             <div className="space-y-6">
-              <h3 className="text-4xl font-bold text-section-heading mb-4">Coffee Chat Prep</h3>
+              <h3 className="text-4xl font-bold text-section-heading mb-4">Meeting Prep</h3>
               <p className="text-xl text-section-body leading-relaxed">
-                Prepare for your coffee chat. Enter the LinkedIn URL of the person you're speaking with and get a 2-page PDF with background, company insights, talking points, and smart questions.
+                Prepare for your meeting. Enter the LinkedIn URL of the person you're speaking with and get a 2-page PDF with background, company insights, talking points, and smart questions.
               </p>
             </div>
             
@@ -201,7 +201,7 @@ export const ProductTour: React.FC = () => {
             <div className="relative">
               <div className="aspect-video rounded-[3px] overflow-hidden border border-purple-500/20 border-purple-300/50 shadow-lg shadow-purple-100/40">
                 <video
-                  src={coffeeChatVideo}
+                  src={meetingVideo}
                   autoPlay
                   loop
                   muted
@@ -372,7 +372,7 @@ export const ProductTour: React.FC = () => {
                   </motion.span>
                 </h4>
                 <p className="text-lg text-section-body leading-relaxed">
-                  Your built-in guide when you're stuck — Scout suggests prompts and helps you decide what to type at every step.
+                  Your built-in guide when you're stuck - Scout suggests prompts and helps you decide what to type at every step.
                 </p>
               </div>
 

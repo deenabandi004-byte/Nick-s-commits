@@ -1,17 +1,17 @@
 // src/components/HeroSearchCTA.tsx
 //
-// Offerloop landing hero — asymmetric, prompt-as-CTA layout inspired by
+// Offerloop landing hero - asymmetric, prompt-as-CTA layout inspired by
 // Clado.ai. The left column is the pitch + real prompt input; the right
 // column is an animated product preview that cycles through the three
-// Offerloop phases — Search → Find → Outreach → Track — exactly the way
+// Offerloop phases - Search → Find → Outreach → Track - exactly the way
 // the app actually flows.
 //
 // Cycle:
 //   1. Query types into the search bar, "Find people" button fades in
-//   2. "Finding" phase — contact rows stream into the table one by one
-//   3. "Drafting" phase — Drafted pills fade into the Status column per row,
+//   2. "Finding" phase - contact rows stream into the table one by one
+//   3. "Drafting" phase - Drafted pills fade into the Status column per row,
 //      then the green "N contacts / N drafted" chips appear
-//   4. "Network tracker" phase — statuses morph Drafted → Sent → Opened /
+//   4. "Network tracker" phase - statuses morph Drafted → Sent → Opened /
 //      Replied over time, and the highlighted row resolves to a red
 //      "● Follow up" pill with a pulsing notification dot
 //   5. Hold briefly, then reset and loop
@@ -26,7 +26,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Search, CornerDownLeft } from 'lucide-react';
+import { Zap, Search, CornerDownLeft } from 'lucide-react';
 
 export const PENDING_QUERY_KEY = 'offerloop_pending_query';
 
@@ -39,7 +39,7 @@ const ROTATING_PLACEHOLDERS = [
 ];
 
 // ───────────────────────────────────────────────────────────────────────────
-// Animated preview — phase machine & demo data
+// Animated preview - phase machine & demo data
 // ───────────────────────────────────────────────────────────────────────────
 
 const DEMO_QUERY = 'USC alumni working at Goldman Sachs in New York';
@@ -60,7 +60,7 @@ type DemoRow = {
   final: Status;
 };
 
-// Fake Gmail draft list — these are the messages Offerloop auto-generates
+// Fake Gmail draft list - these are the messages Offerloop auto-generates
 // into the user's Gmail. The copy is intentionally specific (USC, Trojan
 // Fund, M&A) so it feels real rather than templated. Maya's row stays
 // expanded so the visitor can see the personalized email body inline.
@@ -92,7 +92,7 @@ const DEMO_ROWS: DemoRow[] = [
     avatarBg: '#BBF7D0',
     sender: 'Aidan Murphy',
     email: 'amurphy@bain.com',
-    subject: 'Fellow Trojan, 15 min coffee chat?',
+    subject: 'Fellow Trojan, 15 min meeting?',
     preview: "Hi Aidan, as a fellow USC student heading into consulting…",
     time: '38m',
     final: 'replied',
@@ -134,7 +134,7 @@ const PHASE_LABELS: Record<Phase, { pips: number; title: string }> = {
   tracking: { pips: 4, title: 'Tracker · live replies' },
 };
 
-// Notification toasts that appear during the tracking phase — these show
+// Notification toasts that appear during the tracking phase - these show
 // the "tracker updating" story: Offerloop watches replies and pings you.
 type NotificationKind = 'replied' | 'opened' | 'followup';
 const NOTIFICATIONS: { kind: NotificationKind; name: string; initials: string; bg: string; delay: number }[] = [
@@ -161,7 +161,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
   const [focused, setFocused] = useState(false);
   const [typedPlaceholder, setTypedPlaceholder] = useState('');
 
-  // Typewriter effect — cycles through ROTATING_PLACEHOLDERS, typing each
+  // Typewriter effect - cycles through ROTATING_PLACEHOLDERS, typing each
   // one out character by character, holding briefly, then erasing and
   // moving to the next. Pauses when the user focuses or types.
   useEffect(() => {
@@ -223,7 +223,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
       try {
         localStorage.setItem(PENDING_QUERY_KEY, query);
       } catch {
-        /* private mode — swallow */
+        /* private mode - swallow */
       }
     }
     onSubmit?.(query);
@@ -276,7 +276,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
       setShowChips(false);
       setVisibleNotifs([]);
 
-      // ─── Phase 1 · SEARCH — type the query ───
+      // ─── Phase 1 · SEARCH - type the query ───
       const TYPE_START = 500;
       const TYPE_PER_CHAR = 42;
       for (let i = 0; i <= DEMO_QUERY.length; i++) {
@@ -287,7 +287,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
       // Compose button appears once the query is typed
       at(typingEnd + 180, () => setShowFindBtn(true));
 
-      // ─── Phase 2 · FINDING / DRAFTING — all 6 rows stream in fast ───
+      // ─── Phase 2 · FINDING / DRAFTING - all 6 rows stream in fast ───
       // Batch feel: tight 90ms stagger so the whole list pops within ~540ms
       const findingStart = typingEnd + 600;
       at(findingStart, () => setPhase('finding'));
@@ -299,14 +299,14 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
       });
       const rowsEnd = findingStart + 120 + DEMO_ROWS.length * 90;
 
-      // ─── Phase 3 · READY — celebratory "5 drafts synced" moment ───
+      // ─── Phase 3 · READY - celebratory "5 drafts synced" moment ───
       at(rowsEnd + 250, () => {
         setPhase('drafting');
         setShowChips(true);
       });
       const readyEnd = rowsEnd + 250 + 1100;
 
-      // ─── Phase 4 · TRACKING — drafts turn into sent/opened/replied ───
+      // ─── Phase 4 · TRACKING - drafts turn into sent/opened/replied ───
       at(readyEnd, () => setPhase('tracking'));
       // Wave 1: every row shifts from Draft → Sent
       DEMO_ROWS.forEach((_, idx) => {
@@ -393,7 +393,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
           background-size: 22px 22px;
         }
 
-        /* Flex layout — left text gets more horizontal room, panel shrinks
+        /* Flex layout - left text gets more horizontal room, panel shrinks
            and slides right with a slight trim past the viewport */
         .hsc-grid {
           display: flex;
@@ -454,7 +454,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
       <div className="hsc-grid">
         {/* ═════════════ LEFT: pitch + prompt input ═════════════ */}
         <div className="hsc-left">
-          {/* Headline — two parallel phrases, product loop */}
+          {/* Headline - two parallel phrases, product loop */}
           <h1
             style={{
               fontFamily: "'Libre Baskerville', Georgia, serif",
@@ -471,7 +471,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
             Track every conversation.
           </h1>
 
-          {/* Subheadline — names mechanisms */}
+          {/* Subheadline - names mechanisms */}
           <p
             style={{
               fontFamily: "'Inter', sans-serif",
@@ -486,7 +486,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
             manage every reply, follow-up, and meeting prep.
           </p>
 
-          {/* Prompt input — larger, with a typewriter placeholder */}
+          {/* Prompt input - larger, with a typewriter placeholder */}
           <form onSubmit={handleSubmit} style={{ maxWidth: 580, marginBottom: 0 }}>
             <div
               style={{
@@ -596,7 +596,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
             </div>
           </form>
 
-          {/* Chip buttons removed — example queries now type into the
+          {/* Chip buttons removed - example queries now type into the
               search bar via the typewriter placeholder above. */}
         </div>
 
@@ -658,7 +658,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                 ))}
               </div>
 
-              {/* Official Gmail logo — canonical 2020 refresh
+              {/* Official Gmail logo - canonical 2020 refresh
                   Color mapping (matching Google's brand):
                   - Blue   #4285F4: bottom-left (left stroke of M)
                   - Green  #34A853: bottom-right (right stroke of M)
@@ -707,7 +707,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                 </span>
               </div>
 
-              {/* Search bar — this is where the Offerloop query types in */}
+              {/* Search bar - this is where the Offerloop query types in */}
               <div
                 style={{
                   flex: 1,
@@ -882,7 +882,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                     minHeight: 42,
                   }}
                 >
-                  {/* Offerloop sync badge — signals the drafts are auto-generated */}
+                  {/* Offerloop sync badge - signals the drafts are auto-generated */}
                   <div
                     style={{
                       display: 'inline-flex',
@@ -901,7 +901,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                       boxShadow: '0 2px 8px rgba(37, 99, 235, 0.28)',
                     }}
                   >
-                    <Sparkles size={11} strokeWidth={2.8} />
+                    <Zap size={11} strokeWidth={2.8} />
                     Offerloop
                   </div>
 
@@ -923,7 +923,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                     ))}
                   </div>
 
-                  {/* Phase title — mentions "6 drafts" explicitly to sell the batch */}
+                  {/* Phase title - mentions "6 drafts" explicitly to sell the batch */}
                   <span
                     key={phase}
                     className="hsc-fade-enter"
@@ -938,7 +938,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                     {PHASE_LABELS[phase].title}
                   </span>
 
-                  {/* Success chip — pops when drafts are ready */}
+                  {/* Success chip - pops when drafts are ready */}
                   <div
                     style={{
                       marginLeft: 'auto',
@@ -1155,7 +1155,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
                         </div>
                       </div>
 
-                      {/* ─── Expanded email body — only for the "opened" row ─── */}
+                      {/* ─── Expanded email body - only for the "opened" row ─── */}
                       {expanded && (
                         <div
                           style={{
@@ -1215,7 +1215,7 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
               }}
             >
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Sparkles size={12} strokeWidth={2.4} style={{ color: '#2563EB' }} />
+                <Zap size={12} strokeWidth={2.4} style={{ color: '#2563EB' }} />
                 Drafts auto-written into <strong style={{ color: '#202124', fontWeight: 700 }}>your Gmail</strong>
               </span>
               <span
@@ -1242,11 +1242,11 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
             </div>
           </div>
 
-          {/* Both popups removed — the personalization story is now told
+          {/* Both popups removed - the personalization story is now told
               inline via Maya's expanded row, and the tracker story via the
               reply notifications below. Less crowding, less distraction. */}
 
-          {/* ─── Floating reply notifications — positioned bottom-right
+          {/* ─── Floating reply notifications - positioned bottom-right
               of the panel, overlapping rows 5-6 ─── */}
           <div
             aria-hidden

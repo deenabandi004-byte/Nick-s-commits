@@ -87,7 +87,7 @@ const SKILL_CATEGORY_LABELS: Record<string, string> = {
   languages: 'Languages',
 };
 
-/** Convert ParsedResume to format expected by ResumePDF — use shared util for preview/download */
+/** Convert ParsedResume to format expected by ResumePDF - use shared util for preview/download */
 function resumeDataToPdfPayload(data: ParsedResume | null): any {
   return parseResumeToPdfPayload(data);
 }

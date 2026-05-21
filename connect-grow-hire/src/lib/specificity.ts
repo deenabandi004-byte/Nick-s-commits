@@ -7,7 +7,7 @@
  * dimensions is conspicuously missing.
  *
  * Detection strategy:
- *   - Word-boundary regex (never substring) — `\bgoldman sachs\b`, not `goldman` inside `goldmanson`.
+ *   - Word-boundary regex (never substring) - `\bgoldman sachs\b`, not `goldman` inside `goldmanson`.
  *   - Curated alias maps for the four dimensions (the load-bearing data).
  *   - Fallback scans against the project's existing data files (companies.ts, universities.ts,
  *     roles.ts) only when the curated maps don't match, and only with conservative guards
@@ -19,7 +19,7 @@
  *     "analyst".
  *
  * The heuristic is biased toward false negatives. When a dimension is unclear, the chip
- * stays out — silence is better than a wrong attribution.
+ * stays out - silence is better than a wrong attribution.
  */
 
 import { companies as COMPANIES } from '@/data/companies';
@@ -55,8 +55,8 @@ export interface QueryAnalysis {
   location: DimensionMatch | null;
   company: DimensionMatch | null;
   school: DimensionMatch | null;
-  /** Industry / sector intent — separate from a specific role title.
-   *  E.g. "USC grads in Tech — Startup" → industry: "Tech — Startup".
+  /** Industry / sector intent - separate from a specific role title.
+   *  E.g. "USC grads in Tech - Startup" → industry: "Tech - Startup".
    *  Detected from the curated INDUSTRY_TOKENS lexicon (matches the strings
    *  produced by the Direction extractor on the Profile page). */
   industry: DimensionMatch | null;
@@ -79,7 +79,7 @@ export interface QueryAnalysis {
    *  Snap/Roblox/GOAT, not the generic tech top-companies). */
   roleLocationCompanies?: { roleLabel: string; location: string; firms: string[] };
   /** Top employers for the detected school. Populated when school is detected
-   *  with little other signal — gives users typing "USC alumni" something
+   *  with little other signal - gives users typing "USC alumni" something
    *  concrete to look at. */
   schoolEmployers?: { schoolLabel: string; firms: string[] };
 }
@@ -99,7 +99,7 @@ interface TokenEntry {
   label: string;
 }
 
-// Roles — curated lexicon ordered by specificity.
+// Roles - curated lexicon ordered by specificity.
 // Multi-word + abbrev forms come first so "investment banking analyst" beats "analyst".
 const ROLE_TOKENS: TokenEntry[] = [
   { match: ['investment banking analyst', 'ib analyst', 'investment banking analysts'], label: 'Investment Banking Analyst' },
@@ -123,7 +123,7 @@ const ROLE_TOKENS: TokenEntry[] = [
   { match: ['research analyst', 'research analysts'], label: 'Research Analyst' },
   { match: ['attorney', 'attorneys', 'lawyer', 'lawyers'], label: 'Attorney' },
   { match: ['accountant', 'accountants', 'accounting'], label: 'Accountant' },
-  // Modern startup / tech / RevOps / Sales lexicon — added so the chip lights up
+  // Modern startup / tech / RevOps / Sales lexicon - added so the chip lights up
   // for queries our user base actually types. Each maps to its real industry below.
   { match: ['growth analyst', 'growth analysts'], label: 'Growth Analyst' },
   { match: ['growth manager', 'growth managers'], label: 'Growth Manager' },
@@ -146,7 +146,7 @@ const ROLE_TOKENS: TokenEntry[] = [
   { match: ['venture capital analyst', 'vc analyst', 'vc analysts'], label: 'Venture Capital Analyst' },
   { match: ['private equity analyst', 'pe analyst', 'pe analysts'], label: 'Private Equity Analyst' },
   { match: ['strategy analyst', 'strategy associate'], label: 'Strategy Analyst' },
-  // "Finance" alone is a vague-but-common role keyword — treat it as a role family
+  // "Finance" alone is a vague-but-common role keyword - treat it as a role family
   // so the chip lights up. The role-variation map maps (Finance, <company>) into
   // concrete titles depending on whether the company is finance / tech / fintech / consulting.
   { match: ['finance', 'corporate finance', 'in finance', 'work in finance', 'working in finance'], label: 'Finance' },
@@ -169,7 +169,7 @@ const ROLE_TOKENS: TokenEntry[] = [
   { match: ['partner', 'partners'], label: 'Partner' },
 ];
 
-// Locations — curated cities with shorthand expansions.
+// Locations - curated cities with shorthand expansions.
 // Includes the four shorthand forms the user explicitly named (NYC, SF, LA, plus DC).
 const LOCATION_TOKENS: TokenEntry[] = [
   { match: ['new york city', 'new york', 'nyc', 'manhattan', 'brooklyn'], label: 'New York' },
@@ -205,7 +205,7 @@ const LOCATION_TOKENS: TokenEntry[] = [
   { match: ['paris'], label: 'Paris' },
 ];
 
-// Companies — curated alias map + shorthand expansions.
+// Companies - curated alias map + shorthand expansions.
 // Single-word common-name terms (e.g. "ms", "gs") are excluded to avoid false positives.
 const COMPANY_ALIASES: TokenEntry[] = [
   // Shorthand expansions
@@ -282,7 +282,7 @@ const COMPANY_ALIASES: TokenEntry[] = [
   { match: ['sequoia capital', 'sequoia'], label: 'Sequoia Capital' },
   { match: ['benchmark'], label: 'Benchmark' },
   { match: ['accel'], label: 'Accel' },
-  // Modern startups & growth-stage companies — added so the COMPANY chip lights
+  // Modern startups & growth-stage companies - added so the COMPANY chip lights
   // up when users type names from our right-rail suggestions or natural queries.
   { match: ['snap inc', 'snap inc.', 'snapchat', 'snap'], label: 'Snap' },
   { match: ['roblox'], label: 'Roblox' },
@@ -414,7 +414,7 @@ const COMPANY_ALIASES: TokenEntry[] = [
   // European consulting (US firms have local offices but these are European-native)
   { match: ['roland berger'], label: 'Roland Berger' },
   { match: ['simon-kucher', 'simon kucher'], label: 'Simon-Kucher' },
-  { match: ['ol wyman'], label: 'Oliver Wyman' }, // already in elsewhere — alt spelling
+  { match: ['ol wyman'], label: 'Oliver Wyman' }, // already in elsewhere - alt spelling
   // Asian firms
   { match: ['grab'], label: 'Grab' },
   { match: ['gojek'], label: 'Gojek' },
@@ -427,7 +427,7 @@ const COMPANY_ALIASES: TokenEntry[] = [
   { match: ['samsung'], label: 'Samsung' },
 ];
 
-// Schools — curated alias map for short forms.
+// Schools - curated alias map for short forms.
 // Bare common words (Brown, Cal, Davis) are excluded; we require either a known short
 // form (USC, MIT, NYU, ...) or the full canonical name.
 const SCHOOL_ALIASES: TokenEntry[] = [
@@ -478,7 +478,7 @@ const SCHOOL_ALIASES: TokenEntry[] = [
   { match: ['ohio state university', 'ohio state'], label: 'Ohio State' },
   { match: ['penn state university', 'penn state', 'psu'], label: 'Penn State' },
   { match: ['villanova university', 'villanova'], label: 'Villanova' },
-  // ── International — Europe ──────────────────────────────────────────────────
+  // ── International - Europe ──────────────────────────────────────────────────
   // UK
   { match: ['lse', 'london school of economics'], label: 'LSE' },
   { match: ['oxford university', 'university of oxford', 'oxbridge'], label: 'Oxford' },
@@ -522,7 +522,7 @@ const SCHOOL_ALIASES: TokenEntry[] = [
   { match: ['copenhagen business school', 'cbs'], label: 'Copenhagen Business School' },
   // Ireland
   { match: ['trinity college dublin', 'trinity dublin'], label: 'Trinity College Dublin' },
-  // ── International — Asia ────────────────────────────────────────────────────
+  // ── International - Asia ────────────────────────────────────────────────────
   { match: ['nus', 'national university of singapore'], label: 'NUS' },
   { match: ['ntu', 'nanyang technological university'], label: 'NTU' },
   { match: ['hkust', 'hong kong university of science and technology'], label: 'HKUST' },
@@ -537,7 +537,7 @@ const SCHOOL_ALIASES: TokenEntry[] = [
   { match: ['peking university', 'peking'], label: 'Peking University' },
   { match: ['the university of tokyo', 'university of tokyo', 'todai'], label: 'University of Tokyo' },
   { match: ['snu', 'seoul national university'], label: 'Seoul National University' },
-  // ── International — Canada / Australia ─────────────────────────────────────
+  // ── International - Canada / Australia ─────────────────────────────────────
   { match: ['university of toronto', 'u of t', 'rotman'], label: 'University of Toronto' },
   { match: ['ubc', 'university of british columbia', 'sauder'], label: 'UBC' },
   { match: ['queens university', "queen's university"], label: "Queen's University" },
@@ -545,7 +545,7 @@ const SCHOOL_ALIASES: TokenEntry[] = [
   { match: ['university of melbourne'], label: 'University of Melbourne' },
   { match: ['university of sydney'], label: 'University of Sydney' },
   { match: ['unsw', 'university of new south wales'], label: 'UNSW' },
-  { match: ['ut'], label: 'UT' }, // very short — last resort
+  { match: ['ut'], label: 'UT' }, // very short - last resort
 ];
 
 // ── Industry-aware role refinement ────────────────────────────────────────────
@@ -592,7 +592,7 @@ const INDUSTRY_ROLE_VARIATIONS: Record<string, Record<string, string[]>> = {
     'management consultant': ['Management Consultant', 'Senior Consultant'],
     analyst: ['Business Analyst', 'Strategy Analyst', 'Operations Analyst'],
     associate: ['Associate Consultant', 'Senior Associate Consultant'],
-    // Cross-industry: consulting firms don't actually have bankers — when the user
+    // Cross-industry: consulting firms don't actually have bankers - when the user
     // says "bankers at Bain/McKinsey/BCG", the intent is consulting-firm roles.
     banker: ['Management Consultant', 'Associate Consultant', 'Senior Consultant'],
     bankers: ['Management Consultant', 'Associate Consultant'],
@@ -663,7 +663,7 @@ function getCompanyIndustry(label: string): string | null {
   return found?.industry ?? null;
 }
 
-/** List of role variations for the paired (role, company) — surfaces titles within
+/** List of role variations for the paired (role, company) - surfaces titles within
  *  the same industry the user may not have considered. Junior/analyst-leaning
  *  defaults to match Offerloop's audience. Returns [] if no industry match. */
 function getRoleVariations(role: string, company: string): string[] {
@@ -789,12 +789,12 @@ function findFirstMatch(text: string, tokens: TokenEntry[]): MatchResult | null 
   return null;
 }
 
-/** Replace `[start, end)` in `text` with spaces — preserves indices for downstream passes. */
+/** Replace `[start, end)` in `text` with spaces - preserves indices for downstream passes. */
 function maskRange(text: string, range: [number, number]): string {
   return text.substring(0, range[0]) + ' '.repeat(range[1] - range[0]) + text.substring(range[1]);
 }
 
-// Sort companies.ts and roles.ts by name length descending once at module load — used by
+// Sort companies.ts and roles.ts by name length descending once at module load - used by
 // the fallback scans only when the curated alias map misses.
 const COMPANIES_FALLBACK = [...COMPANIES]
   .filter(c => c.name.length >= 4) // skip ultra-short names that cause false positives
@@ -814,7 +814,7 @@ function scanCompaniesFallback(text: string): MatchResult | null {
 }
 
 function scanUniversitiesFallback(text: string): MatchResult | null {
-  // Only run when the prompt mentions a school keyword — avoids matching "Boston" inside
+  // Only run when the prompt mentions a school keyword - avoids matching "Boston" inside
   // "Boston" the city as "Boston University".
   if (!/\b(university|college|school|alumni|alum|grad|grads|grad of|attended)\b/i.test(text)) {
     return null;
@@ -853,7 +853,7 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
 
   let working = prompt;
 
-  // 1. Company — alias map first, then companies.ts fallback.
+  // 1. Company - alias map first, then companies.ts fallback.
   let m: MatchResult | null = findFirstMatch(working, COMPANY_ALIASES);
   if (!m) m = scanCompaniesFallback(working);
   if (m) {
@@ -861,7 +861,7 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
     working = maskRange(working, m.range);
   }
 
-  // 2. School — alias map, then keyword-gated universities.ts scan.
+  // 2. School - alias map, then keyword-gated universities.ts scan.
   // Run iteratively so we can detect transfer / study-abroad cases
   // ("UCI alum, transferred to USC", "Bocconi exchange from USC"). Primary
   // school stays in `result.school`; extras go in `additionalSchools` and
@@ -894,14 +894,14 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
     working = maskRange(working, m.range);
   }
 
-  // 4. Role — curated lexicon, then roles.ts fallback.
+  // 4. Role - curated lexicon, then roles.ts fallback.
   m = findFirstMatch(working, ROLE_TOKENS);
   if (!m) m = scanRolesFallback(working);
   if (m) {
     result.role = { value: m.label, matched: m.matched };
   }
 
-  // 5. Suggestion pass — surface variations (not auto-applied):
+  // 5. Suggestion pass - surface variations (not auto-applied):
   //    - Role variations: industry-aware list of titles (Banker → IB Analyst,
   //      Sales & Trading Analyst, Equity Research Analyst). Exposes paths the
   //      user may not have considered.
@@ -925,7 +925,7 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
     }
   }
 
-  // 5b. Industry — detect from a separate lexicon (run on the full prompt, not
+  // 5b. Industry - detect from a separate lexicon (run on the full prompt, not
   // the masked working buffer, so it can co-exist with role/school/company).
   if (!result.industry) {
     result.industry = _detectIndustry(prompt);
@@ -942,7 +942,7 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
   }
 
   // 6. Role + location, no company → curated (role × location) shortlist.
-  // This is the killer case — if the user has typed "Growth Analyst in LA"
+  // This is the killer case - if the user has typed "Growth Analyst in LA"
   // we surface Snap/Roblox/GOAT, not the generic tech top-companies.
   if (result.role && result.location && !result.company) {
     const firms = getRoleLocationCompanies(result.role.value, result.location.value);
@@ -989,7 +989,7 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
   // 8. Role detected → always surface common hiring locations for that role.
   // Filter out any location the user already typed so we don't duplicate it back.
   // School-aware anchor: if a school is detected and its hometown isn't already
-  // in the prompt, pin it to slot 1 — USC students see LA first, NYU students
+  // in the prompt, pin it to slot 1 - USC students see LA first, NYU students
   // see NYC first, etc. Removes the cognitive load of "where do I usually look?"
   if (result.role) {
     const locs = getTopLocationsForRole(result.role.value);
@@ -1033,7 +1033,7 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
         firms = intersect;
         labelOverride = result.industry.value; // we'll use this in the rail heading
       } else {
-        // No curated intersection — fall back to industry-wide list (still better
+        // No curated intersection - fall back to industry-wide list (still better
         // than school-generic for industry-flavored queries).
         firms = getIndustryFirms(result.industry.value);
       }
@@ -1054,7 +1054,7 @@ export function analyzeQuery(prompt: string, rotationSeed: number = 0): QueryAna
   return result;
 }
 
-// ── Industry-detection pass — added after company/school/location/role ──────
+// ── Industry-detection pass - added after company/school/location/role ──────
 // Patches into the existing analyzeQuery flow. We run a final pass for industry
 // because it's the lowest-priority dimension (only fires when nothing more
 // specific is in scope).
@@ -1140,7 +1140,7 @@ const ROLE_TO_INDUSTRY_SLUG: Record<string, string> = {
 // and substring-friendly (so "Los Angeles, CA" matches "los angeles").
 
 const ROLE_LOCATION_COMPANIES: Record<string, Record<string, string[]>> = {
-  // Growth / BD / Sales / RevOps — modern startup/tech roles per geography
+  // Growth / BD / Sales / RevOps - modern startup/tech roles per geography
   'Growth Analyst': {
     'los angeles': ['Snap', 'Roblox', 'GOAT', 'ServiceTitan', 'Whoop'],
     'san francisco': ['Stripe', 'Notion', 'Figma', 'Doordash', 'Airbnb'],
@@ -1250,7 +1250,7 @@ function getRoleLocationCompanies(roleLabel: string, locationValue: string): str
   const locLower = locationValue.toLowerCase();
   // Exact match first
   if (map[locLower]) return map[locLower];
-  // Substring match — handles "los angeles, ca" → "los angeles"
+  // Substring match - handles "los angeles, ca" → "los angeles"
   for (const key of Object.keys(map)) {
     if (locLower.includes(key)) return map[key];
   }
@@ -1259,7 +1259,7 @@ function getRoleLocationCompanies(roleLabel: string, locationValue: string): str
 
 // ── School → top employers ─────────────────────────────────────────────────
 // Where a school's alumni concentrate. Used when the user's prompt has a school
-// but no role/company yet — gives them a starting answer to "where do USC grads
+// but no role/company yet - gives them a starting answer to "where do USC grads
 // work?" before they've fully refined their query.
 
 const SCHOOL_TOP_EMPLOYERS: Record<string, string[]> = {
@@ -1283,7 +1283,7 @@ const SCHOOL_TOP_EMPLOYERS: Record<string, string[]> = {
   'Georgetown': ['Goldman Sachs', 'McKinsey', 'JPMorgan', 'Booz Allen Hamilton', 'Bain', 'Deloitte'],
   'CMU': ['Google', 'Meta', 'Microsoft', 'Apple', 'Amazon', 'Anthropic', 'OpenAI', 'NVIDIA'],
   'Notre Dame': ['Deloitte', 'Goldman Sachs', 'JPMorgan', 'EY', 'McKinsey', 'PwC'],
-  // ── US — additional ────────────────────────────────────────────────────────
+  // ── US - additional ────────────────────────────────────────────────────────
   'UC Irvine': ['Google', 'Disney', 'Snap', 'Deloitte', 'EY', 'Apple', 'PwC'],
   'UC Santa Cruz': ['Google', 'Apple', 'Adobe', 'Cisco', 'Salesforce'],
   'UC Riverside': ['Deloitte', 'EY', 'Google', 'Disney'],
@@ -1297,7 +1297,7 @@ const SCHOOL_TOP_EMPLOYERS: Record<string, string[]> = {
   'Ohio State': ['Deloitte', 'EY', 'JPMorgan', 'Procter & Gamble', 'Nationwide'],
   'Penn State': ['Deloitte', 'EY', 'PwC', 'JPMorgan', 'IBM', 'Accenture'],
   'Villanova': ['Deloitte', 'EY', 'JPMorgan', 'PwC', 'Vanguard'],
-  // ── International — UK ────────────────────────────────────────────────────
+  // ── International - UK ────────────────────────────────────────────────────
   'LSE': ['Goldman Sachs', 'JPMorgan', 'McKinsey', 'Barclays', 'Morgan Stanley', 'BCG', 'Deloitte'],
   'Oxford': ['Goldman Sachs', 'McKinsey', 'BCG', 'Bain', 'JPMorgan', 'DeepMind'],
   'Cambridge': ['Goldman Sachs', 'McKinsey', 'BCG', 'JPMorgan', 'DeepMind', 'Microsoft'],
@@ -1306,40 +1306,40 @@ const SCHOOL_TOP_EMPLOYERS: Record<string, string[]> = {
   "King's College London": ['McKinsey', 'BCG', 'Goldman Sachs', 'JPMorgan', 'Deloitte'],
   'Warwick': ['McKinsey', 'BCG', 'Goldman Sachs', 'PwC', 'Deloitte'],
   'London Business School': ['McKinsey', 'BCG', 'Bain', 'Goldman Sachs', 'JPMorgan'],
-  // ── International — Italy ─────────────────────────────────────────────────
+  // ── International - Italy ─────────────────────────────────────────────────
   'Bocconi': ['Mediobanca', 'McKinsey', 'Goldman Sachs', 'BCG', 'Bain', 'JPMorgan', 'BNP Paribas', 'UniCredit', 'Rothschild & Co'],
   'Politecnico di Milano': ['Google', 'Microsoft', 'Mediobanca', 'McKinsey', 'BCG'],
   'LUISS': ['McKinsey', 'BCG', 'Goldman Sachs', 'BNP Paribas', 'Mediobanca'],
-  // ── International — France ────────────────────────────────────────────────
+  // ── International - France ────────────────────────────────────────────────
   'HEC Paris': ['BNP Paribas', 'McKinsey', 'BCG', 'Bain', 'Société Générale', 'Goldman Sachs', 'Lazard'],
   'INSEAD': ['McKinsey', 'BCG', 'Bain', 'Goldman Sachs', 'JPMorgan', 'Roland Berger'],
   'ESCP': ['BNP Paribas', 'McKinsey', 'BCG', 'Société Générale', 'Roland Berger'],
   'ESSEC': ['BNP Paribas', 'McKinsey', 'BCG', 'Société Générale', 'Lazard'],
   'Sciences Po': ['McKinsey', 'BCG', 'BNP Paribas', 'Roland Berger', 'Lazard'],
-  // ── International — Spain ─────────────────────────────────────────────────
+  // ── International - Spain ─────────────────────────────────────────────────
   'IE Business School': ['McKinsey', 'BCG', 'Bain', 'Santander', 'Roland Berger'],
   'ESADE': ['McKinsey', 'BCG', 'Bain', 'Santander', 'Roland Berger'],
   'IESE': ['McKinsey', 'BCG', 'Bain', 'Santander', 'JPMorgan'],
-  // ── International — Germany ───────────────────────────────────────────────
+  // ── International - Germany ───────────────────────────────────────────────
   'WHU': ['McKinsey', 'BCG', 'Bain', 'Goldman Sachs', 'Roland Berger', 'Deutsche Bank'],
   'ESMT Berlin': ['McKinsey', 'BCG', 'Bain', 'Roland Berger'],
   'Mannheim': ['McKinsey', 'BCG', 'SAP', 'Roland Berger', 'Deloitte'],
   'TU Munich': ['Google', 'Microsoft', 'BMW', 'Siemens', 'McKinsey'],
   'RWTH Aachen': ['Siemens', 'BMW', 'Bosch', 'McKinsey', 'BCG'],
-  // ── International — Switzerland ───────────────────────────────────────────
+  // ── International - Switzerland ───────────────────────────────────────────
   'ETH Zurich': ['Google', 'Microsoft', 'McKinsey', 'Goldman Sachs', 'Anthropic', 'OpenAI'],
   'EPFL': ['Google', 'Apple', 'Logitech', 'Anthropic', 'Microsoft'],
   'IMD': ['McKinsey', 'BCG', 'Goldman Sachs', 'Nestlé', 'Roche'],
   'University of St. Gallen': ['McKinsey', 'BCG', 'Goldman Sachs', 'UBS', 'Credit Suisse'],
-  // ── International — Netherlands ───────────────────────────────────────────
+  // ── International - Netherlands ───────────────────────────────────────────
   'RSM Erasmus': ['McKinsey', 'BCG', 'ING', 'Booking.com', 'Adyen'],
   'Erasmus University': ['ING', 'Booking.com', 'McKinsey', 'BCG', 'Adyen'],
-  // ── International — Nordics & Ireland ─────────────────────────────────────
+  // ── International - Nordics & Ireland ─────────────────────────────────────
   'Stockholm School of Economics': ['McKinsey', 'BCG', 'Klarna', 'Goldman Sachs', 'Spotify'],
   'KTH Stockholm': ['Spotify', 'Klarna', 'Ericsson', 'Google', 'Microsoft'],
   'Copenhagen Business School': ['McKinsey', 'BCG', 'Maersk', 'Novo Nordisk'],
   'Trinity College Dublin': ['Google', 'Meta', 'McKinsey', 'BCG', 'Deloitte'],
-  // ── International — Asia ──────────────────────────────────────────────────
+  // ── International - Asia ──────────────────────────────────────────────────
   'NUS': ['Goldman Sachs', 'McKinsey', 'JPMorgan', 'Standard Chartered', 'Grab', 'Sea Limited'],
   'NTU': ['Google', 'Microsoft', 'Standard Chartered', 'McKinsey', 'Grab'],
   'HKUST': ['Goldman Sachs', 'JPMorgan', 'McKinsey', 'HSBC', 'Tencent'],
@@ -1354,7 +1354,7 @@ const SCHOOL_TOP_EMPLOYERS: Record<string, string[]> = {
   'Peking University': ['Tencent', 'ByteDance', 'Alibaba', 'Goldman Sachs', 'McKinsey'],
   'University of Tokyo': ['Sony', 'Rakuten', 'Goldman Sachs', 'McKinsey', 'BCG'],
   'Seoul National University': ['Samsung', 'Hyundai', 'McKinsey', 'BCG'],
-  // ── International — Canada / Australia ────────────────────────────────────
+  // ── International - Canada / Australia ────────────────────────────────────
   'University of Toronto': ['Goldman Sachs', 'JPMorgan', 'McKinsey', 'RBC Capital Markets', 'BMO Capital Markets', 'Shopify'],
   'UBC': ['Microsoft', 'Goldman Sachs', 'McKinsey', 'Shopify', 'RBC Capital Markets'],
   "Queen's University": ['McKinsey', 'BCG', 'RBC Capital Markets', 'BMO Capital Markets'],
@@ -1492,7 +1492,7 @@ function getSchoolHometownLocation(schoolLabel: string): string | null {
 // rotate through the rest of the pool. This balances stability with discovery.
 
 function _seededShuffle<T>(arr: T[], seed: number): T[] {
-  // Mulberry32 — small deterministic PRNG. Plenty for shuffle.
+  // Mulberry32 - small deterministic PRNG. Plenty for shuffle.
   let s = seed | 0;
   const prng = () => {
     s = (s + 0x6D2B79F5) | 0;
@@ -1521,18 +1521,18 @@ export function pickWithRotation<T>(
   return anchor.concat(shuffled.slice(0, count - anchorCount));
 }
 
-// ── Industry detection — 5th dimension on the analyzer ───────────────────────
+// ── Industry detection - 5th dimension on the analyzer ───────────────────────
 //
-// Industry intent is distinct from a specific role title. "USC grads in Tech —
+// Industry intent is distinct from a specific role title. "USC grads in Tech - 
 // Startup" carries clear sectoral signal (startups in tech) but no role/company.
 // The token list mirrors the strings produced by the Direction extractor on the
 // Profile page, so what the user picks there round-trips here.
 
 const INDUSTRY_TOKENS: TokenEntry[] = [
-  // Tech sub-buckets — the user's "Tech — Startup" interest case
-  { match: ['tech — startup', 'tech - startup', 'tech startups', 'startup', 'startups', 'tech startup'], label: 'Tech — Startup' },
-  { match: ['tech — big', 'tech - big', 'big tech', 'faang'], label: 'Tech — Big' },
-  // Bare "tech" / "in tech" — generic industry signal, lower priority than the specific
+  // Tech sub-buckets - the user's "Tech - Startup" interest case
+  { match: ['tech - startup', 'tech - startup', 'tech startups', 'startup', 'startups', 'tech startup'], label: 'Tech - Startup' },
+  { match: ['tech - big', 'tech - big', 'big tech', 'faang'], label: 'Tech - Big' },
+  // Bare "tech" / "in tech" - generic industry signal, lower priority than the specific
   // sub-buckets above (those run first via the longest-first match order).
   { match: ['in tech', 'into tech', 'tech industry', 'tech'], label: 'Tech' },
   { match: ['ai / ml', 'ai/ml', 'ai and ml', 'ml / ai', 'machine learning', 'artificial intelligence'], label: 'AI / ML' },
@@ -1564,13 +1564,13 @@ const INDUSTRY_TOKENS: TokenEntry[] = [
 //
 // When both a school AND an industry are detected, we show a curated list of
 // firms that match the intersection. Critical for queries like "USC grads in
-// Tech — Startup" where the generic SCHOOL_TOP_EMPLOYERS list (Goldman, McKinsey,
-// Disney) actively misleads the user — they want startup-leaning USC employers.
+// Tech - Startup" where the generic SCHOOL_TOP_EMPLOYERS list (Goldman, McKinsey,
+// Disney) actively misleads the user - they want startup-leaning USC employers.
 
 const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
   USC: {
-    'Tech — Startup': ['Snap', 'Roblox', 'GOAT', 'ServiceTitan', 'Whoop', 'Tinder', 'Hinge', 'Niantic', 'Riot Games', 'Honey', 'ZipRecruiter', 'FabFitFun'],
-    'Tech — Big': ['Snap', 'Google', 'Meta', 'Amazon', 'Apple', 'Microsoft', 'Disney', 'Adobe', 'Salesforce', 'Netflix'],
+    'Tech - Startup': ['Snap', 'Roblox', 'GOAT', 'ServiceTitan', 'Whoop', 'Tinder', 'Hinge', 'Niantic', 'Riot Games', 'Honey', 'ZipRecruiter', 'FabFitFun'],
+    'Tech - Big': ['Snap', 'Google', 'Meta', 'Amazon', 'Apple', 'Microsoft', 'Disney', 'Adobe', 'Salesforce', 'Netflix'],
     'AI / ML': ['Anthropic', 'OpenAI', 'Scale AI', 'Snap', 'Riot Games', 'Disney', 'NVIDIA', 'Google'],
     'Developer Tools': ['ServiceTitan', 'GitHub', 'Stripe', 'Vercel', 'Linear', 'Datadog'],
     'Investment Banking': ['Goldman Sachs', 'Houlihan Lokey', 'Moelis & Company', 'JPMorgan', 'B. Riley', 'Centerview Partners', 'Morgan Stanley', 'Lazard', 'Evercore', 'Lincoln International', 'William Blair', 'PJT Partners'],
@@ -1584,51 +1584,51 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
     'Media & Entertainment': ['Disney', 'NBCUniversal', 'Netflix', 'Warner Bros', 'Paramount', 'Hulu', 'Spotify', 'Riot Games'],
   },
   UCLA: {
-    'Tech — Startup': ['Snap', 'Roblox', 'GOAT', 'ServiceTitan', 'Whoop', 'Tinder', 'Honey', 'Riot Games'],
-    'Tech — Big': ['Google', 'Meta', 'Amazon', 'Apple', 'Microsoft', 'Disney', 'Netflix', 'Snap'],
+    'Tech - Startup': ['Snap', 'Roblox', 'GOAT', 'ServiceTitan', 'Whoop', 'Tinder', 'Honey', 'Riot Games'],
+    'Tech - Big': ['Google', 'Meta', 'Amazon', 'Apple', 'Microsoft', 'Disney', 'Netflix', 'Snap'],
     'AI / ML': ['Anthropic', 'OpenAI', 'Google', 'Scale AI', 'Meta'],
     'Investment Banking': ['Goldman Sachs', 'Houlihan Lokey', 'Moelis & Company', 'JPMorgan', 'B. Riley', 'Morgan Stanley', 'Centerview Partners'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Oliver Wyman', 'L.E.K. Consulting'],
     'Media & Entertainment': ['Disney', 'Netflix', 'NBCUniversal', 'Spotify', 'Warner Bros', 'Hulu'],
   },
   Stanford: {
-    'Tech — Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Notion', 'Figma', 'Vercel', 'Linear', 'Ramp', 'Mercury', 'Retool', 'Scale AI'],
-    'Tech — Big': ['Google', 'Meta', 'Apple', 'Amazon', 'Microsoft', 'Tesla', 'NVIDIA'],
+    'Tech - Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Notion', 'Figma', 'Vercel', 'Linear', 'Ramp', 'Mercury', 'Retool', 'Scale AI'],
+    'Tech - Big': ['Google', 'Meta', 'Apple', 'Amazon', 'Microsoft', 'Tesla', 'NVIDIA'],
     'AI / ML': ['OpenAI', 'Anthropic', 'Google', 'Meta', 'Scale AI', 'NVIDIA', 'Apple'],
     'Venture Capital': ['Sequoia Capital', 'a16z', 'Benchmark', 'Accel', 'Greylock Partners', 'Founders Fund', 'Lightspeed'],
     'Investment Banking': ['Goldman Sachs', 'Morgan Stanley', 'JPMorgan', 'Qatalyst Partners', 'Evercore', 'Centerview Partners'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Oliver Wyman'],
   },
   Harvard: {
-    'Tech — Startup': ['Stripe', 'Notion', 'Anthropic', 'Ramp', 'Mercury', 'Brex'],
+    'Tech - Startup': ['Stripe', 'Notion', 'Anthropic', 'Ramp', 'Mercury', 'Brex'],
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Evercore', 'Lazard', 'PJT Partners', 'Centerview Partners'],
     'Private Equity': ['Blackstone', 'KKR', 'Apollo Global Management', 'Carlyle Group', 'Bain Capital', 'TPG Capital', 'Warburg Pincus'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Oliver Wyman'],
   },
   MIT: {
-    'Tech — Startup': ['Anthropic', 'OpenAI', 'Stripe', 'Notion', 'Scale AI', 'Vercel', 'Databricks'],
-    'Tech — Big': ['Google', 'Meta', 'Microsoft', 'Apple', 'NVIDIA', 'Amazon'],
+    'Tech - Startup': ['Anthropic', 'OpenAI', 'Stripe', 'Notion', 'Scale AI', 'Vercel', 'Databricks'],
+    'Tech - Big': ['Google', 'Meta', 'Microsoft', 'Apple', 'NVIDIA', 'Amazon'],
     'AI / ML': ['OpenAI', 'Anthropic', 'Google', 'Scale AI', 'Meta', 'NVIDIA', 'DeepMind'],
     'Quant Trading': ['Two Sigma', 'Citadel', 'Jane Street', 'Hudson River Trading', 'D. E. Shaw', 'Jump Trading', 'Optiver'],
   },
   UPenn: {
-    'Tech — Startup': ['Stripe', 'Notion', 'Snap', 'Brex', 'Ramp', 'Datadog'],
+    'Tech - Startup': ['Stripe', 'Notion', 'Snap', 'Brex', 'Ramp', 'Datadog'],
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Evercore', 'Lazard', 'Centerview Partners', 'PJT Partners'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Oliver Wyman'],
     'Private Equity': ['Blackstone', 'KKR', 'Apollo Global Management', 'TPG Capital', 'Bain Capital'],
   },
   'UC Berkeley': {
-    'Tech — Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Notion', 'Figma', 'Plaid', 'Linear', 'Vercel', 'Datadog'],
-    'Tech — Big': ['Google', 'Apple', 'Meta', 'Amazon', 'Microsoft', 'NVIDIA', 'Adobe'],
+    'Tech - Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Notion', 'Figma', 'Plaid', 'Linear', 'Vercel', 'Datadog'],
+    'Tech - Big': ['Google', 'Apple', 'Meta', 'Amazon', 'Microsoft', 'NVIDIA', 'Adobe'],
     'AI / ML': ['OpenAI', 'Anthropic', 'Google', 'Meta', 'Scale AI'],
   },
   Michigan: {
-    'Tech — Startup': ['Stripe', 'Snap', 'Roblox', 'Notion', 'Ramp'],
+    'Tech - Startup': ['Stripe', 'Snap', 'Roblox', 'Notion', 'Ramp'],
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Lazard', 'Evercore'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Oliver Wyman'],
   },
   NYU: {
-    'Tech — Startup': ['Datadog', 'Stripe', 'Etsy', 'Snap', 'Peloton', 'WeWork', 'Notion'],
+    'Tech - Startup': ['Datadog', 'Stripe', 'Etsy', 'Snap', 'Peloton', 'WeWork', 'Notion'],
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Centerview Partners', 'Evercore', 'Lazard'],
     'Media & Entertainment': ['NBCUniversal', 'Spotify', 'WeWork', 'Disney', 'Bloomberg'],
   },
@@ -1637,7 +1637,7 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
     'Investment Banking': ['Mediobanca', 'Rothschild & Co', 'Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Lazard', 'UniCredit', 'Intesa Sanpaolo', 'BNP Paribas'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Roland Berger', 'Oliver Wyman'],
     'Private Equity': ['Blackstone', 'KKR', 'Carlyle Group', 'CVC Capital', 'Permira'],
-    'Tech — Startup': ['Klarna', 'Wise', 'Revolut', 'Booking.com', 'Adyen'],
+    'Tech - Startup': ['Klarna', 'Wise', 'Revolut', 'Booking.com', 'Adyen'],
     'FinTech': ['Stripe', 'Klarna', 'Revolut', 'N26', 'Adyen'],
   },
   LSE: {
@@ -1645,30 +1645,30 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Oliver Wyman', 'Roland Berger'],
     'Hedge Funds': ['Citadel', 'Two Sigma', 'Bridgewater', 'Point72', 'Jane Street'],
     'Private Equity': ['Blackstone', 'KKR', 'Apollo Global Management', 'CVC Capital', 'Permira'],
-    'Tech — Startup': ['Wise', 'Revolut', 'Monzo', 'Deliveroo', 'Klarna'],
+    'Tech - Startup': ['Wise', 'Revolut', 'Monzo', 'Deliveroo', 'Klarna'],
   },
   Oxford: {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Rothschild & Co', 'Lazard'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Oliver Wyman'],
-    'Tech — Startup': ['DeepMind', 'Anthropic', 'Wise', 'Darktrace', 'Arm'],
+    'Tech - Startup': ['DeepMind', 'Anthropic', 'Wise', 'Darktrace', 'Arm'],
     'AI / ML': ['DeepMind', 'Anthropic', 'OpenAI', 'Google', 'Meta'],
   },
   Cambridge: {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Rothschild & Co', 'Lazard'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain'],
-    'Tech — Startup': ['DeepMind', 'Arm', 'Darktrace', 'Wise'],
+    'Tech - Startup': ['DeepMind', 'Arm', 'Darktrace', 'Wise'],
     'AI / ML': ['DeepMind', 'Anthropic', 'Google', 'Meta'],
   },
   'Imperial College London': {
-    'Tech — Startup': ['Stripe', 'Wise', 'Revolut', 'DeepMind', 'Anthropic'],
-    'Tech — Big': ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'],
+    'Tech - Startup': ['Stripe', 'Wise', 'Revolut', 'DeepMind', 'Anthropic'],
+    'Tech - Big': ['Google', 'Meta', 'Amazon', 'Microsoft', 'Apple'],
     'AI / ML': ['DeepMind', 'Anthropic', 'OpenAI', 'Google'],
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Barclays'],
   },
   UCL: {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Barclays'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain'],
-    'Tech — Startup': ['DeepMind', 'Stripe', 'Revolut', 'Wise'],
+    'Tech - Startup': ['DeepMind', 'Stripe', 'Revolut', 'Wise'],
   },
   'London Business School': {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Rothschild & Co', 'Barclays'],
@@ -1679,14 +1679,14 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
   'HEC Paris': {
     'Investment Banking': ['BNP Paribas', 'Société Générale', 'Goldman Sachs', 'JPMorgan', 'Lazard', 'Rothschild & Co'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Roland Berger', 'Oliver Wyman'],
-    'Tech — Startup': ['Mistral AI', 'Doctolib', 'Hugging Face', 'Klarna'],
+    'Tech - Startup': ['Mistral AI', 'Doctolib', 'Hugging Face', 'Klarna'],
     'AI / ML': ['Mistral AI', 'Hugging Face', 'Google', 'Meta'],
   },
   INSEAD: {
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Roland Berger'],
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Lazard'],
     'Private Equity': ['Blackstone', 'KKR', 'CVC Capital', 'Permira'],
-    'Tech — Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Klarna', 'Revolut'],
+    'Tech - Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Klarna', 'Revolut'],
   },
   ESCP: {
     'Investment Banking': ['BNP Paribas', 'Société Générale', 'JPMorgan', 'Lazard'],
@@ -1699,7 +1699,7 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
   'IE Business School': {
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Roland Berger'],
     'Investment Banking': ['Santander', 'BBVA', 'Goldman Sachs', 'JPMorgan'],
-    'Tech — Startup': ['Cabify', 'Glovo', 'Wallapop', 'Klarna'],
+    'Tech - Startup': ['Cabify', 'Glovo', 'Wallapop', 'Klarna'],
   },
   ESADE: {
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Roland Berger'],
@@ -1714,8 +1714,8 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Roland Berger'],
   },
   'ETH Zurich': {
-    'Tech — Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Google', 'Meta'],
-    'Tech — Big': ['Google', 'Meta', 'Microsoft', 'Apple'],
+    'Tech - Startup': ['Stripe', 'Anthropic', 'OpenAI', 'Google', 'Meta'],
+    'Tech - Big': ['Google', 'Meta', 'Microsoft', 'Apple'],
     'AI / ML': ['DeepMind', 'OpenAI', 'Anthropic', 'Google'],
   },
   IMD: {
@@ -1725,20 +1725,20 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
   NUS: {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'Standard Chartered', 'DBS'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain'],
-    'Tech — Startup': ['Grab', 'Sea Limited', 'Shopee', 'Stripe'],
+    'Tech - Startup': ['Grab', 'Sea Limited', 'Shopee', 'Stripe'],
   },
   HKUST: {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'HSBC', 'Standard Chartered'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain'],
-    'Tech — Startup': ['Tencent', 'ByteDance', 'Alibaba'],
+    'Tech - Startup': ['Tencent', 'ByteDance', 'Alibaba'],
   },
   HKU: {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'HSBC'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain'],
   },
   'IIT Bombay': {
-    'Tech — Startup': ['Google', 'Meta', 'Microsoft', 'Stripe', 'Anthropic'],
-    'Tech — Big': ['Google', 'Meta', 'Microsoft', 'Amazon'],
+    'Tech - Startup': ['Google', 'Meta', 'Microsoft', 'Stripe', 'Anthropic'],
+    'Tech - Big': ['Google', 'Meta', 'Microsoft', 'Amazon'],
     'AI / ML': ['Google', 'Meta', 'OpenAI', 'Anthropic', 'NVIDIA'],
     'Quant Trading': ['Two Sigma', 'Citadel', 'Jane Street', 'Hudson River Trading'],
   },
@@ -1749,11 +1749,11 @@ const SCHOOL_INDUSTRY_FIRMS: Record<string, Record<string, string[]>> = {
   },
   'University of Toronto': {
     'Investment Banking': ['Goldman Sachs', 'JPMorgan', 'Morgan Stanley', 'RBC Capital Markets', 'BMO Capital Markets'],
-    'Tech — Startup': ['Shopify', 'Stripe', 'Anthropic', 'OpenAI'],
+    'Tech - Startup': ['Shopify', 'Stripe', 'Anthropic', 'OpenAI'],
     'Consulting (MBB)': ['McKinsey', 'BCG', 'Bain', 'Deloitte'],
   },
   UBC: {
-    'Tech — Startup': ['Stripe', 'Shopify', 'Microsoft', 'Anthropic'],
+    'Tech - Startup': ['Stripe', 'Shopify', 'Microsoft', 'Anthropic'],
     'Investment Banking': ['Goldman Sachs', 'RBC Capital Markets', 'BMO Capital Markets'],
   },
   'Western (Ivey)': {
@@ -1774,8 +1774,8 @@ const INDUSTRY_LABEL_TO_SLUG: Record<string, string> = {
   'Venture Capital': 'venture-capital',
   'Hedge Funds': 'hedge-funds',
   'Quant Trading': 'hedge-funds',
-  'Tech — Big': 'tech',
-  'Tech — Startup': 'tech',
+  'Tech - Big': 'tech',
+  'Tech - Startup': 'tech',
   'Tech': 'tech',
   'Consulting (MBB)': 'management-consulting',
   'Consulting (Big 4)': 'management-consulting',
@@ -1796,7 +1796,7 @@ const INDUSTRY_LABEL_TO_SLUG: Record<string, string> = {
 // ── Vague industry → specific entry-level roles ────────────────────────────
 //
 // When the user types a broad industry term ("tech", "finance", "marketing"),
-// the backend (PDL) can't search effectively — it needs concrete role titles.
+// the backend (PDL) can't search effectively - it needs concrete role titles.
 // This map drives the Grammarly-style role-variation card to push the user
 // toward a specific role they can actually search by.
 //
@@ -1805,10 +1805,10 @@ const INDUSTRY_LABEL_TO_SLUG: Record<string, string> = {
 // · Data Scientist · ML Engineer". Clicking one swaps "tech" for the role.
 
 const INDUSTRY_VAGUE_TO_ROLES: Record<string, string[]> = {
-  // Generic Tech — most ambiguous; suggest the four most common roles
+  // Generic Tech - most ambiguous; suggest the four most common roles
   'Tech': ['Software Engineer', 'Product Manager', 'Data Scientist', 'ML Engineer'],
-  'Tech — Big': ['Software Engineer', 'Product Manager', 'Data Scientist'],
-  'Tech — Startup': ['Product Engineer', 'Forward-Deployed Engineer', 'Growth Analyst', 'Software Engineer'],
+  'Tech - Big': ['Software Engineer', 'Product Manager', 'Data Scientist'],
+  'Tech - Startup': ['Product Engineer', 'Forward-Deployed Engineer', 'Growth Analyst', 'Software Engineer'],
   'AI / ML': ['ML Engineer', 'Data Scientist', 'Research Engineer', 'AI Product Manager'],
   'Developer Tools': ['Software Engineer', 'Solutions Engineer', 'Developer Advocate', 'Product Manager'],
   // Finance buckets
@@ -1842,13 +1842,13 @@ function getIndustryRoleSuggestions(industryLabel: string): string[] {
 }
 
 function getIndustryFirms(industryLabel: string): string[] {
-  // Tech — Startup deserves its own list since the generic 'tech' top_companies
+  // Tech - Startup deserves its own list since the generic 'tech' top_companies
   // (Google/Meta/Amazon/Apple/Microsoft) are the opposite of startups.
-  if (industryLabel === 'Tech — Startup') {
+  if (industryLabel === 'Tech - Startup') {
     return ['Stripe', 'Anthropic', 'OpenAI', 'Notion', 'Figma', 'Snap', 'Vercel', 'Linear', 'Ramp', 'Brex'];
   }
   if (industryLabel === 'Tech') {
-    // Generic "tech" — mix of big and notable startups so users see a balanced rail
+    // Generic "tech" - mix of big and notable startups so users see a balanced rail
     return ['Google', 'Meta', 'Apple', 'Stripe', 'Anthropic', 'Snap', 'Microsoft', 'Amazon', 'OpenAI', 'NVIDIA'];
   }
   if (industryLabel === 'AI / ML') {
@@ -1958,7 +1958,7 @@ const SCHOOL_CANONICAL: Record<string, string> = {
   'UT Austin': 'University of Texas at Austin',
   'Boston University': 'Boston University',
   'Boston College': 'Boston College',
-  // US — additional
+  // US - additional
   'UC Irvine': 'University of California, Irvine',
   'UC Santa Cruz': 'University of California, Santa Cruz',
   'UC Riverside': 'University of California, Riverside',
@@ -1972,7 +1972,7 @@ const SCHOOL_CANONICAL: Record<string, string> = {
   'Ohio State': 'Ohio State University',
   'Penn State': 'Pennsylvania State University',
   'Villanova': 'Villanova University',
-  // International — UK
+  // International - UK
   'LSE': 'London School of Economics',
   'Oxford': 'University of Oxford',
   'Cambridge': 'University of Cambridge',
@@ -1981,40 +1981,40 @@ const SCHOOL_CANONICAL: Record<string, string> = {
   "King's College London": "King's College London",
   'Warwick': 'University of Warwick',
   'London Business School': 'London Business School',
-  // International — Italy
+  // International - Italy
   'Bocconi': 'Bocconi University',
   'Politecnico di Milano': 'Politecnico di Milano',
   'LUISS': 'LUISS Guido Carli',
-  // International — France
+  // International - France
   'HEC Paris': 'HEC Paris',
   'INSEAD': 'INSEAD',
   'ESCP': 'ESCP Business School',
   'ESSEC': 'ESSEC Business School',
   'Sciences Po': 'Sciences Po',
-  // International — Spain
+  // International - Spain
   'IE Business School': 'IE Business School',
   'ESADE': 'ESADE Business School',
   'IESE': 'IESE Business School',
-  // International — Germany
+  // International - Germany
   'WHU': 'WHU - Otto Beisheim School of Management',
   'ESMT Berlin': 'ESMT Berlin',
   'Mannheim': 'University of Mannheim',
   'RWTH Aachen': 'RWTH Aachen University',
   'TU Munich': 'Technical University of Munich',
-  // International — Switzerland
+  // International - Switzerland
   'ETH Zurich': 'ETH Zurich',
   'EPFL': 'École Polytechnique Fédérale de Lausanne',
   'IMD': 'IMD Business School',
   'University of St. Gallen': 'University of St. Gallen',
-  // International — Netherlands
+  // International - Netherlands
   'RSM Erasmus': 'Rotterdam School of Management',
   'Erasmus University': 'Erasmus University Rotterdam',
-  // International — Nordics & Ireland
+  // International - Nordics & Ireland
   'Stockholm School of Economics': 'Stockholm School of Economics',
   'KTH Stockholm': 'KTH Royal Institute of Technology',
   'Copenhagen Business School': 'Copenhagen Business School',
   'Trinity College Dublin': 'Trinity College Dublin',
-  // International — Asia
+  // International - Asia
   'NUS': 'National University of Singapore',
   'NTU': 'Nanyang Technological University',
   'HKUST': 'Hong Kong University of Science and Technology',
@@ -2029,7 +2029,7 @@ const SCHOOL_CANONICAL: Record<string, string> = {
   'Peking University': 'Peking University',
   'University of Tokyo': 'The University of Tokyo',
   'Seoul National University': 'Seoul National University',
-  // International — Canada / Australia
+  // International - Canada / Australia
   'University of Toronto': 'University of Toronto',
   'UBC': 'University of British Columbia',
   "Queen's University": "Queen's University",
@@ -2056,7 +2056,7 @@ export function getCanonicalSchool(label: string): string {
  *   "University of California, Irvine alumni who transferred to University of Southern California"
  *
  * Use right before sending the prompt to the search API. The frontend chip
- * keeps showing the short label ("USC") — only the backend payload is expanded.
+ * keeps showing the short label ("USC") - only the backend payload is expanded.
  */
 export function expandQueryForBackend(prompt: string): string {
   const analysis = analyzeQuery(prompt);
@@ -2105,7 +2105,7 @@ export function findCompletion(
   if (/\s$/.test(input)) return null;
 
   const lower = input.toLowerCase();
-  // Priority tokens (from the user's profile — target firms, locations, etc.) get
+  // Priority tokens (from the user's profile - target firms, locations, etc.) get
   // checked first so completions for "I want to meet someone at gold..." resolve
   // to the user's actual target firm "goldman sachs" rather than to whichever
   // baseline lexicon entry happens to win lexicographically.
@@ -2156,7 +2156,7 @@ export function buildNudge(analysis: QueryAnalysis, userSchool: string | null): 
   }
   if (detected >= 3) return null;
 
-  // 1–2 detected — location takes priority (matches user spec ordering).
+  // 1–2 detected - location takes priority (matches user spec ordering).
   if (!analysis.location) {
     return { text: 'Try adding a location for stronger matches', appendOnClick: null };
   }

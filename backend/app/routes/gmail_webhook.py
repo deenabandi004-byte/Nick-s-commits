@@ -1,5 +1,5 @@
 """
-Gmail push notification webhook — receives Pub/Sub notifications and detects replies.
+Gmail push notification webhook - receives Pub/Sub notifications and detects replies.
 """
 import base64
 import hmac
@@ -66,7 +66,7 @@ def _lookup_impression_context(db, uid, contact_email):
             result["score"] = data.get("score")
             result["matched"] = True
         else:
-            # No impression found — user emailed someone not surfaced by the recommender
+            # No impression found - user emailed someone not surfaced by the recommender
             logger.info(f"[gmail_webhook] No impression found for uid={uid} contact_email={contact_email} (manual entry or pre-Track-C contact)")
     except Exception as e:
         logger.warning(f"[gmail_webhook] Impression lookup failed for uid={uid}: {e}")
@@ -209,8 +209,8 @@ def _process_gmail_notification(email_address, history_id):
             is_from_user = from_email and user_email_lower and from_email == user_email_lower
 
             if not is_sent and is_from_user:
-                # User's own message without SENT label — skip (e.g. draft)
-                logger.info(f"[gmail_webhook] uid={uid} msg_id={msg_id} skipping — from user but no SENT label")
+                # User's own message without SENT label - skip (e.g. draft)
+                logger.info(f"[gmail_webhook] uid={uid} msg_id={msg_id} skipping - from user but no SENT label")
                 continue
 
             if is_from_user:
@@ -323,7 +323,7 @@ def _process_gmail_notification(email_address, history_id):
                                 # Draft still exists, skip
                             except Exception as draft_err:
                                 if hasattr(draft_err, "resp") and getattr(draft_err.resp, "status", 0) == 404:
-                                    # Draft is gone — it was sent
+                                    # Draft is gone - it was sent
                                     contact_doc = candidate
                                     contact_ref = candidate.reference
                                     # Store the sent-to email as alternateEmail if different from stored email
@@ -559,7 +559,7 @@ def _process_gmail_notification(email_address, history_id):
             except Exception as rc_err:
                 logger.warning(f"[gmail_webhook] reply_coach spawn failed for contact={contact_id}: {rc_err}")
 
-        # All history delta messages processed successfully — advance the
+        # All history delta messages processed successfully - advance the
         # watchHistoryId pointer. On crash/exception above, this line is
         # skipped, and the next webhook replays from last_history_id (safe
         # because downstream writes are idempotent).

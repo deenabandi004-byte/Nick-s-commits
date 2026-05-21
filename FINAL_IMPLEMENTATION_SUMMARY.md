@@ -22,7 +22,7 @@
 11. ✅ Improved Error Messages
 
 ### Round 3 Improvements (6/6) ✅
-12. ✅ Validation for Coffee Chat Prep
+12. ✅ Validation for Meeting Prep
 13. ✅ Validation for Interview Prep
 14. ✅ Firestore Composite Indexes
 15. ✅ React Error Boundaries
@@ -108,7 +108,7 @@
 - `backend/app/routes/contacts.py` - Validation, pagination, bulk delete
 - `backend/app/routes/runs.py` - Validation, search history
 - `backend/app/routes/firm_search.py` - Validation, atomic credits
-- `backend/app/routes/coffee_chat_prep.py` - Validation, errors
+- `backend/app/routes/meeting_prep.py` - Validation, errors
 - `backend/app/routes/interview_prep.py` - Validation, errors
 
 ### Frontend

@@ -38,7 +38,7 @@ def get_contacts():
         # Query ordered by createdAt descending
         query = contacts_ref.order_by('createdAt', direction=firestore.Query.DESCENDING)
 
-        # Cursor-based pagination (efficient — no offset scan)
+        # Cursor-based pagination (efficient - no offset scan)
         if cursor:
             try:
                 cursor_doc = contacts_ref.document(cursor).get()
@@ -875,7 +875,7 @@ def get_auto_prep(contact_id):
         uid = request.firebase_user['uid']
         db = get_db()
 
-        # Check for existing coffee chat prep
+        # Check for existing meeting prep
         preps_ref = db.collection('users').document(uid).collection('coffee-chat-preps')
         preps = list(preps_ref.where("contactId", "==", contact_id).order_by("createdAt", direction="DESCENDING").limit(1).stream())
         if preps:
@@ -899,9 +899,9 @@ def get_auto_prep(contact_id):
                             return jsonify({"status": "generating"})
                     except Exception:
                         pass
-            # Stale or failed — fall through to trigger
+            # Stale or failed - fall through to trigger
 
-        # No prep exists — trigger on-demand if stage is meeting_scheduled
+        # No prep exists - trigger on-demand if stage is meeting_scheduled
         contact_ref = db.collection('users').document(uid).collection('contacts').document(contact_id)
         contact_doc = contact_ref.get()
         if not contact_doc.exists:

@@ -5,7 +5,7 @@ import { Timestamp } from 'firebase/firestore';
 export interface WeeklySummary {
   contactsGenerated: number;
   firmsSearched: number;
-  coffeeChatsCreated: number;
+  meetingsCreated: number;
   interviewPrepsCreated: number;
   totalActivities: number;
 }
@@ -18,7 +18,7 @@ export interface StreakData {
 
 export interface Goal {
   id: string;
-  type: 'contacts' | 'firms' | 'coffeeChats' | 'outreach';
+  type: 'contacts' | 'firms' | 'meetings' | 'outreach';
   target: number;
   period: 'month' | 'week' | 'year';
   startDate: Timestamp;
@@ -56,7 +56,7 @@ export async function calculateWeeklySummary(userId: string): Promise<WeeklySumm
     const summary: WeeklySummary = {
       contactsGenerated: 0,
       firmsSearched: 0,
-      coffeeChatsCreated: 0,
+      meetingsCreated: 0,
       interviewPrepsCreated: 0,
       totalActivities: weeklyActivities.length,
     };
@@ -70,7 +70,7 @@ export async function calculateWeeklySummary(userId: string): Promise<WeeklySumm
           summary.firmsSearched++;
           break;
         case 'coffeePrep':
-          summary.coffeeChatsCreated++;
+          summary.meetingsCreated++;
           break;
         case 'interviewPrep':
           summary.interviewPrepsCreated++;
@@ -84,7 +84,7 @@ export async function calculateWeeklySummary(userId: string): Promise<WeeklySumm
     return {
       contactsGenerated: 0,
       firmsSearched: 0,
-      coffeeChatsCreated: 0,
+      meetingsCreated: 0,
       interviewPrepsCreated: 0,
       totalActivities: 0,
     };
@@ -233,7 +233,7 @@ export async function calculateGoalProgress(
         }).length;
         break;
       }
-      case 'coffeeChats': {
+      case 'meetings': {
         const activities = await firebaseApi.getActivities(userId, 100);
         current = activities.filter(activity => {
           if (activity.type !== 'coffeePrep' || !activity.timestamp) return false;
@@ -295,7 +295,7 @@ export function getDefaultMonthlyGoals(): Omit<Goal, 'id' | 'startDate' | 'endDa
       period: 'month',
     },
     {
-      type: 'coffeeChats',
+      type: 'meetings',
       target: 10,
       period: 'month',
     },

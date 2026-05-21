@@ -68,7 +68,7 @@ This document outlines the differences between the current pricing page and the 
 - **Basic contact search + AI email drafts** (combined)
 - Gmail integration
 - Directory saves all contacts
-- **1 Coffee Chat Prep + 1 Interview Prep**
+- **1 Meeting Prep + 1 Interview Prep**
 - Exports disabled
 - **No "10 alumni searches"** (present in Index.tsx but not in new design)
 - **No estimated time saved** in new design
@@ -92,7 +92,7 @@ This document outlines the differences between the current pricing page and the 
 - **Everything in Free, plus:**
 - **Full Firm Search**
 - **Smart school/major/career filters**
-- **10 Coffee Chat Preps/month**
+- **10 Meeting Preps/month**
 - **5 Interview Preps/month**
 - **Unlimited directory saving**
 - **Bulk drafting + Export unlocked (CSV & Gmail)** (combined)
@@ -110,7 +110,7 @@ This document outlines the differences between the current pricing page and the 
 - Price: **$34.99/month**
 - **3,000 credits (~200 contacts)**
 - **Everything in Pro, plus:**
-- **Unlimited Coffee Chat Prep**
+- **Unlimited Meeting Prep**
 - **Unlimited Interview Prep**
 - **Priority queue for contact generation**
 - **Personalized outreach templates (tailored to resume)**
@@ -214,7 +214,7 @@ This document outlines the differences between the current pricing page and the 
      - Basic contact search + AI email drafts
      - Gmail integration
      - Directory saves all contacts
-     - 1 Coffee Chat Prep + 1 Interview Prep
+     - 1 Meeting Prep + 1 Interview Prep
      - Exports disabled
 3. **Update button text**: "Start for free" → "Start for Free"
 

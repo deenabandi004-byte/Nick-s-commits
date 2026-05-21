@@ -54,7 +54,7 @@ const ExtensionPrivacyPolicy = () => {
 
               {/* Page Title */}
               <h1 className="text-[28px] font-semibold text-[#0F172A] mb-2">
-                Privacy Policy — Chrome Extension
+                Privacy Policy - Chrome Extension
               </h1>
               <p className="text-gray-500 text-sm mb-2">
                 Offerloop for LinkedIn
@@ -86,7 +86,7 @@ const ExtensionPrivacyPolicy = () => {
                   <li>Find professional email addresses from LinkedIn profiles.</li>
                   <li>Generate personalized outreach emails using AI.</li>
                   <li>Save email drafts to your connected Gmail account.</li>
-                  <li>Generate Coffee Chat Prep documents.</li>
+                  <li>Generate Meeting Prep documents.</li>
                   <li>Generate Interview Prep documents and cover letters from job postings.</li>
                 </ul>
 
@@ -140,7 +140,7 @@ const ExtensionPrivacyPolicy = () => {
                   <li>Look up professional email addresses via our backend service (People Data Labs).</li>
                   <li>Generate personalized outreach emails using AI (OpenAI).</li>
                   <li>Save email drafts to your connected Gmail account at your request.</li>
-                  <li>Generate Coffee Chat Prep, Interview Prep, and cover letter documents.</li>
+                  <li>Generate Meeting Prep, Interview Prep, and cover letter documents.</li>
                   <li>Authenticate your account and manage your subscription.</li>
                   <li>Track credit usage across your account.</li>
                 </ul>
@@ -150,11 +150,11 @@ const ExtensionPrivacyPolicy = () => {
                   The Extension communicates with the following third-party services to deliver its functionality:
                 </p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><strong>Firebase (Google):</strong> Authentication — receives email, profile info, and auth tokens.</li>
-                  <li><strong>People Data Labs:</strong> Email lookup — receives name, company, and position from the LinkedIn page.</li>
-                  <li><strong>OpenAI:</strong> AI-generated emails and prep docs — receives name, company, position, and context needed for personalization.</li>
-                  <li><strong>Stripe:</strong> Payment processing — receives subscription status only (we never receive full card details).</li>
-                  <li><strong>Render:</strong> Backend hosting — all data processed through our API.</li>
+                  <li><strong>Firebase (Google):</strong> Authentication - receives email, profile info, and auth tokens.</li>
+                  <li><strong>People Data Labs:</strong> Email lookup - receives name, company, and position from the LinkedIn page.</li>
+                  <li><strong>OpenAI:</strong> AI-generated emails and prep docs - receives name, company, position, and context needed for personalization.</li>
+                  <li><strong>Stripe:</strong> Payment processing - receives subscription status only (we never receive full card details).</li>
+                  <li><strong>Render:</strong> Backend hosting - all data processed through our API.</li>
                 </ul>
                 <p className="text-gray-600">
                   All third-party providers are bound by contractual obligations to protect your data. We do
@@ -166,13 +166,13 @@ const ExtensionPrivacyPolicy = () => {
                   The Extension requests the following Chrome permissions, limited to what is necessary:
                 </p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><strong>tabs</strong> — Detects when you are on a LinkedIn profile or job page to activate relevant features.</li>
-                  <li><strong>activeTab</strong> — Reads publicly visible LinkedIn page content when you click the Extension icon.</li>
-                  <li><strong>storage</strong> — Saves authentication state and preferences locally in your browser.</li>
-                  <li><strong>identity</strong> — Authenticates you via Google OAuth through Chrome's Identity API.</li>
-                  <li><strong>contextMenus</strong> — Provides right-click menu options for quick access to Extension features.</li>
-                  <li><strong>notifications</strong> — Shows browser notifications when actions complete (e.g., "Draft saved to Gmail").</li>
-                  <li><strong>downloads</strong> — Enables downloading generated PDF documents (Coffee Chat Prep, Interview Prep).</li>
+                  <li><strong>tabs</strong> - Detects when you are on a LinkedIn profile or job page to activate relevant features.</li>
+                  <li><strong>activeTab</strong> - Reads publicly visible LinkedIn page content when you click the Extension icon.</li>
+                  <li><strong>storage</strong> - Saves authentication state and preferences locally in your browser.</li>
+                  <li><strong>identity</strong> - Authenticates you via Google OAuth through Chrome's Identity API.</li>
+                  <li><strong>contextMenus</strong> - Provides right-click menu options for quick access to Extension features.</li>
+                  <li><strong>notifications</strong> - Shows browser notifications when actions complete (e.g., "Draft saved to Gmail").</li>
+                  <li><strong>downloads</strong> - Enables downloading generated PDF documents (Meeting Prep, Interview Prep).</li>
                 </ul>
                 <p className="text-gray-600">
                   Host permissions are limited to{" "}
@@ -195,7 +195,7 @@ const ExtensionPrivacyPolicy = () => {
                   , including the Limited Use requirements. Specifically:
                 </p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><strong>Limited use:</strong> Data collected through the Extension is used only to provide or improve the Extension's single purpose — professional networking and outreach on LinkedIn.</li>
+                  <li><strong>Limited use:</strong> Data collected through the Extension is used only to provide or improve the Extension's single purpose - professional networking and outreach on LinkedIn.</li>
                   <li><strong>Limited transfer:</strong> Data is not transferred to third parties except as necessary to provide the service (our backend, OpenAI for content generation, People Data Labs for email lookup).</li>
                   <li><strong>No advertising:</strong> Data is not used for personalized advertising, retargeting, or interest-based ads.</li>
                   <li><strong>No human access:</strong> Humans do not read user data except: (a) with your explicit consent for support purposes, (b) for security or abuse investigation, (c) to comply with applicable law, or (d) when data is aggregated and anonymized for internal operations.</li>

@@ -49,7 +49,7 @@
 - `connect-grow-hire/src/lib/firebase.ts` initializes the Firebase app with project config
 - `FirebaseAuthContext.tsx` wraps the app, listens for auth state changes via `onIdTokenChanged()`
 
-### 2. Google OAuth Sign-In (App Auth — NOT Gmail)
+### 2. Google OAuth Sign-In (App Auth - NOT Gmail)
 ```
 User clicks "Sign In" → GoogleAuthProvider popup → Firebase Auth
                                                        │
@@ -110,7 +110,7 @@ Fields:
   emailsMonthKey: string         # "YYYY-MM" for monthly email tracking
   emailsUsedThisMonth: number    # Email count this month
   alumniSearchesUsed: number     # Alumni search count (resets monthly for paid)
-  coffeeChatPrepsUsed: number    # Coffee chat prep count
+  coffeeChatPrepsUsed: number    # Meeting prep count
   interviewPrepsUsed: number     # Interview prep count
   resumeFileName: string         # Uploaded resume filename
   resumeText: string             # Extracted resume text
@@ -142,7 +142,7 @@ Fields:
 | **Bulk Drafting** | No | Yes | Yes |
 | **Export** | No | Yes | Yes |
 | **Alumni Searches** | 10 (lifetime) | Unlimited (monthly) | Unlimited (monthly) |
-| **Coffee Chat Preps** | 3 (lifetime) | 10/month | Unlimited |
+| **Meeting Preps** | 3 (lifetime) | 10/month | Unlimited |
 | **Interview Preps** | 2 (lifetime) | 5/month | Unlimited |
 | **Priority Queue** | No | No | Yes |
 | **Personalized Templates** | No | No | Yes |
@@ -187,25 +187,25 @@ Fields:
 ### Credit System
 
 **Firestore Fields:**
-- `users/{uid}.credits` — current balance
-- `users/{uid}.maxCredits` — tier max (300/1500/3000)
-- `users/{uid}.lastCreditReset` — ISO datetime
+- `users/{uid}.credits` - current balance
+- `users/{uid}.maxCredits` - tier max (300/1500/3000)
+- `users/{uid}.lastCreditReset` - ISO datetime
 
 **Credit Costs:**
 - Contact search: 15 credits per search
-- Coffee chat prep: 15 credits (`COFFEE_CHAT_CREDITS` in config.py)
+- Meeting prep: 15 credits (`MEETING_CREDITS` in config.py)
 - Interview prep: 25 credits (`INTERVIEW_PREP_CREDITS` in config.py)
 
 **Deduction Logic (`auth.py`):**
-- `deduct_credits_atomic()` — uses Firestore transactions to prevent race conditions
+- `deduct_credits_atomic()` - uses Firestore transactions to prevent race conditions
 - Checks balance, deducts atomically, returns `(success, remaining_credits)`
 - Falls back to non-transactional read if transaction fails
 
 **Monthly Reset Logic:**
-- `check_and_reset_credits()` — called before every credit check
+- `check_and_reset_credits()` - called before every credit check
 - Compares `lastCreditReset` month/year to current month/year
 - If new calendar month: resets credits to `maxCredits`, updates `lastCreditReset`
-- Free tier limits are LIFETIME (never reset for alumni searches, coffee chat, interview prep counts)
+- Free tier limits are LIFETIME (never reset for alumni searches, meeting, interview prep counts)
 - Pro/Elite usage counters reset every 30 days via `check_and_reset_usage()`
 
 **When Credits Run Out:**
@@ -214,7 +214,7 @@ Fields:
 - `UsageMeter` component displays visual progress bar in sidebar
 
 **Refund Logic:**
-- `refund_credits_atomic()` — atomic credit refund for failed operations
+- `refund_credits_atomic()` - atomic credit refund for failed operations
 - Used when email generation fails after credits were deducted
 
 ---
@@ -302,7 +302,7 @@ Scout AI conversation history.
 Professional info (stored by backend).
 
 ### Subcollection: `users/{uid}/coffee-chat-preps/{docId}`
-Saved coffee chat prep notes.
+Saved meeting prep notes.
 
 ### Subcollection: `users/{uid}/interview-preps/{docId}`
 Saved interview prep notes.
@@ -338,6 +338,6 @@ Fields:
 ## Firestore Security Rules Summary
 
 - Users can read/write their own data and subcollections
-- Tier-related fields (`tier`, `subscriptionTier`, `stripeSubscriptionId`, `stripeCustomerId`, `maxCredits`) are **protected from client-side writes** — only the backend (via Admin SDK) can modify these
+- Tier-related fields (`tier`, `subscriptionTier`, `stripeSubscriptionId`, `stripeCustomerId`, `maxCredits`) are **protected from client-side writes** - only the backend (via Admin SDK) can modify these
 - Export operations require Pro/Elite tier (enforced at Firestore rule level)
 - Default deny: all other documents are inaccessible

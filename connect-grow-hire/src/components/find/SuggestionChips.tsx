@@ -360,7 +360,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
     );
   }
 
-  // Build subtitle from profile — prefer richer signals if present
+  // Build subtitle from profile - prefer richer signals if present
   const uni = shortUniversity(userCtx.university);
   const targetFirmHint =
     userCtx.targetFirms && userCtx.targetFirms.length > 0
@@ -509,7 +509,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                   {rec.reason}
                 </div>
 
-                {/* Why this company — reasoning hint */}
+                {/* Why this company - reasoning hint */}
                 {rec.reasoning && (
                   <div style={{
                     fontSize: 11, padding: '6px 8px',

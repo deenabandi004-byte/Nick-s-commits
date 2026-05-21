@@ -4,11 +4,21 @@ Project briefing for developers and AI assistants working in this repository.
 
 ## What This Is
 
-Offerloop is an AI-powered networking SaaS platform for college students recruiting for internships and full-time roles in consulting, investment banking, and tech. It helps students find professional contacts (via a 2.2B-contact database), generate personalized outreach emails, prepare for coffee chats and interviews, and track their networking pipeline.
+Offerloop is an AI-powered networking SaaS platform for college students recruiting for internships and full-time roles in consulting, investment banking, and tech. It helps students find professional contacts (via a 2.2B-contact database), generate personalized outreach emails, prepare for meetings and interviews, and track their networking pipeline.
 
 **Target market**: College students at USC, UCLA, Michigan, NYU, Georgetown, UPenn, and similar schools breaking into consulting (MBB, Big 4), investment banking (Goldman, JPMorgan, Morgan Stanley), and tech (Google, Meta, Amazon).
 
 **Business metrics**: 300+ active student users, 41 paying subscribers, 22% free-to-paid conversion, $0 CAC (organic growth).
+
+---
+
+## House Style (MUST FOLLOW)
+
+These rules are absolute. They apply to all code, UI copy, comments, docs, blog content, AI prompts, and commit messages, whether written by a human or an AI assistant.
+
+1. **No em dashes.** Never use the em dash character (Unicode U+2014). Use a comma, parentheses, a colon, or a spaced hyphen ` - ` instead. This includes generated content and the text of prompts sent to LLMs.
+2. **No Sparkles / sparkle / ✨ icon.** Do not import or render the lucide `Sparkles` or `Sparkle` icon, and do not use the ✨ emoji in the UI. It reads as generic AI slop. Pick a concrete icon that names the actual function instead, for example `Lightbulb` for suggestions, `Bot` for the Scout assistant, `TrendingUp` for optimization, `FileText` for documents, `Target` for fit analysis.
+3. **The feature is "Meeting Prep"** (formerly "Coffee Chat Prep"). Use "meeting", not "coffee chat", in all new copy and identifiers. The only exceptions are three legacy persisted identifiers documented under Known Fragile Areas.
 
 ---
 
@@ -33,7 +43,7 @@ Offerloop/
 │   ├── app/
 │   │   ├── routes/             # 36 Flask blueprints (thin controllers)
 │   │   ├── services/           # 52 business logic modules (function-based, not classes)
-│   │   ├── models/             # 5 data models (contact, user, enums, coffee_chat_prep)
+│   │   ├── models/             # 5 data models (contact, user, enums, meeting_prep)
 │   │   ├── utils/              # 16 utilities (exceptions, validation, retry, rate limiting)
 │   │   ├── config.py           # All constants, tier configs, env vars, PDL metro areas
 │   │   └── extensions.py       # Auth decorators, Firebase init, rate limiting, CORS
@@ -162,10 +172,10 @@ Chrome Extension ──► same Flask API at https://final-offerloop.onrender.co
 
 **Key files**: `backend/app/routes/outbox.py`, `backend/app/services/outbox_service.py`, `connect-grow-hire/src/pages/NetworkTracker.tsx`, `src/components/tracker/`
 
-### 4. Coffee Chat Prep
+### 4. Meeting Prep
 **How it works**: User selects a contact → background thread (`concurrent.futures`) researches the person (web scraping, company info, career trajectory) → AI generates a PDF prep document with talking points, questions to ask, and background research. Costs 15 credits. Runs async with job ID polling for status.
 
-**Key files**: `backend/app/services/coffee_chat.py` (714 lines), `backend/app/routes/coffee_chat_prep.py`, `connect-grow-hire/src/pages/CoffeeChatPrepPage.tsx`
+**Key files**: `backend/app/services/meeting.py` (714 lines), `backend/app/routes/meeting_prep.py`, `connect-grow-hire/src/pages/MeetingPrepPage.tsx`
 
 ### 5. Interview Prep
 **How it works**: Multi-source content aggregation (Reddit, YouTube transcripts, Glassdoor, job postings) → AI personalizes prep based on user profile → generates PDF with behavioral/technical questions, company research, and strategy. Costs 25 credits.
@@ -256,7 +266,7 @@ Three tiers defined in `backend/app/config.py` (frontend mirror in `connect-grow
 | Batch size | 1 | 5 | 15 |
 | Resume tools | No | Yes | Yes |
 | Firm search | No | Yes | Yes |
-| Coffee chat preps | 3 lifetime | 10/mo | Unlimited |
+| Meeting preps | 3 lifetime | 10/mo | Unlimited |
 | Interview preps | 2 lifetime | 5/mo | Unlimited |
 | Alumni searches | 10 | Unlimited | Unlimited |
 | Smart filters | No | Yes | Yes |
@@ -266,7 +276,7 @@ Three tiers defined in `backend/app/config.py` (frontend mirror in `connect-grow
 | Personalized templates | No | No | Yes |
 | Weekly insights | No | No | Yes |
 
-**Credit costs**: Coffee chat = 15, Interview prep = 25, Scout = 5.
+**Credit costs**: Meeting = 15, Interview prep = 25, Scout = 5.
 
 Credits reset at calendar month boundary (not billing cycle). Atomic Firestore deduction prevents double-spend. Free tier has lifetime limits on some features; Pro/Elite reset monthly.
 
@@ -348,8 +358,8 @@ def do_something():
 - **Models** (`app/models/`): Data normalization and creation helpers.
 - **Utils** (`app/utils/`): Cross-cutting concerns (exceptions, validation schemas, retry, rate limiting).
 - `get_db()` from `extensions.py` returns the Firestore client singleton.
-- Coffee chat prep runs in a background thread (`concurrent.futures`), returns job ID for polling.
-- Rate limiting: 2000/day, 500/hour per user (ID if authed, else IP). Static assets and coffee chat status polling exempted.
+- Meeting prep runs in a background thread (`concurrent.futures`), returns job ID for polling.
+- Rate limiting: 2000/day, 500/hour per user (ID if authed, else IP). Static assets and meeting status polling exempted.
 - CORS: `offerloop.ai`, `www.offerloop.ai`, plus `CORS_ORIGINS` env var. Localhost origins in dev.
 
 ### Error handling
@@ -357,7 +367,7 @@ def do_something():
 Custom exception hierarchy in `app/utils/exceptions.py`:
 - `OfferloopException` (base) → `ValidationError`, `AuthenticationError`, `AuthorizationError`, `NotFoundError`, `InsufficientCreditsError`, `ExternalAPIError`, `RateLimitError`
 - All have `.to_response()` for JSON serialization
-- Pydantic schemas in `app/utils/validation.py`: `ContactSearchRequest`, `FirmSearchRequest`, `CoffeeChatPrepRequest`, `InterviewPrepRequest`
+- Pydantic schemas in `app/utils/validation.py`: `ContactSearchRequest`, `FirmSearchRequest`, `MeetingPrepRequest`, `InterviewPrepRequest`
 
 ---
 
@@ -389,8 +399,8 @@ Custom exception hierarchy in `app/utils/exceptions.py`:
 **Protected pages** (require auth + onboarding):
 - `/find` -- Main search hub (tabs: People, Companies, Hiring Managers). Default landing for authenticated users.
 - `/tracker` -- Network pipeline (Kanban-style buckets: Needs Attention, Active, Done)
-- `/coffee-chat-prep`, `/interview-prep` -- AI generation with stepped progress bars
-- `/coffee-chat-library` -- Library of past coffee chat preps
+- `/meeting-prep`, `/interview-prep` -- AI generation with stepped progress bars
+- `/meeting-library` -- Library of past meeting preps
 - `/job-board` -- Job listings with resume matching
 - `/contact-directory` -- Saved contacts library
 - `/write/resume`, `/write/resume-library` -- Resume builder and library
@@ -496,9 +506,9 @@ pytest tests/ --cov=app              # with coverage
 ```
 
 **31 test files** covering:
-- Email generation, coffee chat, interview prep, resume workshop
+- Email generation, meeting, interview prep, resume workshop
 - Contact import, firm search, job board, outbox
-- Credit system (credit reset audit, coffee chat audit)
+- Credit system (credit reset audit, meeting audit)
 - Validation (Pydantic schemas), exceptions
 - Content aggregation, scraping (Reddit, YouTube, Glassdoor)
 - PDF patching, search pipeline, recruiter email generation
@@ -567,6 +577,8 @@ Set `FLASK_ENV=testing` for test runs. Markers: `unit`, `integration`, `slow`.
 
 10. **Blog posts are auto-generated.** The weekly GitHub Action commits directly to `main`. Posts are markdown with YAML frontmatter in `connect-grow-hire/src/content/blog/`.
 
+11. **Meeting Prep keeps three legacy `coffee_chat` persisted identifiers.** The feature was rebranded "Coffee Chat Prep" to "Meeting Prep" across all code and UI, but three names still address live data and must NOT be renamed in code without a data migration: the Firestore subcollection `users/{uid}/coffee-chat-preps`, the Cloud Storage path prefix `coffee_chat_preps/`, and the user-doc usage field `coffeeChatPrepsUsed`. A migration script is at `backend/scripts/migrate_coffee_chat_to_meeting.py`; after it runs against production, those three can be flipped to `meeting` names. The pre-rebrand API route `/api/coffee-chat-prep` is kept alive as a registered alias in `wsgi.py` for deployed extension installs.
+
 ### Technical debt
 
 - **`job_board.py` is 8,800+ lines** -- the largest single route file. Should be broken into smaller modules.
@@ -594,7 +606,7 @@ Based on git status and recent commits:
 | Service | Purpose | Config |
 |---------|---------|--------|
 | Firebase (offerloop-native) | Auth, Firestore, Cloud Storage | `backend/app/extensions.py`, `src/lib/firebase.ts` |
-| OpenAI (GPT-4) | Email gen, resume optimization, scout, interview/coffee chat prep | `backend/app/services/openai_client.py` |
+| OpenAI (GPT-4) | Email gen, resume optimization, scout, interview/meeting prep | `backend/app/services/openai_client.py` |
 | Anthropic (Claude) | Fallback LLM | `backend/app/services/openai_client.py` |
 | People Data Labs | Contact search (2.2B contacts), enrichment | `backend/app/services/pdl_client.py` |
 | Hunter.io | Email discovery, verification | `backend/app/services/hunter.py` |

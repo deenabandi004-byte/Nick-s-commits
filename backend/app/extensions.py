@@ -111,7 +111,7 @@ def init_firebase(app):
 def get_db():
     """Returns the Firestore client instance."""
     global db
-    # Verbose debug log removed — fires on every request
+    # Verbose debug log removed - fires on every request
     # If db is None but Firebase Admin is initialized, create the client on demand
     if db is None:
         if firebase_admin._apps:
@@ -355,9 +355,10 @@ def get_rate_limit_key():
         request.path.endswith('.woff2')):
         return None  # None exempts from rate limiting
 
-    # Exempt coffee chat prep status polling (GET /api/coffee-chat-prep/<id>)
+    # Exempt meeting prep status polling (GET /api/meeting-prep/<id>).
+    # Also covers the legacy /api/coffee-chat-prep alias used by old extensions.
     if (request.method == 'GET' and
-        _re.match(r'^/api/coffee-chat-prep/[^/]+$', request.path)):
+        _re.match(r'^/api/(?:meeting-prep|coffee-chat-prep)/[^/]+$', request.path)):
         return None
     
     # For authenticated requests, use user ID instead of IP address

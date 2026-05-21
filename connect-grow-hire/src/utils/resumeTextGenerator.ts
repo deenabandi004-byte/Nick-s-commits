@@ -88,7 +88,7 @@ export function generatePlainTextResume(data: ParsedResume | null): string {
     lines.push('ACTIVITIES & INTERESTS');
     for (const e of data.extracurriculars) {
       const parts = [e.organization || e.activity, e.role, e.dates].filter(Boolean);
-      if (parts.length) lines.push(parts.join(' — '));
+      if (parts.length) lines.push(parts.join(' - '));
       if (e.description) lines.push(e.description);
     }
     lines.push('');

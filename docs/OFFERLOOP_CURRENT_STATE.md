@@ -56,9 +56,9 @@
   - Visible to: All users
 
 #### PREPARE Section
-- **Coffee Chat Prep**
-  - Route: `/coffee-chat-prep`
-  - Icon: `CoffeeChatIcon` (custom image: icons8-cup-48.png)
+- **Meeting Prep**
+  - Route: `/meeting-prep`
+  - Icon: `MeetingIcon` (custom image: icons8-cup-48.png)
   - Visible to: All users (with tier-based limits)
 
 - **Interview Prep**
@@ -130,7 +130,7 @@
 - **Route:** `/dashboard`
 - **Purpose:** Central hub for tracking networking progress, managing emails, and planning recruiting timeline
 - **Key Features:**
-  - Activity statistics (contacts sent, replies received, coffee chats booked, time saved)
+  - Activity statistics (contacts sent, replies received, meetings booked, time saved)
   - Streak counter (consecutive days of activity)
   - Weekly summary
   - Quick access to main features
@@ -183,8 +183,8 @@
 - **User Inputs:** Company name, role/job title
 - **Outputs:** List of recruiters/hiring managers with contact info
 
-#### Coffee Chat Prep
-- **Route:** `/coffee-chat-prep`
+#### Meeting Prep
+- **Route:** `/meeting-prep`
 - **Purpose:** Generate comprehensive preparation materials for networking conversations. Get talking points, questions to ask, and research on your contact.
 - **Key Features:**
   - Paste LinkedIn URL to generate prep
@@ -300,9 +300,9 @@
 - **User Inputs:** Search/filter terms
 - **Outputs:** List of saved contacts
 
-#### Coffee Chat Library
-- **Route:** `/coffee-chat-library`
-- **Purpose:** Access all your past coffee chat preparation materials.
+#### Meeting Library
+- **Route:** `/meeting-library`
+- **Purpose:** Access all your past meeting preparation materials.
 - **Key Features:**
   - View past preps
   - Download PDFs
@@ -310,7 +310,7 @@
 - **Credit Cost:** Free (viewing only)
 - **Tier Access:** All
 - **User Inputs:** None
-- **Outputs:** List of saved coffee chat preps
+- **Outputs:** List of saved meeting preps
 
 #### Hiring Manager Tracker
 - **Route:** `/hiring-manager-tracker`
@@ -401,7 +401,7 @@
 - **Monthly Credits:** 300 (~20 contacts)
 - **Max Credits:** 300
 - **Contacts Per Search:** Up to 3 contacts
-- **Coffee Chat Prep:** 3 preps (lifetime, not monthly)
+- **Meeting Prep:** 3 preps (lifetime, not monthly)
 - **Interview Prep:** 2 preps (lifetime, not monthly)
 - **Alumni Searches:** 10 (lifetime cap)
 - **Features:**
@@ -424,7 +424,7 @@
 - **Monthly Credits:** 1,500 (~100 contacts)
 - **Max Credits:** 1,500
 - **Contacts Per Search:** Up to 8 contacts
-- **Coffee Chat Prep:** 10/month (resets on billing cycle)
+- **Meeting Prep:** 10/month (resets on billing cycle)
 - **Interview Prep:** 5/month (resets on billing cycle)
 - **Alumni Searches:** Unlimited
 - **Features:**
@@ -432,7 +432,7 @@
   - Full Firm Search access
   - Resume-matched personalized emails
   - Smart school/major/career filters
-  - 10 Coffee Chat Preps/month
+  - 10 Meeting Preps/month
   - 5 Interview Preps/month
   - Unlimited directory saving
   - Bulk drafting + Export unlocked (CSV & Gmail)
@@ -450,12 +450,12 @@
 - **Monthly Credits:** 3,000 (~200 contacts)
 - **Max Credits:** 3,000
 - **Contacts Per Search:** Up to 15 contacts
-- **Coffee Chat Prep:** Unlimited
+- **Meeting Prep:** Unlimited
 - **Interview Prep:** Unlimited
 - **Alumni Searches:** Unlimited
 - **Features:**
   - Everything in Pro, plus:
-  - Unlimited Coffee Chat Prep
+  - Unlimited Meeting Prep
   - Unlimited Interview Prep
   - Priority queue for contact generation
   - Personalized outreach templates (tailored to resume)
@@ -475,7 +475,7 @@
 |---------|---------|------|
 | Contact Search | 15 | per contact |
 | Firm Search | 5 | per firm |
-| Coffee Chat Prep | 15 | per prep |
+| Meeting Prep | 15 | per prep |
 | Interview Prep | 25 | per prep |
 | Resume Optimization (Job Board) | 20 | per optimization |
 | Cover Letter Generation (Job Board) | 15 | per letter |
@@ -774,7 +774,7 @@ CRITICAL INSTRUCTIONS:
 3. Do NOT mention "click the button below" or reference any buttons in your message - the navigation button appears automatically
 4. Your message should read naturally, e.g., "Head to Contact Search to find professionals" NOT "Click the button below to go to Contact Search"
 5. If user asks about something outside Offerloop, politely redirect: "I'm here to help with Offerloop! What can I help you with on the platform?"
-6. If you're unsure about something, say so—don't make up features
+6. If you're unsure about something, say so - don't make up features
 7. When mentioning credit costs, be specific about how many credits each action costs
 
 AUTO-POPULATE INSTRUCTIONS:
@@ -962,7 +962,7 @@ Scout has knowledge of all pages in the sidebar:
 - Contact Search (`/contact-search`)
 - Firm Search (`/firm-search`)
 - Find Hiring Managers (`/recruiter-spreadsheet`)
-- Coffee Chat Prep (`/coffee-chat-prep`)
+- Meeting Prep (`/meeting-prep`)
 - Interview Prep (`/interview-prep`)
 - Resume (`/write/resume`)
 - Cover Letter (`/write/cover-letter`)
@@ -980,7 +980,7 @@ Scout has knowledge of all pages in the sidebar:
 
 - Contact Search: 15 credits per contact, tier-based limits
 - Firm Search: 5 credits per firm, Pro+ only
-- Coffee Chat Prep: 15 credits per prep, tier-based monthly limits
+- Meeting Prep: 15 credits per prep, tier-based monthly limits
 - Interview Prep: 25 credits per prep, tier-based monthly limits
 - Resume Optimization: 20 credits (Job Board), varies (Resume Workshop)
 - Cover Letter: 15 credits (Job Board), 10 credits (Cover Letter page)
@@ -1008,7 +1008,7 @@ Scout uses keyword matching to suggest routes:
 - Contact Search: "contact", "search", "find contacts", "networking", "outreach", "email", "people", "professionals"
 - Firm Search: "firm", "company", "companies", "employers", "find firms", "search companies"
 - Job Board: "job", "jobs", "listings", "openings", "positions", "resume", "cover letter", "recruiter"
-- Coffee Chat Prep: "coffee chat", "coffee prep", "networking prep", "informational"
+- Meeting Prep: "meeting", "coffee prep", "networking prep", "informational"
 - Interview Prep: "interview prep", "interview preparation", "prepare for interview"
 - Application Lab: "application lab", "fit analysis", "job fit", "analyze application"
 - Pricing: "pricing", "plans", "upgrade", "subscription", "pro", "elite", "credits", "billing"
@@ -1022,7 +1022,7 @@ Scout uses keyword matching to suggest routes:
 
 ### 3.1 Platform Overview
 
-**Offerloop** is an AI-powered networking and recruiting platform designed for students and professionals seeking internships and full-time positions. The platform helps users find contacts at target companies, generate personalized outreach emails, prepare for networking conversations and interviews, and track their recruiting progress—all while saving significant time through automation.
+**Offerloop** is an AI-powered networking and recruiting platform designed for students and professionals seeking internships and full-time positions. The platform helps users find contacts at target companies, generate personalized outreach emails, prepare for networking conversations and interviews, and track their recruiting progress - all while saving significant time through automation.
 
 **Who it's for:** Students and professionals actively recruiting for internships and full-time roles, particularly in competitive fields like investment banking, consulting, technology, and finance.
 
@@ -1069,12 +1069,12 @@ Scout uses keyword matching to suggest routes:
 
 **Tier requirements:** Pro and Elite only (Free tier blocked)
 
-#### Coffee Chat Prep
+#### Meeting Prep
 
 **What it does:** Generates comprehensive preparation materials for networking conversations. Includes talking points, questions to ask, and research on the person and their company.
 
 **How to use it:**
-1. Go to Coffee Chat Prep from the sidebar
+1. Go to Meeting Prep from the sidebar
 2. Find the LinkedIn URL of the person you're meeting
 3. Paste the URL in the input field
 4. Click Generate Prep
@@ -1266,7 +1266,7 @@ Scout uses keyword matching to suggest routes:
 
 #### Prep Generation Failing
 
-**Issue:** Coffee Chat Prep or Interview Prep taking too long or failing
+**Issue:** Meeting Prep or Interview Prep taking too long or failing
 
 **Symptoms:**
 - Loading for more than 5 minutes
@@ -1274,10 +1274,10 @@ Scout uses keyword matching to suggest routes:
 - Error messages
 
 **Solution:**
-1. **Coffee Chat Prep:** Usually takes 1-2 minutes - if stuck longer, refresh and try again
+1. **Meeting Prep:** Usually takes 1-2 minutes - if stuck longer, refresh and try again
 2. **Interview Prep:** Can take 2-3 minutes (normal) - if stuck longer, refresh and try again
 3. Check if the LinkedIn URL or job posting is accessible
-4. Make sure you have enough credits (15 for Coffee Chat, 25 for Interview Prep)
+4. Make sure you have enough credits (15 for Meeting, 25 for Interview Prep)
 5. Check if you've hit your monthly limit (Free/Pro tiers)
 
 #### Email Personalization Issues
@@ -1346,10 +1346,10 @@ Scout uses keyword matching to suggest routes:
 
 **Time saved:** ~20 minutes per contact (manual research + email writing)
 
-#### Preparing for a Coffee Chat
+#### Preparing for a Meeting
 
 **Step-by-step:**
-1. Go to Coffee Chat Prep from the sidebar
+1. Go to Meeting Prep from the sidebar
 2. Find the LinkedIn URL of the person you're meeting
 3. Paste the URL in the input field
 4. Click Generate Prep
@@ -1450,7 +1450,7 @@ Scout uses keyword matching to suggest routes:
 
 **Location:** `backend/app/config.py`, `backend/app/routes/*.py`
 
-- `COFFEE_CHAT_CREDITS = 15`
+- `MEETING_CREDITS = 15`
 - `INTERVIEW_PREP_CREDITS = 25`
 - Contact Search: 15 credits per contact (hardcoded in routes)
 - Firm Search: 5 credits per firm (`CREDITS_PER_FIRM = 5`)

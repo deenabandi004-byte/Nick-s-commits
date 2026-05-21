@@ -51,8 +51,8 @@
    - All resume parsing helpers
 
 5. **services/pdf_builder.py** - PDF generation:
-   - generate_coffee_chat_pdf_simple_fixed
-   - process_coffee_chat_prep_background
+   - generate_meeting_pdf_simple_fixed
+   - process_meeting_prep_background
 
 6. **services/stripe_client.py** - Stripe integration:
    - Stripe webhook handling
@@ -69,8 +69,8 @@
 2. **utils/users.py**:
    - User utility functions
 
-3. **utils/coffee_chat_prep.py**:
-   - Coffee chat utility functions
+3. **utils/meeting_prep.py**:
+   - Meeting utility functions
 
 ### Routes (All route handlers)
 All routes need to be extracted from app.py and organized into blueprint files.

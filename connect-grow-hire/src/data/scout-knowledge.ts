@@ -86,9 +86,9 @@ export const PAGES = {
     keywords: ["job", "jobs", "listings", "board", "openings", "positions", "career", "resume", "cover letter", "recruiter"]
   },
 
-  coffeeChatPrep: {
-    route: "/coffee-chat-prep",
-    name: "Coffee Chat Prep",
+  meetingPrep: {
+    route: "/meeting-prep",
+    name: "Meeting Prep",
     description: "Generate comprehensive preparation materials for networking conversations. Includes talking points, questions to ask, and research on the person and their company.",
     tabs: ["Generate Prep", "Prep Library"],
     features: [
@@ -100,7 +100,7 @@ export const PAGES = {
       "Saved preps in library"
     ],
     creditCost: "15 credits per prep",
-    keywords: ["coffee chat", "prep", "preparation", "networking", "informational", "interview", "questions", "talking points"]
+    keywords: ["meeting", "prep", "preparation", "networking", "informational", "interview", "questions", "talking points"]
   },
 
   interviewPrep: {
@@ -175,16 +175,16 @@ export const PAGES = {
     keywords: ["contacts", "directory", "library", "saved", "list"]
   },
 
-  coffeeChatLibrary: {
-    route: "/coffee-chat-library",
-    name: "Coffee Chat Library",
-    description: "Access all your past coffee chat preparation materials.",
+  meetingLibrary: {
+    route: "/meeting-library",
+    name: "Meeting Library",
+    description: "Access all your past meeting preparation materials.",
     features: [
       "View past preps",
       "Download PDFs",
       "Delete old preps"
     ],
-    keywords: ["coffee chat", "library", "history", "past preps", "saved"]
+    keywords: ["meeting", "library", "history", "past preps", "saved"]
   },
 
   outbox: {
@@ -260,11 +260,11 @@ export const FEATURES = {
     creditUnit: "per firm"
   },
 
-  coffeeChatPrep: {
-    name: "Coffee Chat Prep",
+  meetingPrep: {
+    name: "Meeting Prep",
     whatItDoes: "Generates comprehensive preparation materials for networking conversations. Includes talking points, questions to ask, and research on the person and their company.",
     howToUse: [
-      "Go to Coffee Chat Prep from the sidebar",
+      "Go to Meeting Prep from the sidebar",
       "Paste the LinkedIn URL of the person you're meeting",
       "Click Generate Prep",
       "Wait for the AI to research and compile materials (takes 1-2 minutes)",
@@ -328,7 +328,7 @@ export const FEATURES = {
     tips: [
       "Use a clean, well-formatted PDF for best parsing",
       "Update your resume when you have new experiences",
-      "Resume is used for Coffee Chat Prep similarity analysis too"
+      "Resume is used for Meeting Prep similarity analysis too"
     ]
   },
 
@@ -396,10 +396,10 @@ export const WORKFLOWS = {
     ]
   },
 
-  preparingForCoffeeChat: {
-    name: "Preparing for a Coffee Chat",
+  preparingForMeeting: {
+    name: "Preparing for a Meeting",
     steps: [
-      "Go to Coffee Chat Prep",
+      "Go to Meeting Prep",
       "Find the LinkedIn URL of the person you're meeting",
       "Paste the URL and click Generate",
       "Wait 1-2 minutes for research to complete",
@@ -456,7 +456,7 @@ export const CREDIT_SYSTEM = {
   costs: {
     contactSearch: { amount: 15, unit: "per contact" },
     firmSearch: { amount: 5, unit: "per firm" },
-    coffeeChatPrep: { amount: 15, unit: "per prep" },
+    meetingPrep: { amount: 15, unit: "per prep" },
     interviewPrep: { amount: 25, unit: "per prep" },
     resumeOptimization: { amount: 10, unit: "per optimization" },
     coverLetter: { amount: 10, unit: "per letter" },
@@ -474,7 +474,7 @@ export const CREDIT_SYSTEM = {
         "300 monthly credits",
         "Up to 3 contacts per search",
         "Basic email generation",
-        "Coffee Chat Prep access",
+        "Meeting Prep access",
         "Gmail integration"
       ],
       limitations: [
@@ -507,7 +507,7 @@ export const CREDIT_SYSTEM = {
         "3,000 monthly credits",
         "Up to 15 contacts per search",
         "All Pro features",
-        "Unlimited Coffee Chat Prep",
+        "Unlimited Meeting Prep",
         "Unlimited Interview Prep",
         "Application Lab access",
         "Advanced analytics"
@@ -578,11 +578,11 @@ export const TROUBLESHOOTING = {
   },
 
   prepTakingTooLong: {
-    issue: "Coffee Chat or Interview Prep taking too long",
+    issue: "Meeting or Interview Prep taking too long",
     symptoms: ["Loading for more than 5 minutes", "Stuck on processing"],
     solution: [
       "This is normal for Interview Prep (can take 2-3 minutes)",
-      "Coffee Chat Prep usually takes 1-2 minutes",
+      "Meeting Prep usually takes 1-2 minutes",
       "If stuck longer, refresh and try again",
       "Check if the LinkedIn URL or job posting is accessible"
     ]
@@ -612,13 +612,13 @@ export const ROUTE_MAPPING = {
     "/find": ["contact search", "find contacts", "search contacts", "network", "networking", "outreach", "email"],
     "/find?tab=companies": ["firm search", "company search", "find companies", "find firms", "search firms", "employers"],
     "/job-board": ["job board", "jobs", "job listings", "openings", "positions", "resume", "cover letter", "recruiter"],
-    "/coffee-chat-prep": ["coffee chat", "coffee prep", "networking prep", "informational", "prep materials"],
+    "/meeting-prep": ["meeting", "coffee prep", "networking prep", "informational", "prep materials"],
     "/interview-prep": ["interview prep", "interview preparation", "prepare interview", "interview questions"],
     "/application-lab": ["application lab", "fit analysis", "job fit", "resume edits", "analyze application"],
     "/pricing": ["pricing", "plans", "upgrade", "subscription", "pro", "elite", "credits", "billing", "payment"],
     "/account-settings": ["settings", "account", "profile", "gmail", "resume upload", "preferences"],
     "/contact-directory": ["contact directory", "contact library", "saved contacts", "my contacts"],
-    "/coffee-chat-library": ["coffee chat library", "past preps", "prep history"],
+    "/meeting-library": ["meeting library", "past preps", "prep history"],
     "/home?tab=outbox": ["outbox", "emails", "drafts", "sent", "replies", "messages"],
     "/home?tab=calendar": ["calendar", "timeline", "schedule", "deadlines", "milestones"]
   },
@@ -628,7 +628,7 @@ export const ROUTE_MAPPING = {
     findContacts: "/find",
     searchCompanies: "/find?tab=companies",
     browseJobs: "/job-board",
-    prepareCoffeeChat: "/coffee-chat-prep",
+    prepareMeeting: "/meeting-prep",
     prepareInterview: "/interview-prep",
     analyzeApplication: "/application-lab",
     viewPricing: "/pricing",
@@ -674,7 +674,7 @@ export const SCOUT_CHIPS_BY_PAGE: Record<string, readonly string[]> = {
     "Help me find similar jobs",
     "What do I get on each plan?",
   ],
-  "/coffee-chat-prep": [
+  "/meeting-prep": [
     "What questions should I ask?",
     "Help me research this person",
     "How do I follow up after?",

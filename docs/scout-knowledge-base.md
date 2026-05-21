@@ -132,10 +132,10 @@ Offerloop automates the outreach process, helping users spend less time on tedio
 - **Pro:** Up to 8 contacts per search, resume-matched personalized emails
 - **Elite:** Up to 15 contacts per search, all Pro features
 
-#### Journey 2: Preparing for Coffee Chat
+#### Journey 2: Preparing for Meeting
 
 **Flow:**
-1. User navigates to **Coffee Chat Prep** (`/coffee-chat-prep`)
+1. User navigates to **Meeting Prep** (`/meeting-prep`)
 2. User pastes LinkedIn URL of person they're meeting
 3. Clicks "Generate Prep"
 4. System processes in background (1-2 minutes):
@@ -443,7 +443,7 @@ Finds professionals at companies based on job title, company, and location. Auto
 - If user's Gmail not connected, system falls back to shared Gmail account (if available)
 - User should connect their own Gmail for best experience
 
-### Coffee Chat Prep
+### Meeting Prep
 
 **What it generates:**
 - One-page PDF with:
@@ -702,7 +702,7 @@ Finds professionals at companies based on job title, company, and location. Auto
 - **Contact Search:** Up to 3 contacts per search
 - **Features:**
   - Basic email generation
-  - Coffee Chat Prep: 3 preps (lifetime)
+  - Meeting Prep: 3 preps (lifetime)
   - Interview Prep: 2 preps (lifetime)
   - Gmail integration
   - Contact directory
@@ -721,7 +721,7 @@ Finds professionals at companies based on job title, company, and location. Auto
 - **Features:**
   - Resume-matched personalized emails
   - Full Firm Search access
-  - Coffee Chat Prep: 10/month
+  - Meeting Prep: 10/month
   - Interview Prep: 5/month
   - Smart filters (school, major, career)
   - Bulk drafting
@@ -739,7 +739,7 @@ Finds professionals at companies based on job title, company, and location. Auto
 - **Contact Search:** Up to 15 contacts per search
 - **Features:**
   - All Pro features
-  - Unlimited Coffee Chat Prep
+  - Unlimited Meeting Prep
   - Unlimited Interview Prep
   - Application Lab access
   - Advanced analytics
@@ -753,7 +753,7 @@ Finds professionals at companies based on job title, company, and location. Auto
 **What actions consume credits:**
 - Contact Search: 15 credits per contact
 - Firm Search: 5 credits per firm
-- Coffee Chat Prep: 15 credits per prep
+- Meeting Prep: 15 credits per prep
 - Interview Prep: 25 credits per prep
 - Resume Optimization: 10 credits per optimization
 - Cover Letter: 10 credits per letter
@@ -838,13 +838,13 @@ A: Go to Pricing from the sidebar, compare plans, and click "Upgrade" on your ch
 **Q: Can I get a refund?**
 A: Refunds are handled on a case-by-case basis through Stripe. Contact support if you need assistance with a refund.
 
-### Coffee Chat Prep
+### Meeting Prep
 
-**Q: What is Coffee Chat Prep?**
-A: Coffee Chat Prep generates comprehensive preparation materials for networking conversations. It includes talking points, questions to ask, and research on the person and their company.
+**Q: What is Meeting Prep?**
+A: Meeting Prep generates comprehensive preparation materials for networking conversations. It includes talking points, questions to ask, and research on the person and their company.
 
 **Q: How do I prepare for a networking call?**
-A: Go to Coffee Chat Prep, paste the LinkedIn URL of the person you're meeting, and click Generate Prep. Wait 1-2 minutes for the AI to research and compile materials, then download the PDF.
+A: Go to Meeting Prep, paste the LinkedIn URL of the person you're meeting, and click Generate Prep. Wait 1-2 minutes for the AI to research and compile materials, then download the PDF.
 
 ### Interview Prep
 
@@ -874,11 +874,11 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 **USER:** What is Contact Search?
 **SCOUT:** Contact Search helps you find professionals at companies to network with. Enter a job title, company, and location, and we'll find matching professionals and generate personalized outreach emails. It costs 15 credits per contact. Free users can find up to 3 contacts per search, Pro users up to 8, and Elite users up to 15.
 
-**USER:** How does Coffee Chat Prep work?
-**SCOUT:** Coffee Chat Prep generates preparation materials for networking conversations. Paste the LinkedIn URL of the person you're meeting, and we'll create a PDF with talking points, questions to ask, and research on their company. It takes 1-2 minutes to generate and costs 15 credits per prep.
+**USER:** How does Meeting Prep work?
+**SCOUT:** Meeting Prep generates preparation materials for networking conversations. Paste the LinkedIn URL of the person you're meeting, and we'll create a PDF with talking points, questions to ask, and research on their company. It takes 1-2 minutes to generate and costs 15 credits per prep.
 
 **USER:** What's the difference between Free and Pro?
-**SCOUT:** Free tier gives you 300 credits/month and up to 3 contacts per search with basic email generation. Pro ($9.99/month) gives you 1,500 credits, up to 8 contacts per search, resume-matched personalized emails, full Firm Search access, and more Coffee Chat/Interview Prep access. Would you like me to show you the Pricing page to compare all plans?
+**SCOUT:** Free tier gives you 300 credits/month and up to 3 contacts per search with basic email generation. Pro ($9.99/month) gives you 1,500 credits, up to 8 contacts per search, resume-matched personalized emails, full Firm Search access, and more Meeting/Interview Prep access. Would you like me to show you the Pricing page to compare all plans?
 
 **USER:** How do I use Firm Search?
 **SCOUT:** Firm Search helps you discover companies matching your criteria. Enter a natural language query like "Investment banks in NYC focused on healthcare M&A", select how many firms you want, and click Search. It costs 5 credits per firm and is available for Pro+ users. I can help you navigate there if you'd like!
@@ -927,8 +927,8 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 **USER:** How do I get more credits?
 **SCOUT:** Go to Pricing from the sidebar, compare Free, Pro ($9.99/month), and Elite ($34.99/month) plans, click "Upgrade" on your chosen plan, and complete payment through Stripe. Credits are added immediately and reset monthly based on your subscription date.
 
-**USER:** How do I prepare for a coffee chat?
-**SCOUT:** 1) Go to Coffee Chat Prep, 2) Find the LinkedIn URL of the person you're meeting, 3) Paste the URL and click Generate, 4) Wait 1-2 minutes for research to complete, 5) Review the prep materials (similarity points, questions, company news), 6) Download PDF to reference during the meeting. It costs 15 credits per prep.
+**USER:** How do I prepare for a meeting?
+**SCOUT:** 1) Go to Meeting Prep, 2) Find the LinkedIn URL of the person you're meeting, 3) Paste the URL and click Generate, 4) Wait 1-2 minutes for research to complete, 5) Review the prep materials (similarity points, questions, company news), 6) Download PDF to reference during the meeting. It costs 15 credits per prep.
 
 **USER:** How do I prepare for an interview?
 **SCOUT:** 1) Go to Interview Prep, 2) Get the job posting URL, 3) Paste it and click Generate Prep, 4) Wait 2-3 minutes for Reddit and online research, 5) Review interview process and common questions, 6) Study success tips and red flags, 7) Download PDF for offline review. It costs 25 credits per prep.
@@ -946,7 +946,7 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 **SCOUT:** Use Firm Search (Pro+ feature): 1) Go to Firm Search, 2) Enter a natural language query (e.g., "Investment banks in NYC"), 3) Select batch size, 4) Click Search, 5) Review matching firms and save interesting ones, 6) Then search for contacts at those firms. It costs 5 credits per firm.
 
 **USER:** How do I upload my resume?
-**SCOUT:** 1) Go to Account Settings, 2) Find the Resume section, 3) Click "Upload Resume", 4) Select your PDF resume file, 5) Wait for parsing to complete. Your resume is now used for better email personalization (Pro+) and Coffee Chat Prep similarity analysis.
+**SCOUT:** 1) Go to Account Settings, 2) Find the Resume section, 3) Click "Upload Resume", 4) Select your PDF resume file, 5) Wait for parsing to complete. Your resume is now used for better email personalization (Pro+) and Meeting Prep similarity analysis.
 
 **USER:** How do I check my email replies?
 **SCOUT:** Go to your Home page and click the "Outbox" tab. You'll see all your email threads with reply status. If someone replied, you can see their message and regenerate a reply suggestion. You can also open emails directly in Gmail from there.
@@ -977,8 +977,8 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 **USER:** My emails seem generic
 **SCOUT:** Make sure you've uploaded your resume in Account Settings - Pro+ users get resume-matched personalization. Also complete your profile with career interests and university info. The more information you provide, the better the personalization. Free users get basic emails, so consider upgrading to Pro for resume-matched emails.
 
-**USER:** Coffee Chat Prep is taking too long
-**SCOUT:** Coffee Chat Prep usually takes 1-2 minutes to generate. If it's been longer than 5 minutes, try refreshing and generating again. Make sure the LinkedIn URL is accessible and correct. If it keeps timing out, the profile might be private or the URL might be invalid.
+**USER:** Meeting Prep is taking too long
+**SCOUT:** Meeting Prep usually takes 1-2 minutes to generate. If it's been longer than 5 minutes, try refreshing and generating again. Make sure the LinkedIn URL is accessible and correct. If it keeps timing out, the profile might be private or the URL might be invalid.
 
 **USER:** Interview Prep failed to generate
 **SCOUT:** Interview Prep can take 2-3 minutes and sometimes fails if: 1) The job posting URL is invalid or inaccessible, 2) Reddit scraping finds no results, 3) The job description is too short. Try pasting the job description manually instead of using the URL, or try a different job posting.
@@ -1155,7 +1155,7 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 - Try a different PDF
 - Contact support if persistent
 
-### Coffee Chat Prep Fails
+### Meeting Prep Fails
 
 **What happens:**
 - Status shows "failed"
@@ -1268,7 +1268,7 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 ### Credit Costs Summary
 - Contact Search: 15 credits per contact
 - Firm Search: 5 credits per firm
-- Coffee Chat Prep: 15 credits per prep
+- Meeting Prep: 15 credits per prep
 - Interview Prep: 25 credits per prep
 - Resume Optimization: 10 credits
 - Cover Letter: 10 credits
@@ -1282,7 +1282,7 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 |---------|------|-----|-------|
 | Monthly Credits | 300 | 1,500 | 3,000 |
 | Contacts/Search | 3 | 8 | 15 |
-| Coffee Chat Prep | 3 (lifetime) | 10/month | Unlimited |
+| Meeting Prep | 3 (lifetime) | 10/month | Unlimited |
 | Interview Prep | 2 (lifetime) | 5/month | Unlimited |
 | Firm Search | ❌ | ✅ | ✅ |
 | Resume-Matched Emails | ❌ | ✅ | ✅ |
@@ -1295,13 +1295,13 @@ A: Yes, we only request permissions to create drafts and read email threads you'
 - `/contact-search` - Contact Search
 - `/firm-search` - Firm Search
 - `/job-board` - Job Board
-- `/coffee-chat-prep` - Coffee Chat Prep
+- `/meeting-prep` - Meeting Prep
 - `/interview-prep` - Interview Prep
 - `/application-lab` - Application Lab
 - `/pricing` - Pricing
 - `/account-settings` - Account Settings
 - `/contact-directory` - Contact Directory
-- `/coffee-chat-library` - Coffee Chat Library
+- `/meeting-library` - Meeting Library
 
 ---
 

@@ -83,7 +83,7 @@ export const OnboardingProfile = ({ onNext, onBack, initialData }: OnboardingPro
         setProfileAutoFilled(filled);
       }
     } catch {
-      // Silent — user can fill manually
+      // Silent - user can fill manually
     } finally {
       setLinkedinLoading(false);
     }
@@ -148,7 +148,7 @@ export const OnboardingProfile = ({ onNext, onBack, initialData }: OnboardingPro
         setProfileAutoFilled(filled);
       }
     } catch {
-      // Silent — user can fill manually
+      // Silent - user can fill manually
     } finally {
       setResumeParsing(false);
     }

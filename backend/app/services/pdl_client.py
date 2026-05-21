@@ -187,7 +187,7 @@ def _school_name_matches(school_name: str, aliases: list[str]) -> bool:
         # For short/single-word aliases, use word-boundary regex to prevent false positives
         alias_words = alias.split()
         if len(alias_words) == 1 and len(alias) < 15:
-            # Single word like "columbia" — require word boundary match
+            # Single word like "columbia" - require word boundary match
             pattern = r'\b' + re.escape(alias) + r'\b'
             if re.search(pattern, school_name):
                 # Extra guard: if school_name has a geographic prefix that changes meaning, reject
@@ -1735,7 +1735,7 @@ def execute_pdl_search(headers, url, query_obj, desired_limit, search_type, page
         person_to_batch_index = {}  # Map unique_persons index -> contacts_for_batch index
 
         # ⚡ Short-circuit: skip batch verification if all contacts already have valid PDL work emails
-        # BUT: never short-circuit when there's a target company — PDL emails may be from old jobs
+        # BUT: never short-circuit when there's a target company - PDL emails may be from old jobs
         _PERSONAL_DOMAINS = {'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'protonmail.com', 'me.com', 'live.com', 'msn.com', 'aol.com'}
         _all_have_pdl_email = True
         _pdl_emails_by_idx = {}
@@ -1753,12 +1753,12 @@ def execute_pdl_search(headers, url, query_obj, desired_limit, search_type, page
             _all_have_pdl_email = False  # Force batch verification for target company searches
 
         if _all_have_pdl_email and _pdl_emails_by_idx:
-            print(f"[BatchEmailVerification] ⚡ Skipped — all {len(_pdl_emails_by_idx)} contacts have valid PDL emails")
+            print(f"[BatchEmailVerification] ⚡ Skipped - all {len(_pdl_emails_by_idx)} contacts have valid PDL emails")
             for _sc_idx, _sc_email in _pdl_emails_by_idx.items():
                 batch_email_results[_sc_idx] = {'email': _sc_email, 'verified': False, 'source': 'pdl'}
 
         elif len(unique_persons) > 1:
-            print(f"[BatchEmailVerification] ⚡ Running — {len(unique_persons)} contacts need verification")
+            print(f"[BatchEmailVerification] ⚡ Running - {len(unique_persons)} contacts need verification")
             try:
                 from app.services.hunter import batch_verify_emails_for_contacts
 
@@ -2675,7 +2675,7 @@ def search_contacts_with_pdl(job_title, company, location, max_contacts=8):
 #
 # WHY: PDL's strict match_phrase on "data scientist" at Google+USC returns 6 hits.
 # Expanding to {data scientist, data analyst, data engineer, data science manager}
-# lifts that to 8 — a meaningful gain when the initial query has 0 new contacts
+# lifts that to 8 - a meaningful gain when the initial query has 0 new contacts
 # after dedup. See /tmp/pdl_diagnostic.py for the raw counts.
 _TITLE_FAMILY_EXPANSIONS = {
     # Data family
@@ -2800,10 +2800,10 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
       4 = DROP company; keep school + role-family expansion (catches the
           "international school × US firm" PDL coverage gap, e.g. Bocconi × Morgan
           Stanley returns 0 but Bocconi alums in IB more broadly returns plenty)
-      5 = floor — school only (any reachable alum). Last resort before giving up.
+      5 = floor - school only (any reachable alum). Last resort before giving up.
 
     Company is dropped at level 4+; school filter is the only thing that survives
-    to level 5. The user's intent is "find someone from my network" — at the floor
+    to level 5. The user's intent is "find someone from my network" - at the floor
     we ensure they at least see SOMEONE from the school they care about.
     """
     must = []
@@ -2814,13 +2814,13 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
 
     if retry_level == 0:
         # Full: match_phrase for every title variation. For single-word tokens,
-        # match_phrase is equivalent to a term lookup — so it already covers
+        # match_phrase is equivalent to a term lookup - so it already covers
         # "engineer" alone. We deliberately do NOT emit a bare
         # {"match": {"job_title": <single-token>}} clause: PDL silently returns
         # 0 hits for plain `match` queries on common single tokens like "data"
         # (confirmed via /tmp/pdl_diagnostic.py Q5a: 0 results despite the
         # match_phrase variant in Q3 returning 6).
-        # Multi-word titles use match_phrase ONLY to avoid false positives —
+        # Multi-word titles use match_phrase ONLY to avoid false positives - 
         # e.g. "investment banking analyst" as a plain match would OR-tokenize
         # and match any VP with "investment" or "banking" anywhere in their profile.
         if titles:
@@ -2832,7 +2832,7 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
     elif retry_level == 1:
         # Retry 1 (title broadening rung): expand the role family via match_phrase
         # bool.should. This replaces the old plain `match` on `titles[0]`, which
-        # silently returned 0 hits for common single tokens (PDL quirk — see
+        # silently returned 0 hits for common single tokens (PDL quirk - see
         # /tmp/pdl_diagnostic.py Q5a). Broadening from ["data scientist"] to
         # {data scientist, data analyst, data engineer, data science manager}
         # catches adjacent roles the user likely still wants to connect with.
@@ -2849,7 +2849,7 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
         else:
             must.append({"exists": {"field": "job_title"}})
     elif retry_level == 2:
-        # Retry 2: seniority-adjacent title expansion — keeps intent but widens to
+        # Retry 2: seniority-adjacent title expansion - keeps intent but widens to
         # adjacent seniority levels (e.g. analyst → associate, senior analyst)
         if titles:
             adjacent_titles = _expand_titles_seniority_adjacent(titles)
@@ -2873,13 +2873,13 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
         # Retry 4: re-introduce broadened title (school × role family, no company)
         # Use case: international school × US firm where PDL coverage is thin.
         # Bocconi × Morgan Stanley returns 0; Bocconi alumni in IB roles broadly
-        # is the right rescue path — keep their role intent, ditch the specific firm.
+        # is the right rescue path - keep their role intent, ditch the specific firm.
         if titles:
             expanded_titles = _expand_titles_for_broadening(titles)
             title_clauses = [{"match_phrase": {"job_title": t}} for t in expanded_titles]
             must.append({"bool": {"should": title_clauses}})
     else:
-        # Retry 5: school-only floor — any reachable alum
+        # Retry 5: school-only floor - any reachable alum
         pass
 
     # ---- Location block (skip when retry_level >= 4) ----
@@ -2897,7 +2897,7 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
             if strategy == "country_only":
                 location_must = [{"term": {"location_country": "united states"}}]
             else:
-                # Flatten metro, city, and state into a single should block —
+                # Flatten metro, city, and state into a single should block - 
                 # matching ANY of them is sufficient (many PDL profiles have metro but not region)
                 location_should = []
                 if metro_location:
@@ -2909,13 +2909,13 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
 
                 location_must = [{"term": {"location_country": "united states"}}]
                 if location_should:
-                    # PDL doesn't support minimum_should_match — bool.should defaults to "at least one"
+                    # PDL doesn't support minimum_should_match - bool.should defaults to "at least one"
                     location_must.append({"bool": {"should": location_should}})
             loc_block = {"bool": {"must": location_must}}
             must.append(loc_block)
 
     # ---- Company block: dropped at retry_level >= 4 ----
-    # The "international school × US firm" PDL coverage gap is the main motivator —
+    # The "international school × US firm" PDL coverage gap is the main motivator - 
     # at level 4 we try to find ANY alum of the school in the role family (no firm
     # constraint) so users get someone reachable instead of zero results.
     # P1 FIX: Clean company names via PDL cleaner API before querying (e.g. "JP Morgan" → "JPMorgan Chase & Co.")
@@ -2962,7 +2962,7 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
             must.append({"bool": {"should": education_clauses}})
 
     # P3 FIX: Add industry filter when specified (e.g. "consulting", "financial services")
-    # Drop industry at retry_level >= 1 — PDL taxonomy often doesn't match
+    # Drop industry at retry_level >= 1 - PDL taxonomy often doesn't match
     # the prompt parser's industry guesses, and combined with title + location + company
     # it over-constrains the query causing 0 results at level 0
     if retry_level < 1:
@@ -3011,24 +3011,24 @@ def _contact_matches_prompt_criteria(contact, parsed_prompt, target_company):
     # Company check: if user specified a company, contact must be currently at target company
     if companies and target_company:
         if not is_current:
-            print(f"[PostFilter] Result for {name}: FAIL — not currently at target company (expected={target_company})")
+            print(f"[PostFilter] Result for {name}: FAIL - not currently at target company (expected={target_company})")
             return False, "not_currently_at_target"
         actual = contact_company
         if not actual:
-            print(f"[PostFilter] Result for {name}: FAIL — company mismatch (expected={target_company}, got=no company)")
+            print(f"[PostFilter] Result for {name}: FAIL - company mismatch (expected={target_company}, got=no company)")
             return False, "company_mismatch"
         cleaned_expected = clean_company_name(target_company).lower().strip()
         cleaned_actual = clean_company_name(actual).lower().strip()
         if (cleaned_expected != cleaned_actual
                 and not (cleaned_expected in cleaned_actual and len(cleaned_expected) >= 3)
                 and not (cleaned_actual in cleaned_expected and len(cleaned_actual) >= 3)):
-            print(f"[PostFilter] Result for {name}: FAIL — company mismatch (expected={target_company}, got={actual})")
+            print(f"[PostFilter] Result for {name}: FAIL - company mismatch (expected={target_company}, got={actual})")
             return False, "company_mismatch"
 
     # School check: if user specified schools, contact must have at least one matching school.
     # Delegate to contact_matches_school (strictness="loose") which uses word-boundary matching
     # (_school_name_matches) and the geographic-qualifier guard. Stage 4's match_phrase already
-    # did the strict filter, so this is a post-fetch sanity check — "loose" is appropriate.
+    # did the strict filter, so this is a post-fetch sanity check - "loose" is appropriate.
     if schools:
         alias_set = []
         for school in schools:
@@ -3037,7 +3037,7 @@ def _contact_matches_prompt_criteria(contact, parsed_prompt, target_company):
             print(f"[PostFilter] Result for {name}: PASS (no school aliases to check)")
             return True, None
         if not contact_matches_school(contact, alias_set, strictness="loose"):
-            print(f"[PostFilter] Result for {name}: FAIL — school mismatch (expected one of {schools}, got College={contact.get('College')})")
+            print(f"[PostFilter] Result for {name}: FAIL - school mismatch (expected one of {schools}, got College={contact.get('College')})")
             return False, "school_mismatch"
         # City-name guard: if the only evidence is a College field that is JUST a generic
         # city-level alias (e.g. College="New York" for school="New York University"), reject.
@@ -3053,7 +3053,7 @@ def _contact_matches_prompt_criteria(contact, parsed_prompt, target_company):
         has_school_word_in_college = any(sw in college_lower for sw in _SCHOOL_WORDS)
         has_school_word_in_edu_top = any(sw in education_top_lower for sw in _SCHOOL_WORDS)
         if college_lower and not has_school_word_in_college and not has_school_word_in_edu_top and not has_structured_edu:
-            # Check if any aliases that could match the College field are "generic" — no school word and >5 chars.
+            # Check if any aliases that could match the College field are "generic" - no school word and >5 chars.
             # Short aliases (≤5 chars like "usc", "mit", "nyu") are institutional acronyms and are safe.
             def _is_generic_alias(a: str) -> bool:
                 al = a.lower().strip()
@@ -3065,7 +3065,7 @@ def _contact_matches_prompt_criteria(contact, parsed_prompt, target_company):
                 for a in alias_set
             )
             if generic_matching:
-                print(f"[PostFilter] Result for {name}: FAIL — school mismatch (College={college!r} is a generic/city-name alias without school keyword)")
+                print(f"[PostFilter] Result for {name}: FAIL - school mismatch (College={college!r} is a generic/city-name alias without school keyword)")
                 return False, "school_mismatch"
 
     print(f"[PostFilter] Result for {name}: PASS")
@@ -3102,7 +3102,7 @@ def _compute_profile_rank_score(contact: dict, user_profile: dict | None) -> int
     """
     Compute a soft ranking score for a contact based on the searching student's profile.
     Higher score = more relevant to this specific student.
-    This is a SECONDARY sort — the user's explicit search query is always the primary filter.
+    This is a SECONDARY sort - the user's explicit search query is always the primary filter.
     """
     if not user_profile:
         return 0
@@ -3221,7 +3221,7 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
         if attempt >= 1:
             elapsed = time.time() - retry_start_time
             if elapsed > RETRY_WALL_TIME_BUDGET_SEC:
-                print(f"[PDL Retry] Wall-time cap hit at attempt {attempt} (elapsed={elapsed:.2f}s > budget={RETRY_WALL_TIME_BUDGET_SEC}s) — stopping retry chain")
+                print(f"[PDL Retry] Wall-time cap hit at attempt {attempt} (elapsed={elapsed:.2f}s > budget={RETRY_WALL_TIME_BUDGET_SEC}s) - stopping retry chain")
                 break
             if attempt == 1:
                 print(f"[PDL Retry] Attempt 1: broaden title via role-family match_phrase expansion; keep company + school + location")
@@ -3232,7 +3232,7 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
             elif attempt == 4:
                 print(f"[PDL Retry] Attempt 4: drop company; keep school + broadened role family (international-school × US-firm gap rescue)")
             else:
-                print(f"[PDL Retry] Attempt 5: floor — school only (any reachable alum)")
+                print(f"[PDL Retry] Attempt 5: floor - school only (any reachable alum)")
         query_obj = build_query_from_prompt(parsed_prompt, retry_level=attempt)
         raw_contacts, status_code = execute_pdl_search(
             headers=headers,
@@ -3252,7 +3252,7 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
         attempt_filtered = []
         attempt_dropped = 0
         # At retry levels 4+ we intentionally dropped the company filter from
-        # the query, so post-validation can't require a company match either —
+        # the query, so post-validation can't require a company match either - 
         # otherwise everything would get dropped. Strip the company expectation
         # when evaluating contacts at those broader rungs.
         effective_parsed = parsed_prompt
@@ -3286,7 +3286,7 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
             break
         # No NEW contacts on this rung (all hits were already saved or post-filter dropped).
         # Try the next broader rung. Aggregated `already_saved` carries across attempts.
-        print(f"[PDL Retry] Attempt {attempt}: raw={len(raw_contacts)}, already_saved_cumulative={len(already_saved)}, new=0 — trying next rung")
+        print(f"[PDL Retry] Attempt {attempt}: raw={len(raw_contacts)}, already_saved_cumulative={len(already_saved)}, new=0 - trying next rung")
 
     # Build adjacency metadata to explain what happened
     adjacency_metadata = None
@@ -3313,7 +3313,7 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
     if not filtered and not already_saved:
         return [], 0, [], adjacency_metadata
     # Sort by profile relevance (descending), then LinkedIn presence.
-    # Profile ranking is a soft preference — it reorders but never drops contacts.
+    # Profile ranking is a soft preference - it reorders but never drops contacts.
     if user_profile:
         for c in filtered:
             c["_profile_rank"] = _compute_profile_rank_score(c, user_profile)
@@ -3330,10 +3330,10 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
     return filtered[:max_contacts], retry_level_used, already_saved, adjacency_metadata
 
 
-def build_coffee_chat_data(pdl_person: dict, best_email: str) -> dict:
+def build_meeting_data(pdl_person: dict, best_email: str) -> dict:
     """
-    Build the full coffee_chat_data dict from a raw PDL person response.
-    Pass through ALL useful fields — do not flatten or discard.
+    Build the full meeting_data dict from a raw PDL person response.
+    Pass through ALL useful fields - do not flatten or discard.
     """
     first = pdl_person.get("first_name", "") or ""
     last  = pdl_person.get("last_name", "")  or ""
@@ -3417,7 +3417,7 @@ def build_coffee_chat_data(pdl_person: dict, best_email: str) -> dict:
     city    = loc.get("locality") or pdl_person.get("location_locality") or ""
     state   = loc.get("region")   or pdl_person.get("location_region")   or ""
     country = loc.get("country")  or pdl_person.get("location_country")  or ""
-    # PDL can return booleans for location fields — coerce to string, skip booleans
+    # PDL can return booleans for location fields - coerce to string, skip booleans
     city    = str(city) if city and not isinstance(city, bool) else ""
     state   = str(state) if state and not isinstance(state, bool) else ""
     country = str(country) if country and not isinstance(country, bool) else ""
@@ -3528,14 +3528,14 @@ def enrich_linkedin_profile(linkedin_url):
                 enriched = extract_contact_from_pdl_person_enhanced(pdl_person)
                 best_email = (enriched or {}).get('Email', '') if enriched else ''
 
-                # Build rich coffee chat data directly from raw PDL response
-                coffee_chat_data = build_coffee_chat_data(pdl_person, best_email)
+                # Build rich meeting data directly from raw PDL response
+                meeting_data = build_meeting_data(pdl_person, best_email)
 
-                print(f"[CoffeeChat] skills={len(coffee_chat_data['skills'])}, interests={len(coffee_chat_data['interests'])}, industry={coffee_chat_data['industry']}")
+                print(f"[Meeting] skills={len(meeting_data['skills'])}, interests={len(meeting_data['interests'])}, industry={meeting_data['industry']}")
 
                 print(f"Caching enriched data for: {linkedin_url}")
-                set_pdl_cache(linkedin_url, coffee_chat_data)
-                return coffee_chat_data
+                set_pdl_cache(linkedin_url, meeting_data)
+                return meeting_data
             else:
                 print(f"PDL returned status {person_data.get('status')} - no data found")
                 if person_data.get('error'):

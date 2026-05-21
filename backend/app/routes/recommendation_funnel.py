@@ -109,7 +109,7 @@ def funnel():
     if not db:
         return jsonify({"error": "Database unavailable"}), 503
 
-    # Range query on a single field (event_date) — works without composite index.
+    # Range query on a single field (event_date) - works without composite index.
     # Surface filter applied in Python so we never need a composite (range+equality).
     query = (
         db.collection("recommendation_events")

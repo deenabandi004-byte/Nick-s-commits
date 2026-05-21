@@ -59,7 +59,7 @@ function actionChip(c: OutboxThread, bucket: BucketType): Chip | null {
   if (c.nextFollowUpAt && new Date(c.nextFollowUpAt) <= new Date()) {
     return { label: "Follow Up", className: "bg-orange-100 text-orange-700" };
   }
-  // Sent / waiting — open thread
+  // Sent / waiting - open thread
   if (c.pipelineStage === "email_sent" || c.pipelineStage === "waiting_on_reply") {
     if (c.gmailThreadId) return { label: "Open Thread", className: "bg-gray-100 text-gray-600" };
   }

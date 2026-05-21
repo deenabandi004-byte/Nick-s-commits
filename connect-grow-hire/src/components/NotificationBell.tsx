@@ -101,7 +101,7 @@ export const NotificationBell: React.FC<NotificationBellProps> = ({
   // Tooltip text
   const getTooltip = () => {
     if (notificationsMuted) return 'Notifications muted';
-    if (hasUnreadReply) return 'Reply received — open thread';
+    if (hasUnreadReply) return 'Reply received - open thread';
     return 'View sent thread';
   };
 

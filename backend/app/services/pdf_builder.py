@@ -1,5 +1,5 @@
 """
-PDF builder service - generate coffee chat prep PDFs (WeasyPrint + Jinja2)
+PDF builder service - generate meeting prep PDFs (WeasyPrint + Jinja2)
 and resume/cover letter PDFs (ReportLab)
 """
 import logging
@@ -55,7 +55,7 @@ def _parse_strategy_sections(strategy_md: str) -> dict:
     if not strategy_md:
         return sections
 
-    # Extract DO THIS items — stop at AVOID THIS or end of string
+    # Extract DO THIS items - stop at AVOID THIS or end of string
     do_match = re.search(
         r'\*\*DO THIS\*\*.*?\n(.*?)(?=\*\*AVOID THIS\*\*|\Z)',
         strategy_md, re.IGNORECASE | re.DOTALL
@@ -68,7 +68,7 @@ def _parse_strategy_sections(strategy_md: str) -> dict:
             if line.strip() and re.match(r'^[-•]', line.strip())
         ]
 
-    # Extract AVOID THIS items — stop at next header or end of string
+    # Extract AVOID THIS items - stop at next header or end of string
     avoid_match = re.search(
         r'\*\*AVOID THIS\*\*.*?\n(.*?)(?=\*\*[A-Z]|\Z)',
         strategy_md, re.IGNORECASE | re.DOTALL
@@ -89,7 +89,7 @@ def _parse_strategy_sections(strategy_md: str) -> dict:
     return sections
 
 
-def render_coffee_chat_html(
+def render_meeting_html(
     contact_data: dict,
     research: dict,
     ai_output: dict,
@@ -97,7 +97,7 @@ def render_coffee_chat_html(
 ) -> str:
     """Render Jinja2 template to HTML string."""
     env = Environment(loader=FileSystemLoader(_TEMPLATES_DIR))
-    tmpl = env.get_template("coffee_chat_prep.html")
+    tmpl = env.get_template("meeting_prep.html")
 
     strategy_raw    = ai_output.get("strategy", "")
     strategy_sections = _parse_strategy_sections(strategy_raw)
@@ -126,18 +126,18 @@ def render_coffee_chat_html(
     )
 
 
-def generate_coffee_chat_pdf_v2(
+def generate_meeting_pdf_v2(
     contact_data: dict,
     research: dict,
     ai_output: dict,
     user_context: dict,
 ) -> BytesIO:
     """
-    Generate a 3-page Coffee Chat Prep PDF using WeasyPrint + Jinja2.
+    Generate a 3-page Meeting Prep PDF using WeasyPrint + Jinja2.
     Returns a BytesIO buffer containing the PDF.
     """
     try:
-        html_string = render_coffee_chat_html(contact_data, research, ai_output, user_context)
+        html_string = render_meeting_html(contact_data, research, ai_output, user_context)
         _devnull = open(os.devnull, "w")
         _old_stderr = os.dup(2)
         os.dup2(_devnull.fileno(), 2)
@@ -221,8 +221,8 @@ async def build_resume_pdf_from_text(resume_text: str) -> bytes:
             if line.isupper() or (line.endswith(':') and len(line) < 50):
                 current_section = line.rstrip(':')
                 story.append(_safe_paragraph(f"<b>{current_section}</b>", section_title))
-            elif line.startswith(('•', '-', '*', '—')):
-                bullet_text = line.lstrip('•-*— ').strip()
+            elif line.startswith(('•', '-', '*', ' - ')):
+                bullet_text = line.lstrip('•-* - ').strip()
                 story.append(Paragraph(f"<bullet>•</bullet> {bullet_text}", bullet_style))
             elif len(story) == 0 and len(line) < 60:
                 story.append(_safe_paragraph(f"<b>{line}</b>", name_style))

@@ -18,7 +18,7 @@ interface UpgradeBannerProps {
   requiredCredits: number;
   /** Current credits */
   currentCredits: number;
-  /** Feature name for messaging (e.g., "Coffee Chat Preps", "Interview Preps") */
+  /** Feature name for messaging (e.g., "Meeting Preps", "Interview Preps") */
   featureName: string;
   /** Next tier name for upgrade message */
   nextTier: 'Pro' | 'Elite';

@@ -16,7 +16,7 @@ from .app.routes.contacts import contacts_bp
 from .app.routes.runs import runs_bp
 from .app.routes.enrichment import enrichment_bp
 from .app.routes.resume import resume_bp
-from .app.routes.coffee_chat_prep import coffee_chat_bp
+from .app.routes.meeting_prep import meeting_bp
 from .app.routes.interview_prep import interview_prep_bp
 from .app.routes.billing import billing_bp
 from .app.routes.users import users_bp
@@ -69,7 +69,7 @@ def create_app() -> Flask:
     # --- Prerender.io middleware for bot crawlers (SEO/AEO) ---
     PRERENDER_TOKEN = os.environ.get("PRERENDER_TOKEN")
     if not PRERENDER_TOKEN:
-        app.logger.warning("PRERENDER_TOKEN not set — bot SSR via Prerender.io is disabled")
+        app.logger.warning("PRERENDER_TOKEN not set - bot SSR via Prerender.io is disabled")
     else:
         app.logger.info(f"PRERENDER_TOKEN loaded: {PRERENDER_TOKEN[:6]}... ({len(PRERENDER_TOKEN)} chars)")
     BOT_AGENTS = [
@@ -185,7 +185,12 @@ def create_app() -> Flask:
     app.register_blueprint(runs_bp)
     app.register_blueprint(enrichment_bp)
     app.register_blueprint(resume_bp)
-    app.register_blueprint(coffee_chat_bp)
+    app.register_blueprint(meeting_bp)
+    # Backward-compat alias: deployed Chrome/Safari extensions still call the
+    # pre-rebrand /api/coffee-chat-prep endpoint. Same views, legacy URL prefix.
+    app.register_blueprint(
+        meeting_bp, url_prefix="/api/coffee-chat-prep", name="meeting_prep_legacy"
+    )
     app.register_blueprint(interview_prep_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(users_bp)
@@ -417,7 +422,7 @@ def create_app() -> Flask:
     # ---- Monthly credit refill cron (every 1 hour) ----------------------
     #
     # Safety net for monthly credit/usage resets. Stripe's invoice.payment_succeeded
-    # webhook fires once per billing cycle — annual subscribers would only get
+    # webhook fires once per billing cycle - annual subscribers would only get
     # refilled once a year without this. Also covers monthly subs whose webhook
     # was dropped or delayed.
     #
@@ -482,7 +487,7 @@ def create_app() -> Flask:
                         try:
                             doc = db.collection("system").document(scanner_name).get()
                             if not doc.exists:
-                                # Scanner hasn't run yet — only warn if it
+                                # Scanner hasn't run yet - only warn if it
                                 # should have had enough time (> threshold).
                                 _watchdog_logger.debug(
                                     "No health doc for %s (may not have run yet)",
@@ -604,7 +609,7 @@ def create_app() -> Flask:
     def _agent_digest_loop():
         TWENTY_FOUR_HOURS = 86400
         _digest_logger.info("Agent digest daemon started (interval=24h)")
-        time.sleep(3600)  # boot stabilization — 1 hour
+        time.sleep(3600)  # boot stabilization - 1 hour
         while True:
             try:
                 with app.app_context():

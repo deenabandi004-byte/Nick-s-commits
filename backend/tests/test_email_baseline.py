@@ -701,7 +701,7 @@ class TestGetUserSchoolIntegration:
 
 
 # ---------------------------------------------------------------------------
-# Aggregation scanner gate (C2 coordination PR — daemon contract)
+# Aggregation scanner gate (C2 coordination PR - daemon contract)
 # ---------------------------------------------------------------------------
 #
 # Contract: docs/designs/tracker-daemon-contract.md
@@ -723,7 +723,7 @@ def _aggregation_system_doc_mock(last_success_iso=None, exists=True):
 
 
 class TestAggregationScannerGate:
-    """Gate logic for aggregate_email_outcomes — Sunday AND 3-9am AND >6d."""
+    """Gate logic for aggregate_email_outcomes - Sunday AND 3-9am AND >6d."""
 
     def test_gate_constants_match_contract(self):
         assert AGGREGATION_SUNDAY_WEEKDAY == 6  # Sun=6
@@ -739,14 +739,14 @@ class TestAggregationScannerGate:
         assert _should_run_aggregation_scanner(db, now=mon) is False
 
     def test_sunday_before_window_returns_false(self):
-        """Sunday 2am UTC — before 3am window."""
+        """Sunday 2am UTC - before 3am window."""
         db = _aggregation_system_doc_mock(exists=False)
         sun_early = datetime(2026, 4, 12, 2, 0, 0, tzinfo=timezone.utc)
         assert sun_early.weekday() == 6
         assert _should_run_aggregation_scanner(db, now=sun_early) is False
 
     def test_sunday_after_window_returns_false(self):
-        """Sunday 9am UTC — AT the upper bound, half-open [3,9)."""
+        """Sunday 9am UTC - AT the upper bound, half-open [3,9)."""
         db = _aggregation_system_doc_mock(exists=False)
         sun_nine = datetime(2026, 4, 12, 9, 0, 0, tzinfo=timezone.utc)
         assert _should_run_aggregation_scanner(db, now=sun_nine) is False
@@ -854,7 +854,7 @@ class TestAggregationScannerHealth:
 
 
 # ---------------------------------------------------------------------------
-# aggregate_email_outcomes — scanner entry point
+# aggregate_email_outcomes - scanner entry point
 # ---------------------------------------------------------------------------
 
 class TestAggregateEmailOutcomes:

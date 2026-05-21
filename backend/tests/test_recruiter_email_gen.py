@@ -1,6 +1,6 @@
 """
 Tests for recruiter/hiring manager email generation.
-Covers: recruiter_email_generator.py fixes — model switch, resume_text passthrough,
+Covers: recruiter_email_generator.py fixes - model switch, resume_text passthrough,
 template_instructions, role_type, build_resume_summary, fallback emails, user_contact fallback.
 """
 

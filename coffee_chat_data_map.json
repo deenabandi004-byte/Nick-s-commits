@@ -7,42 +7,42 @@
       "fields": {
         "first_name": {
           "extracted": true,
-          "passed_to_coffee_chat": true,
+          "passed_to_meeting": true,
           "used_in_ai_prompt": true,
           "used_in_pdf": true,
-          "coffee_chat_key": "firstName"
+          "meeting_key": "firstName"
         },
         "last_name": {
           "extracted": true,
-          "passed_to_coffee_chat": true,
+          "passed_to_meeting": true,
           "used_in_ai_prompt": true,
           "used_in_pdf": true,
-          "coffee_chat_key": "lastName"
+          "meeting_key": "lastName"
         },
         "experience": {
           "extracted": true,
-          "passed_to_coffee_chat": "partial",
+          "passed_to_meeting": "partial",
           "used_in_ai_prompt": "as_flat_string_only",
           "used_in_pdf": "pdf_checks_for_array_but_only_string_available",
-          "coffee_chat_key": "workExperience",
-          "notes": "Full array with 5+ jobs, titles, dates, companies extracted but flattened to single WorkSummary string. PDF builder has code to iterate experience array but coffee_chat_data only contains [WorkSummary]",
+          "meeting_key": "workExperience",
+          "notes": "Full array with 5+ jobs, titles, dates, companies extracted but flattened to single WorkSummary string. PDF builder has code to iterate experience array but meeting_data only contains [WorkSummary]",
           "gap": "critical"
         },
         "education": {
           "extracted": true,
-          "passed_to_coffee_chat": "partial",
+          "passed_to_meeting": "partial",
           "used_in_ai_prompt": "as_flat_string_only",
           "used_in_pdf": "pdf_checks_for_array_but_only_string_available",
-          "coffee_chat_key": "education",
+          "meeting_key": "education",
           "notes": "Rich array with schools, degrees, majors, dates extracted but flattened to EducationTop string",
           "gap": "critical"
         },
         "location": {
           "extracted": true,
-          "passed_to_coffee_chat": true,
+          "passed_to_meeting": true,
           "used_in_ai_prompt": true,
           "used_in_pdf": true,
-          "coffee_chat_key": "location, city, state",
+          "meeting_key": "location, city, state",
           "sub_fields": {
             "locality": "mapped to city",
             "region": "mapped to state"
@@ -50,24 +50,24 @@
         },
         "emails": {
           "extracted": true,
-          "passed_to_coffee_chat": true,
+          "passed_to_meeting": true,
           "used_in_ai_prompt": false,
           "used_in_pdf": true,
-          "coffee_chat_key": "email",
+          "meeting_key": "email",
           "notes": "Array of emails extracted, best one selected via Hunter verification"
         },
         "interests": {
           "extracted": true,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
-          "coffee_chat_key": "interests",
-          "notes": "CRITICAL GAP: Extracted in extract_contact_from_pdl_person_enhanced but hardcoded to [] at line 3127 in coffee chat transform",
+          "meeting_key": "interests",
+          "notes": "CRITICAL GAP: Extracted in extract_contact_from_pdl_person_enhanced but hardcoded to [] at line 3127 in meeting transform",
           "gap": "critical"
         },
         "summary": {
           "extracted": true,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Only scanned for volunteer-related keywords, not passed as content",
@@ -75,32 +75,32 @@
         },
         "profiles": {
           "extracted": true,
-          "passed_to_coffee_chat": "linkedin_only",
+          "passed_to_meeting": "linkedin_only",
           "used_in_ai_prompt": false,
           "used_in_pdf": true,
-          "coffee_chat_key": "linkedinUrl",
+          "meeting_key": "linkedinUrl",
           "notes": "Only LinkedIn URL extracted. GitHub, Twitter, other social profiles discarded",
           "gap": "medium"
         },
         "phone_numbers": {
           "extracted": true,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
-          "notes": "Extracted to contact dict but not in coffee chat transform",
+          "notes": "Extracted to contact dict but not in meeting transform",
           "gap": "low"
         },
         "linkedin_connections": {
           "extracted": true,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
-          "notes": "Available as LinkedInConnections but not in coffee chat data",
+          "notes": "Available as LinkedInConnections but not in meeting data",
           "gap": "low"
         },
         "inferred_years_experience": {
           "extracted": true,
-          "passed_to_coffee_chat": "embedded_in_work_summary",
+          "passed_to_meeting": "embedded_in_work_summary",
           "used_in_ai_prompt": false,
           "used_in_pdf": "indirectly",
           "notes": "Appended to WorkSummary string, not a standalone field",
@@ -108,7 +108,7 @@
         },
         "skills": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "PDF builder has code to display skills (line 247) but skills are NEVER extracted from PDL response. Always empty.",
@@ -116,7 +116,7 @@
         },
         "certifications": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available from PDL, completely unused",
@@ -124,7 +124,7 @@
         },
         "languages": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available from PDL, completely unused",
@@ -132,7 +132,7 @@
         },
         "industry": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "PDL provides industry field. Currently falls back to fabricated Group field ('{Company} {FirstWord} Team')",
@@ -140,7 +140,7 @@
         },
         "job_company_size": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available from PDL, would enrich company context section",
@@ -148,7 +148,7 @@
         },
         "job_company_industry": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available from PDL, more specific than top-level industry",
@@ -156,7 +156,7 @@
         },
         "job_company_founded": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available from PDL, unused",
@@ -164,7 +164,7 @@
         },
         "job_company_linkedin_url": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available from PDL, unused",
@@ -172,7 +172,7 @@
         },
         "github_url": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available in profiles array, only LinkedIn extracted",
@@ -180,7 +180,7 @@
         },
         "twitter_url": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Available in profiles array, only LinkedIn extracted",
@@ -188,7 +188,7 @@
         },
         "recommended_personal_email": {
           "extracted": true,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Used only for email selection logic, not exposed",
@@ -196,15 +196,15 @@
         },
         "inferred_salary": {
           "extracted": false,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
-          "notes": "Available from PDL, not appropriate for coffee chat use",
+          "notes": "Available from PDL, not appropriate for meeting use",
           "gap": "none"
         },
         "dataset_version": {
           "extracted": true,
-          "passed_to_coffee_chat": false,
+          "passed_to_meeting": false,
           "used_in_ai_prompt": false,
           "used_in_pdf": false,
           "notes": "Internal metadata, not relevant for output",
@@ -325,7 +325,7 @@
       "Professional Background (current role, 3 past roles, 2 schools, skills -- skills always empty)",
       "Organization & Industry Context (company, division -- fabricated, industry -- fabricated, 3 news items, industry pulse)",
       "Personal Hooks & Shared Background (similarity paragraph or placeholder)",
-      "Sample Coffee Chat Questions (up to 8, cut off at 0.8 inch from bottom)"
+      "Sample Meeting Questions (up to 8, cut off at 0.8 inch from bottom)"
     ],
     "visual_quality_score": 4,
     "visual_issues": [

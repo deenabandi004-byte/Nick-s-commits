@@ -41,7 +41,7 @@ POST /api/parse-resume (file in FormData)
 
 ### 1.3 File types and size limit
 
-- **Accepted types:** PDF, DOCX, DOC (backend: `resume_capabilities.is_valid_resume_file`; frontend: `resumeFileTypes.ts` — `.pdf`, `.docx`, `.doc` and matching MIME types).
+- **Accepted types:** PDF, DOCX, DOC (backend: `resume_capabilities.is_valid_resume_file`; frontend: `resumeFileTypes.ts` - `.pdf`, `.docx`, `.doc` and matching MIME types).
 - **Size limit:** Not enforced in backend. Storage rules: **10 MB** (`10 * 1024 * 1024`).
 - **DOC:** Allowed in UI/capabilities but `resume_parser.extract_text_from_file` returns `None` for `.doc` (“Please convert to DOCX first”). So DOC upload can “succeed” but parsing fails.
 
@@ -78,7 +78,7 @@ POST /api/parse-resume (file in FormData)
 
 ### 2.2 What is extracted?
 
-**Library:** `backend/app/utils/users.py` — `parse_resume_info(resume_text)` uses **OpenAI GPT-4o-mini** with a large structured prompt.
+**Library:** `backend/app/utils/users.py` - `parse_resume_info(resume_text)` uses **OpenAI GPT-4o-mini** with a large structured prompt.
 
 **Extracted structure (v2):**
 
@@ -99,7 +99,7 @@ Validation: `validate_parsed_resume()` checks name, education/university, experi
 
 ### 2.4 Parsing stack
 
-- **Text extraction:** `backend/app/services/resume_parser.py` — PyPDF2 for PDF, `docx_service.extract_text_from_docx` for DOCX. DOC returns None.
+- **Text extraction:** `backend/app/services/resume_parser.py` - PyPDF2 for PDF, `docx_service.extract_text_from_docx` for DOCX. DOC returns None.
 - **Structured parsing:** OpenAI GPT-4o-mini in `users.parse_resume_info`.
 - **Interview prep (separate):** `backend/app/services/interview_prep/resume_parser.py` has `extract_text_from_pdf_bytes` and `parse_resume_to_profile` (different pipeline).
 
@@ -185,21 +185,21 @@ Validation: `validate_parsed_resume()` checks name, education/university, experi
 
 ### 5.2 What triggers PDF generation?
 
-- **Resume Workshop — Fix:** Backend returns `pdf_base64`; user can download or “Replace resume.”
-- **Resume Workshop — Replace main:** Backend builds PDF from improved text, uploads to Storage, updates `resumeUrl`/`resumeText`/etc.
-- **Resume Workshop — Apply (deprecated):** Backend applies one recommendation, builds PDF, returns base64 and saves to library.
-- **Application Lab — Resume Edits:** The “Generate Complete Edited Resume” (PDF/TXT) is the checkmark flow but is **disabled** in the UI.
+- **Resume Workshop - Fix:** Backend returns `pdf_base64`; user can download or “Replace resume.”
+- **Resume Workshop - Replace main:** Backend builds PDF from improved text, uploads to Storage, updates `resumeUrl`/`resumeText`/etc.
+- **Resume Workshop - Apply (deprecated):** Backend applies one recommendation, builds PDF, returns base64 and saves to library.
+- **Application Lab - Resume Edits:** The “Generate Complete Edited Resume” (PDF/TXT) is the checkmark flow but is **disabled** in the UI.
 - **ResumePDFDownload (frontend):** User clicks “Download PDF” where the component is used with structured resume data.
 
 ### 5.3 Libraries
 
-- **Backend:** ReportLab (`SimpleDocTemplate`, `Paragraph`, etc.) in `backend/app/services/pdf_builder.py` — `build_resume_pdf_from_text`. Same file has coffee chat PDF and cover letter PDF.
+- **Backend:** ReportLab (`SimpleDocTemplate`, `Paragraph`, etc.) in `backend/app/services/pdf_builder.py` - `build_resume_pdf_from_text`. Same file has meeting PDF and cover letter PDF.
 - **Frontend:** `@react-pdf/renderer` in `ResumePDFDownload.tsx` and `ResumePDF.tsx` for structured resume → PDF.
 
 ### 5.4 Is the generated PDF stored?
 
-- **Replace main:** Yes — uploaded to Storage `resumes/{uid}/improved_resume.pdf`, and `resumeUrl`/`resumeText`/etc. updated in Firestore.
-- **Fix (no replace):** No — PDF only in response (base64).
+- **Replace main:** Yes - uploaded to Storage `resumes/{uid}/improved_resume.pdf`, and `resumeUrl`/`resumeText`/etc. updated in Firestore.
+- **Fix (no replace):** No - PDF only in response (base64).
 - **Apply (deprecated):** Stored in library entry as `pdf_base64` in `resume_library` doc.
 - **ALE:** Would be download-only; currently not reachable (UI disabled).
 
@@ -217,7 +217,7 @@ Validation: `validate_parsed_resume()` checks name, education/university, experi
 
 - **Route:** `POST /api/emails/generate-and-draft` (emails.py).
 - **Resume source:** `resume_url` from payload, or `user_profile.resumeUrl`, or Firestore `user_data.resumeUrl`. Normalized if Google Drive (`_normalize_drive_url`). Filename: payload / user_profile / user_data `resumeFileName` or `"Resume.pdf"`.
-- **Download:** `download_resume_from_url(resume_url)` (gmail_client) — GET with User-Agent; for Firebase URLs, retry with signed URL on failure. Max 8 MB; if larger or download fails, drafts are created without attachment.
+- **Download:** `download_resume_from_url(resume_url)` (gmail_client) - GET with User-Agent; for Firebase URLs, retry with signed URL on failure. Max 8 MB; if larger or download fails, drafts are created without attachment.
 - **Attachment:** One pre-downloaded `resume_content_for_drafts` (bytes) is attached to each draft via MIME (base64). Same content for all drafts in the request.
 
 ### 6.2 Which version is attached?
@@ -245,7 +245,7 @@ Validation: `validate_parsed_resume()` checks name, education/university, experi
 
 ### 7.3 “Fix the job posting URL link stuff” / “needs to be any job posting URL”
 
-- **Issues:** (1) Many sites (e.g. LinkedIn, Handshake) are JS-heavy or block bots, so fetch returns minimal or login pages. (2) No generic “paste job description” in Workshop when URL fails — only manual fields. (3) Application Lab has a paste fallback; Workshop could mirror that. (4) Backend returns `url_parse_warning` when URL fails but still requires job_description for manual path.
+- **Issues:** (1) Many sites (e.g. LinkedIn, Handshake) are JS-heavy or block bots, so fetch returns minimal or login pages. (2) No generic “paste job description” in Workshop when URL fails - only manual fields. (3) Application Lab has a paste fallback; Workshop could mirror that. (4) Backend returns `url_parse_warning` when URL fails but still requires job_description for manual path.
 
 ### 7.4 How job URL connects to tailoring
 
@@ -308,7 +308,7 @@ Validation: `validate_parsed_resume()` checks name, education/university, experi
 | `backend/app/services/resume_capabilities.py` | File type validation, capabilities, metadata builder | Used by resume.py |
 | `backend/app/utils/users.py` | `parse_resume_info`, `validate_parsed_resume`, `extract_user_info_*` | OpenAI parsing; used by resume + email/scout |
 | `backend/app/routes/resume_workshop.py` | Fix, score, tailor (analyze), replace-main, apply (deprecated), library CRUD, _fetch_user_resume_data, _save_to_resume_library | Long file; library write only in apply |
-| `backend/app/services/pdf_builder.py` | `build_resume_pdf_from_text`, coffee chat PDF, cover letter PDF | ReportLab |
+| `backend/app/services/pdf_builder.py` | `build_resume_pdf_from_text`, meeting PDF, cover letter PDF | ReportLab |
 | `backend/app/services/interview_prep/job_posting_parser.py` | Fetch + parse job URL; extract_job_details; role category | Used by resume_workshop + interview prep |
 | `backend/app/routes/emails.py` | generate-and-draft; resume URL resolution; download and attach resume | Uses gmail_client.download_resume_from_url |
 | `backend/app/services/gmail_client.py` | download_resume_from_url, draft creation with attachment, Firebase signed URL retry | Central for attachment reliability |
@@ -343,10 +343,10 @@ Validation: `validate_parsed_resume()` checks name, education/university, experi
 
 ### Critical path code snippets
 
-**Upload (backend) — save to Firestore:**
+**Upload (backend) - save to Firestore:**
 
 ```python
-# backend/app/routes/resume.py — save_resume_to_firebase
+# backend/app/routes/resume.py - save_resume_to_firebase
 update_data = {
     'resumeText': resume_text,
     'originalResumeText': resume_text,
@@ -361,10 +361,10 @@ if parsed_info:
 db.collection('users').document(user_id).update(update_data)
 ```
 
-**Upload (Account Settings) — duplicate Storage + merge:**
+**Upload (Account Settings) - duplicate Storage + merge:**
 
 ```ts
-// connect-grow-hire/src/pages/AccountSettings.tsx — after POST /api/parse-resume
+// connect-grow-hire/src/pages/AccountSettings.tsx - after POST /api/parse-resume
 const storagePath = `resumes/${uid}/${ts}-${file.name}`;
 await uploadBytes(storageRef, file);
 const downloadUrl = await getDownloadURL(storageRef);
@@ -404,10 +404,10 @@ if resume_content_for_drafts is not None:
 )}
 ```
 
-**Library save (only path — inside deprecated apply):**
+**Library save (only path - inside deprecated apply):**
 
 ```python
-# backend/app/routes/resume_workshop.py — apply_recommendation
+# backend/app/routes/resume_workshop.py - apply_recommendation
 library_entry_id = _save_to_resume_library(
     user_id=user_id,
     job_title=job_title,

@@ -18,7 +18,7 @@ linkedin_import_bp = Blueprint('linkedin_import', __name__, url_prefix='/api/con
 
 def resolve_email_for_linkedin_import(pdl_contact: dict, person_data: dict) -> dict:
     """
-    Resolve email using Hunter.io fallback pipeline (same as Coffee Chat Prep).
+    Resolve email using Hunter.io fallback pipeline (same as Meeting Prep).
     
     Args:
         pdl_contact: Extracted contact dict with FirstName, LastName, Company fields

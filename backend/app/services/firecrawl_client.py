@@ -1,4 +1,4 @@
-"""Firecrawl API client — structured web extraction.
+"""Firecrawl API client - structured web extraction.
 
 Replaces Jina Reader for: URL scraping, LinkedIn extraction.
 New capability: structured extraction with Pydantic schemas.

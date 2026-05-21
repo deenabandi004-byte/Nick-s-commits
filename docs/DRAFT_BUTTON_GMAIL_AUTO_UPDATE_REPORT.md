@@ -38,18 +38,18 @@ So the stage **can** already be updated from Gmail (draft existence + thread), b
 
 Current scopes in `backend/app/config.py`:
 
-- `https://www.googleapis.com/auth/gmail.compose` — create/send drafts
-- `https://www.googleapis.com/auth/gmail.readonly` — read mail and **history**
-- `https://www.googleapis.com/auth/gmail.send` — send mail
+- `https://www.googleapis.com/auth/gmail.compose` - create/send drafts
+- `https://www.googleapis.com/auth/gmail.readonly` - read mail and **history**
+- `https://www.googleapis.com/auth/gmail.send` - send mail
 - OpenID / userinfo for email
 
 History (used by Watch) is covered by `gmail.readonly`. **No new scopes are required** to detect that a draft was sent.
 
 ### 4.2 Gmail Watch (push)
 
-- **Where:** `backend/app/services/gmail_client.py` — `start_gmail_watch(uid)` is called after OAuth (e.g. in `gmail_oauth.py`).
+- **Where:** `backend/app/services/gmail_client.py` - `start_gmail_watch(uid)` is called after OAuth (e.g. in `gmail_oauth.py`).
 - **What:** Gmail sends a Pub/Sub notification to our webhook when the user’s mailbox changes. We receive `emailAddress` and `historyId`.
-- **Webhook:** `backend/app/routes/gmail_webhook.py` — `POST /api/gmail/webhook` decodes the push, then in a background thread calls `_process_gmail_notification(email_address, history_id)`.
+- **Webhook:** `backend/app/routes/gmail_webhook.py` - `POST /api/gmail/webhook` decodes the push, then in a background thread calls `_process_gmail_notification(email_address, history_id)`.
 
 ### 4.3 What the webhook does today
 

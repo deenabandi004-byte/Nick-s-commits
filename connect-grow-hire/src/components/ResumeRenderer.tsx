@@ -277,7 +277,7 @@ const ResumeRenderer: React.FC<ResumeRendererProps> = ({ resume, className = '' 
             {resume.Extracurriculars!.map((extra, index) => (
               <li key={index}>
                 <span className="font-medium">{extra.activity}</span>
-                {extra.role && ` — ${extra.role}`}
+                {extra.role && ` - ${extra.role}`}
                 {extra.description && `: ${extra.description}`}
               </li>
             ))}

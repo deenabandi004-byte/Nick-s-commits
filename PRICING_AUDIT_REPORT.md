@@ -23,7 +23,7 @@
 1. **Backend Tier Config (`backend/app/config.py`)**
    - ✅ Credits: 300 (free), 1500 (pro), 3000 (elite) - CORRECT
    - ✅ Alumni searches: 10 (free), unlimited (pro/elite) - CORRECT
-   - ✅ Coffee Chat Prep: 1 (free), 10/month (pro), unlimited (elite) - CORRECT
+   - ✅ Meeting Prep: 1 (free), 10/month (pro), unlimited (elite) - CORRECT
    - ✅ Interview Prep: 1 (free), 5/month (pro), unlimited (elite) - CORRECT
    - ✅ Feature flags (firm_search, export_enabled, etc.) - CORRECT
 
@@ -167,7 +167,7 @@ User schema has usage tracking fields but may be missing monthly reset tracking 
 
 **EXPECTED:**
 ```python
-'coffeeChatPrep': {
+'meetingPrep': {
     'used': 0,
     'limit': tier_config['coffee_chat_preps'],
     'lastResetDate': timestamp
@@ -395,7 +395,7 @@ tier = user_data.get('tier', 'free')
 Verify Free tier limits are LIFETIME, not monthly.
 
 **EXPECTED:**
-- Free tier Coffee Chat Prep: 1 lifetime (never resets)
+- Free tier Meeting Prep: 1 lifetime (never resets)
 - Free tier Interview Prep: 1 lifetime (never resets)
 - Free tier Alumni Searches: 10 lifetime (never resets)
 
@@ -420,7 +420,7 @@ Verify Free tier limits are LIFETIME, not monthly.
 Need to verify consistent terminology and usage display across all components.
 
 **EXPECTED:**
-- "Coffee Chat Prep" (not "Coffee Chat" or variations)
+- "Meeting Prep" (not "Meeting" or variations)
 - "Interview Prep" (not "Interview Preparation")
 - Accurate usage displays with correct limits
 

@@ -125,7 +125,7 @@ export function ExpandablePrivacyLock() {
                   className="text-gray-300 leading-relaxed space-y-4 text-lg"
                 >
                   <p>
-                    At Offerloop.ai, your data is yours — always. We never sell or share your information.
+                    At Offerloop.ai, your data is yours - always. We never sell or share your information.
                   </p>
                   <p>
                     Authentication is handled securely through Google sign-in, and all data is encrypted

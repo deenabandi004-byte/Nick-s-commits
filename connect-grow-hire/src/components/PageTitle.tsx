@@ -8,7 +8,7 @@ interface PageTitleProps {
   accent?: React.ReactNode;
   /** Optional subtitle below the heading. */
   subtitle?: string;
-  /** Explicit lead text — takes precedence over `children`. */
+  /** Explicit lead text - takes precedence over `children`. */
   lead?: string;
   /** Text alignment. Defaults to "left". */
   align?: "left" | "center";

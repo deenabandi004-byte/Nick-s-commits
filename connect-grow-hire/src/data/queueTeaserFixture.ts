@@ -2,7 +2,7 @@
  * Static teaser fixture for the Agentic Networking Queue.
  *
  * Shown to Free-tier users on the "Suggested For You" tab. Never hits the
- * backend — purely a visual paywall that demonstrates what Pro/Elite gets.
+ * backend - purely a visual paywall that demonstrates what Pro/Elite gets.
  * Keep this deterministic (no Math.random, no Date.now) so the preview
  * never shifts between renders.
  */
@@ -26,10 +26,10 @@ export const QUEUE_TEASER_CONTACTS: QueueContact[] = [
     warmthScore: 92,
     warmthSignals: ["USC alumni", "Same major (Business)", "NYC metro"],
     whyThisContact:
-      "USC alum at your #1 target firm. Only 2 years ahead, same major — strong coffee-chat fit.",
+      "USC alum at your #1 target firm. Only 2 years ahead, same major - strong meeting fit.",
     emailSubject: "USC → Goldman: 15 minutes this week?",
     emailBody:
-      "Hi Priya — I'm a junior at USC studying Business Administration with a focus on finance. I saw you made the jump to Goldman's IBD team and would love to hear how you navigated recruiting. Would you have 15 minutes this week or next?",
+      "Hi Priya - I'm a junior at USC studying Business Administration with a focus on finance. I saw you made the jump to Goldman's IBD team and would love to hear how you navigated recruiting. Would you have 15 minutes this week or next?",
     status: "pending",
   },
   {
@@ -52,7 +52,7 @@ export const QUEUE_TEASER_CONTACTS: QueueContact[] = [
       "USC Marshall grad doing the exact MBB consulting path you're targeting. Active in the alumni network.",
     emailSubject: "Marshall alum → MBB: quick chat?",
     emailBody:
-      "Hi Marcus — I'm a USC Marshall junior recruiting for MBB consulting this fall. Your path from Marshall to McKinsey is exactly what I'm trying to build toward. Would you have 15 minutes in the next two weeks to share how you prepped for case interviews?",
+      "Hi Marcus - I'm a USC Marshall junior recruiting for MBB consulting this fall. Your path from Marshall to McKinsey is exactly what I'm trying to build toward. Would you have 15 minutes in the next two weeks to share how you prepped for case interviews?",
     status: "pending",
   },
   {
@@ -75,7 +75,7 @@ export const QUEUE_TEASER_CONTACTS: QueueContact[] = [
       "Well-known APM-program grad with a public portfolio on PM interview prep. Good secondary contact for tech track.",
     emailSubject: "UCLA → Google APM: advice on PM recruiting",
     emailBody:
-      "Hi Sarah — I came across your blog posts on the APM interview process while prepping for tech PM recruiting. Would you have 15 minutes to share how you landed at Google straight from UCLA?",
+      "Hi Sarah - I came across your blog posts on the APM interview process while prepping for tech PM recruiting. Would you have 15 minutes to share how you landed at Google straight from UCLA?",
     status: "pending",
   },
   {
@@ -95,10 +95,10 @@ export const QUEUE_TEASER_CONTACTS: QueueContact[] = [
     warmthScore: 85,
     warmthSignals: ["USC alumni", "LA-based", "Recent grad"],
     whyThisContact:
-      "Recent USC grad now at Bain LA — relatable and close enough in age to remember exactly how recruiting worked for you.",
-    emailSubject: "Fellow Trojan at Bain — 15 minutes?",
+      "Recent USC grad now at Bain LA - relatable and close enough in age to remember exactly how recruiting worked for you.",
+    emailSubject: "Fellow Trojan at Bain - 15 minutes?",
     emailBody:
-      "Hi David — Fellow Trojan here. I'm recruiting for consulting and noticed you're at Bain's LA office. Would you have 15 minutes to chat about how you prepped for the interviews? Happy to work around your schedule.",
+      "Hi David - Fellow Trojan here. I'm recruiting for consulting and noticed you're at Bain's LA office. Would you have 15 minutes to chat about how you prepped for the interviews? Happy to work around your schedule.",
     status: "pending",
   },
   {
@@ -118,10 +118,10 @@ export const QUEUE_TEASER_CONTACTS: QueueContact[] = [
     warmthScore: 68,
     warmthSignals: ["USC alumni", "Finance track"],
     whyThisContact:
-      "Great fallback if the Goldman contact doesn't reply. Different bank, same class year — gives you another shot at IBD.",
+      "Great fallback if the Goldman contact doesn't reply. Different bank, same class year - gives you another shot at IBD.",
     emailSubject: "USC → Morgan Stanley IBD: quick question",
     emailBody:
-      "Hi Jessica — I'm a USC junior starting IBD recruiting this fall and would love to learn how your path at Morgan Stanley has gone. Would you have 15 minutes in the next couple weeks for a quick chat?",
+      "Hi Jessica - I'm a USC junior starting IBD recruiting this fall and would love to learn how your path at Morgan Stanley has gone. Would you have 15 minutes in the next couple weeks for a quick chat?",
     status: "pending",
   },
 ];

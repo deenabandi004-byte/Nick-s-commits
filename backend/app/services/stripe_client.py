@@ -310,7 +310,7 @@ def handle_invoice_paid(invoice):
                 tier = get_tier_from_price_id(price_id)
         except Exception as e:
             print(f"Error retrieving subscription: {e}")
-            return  # Can't determine tier — don't reset blindly
+            return  # Can't determine tier - don't reset blindly
 
         # Only reset for Pro/Elite tiers
         if tier not in ['pro', 'elite']:
@@ -364,7 +364,7 @@ def handle_invoice_paid(invoice):
 def _apply_monthly_reset(user_ref, user_data: dict, tier: str) -> bool:
     """Apply a monthly credit/usage reset to a single user.
 
-    Idempotent at month granularity — checks lastCreditReset and skips
+    Idempotent at month granularity - checks lastCreditReset and skips
     if it's already in the current calendar month.
 
     Returns True if a reset was applied, False if skipped.
@@ -397,13 +397,13 @@ def reset_credits_for_active_subscribers() -> dict:
     """Monthly credit refill safety net for active Pro/Elite subscribers.
 
     Stripe's `invoice.payment_succeeded` webhook fires once per billing cycle.
-    For annual subscribers that's once a year — so without this cron, an annual
+    For annual subscribers that's once a year - so without this cron, an annual
     Pro user would get 3,000 credits and be expected to stretch them across 12
     months. This loop catches that case and also acts as a safety net for any
     monthly subscriber whose webhook was dropped or delayed.
 
     Idempotent: refuses to reset a user more than once in the same calendar
-    month, so running this hourly is safe (and cheap — most users skip
+    month, so running this hourly is safe (and cheap - most users skip
     immediately on the month-key check).
 
     Returns a summary dict for the daemon to log: {reset, skipped, failed}.
@@ -541,7 +541,7 @@ def update_subscription_tier():
         # Get the current subscription item ID (needed for modification)
         current_item_id = subscription.items.data[0].id
 
-        # Modify the subscription — swap the price
+        # Modify the subscription - swap the price
         # proration_behavior='create_prorations' charges the difference immediately
         updated_subscription = stripe.Subscription.modify(
             subscription_id,

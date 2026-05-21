@@ -60,7 +60,7 @@ class FirestoreStorage(Storage):
                     new_count = data.get("count", 0) + amount
                     txn.update(doc_ref, {"count": new_count})
                     return new_count
-            # Expired or missing — start fresh
+            # Expired or missing - start fresh
             new_count = amount
             txn.set(doc_ref, {
                 "count": new_count,

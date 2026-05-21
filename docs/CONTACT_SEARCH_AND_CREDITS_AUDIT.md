@@ -1,4 +1,4 @@
-# Contact Search Flow — Full Audit
+# Contact Search Flow - Full Audit
 
 Audit of contact search execution, credit deduction, and feasibility of cancel + credit refund.
 
@@ -6,7 +6,7 @@ Audit of contact search execution, credit deduction, and feasibility of cancel +
 
 ## 1. Search Execution Flow
 
-### 1.1 When the user clicks Search — full trace
+### 1.1 When the user clicks Search - full trace
 
 **Frontend (Contact Search tab)**
 
@@ -131,7 +131,7 @@ So the **exact** deduction is always: **Firestore `Increment(-15 * len(contacts)
 ### 2.3 Cost per search
 
 - **Per contact:** **15 credits** per contact returned and charged.
-- **Total:** `15 * len(contacts)` — **variable** by number of contacts in the response (capped by tier: free 3, pro 8, elite 15).
+- **Total:** `15 * len(contacts)` - **variable** by number of contacts in the response (capped by tier: free 3, pro 8, elite 15).
 - Minimum cost for one search that returns at least one contact is 15 credits.
 
 ### 2.4 Where credits are stored
@@ -166,7 +166,7 @@ So the **exact** deduction is always: **Firestore `Increment(-15 * len(contacts)
 
 - **No** multi-step transaction. Deduction is a single Firestore `update` with `Increment(-15 * len(contacts))`. There is no “reserve then confirm” or two-phase flow. So there is no partial state like “credits reserved but search failed”; it’s either “deduct once at the end” or “don’t deduct”.
 
-### 3.4 PDL/Hunter error — are credits still deducted?
+### 3.4 PDL/Hunter error - are credits still deducted?
 
 - **No.** Deduction runs only after the pipeline has built a non-empty `contacts` list and run emails/drafts. If:
   - `search_contacts_from_prompt()` raises or returns [],
@@ -217,9 +217,9 @@ So the **exact** deduction is always: **Firestore `Increment(-15 * len(contacts)
 
 **Where to add cancel + refund**
 
-- **Frontend:** ContactSearchPage — Cancel button, AbortController, pass signal into runPromptSearch → makeRequest. On abort, optionally call a “refund” endpoint if backend supports it.
-- **API (optional):** api.ts — makeRequest and runPromptSearch accept optional AbortSignal and pass it to fetch.
-- **Backend:** runs.py (and optionally runs_hunter.py) — Either: (1) detect client disconnect (e.g. request.environ or worker-level) and skip deduction or refund if already deducted; and/or (2) New endpoint e.g. POST /prompt-search-cancel or /refund-search that records a job id and refunds (if you introduce job ids). Today there is no job id; refund would need to be by convention (e.g. “last search for this user within N seconds”) or by adding a search-job id to the flow.
+- **Frontend:** ContactSearchPage - Cancel button, AbortController, pass signal into runPromptSearch → makeRequest. On abort, optionally call a “refund” endpoint if backend supports it.
+- **API (optional):** api.ts - makeRequest and runPromptSearch accept optional AbortSignal and pass it to fetch.
+- **Backend:** runs.py (and optionally runs_hunter.py) - Either: (1) detect client disconnect (e.g. request.environ or worker-level) and skip deduction or refund if already deducted; and/or (2) New endpoint e.g. POST /prompt-search-cancel or /refund-search that records a job id and refunds (if you introduce job ids). Today there is no job id; refund would need to be by convention (e.g. “last search for this user within N seconds”) or by adding a search-job id to the flow.
 
 ---
 

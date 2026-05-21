@@ -9,10 +9,10 @@ const Blog = () => {
   return (
     <div className="min-h-screen w-full" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: '#FFFFFF' }}>
       <Helmet>
-        <title>Offerloop Blog — Networking &amp; Recruiting Guides for College Students</title>
+        <title>Offerloop Blog - Networking &amp; Recruiting Guides for College Students</title>
         <meta name="description" content="Actionable guides on cold emailing, networking, and recruiting for college students breaking into consulting, banking, and tech. Written by the Offerloop team." />
         <link rel="canonical" href="https://offerloop.ai/blog" />
-        <meta property="og:title" content="Offerloop Blog — Networking & Recruiting Guides for College Students" />
+        <meta property="og:title" content="Offerloop Blog - Networking & Recruiting Guides for College Students" />
         <meta property="og:description" content="Actionable guides on cold emailing, networking, and recruiting for college students." />
         <meta property="og:url" content="https://offerloop.ai/blog" />
         <meta property="og:type" content="website" />
@@ -53,7 +53,7 @@ const Blog = () => {
           Networking & Recruiting Guides
         </h1>
         <p style={{ fontSize: '15px', lineHeight: 1.7, color: '#64748B', maxWidth: '680px' }}>
-          Actionable guides on cold emailing, coffee chats, and breaking into consulting, banking, and tech. Written for college students by the Offerloop team.
+          Actionable guides on cold emailing, meetings, and breaking into consulting, banking, and tech. Written for college students by the Offerloop team.
         </p>
       </section>
 
