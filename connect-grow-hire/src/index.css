@@ -107,6 +107,59 @@
     --bg-off: #FAFBFF;
     --border: #E2E8F0;
     --border-light: #EEF2F8;
+
+    /* ============================================================
+       CANONICAL COLOR TOKENS  (single source of truth)
+       Use these in app components. Do not hardcode hex.
+       - Neutrals: one cool-slate ramp. ~90% of the UI.
+       - Accent:   brand blue. The ONLY accent. Actions only.
+       - Status:   success / warning / danger. Meaning only.
+       House rule: if a color is not action or status, it is neutral.
+       ============================================================ */
+
+    /* Neutral surfaces */
+    --c-bg: #FFFFFF;             /* page canvas */
+    --c-surface: #F8FAFC;        /* cards, panels */
+    --c-surface-raised: #FFFFFF; /* modals, popovers, menus */
+    --c-surface-sunken: #F1F5F9; /* wells, track / progress backgrounds */
+
+    /* Neutral borders */
+    --c-border: #E2E8F0;         /* default hairline */
+    --c-border-subtle: #EEF2F8;  /* faint dividers */
+    --c-border-strong: #CBD5E1;  /* emphasized borders */
+
+    /* Neutral text */
+    --c-text: #0F172A;           /* primary */
+    --c-text-secondary: #475569; /* supporting */
+    --c-text-tertiary: #94A3B8;  /* captions, placeholders */
+    --c-text-disabled: #CBD5E1;  /* inactive */
+
+    /* Accent - brand blue (actions, links, selected / active states) */
+    --c-accent: #3B82F6;
+    --c-accent-hover: #2563EB;
+    --c-accent-pressed: #1D4ED8;
+    --c-accent-subtle: #EFF6FF;  /* tinted background */
+    --c-accent-text: #1D4ED8;    /* accent-colored text / links on white (WCAG AA) */
+    --c-accent-ring: rgba(59, 130, 246, 0.40); /* focus ring */
+
+    /* Status - success */
+    --c-success: #16A34A;
+    --c-success-subtle: #F0FDF4;
+    --c-success-border: #BBF7D0;
+    --c-success-text: #15803D;
+
+    /* Status - warning */
+    --c-warning: #D97706;
+    --c-warning-subtle: #FFFBEB;
+    --c-warning-border: #FDE68A;
+    --c-warning-text: #B45309;
+
+    /* Status - danger */
+    --c-danger: #DC2626;
+    --c-danger-subtle: #FEF2F2;
+    --c-danger-border: #FECACA;
+    --c-danger-text: #B91C1C;
+
     --font-display: 'Instrument Serif', Georgia, serif;
     --font-serif: 'Instrument Serif', Georgia, serif;
     --font-body: 'Inter', -apple-system, sans-serif;
