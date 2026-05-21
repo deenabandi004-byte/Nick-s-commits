@@ -167,7 +167,7 @@ function HeroCard({
         textAlign: "left",
         padding: "16px 18px",
         background: "var(--warm-surface, #FAFBFF)",
-        border: "1px solid var(--line, #E8E4DE)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 8,
         cursor: interactive ? "pointer" : "default",
         transition: "border-color .15s, background .15s",
@@ -179,11 +179,11 @@ function HeroCard({
       }}
       onMouseEnter={(e) => {
         if (!interactive) return;
-        e.currentTarget.style.borderColor = "#5B7799";
+        e.currentTarget.style.borderColor = "#64748B";
         e.currentTarget.style.background = "white";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--line, #E8E4DE)";
+        e.currentTarget.style.borderColor = "var(--line, #E2E8F0)";
         e.currentTarget.style.background = "var(--warm-surface, #FAFBFF)";
       }}
     >
@@ -193,7 +193,7 @@ function HeroCard({
           fontWeight: 500,
           letterSpacing: "0.08em",
           textTransform: "uppercase",
-          color: "var(--ink-3, #8A8F9A)",
+          color: "var(--ink-3, #94A3B8)",
           fontFamily: "'JetBrains Mono', monospace",
         }}
       >
@@ -214,7 +214,7 @@ function HeroCard({
       <span
         style={{
           fontSize: 12,
-          color: "var(--ink-3, #8A8F9A)",
+          color: "var(--ink-3, #94A3B8)",
           lineHeight: 1.4,
           marginTop: 2,
         }}
@@ -229,7 +229,7 @@ function HeroCard({
             right: 14,
             width: 12,
             height: 12,
-            color: "var(--ink-3, #8A8F9A)",
+            color: "var(--ink-3, #94A3B8)",
             opacity: 0.4,
           }}
         />
@@ -258,7 +258,7 @@ function PipelineBar({
   // Muted palette - a touch of blue lives in the "active" segment so the
   // pipeline still has some life, while the rest stays in warm/cool greys.
   const COLORS = {
-    active: "#5B7799",       // muted slate-blue (the one bit of color)
+    active: "#64748B",       // muted slate-blue (the one bit of color)
     needs: "#A8A29E",        // warm-grey-400
     done: "#94A3B8",         // slate-400 (lightest, for completed)
   };
@@ -268,7 +268,7 @@ function PipelineBar({
       onClick={onClick}
       style={{
         background: "var(--warm-surface, #FAFBFF)",
-        border: "1px solid var(--line, #E8E4DE)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 8,
         padding: "14px 18px",
         cursor: "pointer",
@@ -277,11 +277,11 @@ function PipelineBar({
         transition: "border-color .15s, background .15s",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "#5B7799";
+        e.currentTarget.style.borderColor = "#64748B";
         e.currentTarget.style.background = "white";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--line, #E8E4DE)";
+        e.currentTarget.style.borderColor = "var(--line, #E2E8F0)";
         e.currentTarget.style.background = "var(--warm-surface, #FAFBFF)";
       }}
     >
@@ -292,13 +292,13 @@ function PipelineBar({
             fontWeight: 500,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
-            color: "var(--ink-3, #8A8F9A)",
+            color: "var(--ink-3, #94A3B8)",
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
           PIPELINE
         </span>
-        <span style={{ fontSize: 11, color: "var(--ink-3, #8A8F9A)" }}>
+        <span style={{ fontSize: 11, color: "var(--ink-3, #94A3B8)" }}>
           {total} total
         </span>
       </div>
@@ -308,7 +308,7 @@ function PipelineBar({
           height: 6,
           borderRadius: 2,
           overflow: "hidden",
-          background: "var(--line, #F0F0ED)",
+          background: "var(--line, #EEF2F8)",
           marginBottom: 10,
         }}
       >
@@ -322,7 +322,7 @@ function PipelineBar({
           <div style={{ width: `${donePct}%`, background: COLORS.done }} title={`${done} done`} />
         )}
       </div>
-      <div style={{ display: "flex", gap: 16, fontSize: 11, color: "var(--ink-2, #4A4F5B)" }}>
+      <div style={{ display: "flex", gap: 16, fontSize: 11, color: "var(--ink-2, #475569)" }}>
         <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ width: 6, height: 6, borderRadius: 1, background: COLORS.active }} />
           {active} active
@@ -360,7 +360,7 @@ function WeeklyProgress({
     <div
       style={{
         background: "var(--warm-surface, #FAFBFF)",
-        border: "1px solid var(--line, #E8E4DE)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 8,
         padding: "14px 18px",
       }}
@@ -372,42 +372,42 @@ function WeeklyProgress({
             fontWeight: 500,
             letterSpacing: "0.08em",
             textTransform: "uppercase",
-            color: "var(--ink-3, #8A8F9A)",
+            color: "var(--ink-3, #94A3B8)",
             fontFamily: "'JetBrains Mono', monospace",
           }}
         >
           THIS WEEK
         </span>
-        <span style={{ fontSize: 11, color: "var(--ink-3, #8A8F9A)" }}>
+        <span style={{ fontSize: 11, color: "var(--ink-3, #94A3B8)" }}>
           {statusLabel}
         </span>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         <div>
-          <div style={{ fontSize: 11, color: "var(--ink-3, #8A8F9A)", marginBottom: 4 }}>
+          <div style={{ fontSize: 11, color: "var(--ink-3, #94A3B8)", marginBottom: 4 }}>
             Emails sent
           </div>
           <div style={{ fontSize: 18, fontWeight: 600, color: "var(--ink, #0F172A)", lineHeight: 1 }}>
             {emailsSent}
-            <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-3, #8A8F9A)" }}>
+            <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-3, #94A3B8)" }}>
               {" "}/ {emailTarget}
             </span>
           </div>
-          <div style={{ height: 3, background: "var(--line, #F0F0ED)", borderRadius: 1, marginTop: 6, overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${emailPct}%`, background: "#5B7799", transition: "width .4s" }} />
+          <div style={{ height: 3, background: "var(--line, #EEF2F8)", borderRadius: 1, marginTop: 6, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${emailPct}%`, background: "#64748B", transition: "width .4s" }} />
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: "var(--ink-3, #8A8F9A)", marginBottom: 4 }}>
+          <div style={{ fontSize: 11, color: "var(--ink-3, #94A3B8)", marginBottom: 4 }}>
             Replies received
           </div>
           <div style={{ fontSize: 18, fontWeight: 600, color: "var(--ink, #0F172A)", lineHeight: 1 }}>
             {repliesReceived}
-            <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-3, #8A8F9A)" }}>
+            <span style={{ fontSize: 12, fontWeight: 400, color: "var(--ink-3, #94A3B8)" }}>
               {" "}/ {replyTarget}
             </span>
           </div>
-          <div style={{ height: 3, background: "var(--line, #F0F0ED)", borderRadius: 1, marginTop: 6, overflow: "hidden" }}>
+          <div style={{ height: 3, background: "var(--line, #EEF2F8)", borderRadius: 1, marginTop: 6, overflow: "hidden" }}>
             <div style={{ height: "100%", width: `${replyPct}%`, background: "#94A3B8", transition: "width .4s" }} />
           </div>
         </div>
@@ -449,12 +449,12 @@ function AskScoutChips({
   }, [data]);
 
   // Muted blue for Scout-area accents - present but never pops.
-  const SCOUT_BLUE = "#5B7799";
+  const SCOUT_BLUE = "#64748B";
   return (
     <div
       style={{
         background: "var(--warm-surface, #FAFBFF)",
-        border: "1px solid var(--line, #E8E4DE)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 8,
         padding: "14px 18px",
       }}
@@ -492,9 +492,9 @@ function AskScoutChips({
               padding: "7px 12px",
               fontSize: 12,
               fontWeight: 400,
-              color: "var(--ink-2, #4A4F5B)",
+              color: "var(--ink-2, #475569)",
               background: "white",
-              border: "1px solid var(--line, #E8E4DE)",
+              border: "1px solid var(--line, #E2E8F0)",
               borderRadius: 6,
               cursor: "pointer",
               transition: "border-color .12s, color .12s, background .12s",
@@ -506,8 +506,8 @@ function AskScoutChips({
               e.currentTarget.style.background = "rgba(91,119,153,0.04)";
             }}
             onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--line, #E8E4DE)";
-              e.currentTarget.style.color = "var(--ink-2, #4A4F5B)";
+              e.currentTarget.style.borderColor = "var(--line, #E2E8F0)";
+              e.currentTarget.style.color = "var(--ink-2, #475569)";
               e.currentTarget.style.background = "white";
             }}
           >
@@ -694,7 +694,7 @@ export function MorningBriefing() {
           <p
             style={{
               fontSize: 13,
-              color: "var(--ink-3, #8A8F9A)",
+              color: "var(--ink-3, #94A3B8)",
               margin: "2px 0 0",
               lineHeight: 1.4,
             }}
@@ -778,7 +778,7 @@ export function MorningBriefing() {
         <div
           style={{
             background: "var(--warm-surface, #FAFBFF)",
-            border: "1px solid var(--line, #E8E4DE)",
+            border: "1px solid var(--line, #E2E8F0)",
             borderRadius: 8,
             padding: "14px 18px",
           }}
@@ -790,7 +790,7 @@ export function MorningBriefing() {
                 fontWeight: 500,
                 letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: "var(--ink-3, #8A8F9A)",
+                color: "var(--ink-3, #94A3B8)",
                 fontFamily: "'JetBrains Mono', monospace",
               }}
             >
@@ -806,7 +806,7 @@ export function MorningBriefing() {
                   alignItems: "center",
                   gap: 10,
                   fontSize: 12,
-                  color: "var(--ink-2, #4A4F5B)",
+                  color: "var(--ink-2, #475569)",
                 }}
               >
                 <span
@@ -828,7 +828,7 @@ export function MorningBriefing() {
                         ? "#7C2D12"
                         : d.urgency === "upcoming"
                           ? "#78350F"
-                          : "var(--ink-3, #8A8F9A)",
+                          : "var(--ink-3, #94A3B8)",
                     fontFamily: "'JetBrains Mono', monospace",
                   }}
                 >

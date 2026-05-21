@@ -87,9 +87,9 @@ function FallbackChips({
               padding: '5px 11px', fontSize: 11.5, borderRadius: 100,
               cursor: 'pointer', transition: 'all .12s', fontFamily: 'inherit',
               maxWidth: 280, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              border: `1px solid ${isSelected ? '#3B82F6' : 'var(--warm-border, #E8E4DE)'}`,
+              border: `1px solid ${isSelected ? '#3B82F6' : 'var(--warm-border, #E2E8F0)'}`,
               background: isSelected ? '#3B82F6' : 'var(--warm-surface, #FAFBFF)',
-              color: isSelected ? '#fff' : 'var(--warm-ink-secondary, #6B6560)',
+              color: isSelected ? '#fff' : 'var(--warm-ink-secondary, #64748B)',
             }}
             onMouseEnter={e => {
               if (!isSelected) {
@@ -100,9 +100,9 @@ function FallbackChips({
             }}
             onMouseLeave={e => {
               if (!isSelected) {
-                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--warm-border, #E8E4DE)';
+                (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--warm-border, #E2E8F0)';
                 (e.currentTarget as HTMLButtonElement).style.background = 'var(--warm-surface, #FAFBFF)';
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-secondary, #6B6560)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-secondary, #64748B)';
               }
             }}
           >
@@ -218,13 +218,13 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
         aria-label="Toggle personalized suggestions"
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 4,
-          padding: '4px 10px', fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)',
-          background: 'none', border: '1px solid var(--warm-border, #E8E4DE)', borderRadius: 100,
+          padding: '4px 10px', fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)',
+          background: 'none', border: '1px solid var(--warm-border, #E2E8F0)', borderRadius: 100,
           cursor: 'pointer', transition: 'all .12s', fontFamily: 'inherit',
           marginBottom: 16,
         }}
         onMouseEnter={e => { e.currentTarget.style.color = '#3B82F6'; e.currentTarget.style.borderColor = '#3B82F6'; }}
-        onMouseLeave={e => { e.currentTarget.style.color = 'var(--warm-ink-tertiary, #9C9590)'; e.currentTarget.style.borderColor = 'var(--warm-border, #E8E4DE)'; }}
+        onMouseLeave={e => { e.currentTarget.style.color = 'var(--warm-ink-tertiary, #94A3B8)'; e.currentTarget.style.borderColor = 'var(--warm-border, #E2E8F0)'; }}
       >
         Suggestions
         <ChevronDown className="h-3 w-3" />
@@ -247,18 +247,18 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
     return (
       <div id="suggestion-chips" style={{ marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--warm-ink-secondary, #6B6560)', letterSpacing: '0.01em' }}>
+          <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--warm-ink-secondary, #64748B)', letterSpacing: '0.01em' }}>
             Here's where to start
           </span>
           <button
             onClick={toggleCollapse}
             style={{
-              fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', background: 'none', border: 'none',
+              fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', background: 'none', border: 'none',
               cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex',
               alignItems: 'center', gap: 3, padding: 0,
             }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3B82F6'; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-tertiary, #9C9590)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-tertiary, #94A3B8)'; }}
           >
             Collapse
             <ChevronUp className="h-3 w-3" />
@@ -292,9 +292,9 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   padding: isFirst ? '14px 14px 14px 14px' : '10px 14px',
                   background: 'var(--warm-surface, #FAFBFF)',
-                  borderTop: '1px solid var(--warm-border, #E8E4DE)',
-                  borderRight: '1px solid var(--warm-border, #E8E4DE)',
-                  borderBottom: '1px solid var(--warm-border, #E8E4DE)',
+                  borderTop: '1px solid var(--warm-border, #E2E8F0)',
+                  borderRight: '1px solid var(--warm-border, #E2E8F0)',
+                  borderBottom: '1px solid var(--warm-border, #E2E8F0)',
                   borderLeft: '2px solid transparent',
                   borderRadius: 8,
                   cursor: 'pointer',
@@ -316,9 +316,9 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                 onMouseLeave={e => {
                   const el = e.currentTarget as HTMLButtonElement;
                   el.style.background = 'var(--warm-surface, #FAFBFF)';
-                  el.style.borderTop = '1px solid var(--warm-border, #E8E4DE)';
-                  el.style.borderRight = '1px solid var(--warm-border, #E8E4DE)';
-                  el.style.borderBottom = '1px solid var(--warm-border, #E8E4DE)';
+                  el.style.borderTop = '1px solid var(--warm-border, #E2E8F0)';
+                  el.style.borderRight = '1px solid var(--warm-border, #E2E8F0)';
+                  el.style.borderBottom = '1px solid var(--warm-border, #E2E8F0)';
                   el.style.borderLeft = '2px solid transparent';
                   el.style.boxShadow = 'none';
                   el.style.paddingLeft = '14px';
@@ -327,7 +327,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                 }}
               >
                 <span style={{
-                  fontSize: 13.5, fontWeight: isFirst ? 600 : 500, color: '#1A1714',
+                  fontSize: 13.5, fontWeight: isFirst ? 600 : 500, color: '#0F172A',
                   lineHeight: 1.4, flex: 1,
                 }}>
                   {chip.label}
@@ -342,7 +342,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                     Best match
                   </span>
                 )}
-                <ArrowRight className="suggestion-arrow" style={{ width: 13, height: 13, color: 'var(--warm-ink-tertiary, #9C9590)', flexShrink: 0, marginLeft: isFirst ? 8 : 12, transition: 'transform .15s ease' }} />
+                <ArrowRight className="suggestion-arrow" style={{ width: 13, height: 13, color: 'var(--warm-ink-tertiary, #94A3B8)', flexShrink: 0, marginLeft: isFirst ? 8 : 12, transition: 'transform .15s ease' }} />
               </button>
             );
           })}
@@ -353,7 +353,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
           display: 'flex', alignItems: 'center', gap: 12, marginTop: 16,
         }}>
           <div style={{ flex: 1, height: 1, background: 'var(--warm-border-light, #F0EDE8)' }} />
-          <span style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', whiteSpace: 'nowrap' }}>Have somewhere in mind?</span>
+          <span style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', whiteSpace: 'nowrap' }}>Have somewhere in mind?</span>
           <div style={{ flex: 1, height: 1, background: 'var(--warm-border-light, #F0EDE8)' }} />
         </div>
       </div>
@@ -378,19 +378,19 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
     <div id="suggestion-chips" style={{ marginBottom: 20 }}>
       {/* Header row */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-        <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--ink-3, #8A8F9A)', letterSpacing: '0.14em', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace", display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ color: 'var(--accent, #1B2A44)', fontSize: 11 }}>&#9670;</span>
+        <span style={{ fontSize: 10, fontWeight: 500, color: 'var(--ink-3, #94A3B8)', letterSpacing: '0.14em', textTransform: 'uppercase', fontFamily: "'JetBrains Mono', monospace", display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: 'var(--accent, #1E293B)', fontSize: 11 }}>&#9670;</span>
           Recommended for you
         </span>
         <button
           onClick={toggleCollapse}
           style={{
-            fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', background: 'none', border: 'none',
+            fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', background: 'none', border: 'none',
             cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex',
             alignItems: 'center', gap: 3, padding: 0,
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3B82F6'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-tertiary, #9C9590)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-tertiary, #94A3B8)'; }}
         >
           Collapse
           <ChevronUp className="h-3 w-3" />
@@ -403,7 +403,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
           <span style={{
             width: 5, height: 5, borderRadius: '50%', background: '#B8A08A', flexShrink: 0,
           }} />
-          <span style={{ fontSize: 11.5, color: 'var(--warm-ink-secondary, #6B6560)' }}>{subtitle}</span>
+          <span style={{ fontSize: 11.5, color: 'var(--warm-ink-secondary, #64748B)' }}>{subtitle}</span>
         </div>
       )}
 
@@ -492,7 +492,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
 
                 {/* Company name */}
                 <div style={{
-                  fontSize: 13.5, fontWeight: 500, color: '#1A1714',
+                  fontSize: 13.5, fontWeight: 500, color: '#0F172A',
                   whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                   marginBottom: 4,
                 }}>
@@ -501,7 +501,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
 
                 {/* Reason */}
                 <div style={{
-                  fontSize: 11, color: 'var(--ink-2, #4A4F5B)', lineHeight: 1.4,
+                  fontSize: 11, color: 'var(--ink-2, #475569)', lineHeight: 1.4,
                   display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                   overflow: 'hidden', minHeight: 30,
                   marginBottom: rec.reasoning ? 6 : 10,
@@ -514,7 +514,7 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                   <div style={{
                     fontSize: 11, padding: '6px 8px',
                     background: 'var(--paper, #FFFFFF)',
-                    borderLeft: '2px solid var(--accent, #1B2A44)',
+                    borderLeft: '2px solid var(--accent, #1E293B)',
                     borderRadius: '0 4px 4px 0',
                     marginBottom: 10,
                     lineHeight: 1.4,
@@ -522,21 +522,21 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                     <span style={{
                       fontFamily: "'JetBrains Mono', monospace",
                       fontWeight: 600,
-                      color: 'var(--accent, #1B2A44)',
+                      color: 'var(--accent, #1E293B)',
                     }}>
                       {rec.reasoning.primary.number}
                     </span>
                     {' '}
-                    <span style={{ color: 'var(--ink-2, #4A4F5B)' }}>
+                    <span style={{ color: 'var(--ink-2, #475569)' }}>
                       {rec.reasoning.primary.label}
                     </span>
                     {rec.reasoning.qualifier && (
                       <>
-                        <span style={{ color: 'var(--ink-3, #8A8F9A)', margin: '0 4px' }}>&middot;</span>
+                        <span style={{ color: 'var(--ink-3, #94A3B8)', margin: '0 4px' }}>&middot;</span>
                         <em style={{
                           fontFamily: "'Instrument Serif', Georgia, serif",
                           fontStyle: 'italic',
-                          color: 'var(--ink-2, #4A4F5B)',
+                          color: 'var(--ink-2, #475569)',
                         }}>
                           {rec.reasoning.qualifier}
                         </em>
@@ -565,12 +565,12 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
           type="button"
           onClick={() => setShowMore(true)}
           style={{
-            fontSize: 11.5, color: 'var(--warm-ink-secondary, #6B6560)', background: 'none', border: 'none',
+            fontSize: 11.5, color: 'var(--warm-ink-secondary, #64748B)', background: 'none', border: 'none',
             cursor: 'pointer', fontFamily: 'inherit', padding: '8px 0 0',
             transition: 'color .12s',
           }}
           onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3B82F6'; }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-secondary, #6B6560)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-secondary, #64748B)'; }}
         >
           Show more companies
         </button>

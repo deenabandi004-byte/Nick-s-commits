@@ -444,8 +444,8 @@ export function AppSidebar() {
                           cn(
                             "flex items-center gap-3 px-3 py-2 text-sm transition-colors",
                             isActive
-                              ? "text-[#1B2A44] bg-[rgba(27,42,68,0.1)]"
-                              : "text-[#475569] hover:text-[#0F172A] hover:bg-[rgba(27,42,68,0.06)]"
+                              ? "text-[#1E293B] bg-[rgba(30, 41, 59,0.1)]"
+                              : "text-[#475569] hover:text-[#0F172A] hover:bg-[rgba(30, 41, 59,0.06)]"
                           )
                         }
                       >

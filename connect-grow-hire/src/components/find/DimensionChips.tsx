@@ -118,7 +118,7 @@ export const DimensionChips: React.FC<DimensionChipsProps> = ({
                     fontWeight: 500,
                     letterSpacing: '0.08em',
                     textTransform: 'uppercase',
-                    color: 'var(--ink-3, #8A8F9A)',
+                    color: 'var(--ink-3, #94A3B8)',
                     opacity: detected ? 1 : 0.55,
                     transition: 'opacity .15s ease',
                   }}
@@ -130,7 +130,7 @@ export const DimensionChips: React.FC<DimensionChipsProps> = ({
                     fontFamily: 'inherit',
                     fontSize: 11,
                     fontWeight: 500,
-                    color: detected ? 'var(--ink-2, #4A4F5B)' : 'var(--ink-3, #8A8F9A)',
+                    color: detected ? 'var(--ink-2, #475569)' : 'var(--ink-3, #94A3B8)',
                     opacity: detected ? 1 : 0.45,
                     transition: 'color .15s ease, opacity .15s ease',
                   }}

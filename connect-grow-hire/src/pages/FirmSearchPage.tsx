@@ -842,7 +842,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <Search style={{ width: 16, height: 16, flexShrink: 0, color: inputFocused ? '#3B82F6' : '#8A8F97', marginTop: 2 }} />
+                          <Search style={{ width: 16, height: 16, flexShrink: 0, color: inputFocused ? '#3B82F6' : '#94A3B8', marginTop: 2 }} />
                           <textarea
                             ref={textareaRef}
                             className="firm-search-textarea"
@@ -890,7 +890,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                               <div>
                                 <div style={{
                                   fontFamily: "'JetBrains Mono', monospace",
-                                  fontSize: 10, letterSpacing: '0.14em', color: '#8A8F97',
+                                  fontSize: 10, letterSpacing: '0.14em', color: '#94A3B8',
                                   textTransform: 'uppercase' as const, marginBottom: 4,
                                 }}>
                                   {promptsPersonalized ? 'Built from your profile' : 'Curated by Offerloop'}
@@ -974,7 +974,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                                   background: 'none', border: 'none', padding: 0, cursor: 'pointer',
                                   display: 'inline-flex', alignItems: 'center', gap: 5,
                                   fontFamily: "'JetBrains Mono', monospace",
-                                  fontSize: 11, letterSpacing: '0.04em', color: '#8A8F97',
+                                  fontSize: 11, letterSpacing: '0.04em', color: '#94A3B8',
                                 }}
                               >
                                 <History style={{ width: 12, height: 12 }} />
@@ -1003,12 +1003,12 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                                       }}
                                     >
                                       <div style={{ fontSize: 12, color: '#4A4F57' }}>
-                                        <Search style={{ width: 11, height: 11, display: 'inline', verticalAlign: 'middle', color: '#8A8F97', marginRight: 5 }} />
+                                        <Search style={{ width: 11, height: 11, display: 'inline', verticalAlign: 'middle', color: '#94A3B8', marginRight: 5 }} />
                                         {item.query}
                                       </div>
                                       <div style={{
                                         fontFamily: "'JetBrains Mono', monospace",
-                                        fontSize: 10, color: '#8A8F97', whiteSpace: 'nowrap', marginLeft: 12,
+                                        fontSize: 10, color: '#94A3B8', whiteSpace: 'nowrap', marginLeft: 12,
                                       }}>
                                         {item.resultsCount} {item.resultsCount === 1 ? 'result' : 'results'}
                                       </div>
@@ -1025,17 +1025,17 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                       <div style={{ marginBottom: 12 }}>
                         <div style={{
                           fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: 10, letterSpacing: '0.12em', color: '#8A8F97', marginBottom: 8,
+                          fontSize: 10, letterSpacing: '0.12em', color: '#94A3B8', marginBottom: 8,
                         }}>
                           HOW MANY TO FIND?
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: 11, color: '#8A8F97', minWidth: 12 }}>5</span>
+                          <span style={{ fontSize: 11, color: '#94A3B8', minWidth: 12 }}>5</span>
                           <div className="slider-input-wrapper" style={{ flex: 1, position: 'relative', height: 4, background: '#E5E3DE', borderRadius: 2 }}>
                             <div style={{
                               position: 'absolute', left: 0, top: 0, height: 4,
                               width: maxBatchSize > 5 ? `${((batchSize - 5) / (maxBatchSize - 5)) * 100}%` : '0%',
-                              background: 'var(--accent, #1B2A44)', borderRadius: 2,
+                              background: 'var(--accent, #1E293B)', borderRadius: 2,
                             }} />
                             <input
                               type="range"
@@ -1056,12 +1056,12 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                               position: 'absolute',
                               left: `calc(${maxBatchSize > 5 ? ((batchSize - 5) / (maxBatchSize - 5)) * 100 : 0}% - 7px)`,
                               top: -5, width: 14, height: 14, borderRadius: '50%',
-                              background: 'var(--accent, #1B2A44)',
-                              boxShadow: '0 1px 4px rgba(27,42,68,0.4)',
+                              background: 'var(--accent, #1E293B)',
+                              boxShadow: '0 1px 4px rgba(30, 41, 59,0.4)',
                               pointerEvents: 'none',
                             }} />
                           </div>
-                          <span style={{ fontSize: 11, color: '#8A8F97', minWidth: 16, textAlign: 'right' }}>{maxBatchSize}</span>
+                          <span style={{ fontSize: 11, color: '#94A3B8', minWidth: 16, textAlign: 'right' }}>{maxBatchSize}</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
                           <div style={{
@@ -1078,7 +1078,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                             }}>
                               {batchSize * creditsPerFirm} credits
                             </span>
-                            <span style={{ color: '#8A8F97' }}>of {effectiveUser.credits ?? 0}</span>
+                            <span style={{ color: '#94A3B8' }}>of {effectiveUser.credits ?? 0}</span>
                           </div>
                         </div>
                         {effectiveUser.credits !== undefined && effectiveUser.credits < (batchSize * creditsPerFirm) && (
@@ -1098,11 +1098,11 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                           width: '100%',
                           height: 52,
                           borderRadius: 12,
-                          background: isSearching ? 'var(--warm-border, #E8E4DE)'
+                          background: isSearching ? 'var(--warm-border, #E2E8F0)'
                             : (!query.trim() || !isValidQuery || !user) ? 'transparent'
                             : 'var(--ink, #1A1D23)',
-                          color: isSearching ? 'var(--warm-ink-tertiary, #9C9590)'
-                            : (!query.trim() || !isValidQuery || !user) ? '#6B6560'
+                          color: isSearching ? 'var(--warm-ink-tertiary, #94A3B8)'
+                            : (!query.trim() || !isValidQuery || !user) ? '#64748B'
                             : 'var(--paper, #FFFFFF)',
                           border: (!query.trim() || !isValidQuery || !user) && !isSearching ? '1.5px solid #D5D0C9' : '1.5px solid transparent',
                           fontSize: 15,
@@ -1132,7 +1132,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
 
                       {/* Validation feedback */}
                       {query && !isValidQuery && !hasSearched && (
-                        <p style={{ fontSize: 11, color: '#8A8F97', marginTop: 6, textAlign: 'center' }}>
+                        <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 6, textAlign: 'center' }}>
                           Include an industry and location for best results
                         </p>
                       )}
@@ -1148,12 +1148,12 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                             setError(null);
                           }}
                           style={{
-                            fontSize: 12, color: '#8A8F97', background: 'none', border: 'none',
+                            fontSize: 12, color: '#94A3B8', background: 'none', border: 'none',
                             cursor: 'pointer', fontFamily: 'inherit', padding: '12px 0 0',
                             transition: 'color .12s',
                           }}
-                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent, #1B2A44)'; }}
-                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#8A8F97'; }}
+                          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--accent, #1E293B)'; }}
+                          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#94A3B8'; }}
                         >
                           ← Back to recommendations
                         </button>

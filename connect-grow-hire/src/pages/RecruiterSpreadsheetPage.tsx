@@ -521,7 +521,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                             alignItems: 'flex-start',
                             gap: 10,
                             padding: '16px 20px',
-                            border: '1.5px solid var(--warm-border, #E8E4DE)',
+                            border: '1.5px solid var(--warm-border, #E2E8F0)',
                             borderRadius: 14,
                             background: 'var(--warm-surface, #FAF9F6)',
                             transition: 'all .15s',
@@ -570,13 +570,13 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                               onClick={() => setChipsCollapsed(false)}
                               style={{
                                 display: 'inline-flex', alignItems: 'center', gap: 4,
-                                padding: '4px 10px', fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)',
-                                background: 'none', border: '1px solid var(--warm-border, #E8E4DE)', borderRadius: 100,
+                                padding: '4px 10px', fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)',
+                                background: 'none', border: '1px solid var(--warm-border, #E2E8F0)', borderRadius: 100,
                                 cursor: 'pointer', transition: 'all .12s', fontFamily: 'inherit',
                                 marginBottom: 16,
                               }}
                               onMouseEnter={e => { e.currentTarget.style.color = '#3B82F6'; e.currentTarget.style.borderColor = '#3B82F6'; }}
-                              onMouseLeave={e => { e.currentTarget.style.color = 'var(--warm-ink-tertiary, #9C9590)'; e.currentTarget.style.borderColor = 'var(--warm-border, #E8E4DE)'; }}
+                              onMouseLeave={e => { e.currentTarget.style.color = 'var(--warm-ink-tertiary, #94A3B8)'; e.currentTarget.style.borderColor = 'var(--warm-border, #E2E8F0)'; }}
                             >
                               Suggestions
                               <ChevronDown style={{ width: 12, height: 12 }} />
@@ -589,23 +589,23 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                             {/* Header row */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
                               <span style={{
-                                fontSize: 10, fontWeight: 500, color: 'var(--ink-3, #8A8F9A)',
+                                fontSize: 10, fontWeight: 500, color: 'var(--ink-3, #94A3B8)',
                                 letterSpacing: '0.14em', textTransform: 'uppercase' as const,
                                 fontFamily: "'JetBrains Mono', monospace",
                                 display: 'flex', alignItems: 'center', gap: 6,
                               }}>
-                                <span style={{ color: 'var(--accent, #1B2A44)', fontSize: 11 }}>&#9670;</span>
+                                <span style={{ color: 'var(--accent, #1E293B)', fontSize: 11 }}>&#9670;</span>
                                 {hasJobs ? 'From your job board' : 'Recommended for you'}
                               </span>
                               <button
                                 onClick={() => setChipsCollapsed(true)}
                                 style={{
-                                  fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', background: 'none', border: 'none',
+                                  fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', background: 'none', border: 'none',
                                   cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex',
                                   alignItems: 'center', gap: 3, padding: 0,
                                 }}
                                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#3B82F6'; }}
-                                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-tertiary, #9C9590)'; }}
+                                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--warm-ink-tertiary, #94A3B8)'; }}
                               >
                                 Collapse
                                 <ChevronUp style={{ width: 12, height: 12 }} />
@@ -613,7 +613,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                             </div>
 
                             {/* Subtitle */}
-                            <div style={{ fontSize: 11.5, color: 'var(--warm-ink-secondary, #6B6560)', marginBottom: 14 }}>
+                            <div style={{ fontSize: 11.5, color: 'var(--warm-ink-secondary, #64748B)', marginBottom: 14 }}>
                               {hasJobs ? 'Click a role to find the hiring manager behind it' : 'Click a company to find hiring managers there'}
                             </div>
 
@@ -655,7 +655,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                       }}
                                       onMouseEnter={e => {
                                         const el = e.currentTarget as HTMLButtonElement;
-                                        el.style.borderColor = 'var(--accent, #1B2A44)';
+                                        el.style.borderColor = 'var(--accent, #1E293B)';
                                         el.style.boxShadow = 'inset 0 -1px 0 var(--line, #E8E8E8), 0 2px 6px rgba(26,29,35,0.06)';
                                         el.style.transform = 'translateY(-1px)';
                                       }}
@@ -696,7 +696,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                         </div>
 
                                         <div style={{
-                                          fontSize: 13.5, fontWeight: 500, color: '#1A1714',
+                                          fontSize: 13.5, fontWeight: 500, color: '#0F172A',
                                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                                           marginBottom: 4,
                                         }}>
@@ -704,7 +704,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                         </div>
 
                                         <div style={{
-                                          fontSize: 11, color: 'var(--ink-2, #4A4F5B)', lineHeight: 1.4,
+                                          fontSize: 11, color: 'var(--ink-2, #475569)', lineHeight: 1.4,
                                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                                           overflow: 'hidden', minHeight: 30,
                                           marginBottom: (job.match_score && job.match_score > 0) || job.location ? 6 : 10,
@@ -716,7 +716,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                           <div style={{
                                             fontSize: 11, padding: '6px 8px',
                                             background: 'var(--paper, #FFFFFF)',
-                                            borderLeft: '2px solid var(--accent, #1B2A44)',
+                                            borderLeft: '2px solid var(--accent, #1E293B)',
                                             borderRadius: '0 4px 4px 0',
                                             marginBottom: 10,
                                             lineHeight: 1.4,
@@ -726,22 +726,22 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                                 <span style={{
                                                   fontFamily: "'JetBrains Mono', monospace",
                                                   fontWeight: 600,
-                                                  color: 'var(--accent, #1B2A44)',
+                                                  color: 'var(--accent, #1E293B)',
                                                 }}>
                                                   {job.match_score}%
                                                 </span>
                                                 {' '}
-                                                <span style={{ color: 'var(--ink-2, #4A4F5B)' }}>match</span>
+                                                <span style={{ color: 'var(--ink-2, #475569)' }}>match</span>
                                               </>
                                             )}
                                             {job.match_score && job.match_score > 0 && job.location && (
-                                              <span style={{ color: 'var(--ink-3, #8A8F9A)', margin: '0 4px' }}>&middot;</span>
+                                              <span style={{ color: 'var(--ink-3, #94A3B8)', margin: '0 4px' }}>&middot;</span>
                                             )}
                                             {job.location && (
                                               <em style={{
                                                 fontFamily: "'Instrument Serif', Georgia, serif",
                                                 fontStyle: 'italic',
-                                                color: 'var(--ink-2, #4A4F5B)',
+                                                color: 'var(--ink-2, #475569)',
                                               }}>
                                                 {job.location}
                                               </em>
@@ -750,7 +750,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                         )}
 
                                         <div style={{
-                                          fontSize: 11, color: 'var(--accent, #1B2A44)', fontWeight: 500,
+                                          fontSize: 11, color: 'var(--accent, #1E293B)', fontWeight: 500,
                                           display: 'flex', alignItems: 'center', gap: 4,
                                         }}>
                                           Find hiring manager
@@ -788,7 +788,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                       }}
                                       onMouseEnter={e => {
                                         const el = e.currentTarget as HTMLButtonElement;
-                                        el.style.borderColor = 'var(--accent, #1B2A44)';
+                                        el.style.borderColor = 'var(--accent, #1E293B)';
                                         el.style.boxShadow = 'inset 0 -1px 0 var(--line, #E8E8E8), 0 2px 6px rgba(26,29,35,0.06)';
                                         el.style.transform = 'translateY(-1px)';
                                       }}
@@ -829,7 +829,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                         </div>
 
                                         <div style={{
-                                          fontSize: 13.5, fontWeight: 500, color: '#1A1714',
+                                          fontSize: 13.5, fontWeight: 500, color: '#0F172A',
                                           whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                                           marginBottom: 4,
                                         }}>
@@ -837,7 +837,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                         </div>
 
                                         <div style={{
-                                          fontSize: 11, color: 'var(--ink-2, #4A4F5B)', lineHeight: 1.4,
+                                          fontSize: 11, color: 'var(--ink-2, #475569)', lineHeight: 1.4,
                                           display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                                           overflow: 'hidden', minHeight: 30,
                                           marginBottom: rec.reasoning ? 6 : 10,
@@ -849,7 +849,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                           <div style={{
                                             fontSize: 11, padding: '6px 8px',
                                             background: 'var(--paper, #FFFFFF)',
-                                            borderLeft: '2px solid var(--accent, #1B2A44)',
+                                            borderLeft: '2px solid var(--accent, #1E293B)',
                                             borderRadius: '0 4px 4px 0',
                                             marginBottom: 10,
                                             lineHeight: 1.4,
@@ -857,21 +857,21 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                             <span style={{
                                               fontFamily: "'JetBrains Mono', monospace",
                                               fontWeight: 600,
-                                              color: 'var(--accent, #1B2A44)',
+                                              color: 'var(--accent, #1E293B)',
                                             }}>
                                               {rec.reasoning.primary.number}
                                             </span>
                                             {' '}
-                                            <span style={{ color: 'var(--ink-2, #4A4F5B)' }}>
+                                            <span style={{ color: 'var(--ink-2, #475569)' }}>
                                               {rec.reasoning.primary.label}
                                             </span>
                                             {rec.reasoning.qualifier && (
                                               <>
-                                                <span style={{ color: 'var(--ink-3, #8A8F9A)', margin: '0 4px' }}>&middot;</span>
+                                                <span style={{ color: 'var(--ink-3, #94A3B8)', margin: '0 4px' }}>&middot;</span>
                                                 <em style={{
                                                   fontFamily: "'Instrument Serif', Georgia, serif",
                                                   fontStyle: 'italic',
-                                                  color: 'var(--ink-2, #4A4F5B)',
+                                                  color: 'var(--ink-2, #475569)',
                                                 }}>
                                                   {rec.reasoning.qualifier}
                                                 </em>
@@ -881,7 +881,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                         )}
 
                                         <div style={{
-                                          fontSize: 11, color: 'var(--accent, #1B2A44)', fontWeight: 500,
+                                          fontSize: 11, color: 'var(--accent, #1E293B)', fontWeight: 500,
                                           display: 'flex', alignItems: 'center', gap: 4,
                                         }}>
                                           Find hiring manager
@@ -899,11 +899,11 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
                       {/* Credit cost pill */}
                       <div style={{ marginBottom: 14 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--warm-ink-secondary, #6B6560)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--warm-ink-secondary, #64748B)' }}>
                           <span style={{
                             display: 'inline-flex', alignItems: 'center', gap: 4,
                             padding: '2px 8px', borderRadius: 3,
-                            background: 'var(--warm-surface, #FAF9F6)', border: '1px solid var(--warm-border, #E8E4DE)',
+                            background: 'var(--warm-surface, #FAF9F6)', border: '1px solid var(--warm-border, #E2E8F0)',
                             fontWeight: 500, color: '#0F172A', fontSize: 12,
                           }}>
                             {15 * estimatedManagers} credits
@@ -920,7 +920,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                           style={{
                             fontSize: 12,
                             fontWeight: 500,
-                            color: 'var(--warm-ink-secondary, #6B6560)',
+                            color: 'var(--warm-ink-secondary, #64748B)',
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',
@@ -937,10 +937,10 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
                       {/* Manual Entry Section - Collapsible */}
                       {showManualEntry && !jobPostingUrl && (
-                        <div style={{ marginBottom: 16, paddingTop: 16, borderTop: '1px solid var(--warm-border, #E8E4DE)' }}>
+                        <div style={{ marginBottom: 16, paddingTop: 16, borderTop: '1px solid var(--warm-border, #E2E8F0)' }}>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
                             <div>
-                              <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #6B6560)', marginBottom: 4 }}>Company</label>
+                              <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #64748B)', marginBottom: 4 }}>Company</label>
                               <input
                                 type="text"
                                 value={company}
@@ -950,7 +950,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                 style={{
                                   width: '100%',
                                   padding: '8px 12px',
-                                  border: '1.5px solid var(--warm-border, #E8E4DE)',
+                                  border: '1.5px solid var(--warm-border, #E2E8F0)',
                                   borderRadius: 8,
                                   fontSize: 13,
                                   color: '#0F172A',
@@ -961,7 +961,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                               />
                             </div>
                             <div>
-                              <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #6B6560)', marginBottom: 4 }}>Job Title</label>
+                              <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #64748B)', marginBottom: 4 }}>Job Title</label>
                               <input
                                 type="text"
                                 value={jobTitle}
@@ -971,7 +971,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                 style={{
                                   width: '100%',
                                   padding: '8px 12px',
-                                  border: '1.5px solid var(--warm-border, #E8E4DE)',
+                                  border: '1.5px solid var(--warm-border, #E2E8F0)',
                                   borderRadius: 8,
                                   fontSize: 13,
                                   color: '#0F172A',
@@ -982,7 +982,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                               />
                             </div>
                             <div>
-                              <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #6B6560)', marginBottom: 4 }}>Location</label>
+                              <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #64748B)', marginBottom: 4 }}>Location</label>
                               <input
                                 type="text"
                                 value={location}
@@ -992,7 +992,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                 style={{
                                   width: '100%',
                                   padding: '8px 12px',
-                                  border: '1.5px solid var(--warm-border, #E8E4DE)',
+                                  border: '1.5px solid var(--warm-border, #E2E8F0)',
                                   borderRadius: 8,
                                   fontSize: 13,
                                   color: '#0F172A',
@@ -1004,7 +1004,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                             </div>
                           </div>
                           <div>
-                            <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #6B6560)', marginBottom: 4 }}>
+                            <label style={{ display: 'block', fontSize: 11, fontWeight: 500, color: 'var(--warm-ink-secondary, #64748B)', marginBottom: 4 }}>
                               Job Description <span style={{ color: '#EF4444' }}>*</span>
                             </label>
                             <textarea
@@ -1016,7 +1016,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                               style={{
                                 width: '100%',
                                 padding: '10px 12px',
-                                border: '1.5px solid var(--warm-border, #E8E4DE)',
+                                border: '1.5px solid var(--warm-border, #E2E8F0)',
                                 borderRadius: 8,
                                 fontSize: 13,
                                 color: '#0F172A',
@@ -1039,11 +1039,11 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                           width: '100%',
                           height: 52,
                           borderRadius: 12,
-                          background: isSearching ? 'var(--warm-border, #E8E4DE)'
+                          background: isSearching ? 'var(--warm-border, #E2E8F0)'
                             : !canSearch ? 'transparent'
                             : 'var(--ink, #1A1D23)',
-                          color: isSearching ? 'var(--warm-ink-tertiary, #9C9590)'
-                            : !canSearch ? '#6B6560'
+                          color: isSearching ? 'var(--warm-ink-tertiary, #94A3B8)'
+                            : !canSearch ? '#64748B'
                             : 'var(--paper, #FFFFFF)',
                           border: !canSearch && !isSearching ? '1.5px solid #D5D0C9' : '1.5px solid transparent',
                           fontSize: 15,
@@ -1078,7 +1078,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                             disabled={isSearching || isUploadingResume}
                             style={{
                               fontSize: 11,
-                              color: 'var(--warm-ink-tertiary, #9C9590)',
+                              color: 'var(--warm-ink-tertiary, #94A3B8)',
                               display: 'flex',
                               alignItems: 'center',
                               gap: 4,
@@ -1090,7 +1090,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                           >
                             <CheckCircle style={{ width: 11, height: 11, color: '#22C55E' }} />
                             Resume: <span style={{ fontWeight: 500 }}>{savedResumeFileName}</span>
-                            <span style={{ color: 'var(--accent, #1B2A44)', marginLeft: 2 }}>
+                            <span style={{ color: 'var(--accent, #1E293B)', marginLeft: 2 }}>
                               {isUploadingResume ? 'Uploading...' : '· Change'}
                             </span>
                           </button>
@@ -1099,7 +1099,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                             onClick={() => fileInputRef.current?.click()}
                             style={{
                               fontSize: 11,
-                              color: 'var(--warm-ink-tertiary, #9C9590)',
+                              color: 'var(--warm-ink-tertiary, #94A3B8)',
                               display: 'flex',
                               alignItems: 'center',
                               gap: 4,

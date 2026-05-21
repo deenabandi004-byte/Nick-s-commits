@@ -50,7 +50,7 @@ export function SmartSuggestions({ onSelect, disabled, hidden }: SmartSuggestion
               gap: 8,
               padding: "8px 14px",
               borderRadius: 10,
-              border: "1px solid var(--warm-border, #E8E4DE)",
+              border: "1px solid var(--warm-border, #E2E8F0)",
               background: "var(--warm-surface, #FAFBFF)",
               cursor: disabled ? "not-allowed" : "pointer",
               opacity: disabled ? 0.5 : 1,

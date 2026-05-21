@@ -8,7 +8,7 @@ export const ScoutNote: React.FC<ScoutNoteProps> = ({ children }) => (
   <div
     style={{
       background: "var(--paper-2, #FAFBFF)",
-      border: "1px solid var(--line-2, #F0F0ED)",
+      border: "1px solid var(--line-2, #EEF2F8)",
       borderRadius: 3,
       padding: "16px 20px",
       marginBottom: 24,
@@ -20,7 +20,7 @@ export const ScoutNote: React.FC<ScoutNoteProps> = ({ children }) => (
         fontSize: 13,
         fontWeight: 400,
         lineHeight: 1.5,
-        color: "var(--ink-2, #4A4F5B)",
+        color: "var(--ink-2, #475569)",
         margin: 0,
       }}
     >

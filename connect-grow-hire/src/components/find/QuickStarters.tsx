@@ -119,11 +119,11 @@ export const QuickStarters: React.FC<QuickStartersProps> = ({
             alignItems: 'baseline',
             gap: 4,
             fontSize: 12.5,
-            color: 'var(--ink-3, #8A8F9A)',
+            color: 'var(--ink-3, #94A3B8)',
             lineHeight: 1.7,
           }}
         >
-          <span style={{ marginRight: 2, color: 'var(--ink-3, #8A8F9A)' }}>
+          <span style={{ marginRight: 2, color: 'var(--ink-3, #94A3B8)' }}>
             Try
           </span>
           {starters.map((s, i) => (
@@ -143,7 +143,7 @@ export const QuickStarters: React.FC<QuickStartersProps> = ({
                   margin: 0,
                   fontFamily: 'inherit',
                   fontSize: 'inherit',
-                  color: 'var(--ink-2, #4A4F5B)',
+                  color: 'var(--ink-2, #475569)',
                   cursor: 'pointer',
                   textDecoration: 'underline',
                   textDecorationColor: 'rgba(15, 23, 42, 0.12)',
@@ -157,14 +157,14 @@ export const QuickStarters: React.FC<QuickStartersProps> = ({
                 }}
                 onMouseLeave={(e) => {
                   const el = e.currentTarget as HTMLButtonElement;
-                  el.style.color = 'var(--ink-2, #4A4F5B)';
+                  el.style.color = 'var(--ink-2, #475569)';
                   el.style.textDecorationColor = 'rgba(15, 23, 42, 0.12)';
                 }}
               >
                 {s}
               </button>
               {i < starters.length - 1 && (
-                <span style={{ color: 'var(--ink-3, #8A8F9A)' }}>·</span>
+                <span style={{ color: 'var(--ink-3, #94A3B8)' }}>·</span>
               )}
             </React.Fragment>
           ))}

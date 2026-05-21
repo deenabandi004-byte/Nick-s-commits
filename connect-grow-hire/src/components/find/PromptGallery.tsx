@@ -62,7 +62,7 @@ export const PromptGallery: React.FC<PromptGalleryProps> = ({ ctx, onSelect, onU
               fontSize: 9.5,
               letterSpacing: '0.08em',
               textTransform: 'uppercase' as const,
-              color: '#8A8F97',
+              color: '#94A3B8',
               marginBottom: 4,
             }}
           >

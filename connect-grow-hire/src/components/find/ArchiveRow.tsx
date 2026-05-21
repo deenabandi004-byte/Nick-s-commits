@@ -31,7 +31,7 @@ export const ArchiveRow: React.FC<ArchiveRowProps> = ({
         padding: "14px 16px",
         background: "transparent",
         border: "none",
-        borderBottom: "1px solid var(--line-2, #F0F0ED)",
+        borderBottom: "1px solid var(--line-2, #EEF2F8)",
         cursor: "pointer",
         textAlign: "left",
         fontFamily: "inherit",
@@ -50,7 +50,7 @@ export const ArchiveRow: React.FC<ArchiveRowProps> = ({
           fontFamily: "'JetBrains Mono', monospace",
           fontSize: 12,
           fontWeight: 400,
-          color: "var(--ink-3, #8A8F9A)",
+          color: "var(--ink-3, #94A3B8)",
           width: 24,
           flexShrink: 0,
           textAlign: "right",
@@ -78,7 +78,7 @@ export const ArchiveRow: React.FC<ArchiveRowProps> = ({
             width: 20,
             height: 20,
             borderRadius: 3,
-            background: "var(--line-2, #F0F0ED)",
+            background: "var(--line-2, #EEF2F8)",
             flexShrink: 0,
           }}
         />
@@ -89,7 +89,7 @@ export const ArchiveRow: React.FC<ArchiveRowProps> = ({
         style={{
           fontSize: 14,
           fontWeight: 500,
-          color: "var(--ink, #111318)",
+          color: "var(--ink, #0F172A)",
           minWidth: 120,
           flexShrink: 0,
         }}
@@ -102,7 +102,7 @@ export const ArchiveRow: React.FC<ArchiveRowProps> = ({
         style={{
           flex: 1,
           fontSize: 13,
-          color: "var(--ink-3, #8A8F9A)",
+          color: "var(--ink-3, #94A3B8)",
           overflow: "hidden",
           textOverflow: "ellipsis",
           whiteSpace: "nowrap",
@@ -116,7 +116,7 @@ export const ArchiveRow: React.FC<ArchiveRowProps> = ({
         style={{
           fontSize: 10,
           fontFamily: "'JetBrains Mono', monospace",
-          color: "var(--ink-3, #8A8F9A)",
+          color: "var(--ink-3, #94A3B8)",
           textTransform: "uppercase",
           letterSpacing: "0.04em",
           flexShrink: 0,
@@ -132,7 +132,7 @@ export const ArchiveRow: React.FC<ArchiveRowProps> = ({
         style={{
           width: 14,
           height: 14,
-          color: "var(--ink-3, #8A8F9A)",
+          color: "var(--ink-3, #94A3B8)",
           flexShrink: 0,
           opacity: 0.5,
         }}

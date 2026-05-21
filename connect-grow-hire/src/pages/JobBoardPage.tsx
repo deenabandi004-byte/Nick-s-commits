@@ -375,7 +375,7 @@ const JobCardLogo: React.FC<{ job: Job }> = ({ job }) => {
       className="w-12 h-12 rounded-[6px] flex items-center justify-center font-semibold"
       style={{
         background: "rgba(91,119,153,0.10)",
-        color: "#5B7799",
+        color: "#64748B",
         fontSize: 16,
         letterSpacing: "-0.02em",
         fontFamily: "'Inter', system-ui, sans-serif",
@@ -401,9 +401,9 @@ const JobCard: React.FC<{
   <GlassCard
     className={cn(
       "p-5 cursor-pointer transition-all duration-200",
-      "hover:border-[#5B7799]/60 hover:shadow-[0_2px_12px_rgba(91,119,153,0.10)]",
+      "hover:border-[#64748B]/60 hover:shadow-[0_2px_12px_rgba(91,119,153,0.10)]",
       "hover:-translate-y-[1px]",
-      isSelected && "ring-2 ring-[#5B7799]/40 ring-offset-2 ring-offset-background border-[#5B7799]/60"
+      isSelected && "ring-2 ring-[#64748B]/40 ring-offset-2 ring-offset-background border-[#64748B]/60"
     )}
     glow={isSelected}
     onClick={onCardClick}

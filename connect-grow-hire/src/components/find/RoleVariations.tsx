@@ -150,19 +150,19 @@ export const RoleVariations: React.FC<RoleVariationsProps> = ({
                 border: 'none',
                 padding: 2,
                 cursor: 'pointer',
-                color: 'var(--ink-3, #8A8F9A)',
+                color: 'var(--ink-3, #94A3B8)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 borderRadius: 4,
                 transition: 'color .12s, background .12s',
               }}
               onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ink-2, #4A4F5B)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ink-2, #475569)';
                 (e.currentTarget as HTMLButtonElement).style.background =
                   'rgba(15,23,42,0.04)';
               }}
               onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ink-3, #8A8F9A)';
+                (e.currentTarget as HTMLButtonElement).style.color = 'var(--ink-3, #94A3B8)';
                 (e.currentTarget as HTMLButtonElement).style.background = 'transparent';
               }}
               aria-label="Dismiss role variations"

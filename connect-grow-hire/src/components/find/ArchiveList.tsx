@@ -18,7 +18,7 @@ export const ArchiveList: React.FC<ArchiveListProps> = ({ items, onSelect }) => 
   return (
     <div
       style={{
-        border: "1px solid var(--line, #E5E5E0)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 3,
         overflow: "hidden",
       }}

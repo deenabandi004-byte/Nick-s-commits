@@ -45,7 +45,7 @@ export const PromptCard: React.FC<PromptCardProps> = ({ item, onSelect }) => {
           fontSize: 9.5,
           letterSpacing: '0.08em',
           textTransform: 'uppercase' as const,
-          color: '#8A8F97',
+          color: '#94A3B8',
           marginTop: 'auto',
           paddingTop: 8,
         }}
@@ -55,11 +55,11 @@ export const PromptCard: React.FC<PromptCardProps> = ({ item, onSelect }) => {
 
       <style>{`
         .prompt-card:hover {
-          border-color: #1B2A44 !important;
+          border-color: #1E293B !important;
           transform: translateY(-1px);
         }
         .prompt-card:focus-visible {
-          outline: 2px solid var(--st-accent, #1B2A44);
+          outline: 2px solid var(--st-accent, #1E293B);
           outline-offset: 2px;
         }
       `}</style>

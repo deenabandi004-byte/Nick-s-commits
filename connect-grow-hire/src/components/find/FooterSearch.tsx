@@ -29,7 +29,7 @@ export const FooterSearch: React.FC<FooterSearchProps> = ({
         alignItems: "center",
         gap: 10,
         padding: "12px 16px",
-        border: "1px solid var(--line, #E5E5E0)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 3,
         background: "var(--paper, #FFFFFF)",
         marginTop: 20,
@@ -41,7 +41,7 @@ export const FooterSearch: React.FC<FooterSearchProps> = ({
         style={{
           width: 14,
           height: 14,
-          color: "var(--ink-3, #8A8F9A)",
+          color: "var(--ink-3, #94A3B8)",
           flexShrink: 0,
         }}
       />
@@ -56,7 +56,7 @@ export const FooterSearch: React.FC<FooterSearchProps> = ({
           background: "none",
           outline: "none",
           fontSize: 13,
-          color: "var(--ink, #111318)",
+          color: "var(--ink, #0F172A)",
           fontFamily: "inherit",
         }}
       />

@@ -1,21 +1,21 @@
 /* Design tokens - White + Navy unified system */
 
 :root {
-  --brand: #1B2A44;          /* navy - sidebar, headline accents */
-  --brand-2: #243656;
+  --brand: #1E293B;          /* slate-800 - headline accents (de-navied) */
+  --brand-2: #334155;
 
-  --accent: #1B2A44;         /* same navy - unified accent color */
+  --accent: #1E293B;         /* slate-800 - neutral dark accent (de-navied) */
 
-  --ink: #111318;            /* primary text + primary button fill */
-  --ink-2: #4A4F5B;
-  --ink-3: #8A8F9A;
+  --ink: #0F172A;            /* primary text + primary button fill */
+  --ink-2: #475569;
+  --ink-3: #94A3B8;
 
   --paper: #FFFFFF;          /* main canvas */
-  --paper-2: #FAFBFF;        /* card fills, subtle surfaces - faint blue tint to match Profile */
+  --paper-2: #FAFBFF;        /* card fills, subtle surfaces - faint cool tint */
   --elev: #FFFFFF;
 
-  --line: #E5E5E0;
-  --line-2: #F0F0ED;
+  --line: #E2E8F0;
+  --line-2: #EEF2F8;
 
   /* Signals */
   --signal-pos: #16a34a;

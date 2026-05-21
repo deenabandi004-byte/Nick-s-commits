@@ -636,7 +636,7 @@ const MeetingPrepPage: React.FC = () => {
                 <h1 style={{
                   fontSize: 22,
                   fontWeight: 600,
-                  color: '#1A1714',
+                  color: '#0F172A',
                   lineHeight: 1.2,
                   marginBottom: 6,
                   fontFamily: "'Lora', Georgia, serif",
@@ -645,7 +645,7 @@ const MeetingPrepPage: React.FC = () => {
                 </h1>
                 <p style={{
                   fontSize: 13,
-                  color: 'var(--warm-ink-tertiary, #9C9590)',
+                  color: 'var(--warm-ink-tertiary, #94A3B8)',
                   lineHeight: 1.6,
                 }}>
                   Walk into every conversation prepared. We'll research them so you don't have to.
@@ -675,7 +675,7 @@ const MeetingPrepPage: React.FC = () => {
                 <p style={{
                   textAlign: 'center',
                   fontSize: 16,
-                  color: '#1B2A44',
+                  color: '#1E293B',
                   fontFamily: "'Lora', Georgia, serif",
                   fontStyle: 'italic',
                   marginBottom: 20,
@@ -691,15 +691,15 @@ const MeetingPrepPage: React.FC = () => {
                   alignItems: 'center',
                   gap: 10,
                   padding: '14px 18px',
-                  border: '1.5px solid var(--warm-border, #E8E4DE)',
+                  border: '1.5px solid var(--warm-border, #E2E8F0)',
                   borderRadius: 14,
                   background: 'var(--warm-surface, #FAFBFF)',
                   transition: 'all .15s',
                   marginBottom: 12,
                 }}
-                className="focus-within:border-[#1B2A44] focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(27,42,68,0.15)]"
+                className="focus-within:border-[#1E293B] focus-within:bg-white focus-within:shadow-[0_0_0_3px_rgba(30, 41, 59,0.15)]"
                 >
-                  <Linkedin style={{ width: 16, height: 16, flexShrink: 0, color: '#1B2A44', strokeWidth: 1.5 }} />
+                  <Linkedin style={{ width: 16, height: 16, flexShrink: 0, color: '#1E293B', strokeWidth: 1.5 }} />
                   <div style={{ flex: 1, position: 'relative' }}>
                     <input
                       type="url"
@@ -715,7 +715,7 @@ const MeetingPrepPage: React.FC = () => {
                         border: 'none',
                         background: 'none',
                         fontSize: 14,
-                        color: '#1A1714',
+                        color: '#0F172A',
                         outline: 'none',
                         fontFamily: 'inherit',
                       }}
@@ -731,7 +731,7 @@ const MeetingPrepPage: React.FC = () => {
                           fontSize: 14,
                           fontFamily: 'inherit',
                           lineHeight: 1.5,
-                          color: 'var(--warm-ink-tertiary, #9C9590)',
+                          color: 'var(--warm-ink-tertiary, #94A3B8)',
                           opacity: placeholderVisible ? 1 : 0,
                           transition: 'opacity 0.3s ease',
                           whiteSpace: 'nowrap',
@@ -770,8 +770,8 @@ const MeetingPrepPage: React.FC = () => {
                     width: '100%',
                     height: 52,
                     borderRadius: 12,
-                    background: (meetingLoading || !hasAccess) ? 'var(--warm-border, #E8E4DE)' : '#1B2A44',
-                    color: (meetingLoading || !hasAccess) ? 'var(--warm-ink-tertiary, #9C9590)' : '#fff',
+                    background: (meetingLoading || !hasAccess) ? 'var(--warm-border, #E2E8F0)' : '#1E293B',
+                    color: (meetingLoading || !hasAccess) ? 'var(--warm-ink-tertiary, #94A3B8)' : '#fff',
                     border: 'none',
                     fontSize: 15,
                     fontWeight: 600,
@@ -796,7 +796,7 @@ const MeetingPrepPage: React.FC = () => {
 
                 {/* Meta row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)' }}>{MEETING_CREDITS} credits · PDF auto-saved</span>
+                  <span style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>{MEETING_CREDITS} credits · PDF auto-saved</span>
                   {subscription?.resumeFileName ? (
                     <button
                       onClick={() => navigate('/settings')}
@@ -813,7 +813,7 @@ const MeetingPrepPage: React.FC = () => {
                     <button
                       onClick={() => navigate('/settings')}
                       style={{
-                        fontSize: 11, color: '#1B2A44', fontWeight: 500,
+                        fontSize: 11, color: '#1E293B', fontWeight: 500,
                         display: 'flex', alignItems: 'center', gap: 3,
                         background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       }}
@@ -826,7 +826,7 @@ const MeetingPrepPage: React.FC = () => {
               </div>
 
               {/* ── Tabs ── */}
-              <div style={{ marginBottom: 28, borderBottom: '1px solid var(--warm-border, #E8E4DE)' }}>
+              <div style={{ marginBottom: 28, borderBottom: '1px solid var(--warm-border, #E2E8F0)' }}>
                 <div className="relative">
                   <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
                     {meetingTabs.map((tab, index) => {
@@ -845,9 +845,9 @@ const MeetingPrepPage: React.FC = () => {
                             fontWeight: isActive ? 600 : 400,
                             cursor: 'pointer',
                             border: 'none',
-                            borderBottom: isActive ? '2px solid #1B2A44' : '2px solid transparent',
+                            borderBottom: isActive ? '2px solid #1E293B' : '2px solid transparent',
                             background: 'transparent',
-                            color: isActive ? '#1A1714' : 'var(--warm-ink-tertiary, #9C9590)',
+                            color: isActive ? '#0F172A' : 'var(--warm-ink-tertiary, #94A3B8)',
                             transition: 'all .15s',
                             fontFamily: 'inherit',
                           }}
@@ -884,16 +884,16 @@ const MeetingPrepPage: React.FC = () => {
                                   <CheckCircle className="w-4 h-4" style={{ color: '#15803D' }} />
                                 </div>
                                 <div>
-                                  <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1714' }}>
+                                  <p style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>
                                     {meetingResult?.contactData?.firstName} {meetingResult?.contactData?.lastName} - prep sheet ready
                                   </p>
-                                  <p style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)' }}>{meetingResult?.contactData?.company}</p>
+                                  <p style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>{meetingResult?.contactData?.company}</p>
                                 </div>
                               </div>
                               <button
                                 onClick={() => downloadMeetingPDF()}
                                 style={{
-                                  padding: '9px 18px', background: '#1B2A44', color: '#fff',
+                                  padding: '9px 18px', background: '#1E293B', color: '#fff',
                                   fontSize: 13, fontWeight: 600, borderRadius: 8, border: 'none',
                                   cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'inherit',
                                 }}
@@ -910,7 +910,7 @@ const MeetingPrepPage: React.FC = () => {
                           ) : (
                             <div className="space-y-2.5">
                               <SteppedLoadingBar steps={meetingSteps} currentStepId={currentPrepStatus} />
-                              <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', textAlign: 'center' }}>Usually 20-35 seconds</p>
+                              <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', textAlign: 'center' }}>Usually 20-35 seconds</p>
                             </div>
                           )}
                         </div>
@@ -941,15 +941,15 @@ const MeetingPrepPage: React.FC = () => {
                                 key={item.title}
                                 style={{
                                   background: '#FFFFFF',
-                                  border: '1px solid var(--warm-border, #E8E4DE)',
-                                  borderTop: '3px solid #1B2A44',
+                                  border: '1px solid var(--warm-border, #E2E8F0)',
+                                  borderTop: '3px solid #1E293B',
                                   borderRadius: 12,
                                   padding: '20px 18px 22px',
                                   transition: 'transform 0.15s, box-shadow 0.15s',
                                 }}
                                 onMouseEnter={(e) => {
                                   e.currentTarget.style.transform = 'translateY(-2px)';
-                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(27,42,68,0.12)';
+                                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(30, 41, 59,0.12)';
                                 }}
                                 onMouseLeave={(e) => {
                                   e.currentTarget.style.transform = 'translateY(0)';
@@ -958,14 +958,14 @@ const MeetingPrepPage: React.FC = () => {
                               >
                                 <div style={{
                                   width: 32, height: 32, borderRadius: 8,
-                                  background: 'rgba(27,42,68,0.06)',
+                                  background: 'rgba(30, 41, 59,0.06)',
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   marginBottom: 12,
                                 }}>
-                                  <item.icon style={{ width: 15, height: 15, color: '#1B2A44' }} />
+                                  <item.icon style={{ width: 15, height: 15, color: '#1E293B' }} />
                                 </div>
-                                <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1714', marginBottom: 6, fontFamily: "'Lora', Georgia, serif" }}>{item.title}</p>
-                                <p style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)', lineHeight: 1.55 }}>{item.desc}</p>
+                                <p style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', marginBottom: 6, fontFamily: "'Lora', Georgia, serif" }}>{item.title}</p>
+                                <p style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #94A3B8)', lineHeight: 1.55 }}>{item.desc}</p>
                               </div>
                             ))}
                           </div>
@@ -974,13 +974,13 @@ const MeetingPrepPage: React.FC = () => {
 
                       {/* Recent Preps from Library */}
                       {recentPreps.length > 0 && meetingStatus !== 'completed' && (
-                        <div style={{ paddingTop: 24, borderTop: '1px solid #E8E4DE' }}>
+                        <div style={{ paddingTop: 24, borderTop: '1px solid #E2E8F0' }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#1A1714', fontFamily: "'Lora', Georgia, serif" }}>Recent Prep Sheets</h3>
+                            <h3 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', fontFamily: "'Lora', Georgia, serif" }}>Recent Prep Sheets</h3>
                             <button
                               onClick={() => setActiveTab('coffee-library')}
                               style={{
-                                fontSize: 12, color: '#1B2A44', fontWeight: 500,
+                                fontSize: 12, color: '#1E293B', fontWeight: 500,
                                 background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                               }}
                               onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
@@ -997,22 +997,22 @@ const MeetingPrepPage: React.FC = () => {
                                 onClick={() => handleLibraryDownload(prep)}
                                 style={{
                                   padding: '14px 16px',
-                                  border: '1px solid var(--warm-border, #E8E4DE)',
+                                  border: '1px solid var(--warm-border, #E2E8F0)',
                                   borderRadius: 12,
                                   cursor: 'pointer',
                                   transition: 'all .15s',
                                   background: '#FFFFFF',
                                 }}
                                 onMouseEnter={(e) => {
-                                  (e.currentTarget as HTMLDivElement).style.borderColor = '#1B2A44';
+                                  (e.currentTarget as HTMLDivElement).style.borderColor = '#1E293B';
                                 }}
                                 onMouseLeave={(e) => {
-                                  (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--warm-border, #E8E4DE)';
+                                  (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--warm-border, #E2E8F0)';
                                 }}
                               >
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
                                   <div style={{
-                                    width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #1B2A44, #2C4A6E)',
+                                    width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #1E293B, #2C4A6E)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                                   }}>
                                     <span style={{ fontSize: 11, fontWeight: 600, color: '#fff' }}>
@@ -1020,11 +1020,11 @@ const MeetingPrepPage: React.FC = () => {
                                     </span>
                                   </div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
-                                    <p style={{ fontSize: 13, fontWeight: 500, color: '#1A1714', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prep.contactName}</p>
-                                    <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prep.company}</p>
+                                    <p style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prep.contactName}</p>
+                                    <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{prep.company}</p>
                                   </div>
                                 </div>
-                                <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)' }}>
+                                <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>
                                   {prep.createdAt ? new Date(prep.createdAt).toLocaleDateString() : ''}
                                 </p>
                               </div>
@@ -1043,16 +1043,16 @@ const MeetingPrepPage: React.FC = () => {
                         <LoadingSkeleton variant="card" count={3} />
                       ) : preps.length === 0 ? (
                         <div className="text-center py-12">
-                          <div style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', background: 'rgba(27,42,68,0.06)', borderRadius: 12 }}>
-                            <Coffee className="h-8 w-8" style={{ color: '#1B2A44' }} />
+                          <div style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', background: 'rgba(30, 41, 59,0.06)', borderRadius: 12 }}>
+                            <Coffee className="h-8 w-8" style={{ color: '#1E293B' }} />
                           </div>
-                          <h3 style={{ fontSize: 18, fontWeight: 600, color: '#1A1714', marginBottom: 8, fontFamily: "'Lora', Georgia, serif" }}>No preps yet</h3>
-                          <p style={{ fontSize: 13, color: 'var(--warm-ink-tertiary, #9C9590)', marginBottom: 24 }}>
+                          <h3 style={{ fontSize: 18, fontWeight: 600, color: '#0F172A', marginBottom: 8, fontFamily: "'Lora', Georgia, serif" }}>No preps yet</h3>
+                          <p style={{ fontSize: 13, color: 'var(--warm-ink-tertiary, #94A3B8)', marginBottom: 24 }}>
                             Generate your first meeting prep to see it appear here.
                           </p>
                           <button
                             onClick={() => setActiveTab('meeting-prep')}
-                            style={{ padding: '10px 24px', fontSize: 14, fontWeight: 600, background: '#1B2A44', color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                            style={{ padding: '10px 24px', fontSize: 14, fontWeight: 600, background: '#1E293B', color: '#fff', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                           >
                             Create Your First Prep
                           </button>
@@ -1061,25 +1061,25 @@ const MeetingPrepPage: React.FC = () => {
                         <div className="space-y-6">
                           {groupedPreps.inProgress.length > 0 && (
                             <section>
-                              <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warm-ink-tertiary, #9C9590)', marginBottom: 12 }}>
+                              <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warm-ink-tertiary, #94A3B8)', marginBottom: 12 }}>
                                 In Progress
                               </h3>
                               <div className="space-y-3">
                                 {groupedPreps.inProgress.map((prep) => (
                                   <div
                                     key={prep.id}
-                                    style={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--warm-surface, #FAFBFF)', border: '1px solid var(--warm-border, #E8E4DE)', borderRadius: 12 }}
+                                    style={{ padding: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--warm-surface, #FAFBFF)', border: '1px solid var(--warm-border, #E2E8F0)', borderRadius: 12 }}
                                   >
                                     <div>
-                                      <p style={{ fontWeight: 500, color: '#1A1714' }}>{prep.contactName}</p>
-                                      <p style={{ fontSize: 13, color: 'var(--warm-ink-tertiary, #9C9590)' }}>
+                                      <p style={{ fontWeight: 500, color: '#0F172A' }}>{prep.contactName}</p>
+                                      <p style={{ fontSize: 13, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>
                                         {prep.jobTitle} @ {prep.company}
                                       </p>
-                                      <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', marginTop: 4 }}>
+                                      <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', marginTop: 4 }}>
                                         Requested {prep.createdAt ? new Date(prep.createdAt).toLocaleString() : ""}
                                       </p>
                                     </div>
-                                    <div className="flex items-center gap-2" style={{ color: 'var(--warm-ink-tertiary, #9C9590)' }}>
+                                    <div className="flex items-center gap-2" style={{ color: 'var(--warm-ink-tertiary, #94A3B8)' }}>
                                       <Loader2 className="w-4 h-4 animate-spin" />
                                       <span style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase' }}>Processing...</span>
                                     </div>
@@ -1091,7 +1091,7 @@ const MeetingPrepPage: React.FC = () => {
 
                           {groupedPreps.completed.length > 0 && (
                             <section className="space-y-3">
-                              <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warm-ink-tertiary, #9C9590)' }}>
+                              <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warm-ink-tertiary, #94A3B8)' }}>
                                 Completed ({groupedPreps.completed.length})
                               </h3>
                               <div className="space-y-3">
@@ -1099,17 +1099,17 @@ const MeetingPrepPage: React.FC = () => {
                                   <div
                                     key={prep.id}
                                     className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-                                    style={{ padding: 20, background: '#FFFFFF', border: '1px solid var(--warm-border, #E8E4DE)', borderRadius: 12 }}
+                                    style={{ padding: 20, background: '#FFFFFF', border: '1px solid var(--warm-border, #E2E8F0)', borderRadius: 12 }}
                                   >
                                     <div className="space-y-2">
                                       <div className="flex items-center gap-2">
                                         <BadgeCheck className="h-5 w-5 text-green-600" />
-                                        <span style={{ fontWeight: 600, color: '#1A1714' }}>{prep.contactName}</span>
+                                        <span style={{ fontWeight: 600, color: '#0F172A' }}>{prep.contactName}</span>
                                       </div>
                                       <p style={{ fontSize: 13, color: '#3B3530' }}>
                                         {prep.jobTitle} @ {prep.company}
                                       </p>
-                                      <div className="flex flex-wrap items-center gap-3" style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)' }}>
+                                      <div className="flex flex-wrap items-center gap-3" style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>
                                         <span className="flex items-center gap-1">
                                           <Calendar className="h-3 w-3" />
                                           {prep.createdAt ? new Date(prep.createdAt).toLocaleDateString() : " - "}
@@ -1126,7 +1126,7 @@ const MeetingPrepPage: React.FC = () => {
                                     <div className="flex items-center gap-3">
                                       <button
                                         onClick={() => handleLibraryDownload(prep)}
-                                        style={{ padding: '8px 16px', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(27,42,68,0.08)', color: '#1B2A44', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                                        style={{ padding: '8px 16px', fontSize: 13, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(30, 41, 59,0.08)', color: '#1E293B', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
                                       >
                                         <Download className="h-4 w-4" />
                                         PDF

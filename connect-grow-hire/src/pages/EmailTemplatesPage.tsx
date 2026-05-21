@@ -275,7 +275,7 @@ export default function EmailTemplatesPage() {
           <MainContentWrapper>
             <AppHeader />
             <main className="flex-1 flex items-center justify-center p-8">
-              <p style={{ color: 'var(--warm-ink-tertiary, #9C9590)' }}>Loading…</p>
+              <p style={{ color: 'var(--warm-ink-tertiary, #94A3B8)' }}>Loading…</p>
             </main>
           </MainContentWrapper>
         </div>
@@ -301,7 +301,7 @@ export default function EmailTemplatesPage() {
                   marginTop: 24,
                   marginBottom: 20,
                   fontSize: 13,
-                  color: 'var(--warm-ink-tertiary, #9C9590)',
+                  color: 'var(--warm-ink-tertiary, #94A3B8)',
                   background: 'none',
                   border: 'none',
                   cursor: 'pointer',
@@ -309,8 +309,8 @@ export default function EmailTemplatesPage() {
                   padding: 0,
                   transition: 'color .12s',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#1A1714'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--warm-ink-tertiary, #9C9590)'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#0F172A'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--warm-ink-tertiary, #94A3B8)'; }}
               >
                 <ArrowLeft style={{ width: 14, height: 14 }} />
                 Back to Find
@@ -321,7 +321,7 @@ export default function EmailTemplatesPage() {
                   fontFamily: "'Lora', Georgia, serif",
                   fontWeight: 600,
                   fontSize: 22,
-                  color: '#1A1714',
+                  color: '#0F172A',
                   marginBottom: 6,
                 }}
               >
@@ -331,7 +331,7 @@ export default function EmailTemplatesPage() {
                 style={{
                   fontSize: 13,
                   lineHeight: 1.6,
-                  color: 'var(--warm-ink-tertiary, #9C9590)',
+                  color: 'var(--warm-ink-tertiary, #94A3B8)',
                   marginBottom: 28,
                 }}
               >
@@ -354,8 +354,8 @@ export default function EmailTemplatesPage() {
                           fontSize: 12,
                           fontWeight: 500,
                           borderRadius: 8,
-                          border: isActive ? '1.5px solid #1A1714' : '1px solid var(--warm-border, #E8E4DE)',
-                          background: isActive ? '#1A1714' : 'var(--warm-surface, #FAFBFF)',
+                          border: isActive ? '1.5px solid #0F172A' : '1px solid var(--warm-border, #E2E8F0)',
+                          background: isActive ? '#0F172A' : 'var(--warm-surface, #FAFBFF)',
                           color: isActive ? '#fff' : '#3B3530',
                           cursor: 'pointer',
                           transition: 'all .15s',
@@ -380,8 +380,8 @@ export default function EmailTemplatesPage() {
                             fontSize: 12,
                             fontWeight: 500,
                             borderRadius: 8,
-                            border: isActive ? '1.5px solid #1A1714' : '1px solid var(--warm-border, #E8E4DE)',
-                            background: isActive ? '#1A1714' : 'var(--warm-surface, #FAFBFF)',
+                            border: isActive ? '1.5px solid #0F172A' : '1px solid var(--warm-border, #E2E8F0)',
+                            background: isActive ? '#0F172A' : 'var(--warm-surface, #FAFBFF)',
                             color: isActive ? '#fff' : '#3B3530',
                             cursor: 'pointer',
                             transition: 'all .15s',
@@ -408,7 +408,7 @@ export default function EmailTemplatesPage() {
                   })}
                 </div>
                 {hasPresetPurpose && !activeSavedTemplateId && PURPOSE_DESCRIPTIONS[purpose!] && (
-                  <p style={{ marginTop: 8, fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)' }}>
+                  <p style={{ marginTop: 8, fontSize: 12, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>
                     {PURPOSE_DESCRIPTIONS[purpose!]}
                   </p>
                 )}
@@ -429,7 +429,7 @@ export default function EmailTemplatesPage() {
                 style={{
                   width: '100%',
                   borderRadius: 12,
-                  border: isMakeYourOwn ? '1.5px solid #1A1714' : '1px solid var(--warm-border, #E8E4DE)',
+                  border: isMakeYourOwn ? '1.5px solid #0F172A' : '1px solid var(--warm-border, #E2E8F0)',
                   padding: '16px 20px',
                   marginBottom: 28,
                   cursor: isMakeYourOwn ? 'default' : 'pointer',
@@ -455,9 +455,9 @@ export default function EmailTemplatesPage() {
                 >
                   <span style={{ fontSize: 13, fontWeight: 500, color: '#3B3530' }}>Create Your Own Template</span>
                   {isMakeYourOwn ? (
-                    <ChevronDown style={{ width: 14, height: 14, color: 'var(--warm-ink-tertiary, #9C9590)' }} />
+                    <ChevronDown style={{ width: 14, height: 14, color: 'var(--warm-ink-tertiary, #94A3B8)' }} />
                   ) : (
-                    <ChevronRight style={{ width: 14, height: 14, color: 'var(--warm-ink-tertiary, #9C9590)' }} />
+                    <ChevronRight style={{ width: 14, height: 14, color: 'var(--warm-ink-tertiary, #94A3B8)' }} />
                   )}
                 </div>
                 <div
@@ -467,7 +467,7 @@ export default function EmailTemplatesPage() {
                   )}
                 >
                   <div
-                    style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--warm-border, #E8E4DE)', display: 'flex', flexDirection: 'column', gap: 16 }}
+                    style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--warm-border, #E2E8F0)', display: 'flex', flexDirection: 'column', gap: 16 }}
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div>
@@ -476,7 +476,7 @@ export default function EmailTemplatesPage() {
                         placeholder="e.g., Startup Pitch, Informational Interview Request..."
                         value={templateName}
                         onChange={(e) => setTemplateName(e.target.value.slice(0, 200))}
-                        className="w-full rounded-lg border-[#E8E4DE] bg-[#FAF9F6] text-[#1A1714] placeholder:text-[#9C9590] focus:bg-white focus:ring-2 focus:ring-[#1A1714]/10 focus:border-[#1A1714]"
+                        className="w-full rounded-lg border-[#E2E8F0] bg-[#FAF9F6] text-[#0F172A] placeholder:text-[#94A3B8] focus:bg-white focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A]"
                       />
                     </div>
                     <div>
@@ -485,22 +485,22 @@ export default function EmailTemplatesPage() {
                         placeholder="e.g., Quick question from a fellow USC Trojan"
                         value={subjectLine}
                         onChange={(e) => setSubjectLine(e.target.value.slice(0, 500))}
-                        className="w-full rounded-lg border-[#E8E4DE] bg-[#FAF9F6] text-[#1A1714] placeholder:text-[#9C9590] focus:bg-white focus:ring-2 focus:ring-[#1A1714]/10 focus:border-[#1A1714]"
+                        className="w-full rounded-lg border-[#E2E8F0] bg-[#FAF9F6] text-[#0F172A] placeholder:text-[#94A3B8] focus:bg-white focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A]"
                       />
                     </div>
                     <div>
-                      <p style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)', lineHeight: 1.5, marginBottom: 8 }}>
+                      <p style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #94A3B8)', lineHeight: 1.5, marginBottom: 8 }}>
                         Describe exactly what you want your emails to say - in plain English. Want to pitch your startup? Ask for an intro to their manager? Request a campus speaking slot? Just type it out.
                       </p>
                       <Textarea
                         placeholder="e.g., Write a 3-sentence email pitching my startup to university career center directors and asking for a 15-minute demo call..."
                         value={customInstructions}
                         onChange={(e) => setCustomInstructions(e.target.value.slice(0, MAX_CUSTOM_LEN))}
-                        className="min-h-[72px] resize-y w-full rounded-lg border-[#E8E4DE] bg-[#FAF9F6] text-[#1A1714] placeholder:text-[#9C9590] focus:bg-white focus:ring-2 focus:ring-[#1A1714]/10 focus:border-[#1A1714]"
+                        className="min-h-[72px] resize-y w-full rounded-lg border-[#E2E8F0] bg-[#FAF9F6] text-[#0F172A] placeholder:text-[#94A3B8] focus:bg-white focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A]"
                         maxLength={MAX_CUSTOM_LEN}
                         rows={3}
                       />
-                      <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', textAlign: 'right', marginTop: 4 }}>
+                      <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', textAlign: 'right', marginTop: 4 }}>
                         {MAX_CUSTOM_LEN - customInstructions.length} characters left
                       </p>
                     </div>
@@ -511,7 +511,7 @@ export default function EmailTemplatesPage() {
               <div style={{
                 width: '100%',
                 borderRadius: 12,
-                border: '1px solid var(--warm-border, #E8E4DE)',
+                border: '1px solid var(--warm-border, #E2E8F0)',
                 background: 'var(--warm-surface, #FAFBFF)',
                 padding: '16px 20px',
                 marginBottom: 28,
@@ -519,9 +519,9 @@ export default function EmailTemplatesPage() {
                 cursor: 'default',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                  <LockKeyhole style={{ width: 14, height: 14, color: 'var(--warm-ink-tertiary, #9C9590)' }} />
-                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--warm-ink-tertiary, #9C9590)' }}>Create Your Own Template</span>
-                  <span style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)' }}>Elite · Free trial available</span>
+                  <LockKeyhole style={{ width: 14, height: 14, color: 'var(--warm-ink-tertiary, #94A3B8)' }} />
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>Create Your Own Template</span>
+                  <span style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>Elite · Free trial available</span>
                 </div>
               </div>
               )}
@@ -545,8 +545,8 @@ export default function EmailTemplatesPage() {
                           fontSize: 12,
                           fontWeight: 500,
                           borderRadius: 8,
-                          border: isActive ? '1.5px solid #1A1714' : '1px solid var(--warm-border, #E8E4DE)',
-                          background: isActive ? '#1A1714' : 'var(--warm-surface, #FAFBFF)',
+                          border: isActive ? '1.5px solid #0F172A' : '1px solid var(--warm-border, #E2E8F0)',
+                          background: isActive ? '#0F172A' : 'var(--warm-surface, #FAFBFF)',
                           color: isActive ? '#fff' : '#3B3530',
                           cursor: 'pointer',
                           transition: 'all .15s',
@@ -568,8 +568,8 @@ export default function EmailTemplatesPage() {
                           fontSize: 12,
                           fontWeight: 500,
                           borderRadius: 8,
-                          border: isActive ? '1.5px solid #1A1714' : '1px solid var(--warm-border, #E8E4DE)',
-                          background: isActive ? '#1A1714' : 'var(--warm-surface, #FAFBFF)',
+                          border: isActive ? '1.5px solid #0F172A' : '1px solid var(--warm-border, #E2E8F0)',
+                          background: isActive ? '#0F172A' : 'var(--warm-surface, #FAFBFF)',
                           color: isActive ? '#fff' : '#3B3530',
                           cursor: 'pointer',
                           transition: 'all .15s',
@@ -585,7 +585,7 @@ export default function EmailTemplatesPage() {
                       placeholder="e.g. Best regards,"
                       value={signoffPhraseCustom}
                       onChange={(e) => setSignoffPhraseCustom(e.target.value.slice(0, 50))}
-                      className="inline-flex w-[160px] h-8 text-xs rounded-lg border-[#E8E4DE]"
+                      className="inline-flex w-[160px] h-8 text-xs rounded-lg border-[#E2E8F0]"
                       maxLength={50}
                     />
                   )}
@@ -596,13 +596,13 @@ export default function EmailTemplatesPage() {
                     placeholder="e.g. John Smith\nUSC | Class of 2025\njohn@example.com"
                     value={signatureBlock}
                     onChange={(e) => setSignatureBlock(e.target.value.slice(0, 500))}
-                    className="min-h-[72px] resize-y w-full rounded-lg border-[#E8E4DE] bg-[#FAF9F6] text-sm text-[#1A1714] placeholder:text-[#9C9590] focus:bg-white focus:ring-2 focus:ring-[#1A1714]/10 focus:border-[#1A1714]"
+                    className="min-h-[72px] resize-y w-full rounded-lg border-[#E2E8F0] bg-[#FAF9F6] text-sm text-[#0F172A] placeholder:text-[#94A3B8] focus:bg-white focus:ring-2 focus:ring-[#0F172A]/10 focus:border-[#0F172A]"
                     maxLength={500}
                     rows={3}
                   />
-                  <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', textAlign: 'right', marginTop: 4 }}>{500 - signatureBlock.length} characters left</p>
+                  <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', textAlign: 'right', marginTop: 4 }}>{500 - signatureBlock.length} characters left</p>
                 </div>
-                <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', marginTop: 4 }}>Live preview:</p>
+                <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', marginTop: 4 }}>Live preview:</p>
                 <pre style={{ fontSize: 12, color: '#3B3530', marginTop: 2, whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
                   {`${effectiveSignoff}\n${signatureBlock.trim() || firstName}`}
                 </pre>
@@ -613,7 +613,7 @@ export default function EmailTemplatesPage() {
                 <button
                   type="button"
                   onClick={handleReset}
-                  style={{ fontSize: 13, color: 'var(--warm-ink-tertiary, #9C9590)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0, textDecoration: 'underline' }}
+                  style={{ fontSize: 13, color: 'var(--warm-ink-tertiary, #94A3B8)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0, textDecoration: 'underline' }}
                 >
                   Reset
                 </button>
@@ -626,7 +626,7 @@ export default function EmailTemplatesPage() {
                     fontSize: 13,
                     fontWeight: 500,
                     borderRadius: 8,
-                    border: '1.5px solid var(--warm-border, #E8E4DE)',
+                    border: '1.5px solid var(--warm-border, #E2E8F0)',
                     background: 'transparent',
                     color: '#3B3530',
                     cursor: isSaving ? 'not-allowed' : 'pointer',
@@ -646,7 +646,7 @@ export default function EmailTemplatesPage() {
                     fontWeight: 600,
                     borderRadius: 8,
                     border: '1.5px solid transparent',
-                    background: '#1A1714',
+                    background: '#0F172A',
                     color: '#fff',
                     cursor: isSaving ? 'not-allowed' : 'pointer',
                     fontFamily: 'inherit',
@@ -659,19 +659,19 @@ export default function EmailTemplatesPage() {
 
               {/* Preview */}
               <div style={{
-                borderLeft: '3px solid var(--warm-border, #E8E4DE)',
+                borderLeft: '3px solid var(--warm-border, #E2E8F0)',
                 background: 'var(--warm-surface, #FAFBFF)',
                 borderRadius: '0 12px 12px 0',
                 padding: '16px 20px',
               }}>
-                <p style={{ fontSize: 10, fontWeight: 500, color: 'var(--warm-ink-tertiary, #9C9590)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Preview</p>
+                <p style={{ fontSize: 10, fontWeight: 500, color: 'var(--warm-ink-tertiary, #94A3B8)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>Preview</p>
                 {isMakeYourOwn ? (
                   <p style={{ fontSize: 13, color: '#3B3530', lineHeight: 1.5 }}>
                     Your emails will be generated based on your instructions above. Each email will be personalized to the contact.
                   </p>
                 ) : previewBody ? (
                   <>
-                    <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #9C9590)', marginBottom: 12 }}>Actual emails will be personalized to each contact.</p>
+                    <p style={{ fontSize: 11, color: 'var(--warm-ink-tertiary, #94A3B8)', marginBottom: 12 }}>Actual emails will be personalized to each contact.</p>
                     <pre style={{ fontSize: 13, color: '#3B3530', whiteSpace: 'pre-wrap', fontFamily: 'inherit', lineHeight: 1.6 }}>
                       {previewBody}
                     </pre>

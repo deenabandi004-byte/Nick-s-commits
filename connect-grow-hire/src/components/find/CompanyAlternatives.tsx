@@ -79,7 +79,7 @@ const SubRail: React.FC<{
         fontWeight: 500,
         letterSpacing: '0.08em',
         textTransform: 'uppercase',
-        color: 'var(--ink-3, #8A8F9A)',
+        color: 'var(--ink-3, #94A3B8)',
         marginBottom: 4,
         paddingLeft: 6,
       }}

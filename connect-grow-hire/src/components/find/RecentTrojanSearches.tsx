@@ -33,7 +33,7 @@ export const RecentTrojanSearches: React.FC<RecentTrojanSearchesProps> = ({ scho
             fontSize: 9.5,
             letterSpacing: '0.08em',
             textTransform: 'uppercase' as const,
-            color: '#8A8F97',
+            color: '#94A3B8',
             marginBottom: 4,
           }}
         >
@@ -67,10 +67,10 @@ export const RecentTrojanSearches: React.FC<RecentTrojanSearchesProps> = ({ scho
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 14, height: 14, background: 'var(--line-2, #F0F0ED)', borderRadius: 2 }} />
-                <div style={{ width: 200 + i * 30, height: 13, background: 'var(--line-2, #F0F0ED)', borderRadius: 2 }} />
+                <div style={{ width: 14, height: 14, background: 'var(--line-2, #EEF2F8)', borderRadius: 2 }} />
+                <div style={{ width: 200 + i * 30, height: 13, background: 'var(--line-2, #EEF2F8)', borderRadius: 2 }} />
               </div>
-              <div style={{ width: 100, height: 10, background: 'var(--line-2, #F0F0ED)', borderRadius: 2 }} />
+              <div style={{ width: 100, height: 10, background: 'var(--line-2, #EEF2F8)', borderRadius: 2 }} />
             </div>
           ))}
         </div>
@@ -99,14 +99,14 @@ export const RecentTrojanSearches: React.FC<RecentTrojanSearchesProps> = ({ scho
           className="recent-search-row"
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ color: '#8A8F97', fontSize: 13 }}>&#x2315;</span>
+            <span style={{ color: '#94A3B8', fontSize: 13 }}>&#x2315;</span>
             <span style={{ fontSize: 13, color: '#4A4F57' }}>{item.query}</span>
           </div>
           <span
             style={{
               fontFamily: "'JetBrains Mono', monospace",
               fontSize: 10,
-              color: '#8A8F97',
+              color: '#94A3B8',
               whiteSpace: 'nowrap',
               flexShrink: 0,
               marginLeft: 12,
@@ -125,7 +125,7 @@ export const RecentTrojanSearches: React.FC<RecentTrojanSearchesProps> = ({ scho
           background: var(--paper-2, #FAFBFF) !important;
         }
         .recent-search-row:focus-visible {
-          outline: 2px solid var(--st-accent, #1B2A44);
+          outline: 2px solid var(--st-accent, #1E293B);
           outline-offset: 2px;
         }
       `}</style>

@@ -227,7 +227,7 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
             href={row.linkedinUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[11px] text-[#5B7799] hover:underline inline-flex items-center gap-1"
+            className="text-[11px] text-[#64748B] hover:underline inline-flex items-center gap-1"
           >
             <ExternalLink className="h-3 w-3" /> view
           </a>
@@ -255,7 +255,7 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
           <button
             type="button"
             title={hasNote ? "Edit note" : "Add note"}
-            className={`p-0.5 ${hasNote ? "text-[#5B7799]" : "hover:text-ink"}`}
+            className={`p-0.5 ${hasNote ? "text-[#64748B]" : "hover:text-ink"}`}
             onClick={(e) => {
               e.stopPropagation();
               if (noteOpen) {
@@ -295,14 +295,14 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
             style={{ background: "var(--paper-2, #FAFBFF)" }}
           >
             <div style={{ marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}>
-              <StickyNote className="h-3 w-3" style={{ color: "#5B7799" }} />
+              <StickyNote className="h-3 w-3" style={{ color: "#64748B" }} />
               <span
                 style={{
                   fontSize: 9.5,
                   fontFamily: "'JetBrains Mono', monospace",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
-                  color: "#5B7799",
+                  color: "#64748B",
                 }}
               >
                 Note · {row.name}
@@ -321,7 +321,7 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
                 lineHeight: 1.5,
                 color: "var(--ink, #0F172A)",
                 background: "white",
-                border: "1px solid var(--line, #E8E4DE)",
+                border: "1px solid var(--line, #E2E8F0)",
                 borderRadius: 4,
                 padding: "8px 10px",
                 outline: "none",
@@ -351,7 +351,7 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
                   commitNote(row.id, row.notes);
                   setOpenNoteId(null);
                 }}
-                className="text-[11px] font-medium text-[#5B7799] hover:text-[#3F5878]"
+                className="text-[11px] font-medium text-[#64748B] hover:text-[#3F5878]"
               >
                 Save
               </button>
@@ -424,7 +424,7 @@ interface CompanyRow {
 // Soft-blue color tokens used across both the list and grid views - picked to
 // echo the landing-page palette (white surface, faint blue tint, slate-blue
 // accent) the user called out as the target aesthetic.
-const COMPANY_BLUE = "#5B7799";
+const COMPANY_BLUE = "#64748B";
 const COMPANY_BLUE_TINT = "rgba(91,119,153,0.08)";
 const COMPANY_BLUE_TINT_HOVER = "rgba(91,119,153,0.12)";
 
@@ -483,7 +483,7 @@ const CompanyLogo: React.FC<CompanyLogoProps> = ({ name, size }) => {
         objectFit: "contain",
         flexShrink: 0,
         background: "white",
-        border: "1px solid var(--line-2, #F0F0ED)",
+        border: "1px solid var(--line-2, #EEF2F8)",
       }}
     />
   );
@@ -515,7 +515,7 @@ const CompaniesTable: React.FC<{
       style={{
         display: "inline-flex",
         background: "var(--paper-2, #FAFBFF)",
-        border: "1px solid var(--line, #E8E4DE)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 6,
         padding: 2,
         marginBottom: 12,
@@ -531,9 +531,9 @@ const CompaniesTable: React.FC<{
             fontSize: 11.5,
             fontWeight: 500,
             background: view === v ? "white" : "transparent",
-            border: view === v ? "1px solid var(--line, #E8E4DE)" : "1px solid transparent",
+            border: view === v ? "1px solid var(--line, #E2E8F0)" : "1px solid transparent",
             borderRadius: 4,
-            color: view === v ? COMPANY_BLUE : "var(--ink-3, #8A8F9A)",
+            color: view === v ? COMPANY_BLUE : "var(--ink-3, #94A3B8)",
             cursor: "pointer",
             display: "inline-flex",
             alignItems: "center",
@@ -625,8 +625,8 @@ const CompaniesTable: React.FC<{
                       padding: "3px 9px",
                       borderRadius: 4,
                       background: isExploring ? "transparent" : COMPANY_BLUE_TINT,
-                      color: isExploring ? "var(--ink-3, #8A8F9A)" : COMPANY_BLUE,
-                      border: isExploring ? "1px dashed var(--line, #E8E4DE)" : "none",
+                      color: isExploring ? "var(--ink-3, #94A3B8)" : COMPANY_BLUE,
+                      border: isExploring ? "1px dashed var(--line, #E2E8F0)" : "none",
                       textTransform: isExploring ? "uppercase" : "none",
                     }}
                   >
@@ -638,7 +638,7 @@ const CompaniesTable: React.FC<{
                 <div
                   style={{
                     fontSize: 12,
-                    color: "var(--ink-2, #4A4F5B)",
+                    color: "var(--ink-2, #475569)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -650,7 +650,7 @@ const CompaniesTable: React.FC<{
                 <div
                   style={{
                     fontSize: 12,
-                    color: "var(--ink-3, #8A8F9A)",
+                    color: "var(--ink-3, #94A3B8)",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
@@ -691,7 +691,7 @@ const CompaniesTable: React.FC<{
                 textAlign: "left",
                 padding: "14px 16px",
                 background: "white",
-                border: "1px solid var(--line, #E8E4DE)",
+                border: "1px solid var(--line, #E2E8F0)",
                 borderRadius: 8,
                 cursor: onSelectCompany ? "pointer" : "default",
                 transition: "border-color .15s, background .15s",
@@ -707,7 +707,7 @@ const CompaniesTable: React.FC<{
                 e.currentTarget.style.background = COMPANY_BLUE_TINT;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = "var(--line, #E8E4DE)";
+                e.currentTarget.style.borderColor = "var(--line, #E2E8F0)";
                 e.currentTarget.style.background = "white";
               }}
             >
@@ -734,7 +734,7 @@ const CompaniesTable: React.FC<{
                       fontFamily: "'JetBrains Mono', monospace",
                       letterSpacing: "0.06em",
                       textTransform: "uppercase",
-                      color: isExploring ? COMPANY_BLUE : "var(--ink-3, #8A8F9A)",
+                      color: isExploring ? COMPANY_BLUE : "var(--ink-3, #94A3B8)",
                       marginTop: 2,
                     }}
                   >
@@ -751,9 +751,9 @@ const CompaniesTable: React.FC<{
                     flexDirection: "column",
                     gap: 3,
                     fontSize: 11.5,
-                    color: "var(--ink-2, #4A4F5B)",
+                    color: "var(--ink-2, #475569)",
                     lineHeight: 1.4,
-                    borderTop: "1px solid var(--line-2, #F0F0ED)",
+                    borderTop: "1px solid var(--line-2, #EEF2F8)",
                     paddingTop: 8,
                   }}
                 >
@@ -772,7 +772,7 @@ const CompaniesTable: React.FC<{
                   {row.hq && (
                     <div
                       style={{
-                        color: "var(--ink-3, #8A8F9A)",
+                        color: "var(--ink-3, #94A3B8)",
                         overflow: "hidden",
                         textOverflow: "ellipsis",
                         whiteSpace: "nowrap",
@@ -890,7 +890,7 @@ const ManagersTable: React.FC<{ rows: ManagerRow[] }> = ({ rows }) => {
                   href={row.linkedinUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] text-[#5B7799] hover:underline inline-flex items-center gap-1"
+                  className="text-[11px] text-[#64748B] hover:underline inline-flex items-center gap-1"
                 >
                   <ExternalLink className="h-3 w-3" /> view
                 </a>
@@ -907,7 +907,7 @@ const ManagersTable: React.FC<{ rows: ManagerRow[] }> = ({ rows }) => {
                   href={row.jobUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[12px] text-[#5B7799] hover:underline truncate inline-block max-w-full align-bottom"
+                  className="text-[12px] text-[#64748B] hover:underline truncate inline-block max-w-full align-bottom"
                   title={row.roleHiringFor || ""}
                 >
                   {row.roleHiringFor || "view posting"}
@@ -1200,7 +1200,7 @@ const MyNetworkPage: React.FC = () => {
                     onClick={() => setGroupByCompany((v) => !v)}
                     className={`inline-flex items-center gap-1.5 px-3 py-2 border rounded-md text-[12px] font-medium transition-colors ${
                       groupByCompany
-                        ? "bg-[#5B7799]/10 border-[#5B7799] text-[#3F5878]"
+                        ? "bg-[#64748B]/10 border-[#64748B] text-[#3F5878]"
                         : "bg-paper-2/60 border-line text-ink-3 hover:text-ink-2"
                     }`}
                     title="Toggle company grouping"

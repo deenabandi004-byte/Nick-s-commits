@@ -21,13 +21,13 @@ export const TemplateButton: React.FC<TemplateButtonProps> = ({ template, onClic
         alignItems: "center",
         gap: 0,
         padding: "8px 12px",
-        border: "1px solid var(--line, #E5E5E0)",
+        border: "1px solid var(--line, #E2E8F0)",
         borderRadius: 10,
         background: "var(--paper)",
         cursor: "pointer",
         fontFamily: "inherit",
         transition: "all .15s",
-        color: "var(--ink, #111318)",
+        color: "var(--ink, #0F172A)",
       }}
       onMouseEnter={(e) => {
         e.currentTarget.style.borderColor = "var(--brand-blue, #3B82F6)";
@@ -35,8 +35,8 @@ export const TemplateButton: React.FC<TemplateButtonProps> = ({ template, onClic
         e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)";
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = "var(--line, #E5E5E0)";
-        e.currentTarget.style.color = "var(--ink, #111318)";
+        e.currentTarget.style.borderColor = "var(--line, #E2E8F0)";
+        e.currentTarget.style.color = "var(--ink, #0F172A)";
         e.currentTarget.style.boxShadow = "none";
       }}
     >

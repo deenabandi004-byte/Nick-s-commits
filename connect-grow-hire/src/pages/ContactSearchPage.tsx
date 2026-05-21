@@ -1575,11 +1575,11 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       {/* Gmail hint - subtle inline text, not a warning banner */}
       {gmailConnected === false && !gmailBannerDismissed && (
         <div style={{ maxWidth: '860px', margin: '0 auto', padding: '8px 32px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-          <span style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)' }}>
+          <span style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #94A3B8)' }}>
             <button
               type="button"
               onClick={initiateGmailOAuth}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--warm-ink-secondary, #6B6560)', textDecoration: 'underline', textUnderlineOffset: 2, fontFamily: 'inherit' }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--warm-ink-secondary, #64748B)', textDecoration: 'underline', textUnderlineOffset: 2, fontFamily: 'inherit' }}
             >
               Connect Gmail
             </button>
@@ -1589,7 +1589,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             type="button"
             aria-label="Dismiss"
             onClick={dismissGmailBanner}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--warm-ink-tertiary, #9C9590)', fontSize: 14, lineHeight: 1, padding: 2 }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--warm-ink-tertiary, #94A3B8)', fontSize: 14, lineHeight: 1, padding: 2 }}
           >
             &times;
           </button>
@@ -1659,7 +1659,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 display: 'flex',
                 flexDirection: 'column',
                 padding: '22px 24px',
-                border: '1.5px solid var(--warm-border, #E8E4DE)',
+                border: '1.5px solid var(--warm-border, #E2E8F0)',
                 borderRadius: 14,
                 background: 'var(--warm-surface, #FAFBFF)',
                 transition:
@@ -1680,7 +1680,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                     - ::selection - keep selected text transparent (the visible rendering
                       lives in the overlay above; without this rule, the input's selected
                       text re-emerges and double-renders against the overlay). */}
-                <style>{`.ofl-search-input::placeholder{color:var(--warm-ink-tertiary,#9C9590);opacity:1;}.ofl-search-input::selection{color:transparent;background:rgba(59,130,246,0.20);}.ofl-search-input::-moz-selection{color:transparent;background:rgba(59,130,246,0.20);}`}</style>
+                <style>{`.ofl-search-input::placeholder{color:var(--warm-ink-tertiary,#94A3B8);opacity:1;}.ofl-search-input::selection{color:transparent;background:rgba(59,130,246,0.20);}.ofl-search-input::-moz-selection{color:transparent;background:rgba(59,130,246,0.20);}`}</style>
                 <textarea
                   ref={promptInputRef}
                   className="ofl-search-input"
@@ -1757,7 +1757,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                       fontSize: 14,
                       fontFamily: 'inherit',
                       lineHeight: 1.5,
-                      color: 'var(--warm-ink-tertiary, #9C9590)',
+                      color: 'var(--warm-ink-tertiary, #94A3B8)',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -1809,7 +1809,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                       <>
                         <span style={{ color: '#0F172A' }}>{searchPrompt}</span>
                         {ghostCompletion && inputFocused && (
-                          <span style={{ color: 'var(--ink-3, #8A8F9A)', opacity: 0.55 }}>
+                          <span style={{ color: 'var(--ink-3, #94A3B8)', opacity: 0.55 }}>
                             {ghostCompletion}
                           </span>
                         )}
@@ -1961,13 +1961,13 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             <button
               type="button"
               onClick={() => setShowImportDialog(true)}
-              style={{ fontSize: 12, color: 'var(--ink-2, #4A4F5B)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 6px', borderRadius: 6, transition: 'color .12s, background .12s' }}
+              style={{ fontSize: 12, color: 'var(--ink-2, #475569)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 6px', borderRadius: 6, transition: 'color .12s, background .12s' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.color = 'var(--brand-blue, #3B82F6)';
                 e.currentTarget.style.background = 'rgba(59,130,246,0.06)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--ink-2, #4A4F5B)';
+                e.currentTarget.style.color = 'var(--ink-2, #475569)';
                 e.currentTarget.style.background = 'transparent';
               }}
             >
@@ -2094,7 +2094,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             style={{
               marginTop: 20,
               background: '#FFFFFF',
-              border: '1px solid var(--warm-border, #E8E4DE)',
+              border: '1px solid var(--warm-border, #E2E8F0)',
               borderRadius: 12,
               padding: '18px 20px',
               display: 'flex',
@@ -2112,13 +2112,13 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               justifyContent: 'center',
               flexShrink: 0,
             }}>
-              <FileText style={{ width: 20, height: 20, color: '#6B6560' }} />
+              <FileText style={{ width: 20, height: 20, color: '#64748B' }} />
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#1A1714', marginBottom: 3 }}>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#0F172A', marginBottom: 3 }}>
                 Upload your resume for better matches
               </div>
-              <div style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #9C9590)', lineHeight: 1.5 }}>
+              <div style={{ fontSize: 12, color: 'var(--warm-ink-tertiary, #94A3B8)', lineHeight: 1.5 }}>
                 We'll find people who hired for roles like yours - and tailor your outreach automatically.
               </div>
             </div>
@@ -2126,7 +2126,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               className="max-sm:w-full"
               onClick={() => document.getElementById('resume-upload')?.click()}
               style={{
-                background: '#1A1714',
+                background: '#0F172A',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
@@ -2151,7 +2151,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               disabled={isSearching || isUploadingResume}
               style={{
                 fontSize: 11,
-                color: 'var(--warm-ink-tertiary, #9C9590)',
+                color: 'var(--warm-ink-tertiary, #94A3B8)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 4,
@@ -2276,7 +2276,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                     border: '0.5px solid rgba(59,130,246,0.20)',
                     borderRadius: 6,
                     fontSize: 12,
-                    color: 'var(--ink-2, #4A4F5B)',
+                    color: 'var(--ink-2, #475569)',
                     lineHeight: 1.45,
                     marginBottom: 12,
                     display: 'inline-flex',
