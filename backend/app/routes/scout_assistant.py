@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import queue
 import threading
 
@@ -18,6 +19,10 @@ from app.extensions import require_firebase_auth, get_db
 from app.utils.async_runner import run_async
 
 scout_assistant_bp = Blueprint("scout_assistant", __name__, url_prefix="/api/scout-assistant")
+
+# Admin endpoints live on a prefix-less blueprint so the path is exactly
+# /api/admin/scout-assistant/... rather than under /api/scout-assistant.
+scout_admin_bp = Blueprint("scout_admin", __name__)
 
 # User context cache - avoids 2 Firestore reads per message within 5 minutes
 # 60s TTL: profile rarely changes, but recent_searches / recent_coffee_chat_preps
@@ -632,4 +637,47 @@ def scout_search_help():
 def scout_assistant_health():
     """Health check endpoint."""
     return jsonify({"status": "ok", "service": "scout-assistant"})
+
+
+def _check_scout_admin():
+    """(is_admin, error_response_or_None). Mirrors the audit-endpoint guard: a
+    Bearer Firebase token whose uid is in the ADMIN_UIDS env var."""
+    admin_uids = {u.strip() for u in os.getenv("ADMIN_UIDS", "").split(",") if u.strip()}
+    if not admin_uids:
+        return False, (jsonify({"error": "ADMIN_UIDS not configured"}), 500)
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return False, (jsonify({"error": "Unauthorized"}), 401)
+    from firebase_admin import auth as fb_auth
+    try:
+        decoded = fb_auth.verify_id_token(
+            auth_header.split("Bearer ", 1)[1], clock_skew_seconds=5
+        )
+    except Exception:
+        return False, (jsonify({"error": "Invalid token"}), 401)
+    if decoded.get("uid") not in admin_uids:
+        return False, (jsonify({"error": "Forbidden"}), 403)
+    return True, None
+
+
+@scout_admin_bp.route("/api/admin/scout-assistant/metrics", methods=["GET"])
+def scout_assistant_metrics():
+    """Admin-only Scout cost/latency metrics, last 24h. No PII in the response.
+
+    Aggregates the scout_metrics collection: turn share, average cost, and
+    average latency per tier (regex / navigate cache / answer cache / llm),
+    the near-miss cosine distribution, and the top cached intents (each a
+    de-identified, 80-char-truncated message).
+    """
+    is_admin, err = _check_scout_admin()
+    if not is_admin:
+        return err
+    from app.services.scout import metrics
+    from app.services.scout.cache import navigate_cache, answer_cache
+    summary = metrics.summary_last_24h()
+    summary["cache"] = {
+        "navigate": navigate_cache.stats(),
+        "answer": answer_cache.stats(),
+    }
+    return jsonify(summary)
 

@@ -250,13 +250,16 @@ export function ScoutSidePanel() {
     }
   }, [isPanelOpen, inputRef, searchHelpContext]);
 
-  // Auto-send a pending message (e.g. from briefing's "Ask Scout" chips).
+  // Auto-send a pending message (the home-page "Ask Scout" box, briefing
+  // chips). The message is captured and sent synchronously: clearPendingMessage
+  // sets pendingMessage to null, which re-runs this effect, so a deferred send
+  // (setTimeout) would be cancelled by this effect's own cleanup before it
+  // fired. The re-run hits the early return below, so the send happens once.
   useEffect(() => {
     if (!isPanelOpen || !pendingMessage) return;
     const msg = pendingMessage;
     clearPendingMessage();
-    const t = setTimeout(() => sendMessage(msg), 50);
-    return () => clearTimeout(t);
+    void sendMessage(msg);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPanelOpen, pendingMessage]);
 

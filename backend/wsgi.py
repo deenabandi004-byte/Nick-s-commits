@@ -30,7 +30,7 @@ from .app.routes.prompt_search import prompt_search_bp
 from .app.routes.parse_prompt import parse_prompt_bp
 from .app.routes.contact_import import contact_import_bp
 from .app.routes.job_board import job_board_bp
-from .app.routes.scout_assistant import scout_assistant_bp
+from .app.routes.scout_assistant import scout_assistant_bp, scout_admin_bp
 from .app.routes.linkedin_import import linkedin_import_bp
 from .app.routes.resume_workshop import resume_workshop_bp
 from .app.routes.resume_pdf_patch import resume_pdf_patch_bp
@@ -133,6 +133,13 @@ def create_app() -> Flask:
     print("🚀 Initializing app extensions...")
     init_app_extensions(app)
     print("✅ App extensions initialized")
+
+    # Load the Scout Tier B embedding caches from Firestore (best-effort).
+    try:
+        from .app.services.scout.cache import load_all as _load_scout_caches
+        _load_scout_caches()
+    except Exception as _e:
+        print(f"[ScoutCache] startup load skipped: {_e}")
     
     # Initialize Sentry error tracking
     from app.utils.sentry_config import init_sentry
@@ -205,6 +212,7 @@ def create_app() -> Flask:
     app.register_blueprint(contact_import_bp)
     app.register_blueprint(job_board_bp)
     app.register_blueprint(scout_assistant_bp)
+    app.register_blueprint(scout_admin_bp)
     app.register_blueprint(resume_workshop_bp)
     app.register_blueprint(resume_pdf_patch_bp)
     app.register_blueprint(cover_letter_workshop_bp)

@@ -8,7 +8,7 @@
  * edited) prefill; the panel then writes the bridge and navigates.
  */
 import { useState } from 'react';
-import { Check, ArrowRight, Coins } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import type { ScoutNavigate } from '@/hooks/useScoutChat';
 
 interface ScoutApproveCardProps {
@@ -55,12 +55,6 @@ export function ScoutApproveCard({ navigate, resolved, onApprove }: ScoutApprove
         <span className="rounded-md bg-[var(--c-surface-sunken)] px-2 py-0.5 font-mono text-[11px] text-[var(--c-text-secondary)]">
           {navigate.route}
         </span>
-        {navigate.credit_cost != null && (
-          <span className="inline-flex items-center gap-1 rounded-md bg-[var(--c-warning-subtle)] px-2 py-0.5 text-[11px] font-medium text-[var(--c-warning-text)]">
-            <Coins className="h-3 w-3" />
-            {navigate.credit_cost} credits per result
-          </span>
-        )}
       </div>
 
       {keys.length > 0 && (

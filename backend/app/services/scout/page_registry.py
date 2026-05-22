@@ -251,6 +251,76 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
 
 
 # ---------------------------------------------------------------------------
+# Registry version - bump on ANY change to PAGE_REGISTRY or ROUTE_ALIASES.
+# ---------------------------------------------------------------------------
+# The Scout embedding caches (Phase 4 Tier B) stamp every entry with the
+# version it was built against. A lookup ignores entries from an older
+# version, and stale entries are evicted on the next write cycle. Bumping this
+# is how a registry change invalidates the caches without a manual flush.
+REGISTRY_VERSION = 1
+
+
+# ---------------------------------------------------------------------------
+# Route aliases - hand-curated phrasings the pre-LLM router (Tier A) maps to a
+# route. Kept next to PAGE_REGISTRY so the two never drift. Keys are lowercase
+# phrases. The router only treats an alias as a hit behind an explicit
+# navigation verb ("open ...", "go to ...", "take me to ..."), so a passing
+# mention of a word like "jobs" inside a sentence does not trigger navigation.
+# Every value must be a route present in PAGE_REGISTRY (asserted at import).
+# ---------------------------------------------------------------------------
+ROUTE_ALIASES: Dict[str, str] = {
+    "dashboard": "/dashboard",
+    "home": "/dashboard",
+    "contact search": "/contact-search",
+    "people search": "/contact-search",
+    "find people": "/contact-search",
+    "find contacts": "/contact-search",
+    "firm search": "/firm-search",
+    "company search": "/firm-search",
+    "recruiter spreadsheet": "/recruiter-spreadsheet",
+    "hiring managers": "/recruiter-spreadsheet",
+    "hiring manager search": "/recruiter-spreadsheet",
+    "meeting prep": "/meeting-prep",
+    "coffee chat prep": "/meeting-prep",
+    "interview prep": "/interview-prep",
+    "meeting library": "/meeting-library",
+    "resume": "/write/resume",
+    "resume builder": "/write/resume",
+    "resume workshop": "/write/resume",
+    "resume library": "/write/resume-library",
+    "cover letter": "/write/cover-letter",
+    "cover letter library": "/write/cover-letter-library",
+    "outbox": "/outbox",
+    "tracker": "/outbox",
+    "network tracker": "/outbox",
+    "email tracker": "/outbox",
+    "calendar": "/calendar",
+    "recruiting timeline": "/calendar",
+    "recruiting calendar": "/calendar",
+    "contact directory": "/contact-directory",
+    "saved contacts": "/contact-directory",
+    "my contacts": "/contact-directory",
+    "hiring manager tracker": "/hiring-manager-tracker",
+    "company tracker": "/company-tracker",
+    "application lab": "/application-lab",
+    "job board": "/job-board",
+    "jobs": "/job-board",
+    "job listings": "/job-board",
+    "email templates": "/email-templates",
+    "pricing": "/pricing",
+    "plans": "/pricing",
+    "upgrade": "/pricing",
+    "subscription": "/pricing",
+    "account settings": "/account-settings",
+    "settings": "/account-settings",
+    "documentation": "/documentation",
+    "docs": "/documentation",
+    "help docs": "/documentation",
+    "onboarding": "/onboarding",
+}
+
+
+# ---------------------------------------------------------------------------
 # Lookups
 # ---------------------------------------------------------------------------
 
@@ -308,3 +378,10 @@ def build_pages_prompt_section() -> str:
             )
         lines.append("")
     return "\n".join(lines).rstrip()
+
+
+# Fail fast at import if an alias points at a route not in the registry.
+assert all(r in _BY_ROUTE for r in ROUTE_ALIASES.values()), (
+    "ROUTE_ALIASES has a target not in PAGE_REGISTRY: "
+    + ", ".join(sorted(set(ROUTE_ALIASES.values()) - set(_BY_ROUTE)))
+)

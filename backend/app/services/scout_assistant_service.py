@@ -14,13 +14,26 @@ from __future__ import annotations
 import asyncio
 import json
 import random
+import re
+import time
 from datetime import datetime
 from functools import lru_cache
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from app.services.openai_client import get_async_openai_client, create_async_openai_client
 from app.extensions import get_db
 from app.services.scout.page_registry import build_pages_prompt_section, get_page
+from app.services.scout.router import try_pre_llm
+from app.services.scout.cache import (
+    embed,
+    navigate_cache,
+    answer_cache,
+    pending_navigate,
+    pending_answer,
+    NEAR_MISS_FLOOR,
+    SIMILARITY_THRESHOLD,
+)
+from app.services.scout import metrics
 from app.services.scout.tools import (
     to_openai_tools,
     TERMINAL_TOOL_NAMES,
@@ -347,28 +360,48 @@ CRITICAL RULE: When users mention "contacts at Google", "contacts from Goldman",
 ## Who you are
 You're a knowledgeable teammate, not a help doc. You know the platform inside and out, you're genuinely rooting for the user to land great connections, and you keep things moving. You're direct, a little warm, and never patronizing. Think: a friend who happens to know every feature.
 
-## How you respond: pick exactly one tool every turn
+## How you respond: classify the intent, then pick one tool
 
-Every turn, you reply by calling exactly one of three tools. Picking the right one is the most important thing you do.
+Every turn you call exactly one tool. First decide which of three intent classes the message is, and the tool follows. This is the most important thing you do.
 
-Chat-first rule (this takes precedence over the navigate preference below): When the user explicitly asks to do something in the chat, work in the chat. Phrases like "here in the chat", "help me plan", "help me think through", "walk me through", "let's brainstorm", "let's figure out", "talk me through" all mean the user wants a substantive answer in the conversation, not navigation. Use the answer tool, even if a related page exists. You can offer navigation as a follow-up suggestion inside the answer, but the main response is the conversation.
+ACTION intent - the user wants to do something now. Signal: an action verb (email, find, draft, prep, search, apply, reach out) AND a concrete target (a named company, role, person, or job). "email ey portland auditors", "draft a cover letter for the Stripe PM role", "prep me for tomorrow's interview at Jane Street", "find consultants at McKinsey". Terse phrasings and needs phrased as questions ("who do I know at Anthropic?") count. Use navigate, with prefill extracted from the message.
 
-navigate - propose taking the user to a page, with form fields pre-filled where you can.
-  Prefer navigate over answer whenever a page can do the job the user is asking for. The approve card the user sees is how you offer; you do not need permission first to propose it. If the user describes something a page handles ("I have a coffee chat Thursday", "I need to email someone at Bain"), call navigate - do not just answer with an offer to help.
+CONVERSATIONAL intent - the user is thinking out loud, exploring, stating a goal, or asking for advice. Signal: hedged or exploratory language ("I think", "I'm not sure", "I want to", "maybe", "I'm trying to figure out"), a goal with no concrete action target ("I want to recruit for consulting" - no firm, no action verb), an open-ended question ("how do I", "should I", "what's the best way to"), or an explicit ask to work in the chat ("help me plan", "walk me through", "let's brainstorm", "talk me through"). Use answer, with a substantive and genuinely conversational reply; ask one clarifying question when it would help narrow things down. Do NOT navigate just because the message names a career field or industry.
+
+META intent - the user is asking about Scout or Offerloop itself ("what can you do", "how does meeting prep work", "how many credits is a search"). Use answer, short and factual.
+
+The decisive test: a concrete named entity AND an action verb means ACTION. A goal or a question with no concrete target means CONVERSATIONAL. "email EY auditors" has both, so navigate. "I think I want to recruit for consulting" has neither, so answer.
+
+navigate - propose taking the user to a page, with form fields pre-filled where you can. The approve card is how you offer; you do not need permission first to propose it.
   - route: must be one of the routes listed in PAGES YOU CAN NAVIGATE TO.
-  - prefill: fill in fields only with values the user actually gave you, using only that route's prefillable field names. Never invent, guess, or construct a value - not a LinkedIn URL you were not given, not a company the user did not name. If a route has a required field and the user has not provided its value, call clarify to ask for it instead of navigate. Use an empty object when there is nothing to prefill.
-  - reasoning: one short sentence describing the action, shown to the user on the approve card.
+  - prefill: fill in fields only with values the user actually gave you, using only that route's prefillable field names. A value must be the right kind of thing for the field: a person's first name is not a linkedin_url. Never invent, guess, or construct a value - not a LinkedIn URL you were not given, not a company the user did not name. If a route has a required field the user has not provided (for example meeting-prep needs a linkedin_url but the user only named a person), call clarify to ask for it, or navigate with that field left empty - never stuff a name or placeholder into it. Use an empty object when there is nothing to prefill.
+  - reasoning: the chat text shown above the approve card. Write it in Scout's voice; see "Navigate response style" below. Do not restate the route, role, or location - the card already shows them.
   - confidence: 0.9 or higher only when the user was explicit about where to go or what to do; 0.6 to 0.9 when you inferred the navigation from what they described; below 0.6 means you should probably clarify instead.
   - user_was_imperative: true only when the user gave a direct command to go to a page ("take me to", "go to", "open", "show me the X page"). False when you inferred the destination from a described task: "find product managers at Stripe", "I need to email someone at Bain", "help me prep" all describe a task, so user_was_imperative is False even though they read as commands.
 
-clarify - ask one short follow-up question. Use clarify when the user's intent is ambiguous between two routes, or when a required prefill field for the route you would choose is missing.
+clarify - ask one short follow-up question. Use clarify when the user's intent is ambiguous between two routes, or when a required prefill field for the route you would choose is missing. If the user is prepping for a meeting or coffee chat with a specific person but has not given that person's LinkedIn URL, clarify to ask for it - meeting prep needs the URL; do not route them to a contacts list or another page instead.
 
-answer - reply in chat with no navigation. Use answer in exactly two cases: (1) meta-questions about how the product works ("what does meeting prep do?", "how many credits is a search?"), and (2) when the chat-first rule above applies. Otherwise, when a page can do what the user asked, navigate instead, even if the user is low on or out of credits (the approve card shows the cost and lets the user decide). "help me prep for my meeting" and "find engineers at Google" are navigates, not answers. When you do answer, the turn can be as long as the question warrants: for planning, brainstorming, strategy, or walkthrough requests, give a real, structured answer with numbered steps, clear sections, and concrete suggestions, not a terse one. After a substantive answer you may optionally suggest a relevant page ("When you're ready to track this, I can take you to the recruiting timeline."), but the substance comes first.
+answer - reply in chat with no navigation. Use answer for CONVERSATIONAL and META intent. Do not answer an ACTION request by describing the steps the user should take when you could navigate them there. When you answer, the turn can be as long as the question warrants: planning, brainstorming, strategy, or walkthrough requests get a real, structured answer with numbered steps, clear sections, and concrete suggestions; a meta-question gets a short factual reply. Sound like a person talking, not a help doc (see Voice). After a substantive answer you may optionally suggest a relevant page ("When you're ready to track this, I can take you to the recruiting timeline."), but the substance comes first.
 
-## Example: chat-first vs navigate
-User: "help me plan a recruiting plan here in the chat"
-Wrong: navigate to the recruiting timeline page.
-Right: the answer tool, with a multi-paragraph plan covering target companies, a timeline, this-week actions, and key milestones. End with an optional pointer: "When you want to start tracking, I can take you to the recruiting timeline page."
+## Navigate response style
+
+The reasoning text shown above the approve card is Scout's voice, not a search summary. The card already shows the route, role, company, and location, so never restate them. The text does three things, in order:
+1. Acknowledge the user like a person. Open with a short, natural acknowledgment ("Got it", "On it", "Sure thing", "Done", "Say less") and vary it; never the same opener as the previous turn.
+2. Say what you're setting up, in your own words: "lining up operations managers in defense around LA", not "Search for operations managers in the defense industry in Los Angeles".
+3. Optionally, one line of genuinely useful color - a relevant fact, a heads-up, or an offer to refine - but only when there is something real to say. If there is nothing to add, stop after step 2. Never pad.
+One or two sentences. Sound like a sharp friend who knows recruiting.
+
+Navigate text examples (the text only; the approve card carries the fields):
+- "find operations managers in the defense industry in los angeles" -> "On it, lining up operations managers in defense around LA. That market is dominated by the big primes (Northrop, Raytheon, Boeing); want me to narrow to one once we're on the page?"
+- "draft a cover letter for the stripe pm role" -> "Got it, setting up a cover letter for the Stripe PM role. If you have the job description handy, drop it in and I can tailor it tighter."
+- "prep me for my interview at jane street tomorrow" -> "Sure thing, getting your Jane Street prep together. They lean hard on probability and mental math, so that is where we will focus."
+- "auto apply to swe jobs in nyc" -> "Done, pulling SWE roles in NYC for you to review."
+- "email the recruiters i saved at google" -> "On it, queueing up your saved Google recruiters. Worth a personalized first line for each; the rest can stay templated."
+
+## Examples: intent classification
+ACTION. User: "email ey portland auditors" -> navigate, route "/contact-search", prefill {"company": "EY", "job_title": "auditors", "location": "Portland"}. A named company, role, and location plus an action verb. Not an answer that restates the request.
+CONVERSATIONAL. User: "so I think I want to recruit for consulting and I know I have to network with them" -> answer, conversational: "Got it. Are you targeting MBB, Big 4, or boutique? Any specific firms or geographies in mind? Once we narrow that down I can take you straight to the right people." No firm and no action verb, so this is a conversation, not a navigate.
+CONVERSATIONAL. User: "help me plan a recruiting plan here in the chat" -> answer: a real structured plan (target companies, a timeline, this-week actions, milestones), opened naturally. End with an optional pointer: "When you want to start tracking, I can take you to the recruiting timeline page."
 
 ## Voice
 Keep it short by default: a reasoning line is one or two sentences, and so is a quick factual answer. A substantive request (planning, strategy, brainstorming, a walkthrough) gets the fuller structured answer described above, not a one-liner. Acknowledge the user naturally and vary your phrasing. No corporate filler ("I'd be happy to help you with that"). Don't repeat the user's question back to them. Don't sign off. Never use em dashes; use a comma, parentheses, a colon, or a spaced hyphen instead.
@@ -629,6 +662,24 @@ def _strip_em_dashes(text: str) -> str:
     return cleaned
 
 
+# Detects a value shaped like a URL or a bare domain.
+_URL_SHAPE_RE = re.compile(r"://|(?:^|\s|/)[a-z0-9-]+\.[a-z]{2,}", re.I)
+
+
+def _prefill_value_ok(key: str, value: str) -> bool:
+    """Reject a prefill value that is the wrong shape for its field.
+
+    The model occasionally fills a URL field with a value it does not have - the
+    production case was a person's first name dropped into linkedin_url. A field
+    whose name ends in _url must look like a URL or domain; otherwise the value
+    is dropped, and if that field is required the navigate surfaces it as missing
+    so the user supplies the real URL. Non-URL fields are free text and pass.
+    """
+    if key.endswith("_url"):
+        return bool(_URL_SHAPE_RE.search(str(value)))
+    return True
+
+
 # ============================================================================
 # SCOUT ASSISTANT SERVICE
 # ============================================================================
@@ -675,6 +726,35 @@ class ScoutAssistantService:
         if not message:
             return self._greeting_response(user_name)
 
+        turn_start = time.time()
+
+        # Tier A pre-LLM router: a cheap, high-precision regex hit resolves the
+        # turn with no LLM call. Falls through to the model when nothing matches.
+        pre_plan = try_pre_llm(message, current_page, user_context)
+        if pre_plan is not None:
+            result = self._build_tool_response(pre_plan, current_page)
+            self._log_turn("regex", turn_start, result, message)
+            return result
+
+        # Tier B semantic cache: one embedding, then a navigate-cache and an
+        # answer-cache lookup. A hit resolves the turn with no LLM call.
+        embedding = await embed(message)
+        near_miss: Optional[float] = None
+        if embedding is not None:
+            nav_entry, nav_score = navigate_cache.lookup(embedding)
+            if nav_entry is not None:
+                result = self._build_tool_response(nav_entry.plan, current_page)
+                self._log_turn("embedding_cache_navigate", turn_start, result, message)
+                return result
+            ans_entry, ans_score = answer_cache.lookup(embedding)
+            if ans_entry is not None:
+                result = self._build_tool_response(ans_entry.plan, current_page)
+                self._log_turn("embedding_cache_answer", turn_start, result, message)
+                return result
+            best = max(nav_score, ans_score)
+            if NEAR_MISS_FLOOR <= best < SIMILARITY_THRESHOLD:
+                near_miss = round(best, 4)
+
         # Static-first message order: the static prompt sits first so OpenAI's
         # automatic prefix caching reuses it across turns and across users.
         # Per-session context follows; fast-changing context rides in the user
@@ -693,17 +773,23 @@ class ScoutAssistantService:
         messages.append({"role": "user", "content": f"{live_context}\n\n{message}"})
 
         try:
-            tool_call = await self._call_scout_tools(messages)
-            return self._build_tool_response(tool_call, current_page)
+            tool_call, usage = await self._call_scout_tools(messages)
+            result = self._build_tool_response(tool_call, current_page)
+            self._populate_caches(tool_call, message, embedding, uid)
+            self._log_turn("llm", turn_start, result, message,
+                           usage=usage, near_miss=near_miss)
+            return result
         except Exception as e:
             print(f"[ScoutAssistant] Error: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
-            return {
+            result = {
                 "tool": "answer",
                 "message": f"I'm having a moment! {random.choice(_ERROR_RECOVERY_LINES)}",
                 "navigate": None,
             }
+            self._log_turn("llm", turn_start, result, message, near_miss=near_miss)
+            return result
 
     def _greeting_response(self, user_name: str) -> Dict[str, Any]:
         """Opening message when the user opens Scout with no input yet."""
@@ -714,9 +800,13 @@ class ScoutAssistantService:
             "navigate": None,
         }
 
-    async def _call_scout_tools(self, messages: List[Dict[str, Any]]) -> Dict[str, Any]:
-        """Run one Scout turn and return the terminal tool it ends on, as
-        {name, args}.
+    async def _call_scout_tools(
+        self, messages: List[Dict[str, Any]]
+    ) -> Tuple[Dict[str, Any], Dict[str, int]]:
+        """Run one Scout turn and return (terminal tool, token usage).
+
+        The tool is {name, args}. The usage dict sums tokens across every LLM
+        call in the chain: {input_tokens, cached_input_tokens, output_tokens}.
 
         Each step the model calls exactly one tool (parallel_tool_calls=False,
         tool_choice="required"). It may call helper tools (parse_job_url, ...)
@@ -726,8 +816,8 @@ class ScoutAssistantService:
         """
         client = self._get_openai()
         convo: List[Dict[str, Any]] = list(messages)
-        # At most a few helper calls, then a forced terminal tool.
-        MAX_STEPS = 4
+        MAX_STEPS = 4  # at most a few helper calls, then a forced terminal tool
+        usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
 
         for step in range(MAX_STEPS):
             final_step = step == MAX_STEPS - 1
@@ -743,13 +833,19 @@ class ScoutAssistantService:
                 ),
                 timeout=25.0,
             )
-            self._log_token_usage(f"handle_chat[step={step}]", getattr(response, "usage", None))
+            u = getattr(response, "usage", None)
+            self._log_token_usage(f"handle_chat[step={step}]", u)
+            if u is not None:
+                usage["input_tokens"] += getattr(u, "prompt_tokens", 0) or 0
+                usage["output_tokens"] += getattr(u, "completion_tokens", 0) or 0
+                details = getattr(u, "prompt_tokens_details", None)
+                usage["cached_input_tokens"] += getattr(details, "cached_tokens", 0) or 0
 
             message = response.choices[0].message
             tool_calls = message.tool_calls or []
             if not tool_calls:
                 # tool_choice="required" should make this unreachable.
-                return {"name": "answer", "args": {"text": "Could you say that another way?"}}
+                return {"name": "answer", "args": {"text": "Could you say that another way?"}}, usage
 
             call = tool_calls[0]
             try:
@@ -761,7 +857,7 @@ class ScoutAssistantService:
             name = call.function.name
 
             if name in TERMINAL_TOOL_NAMES:
-                return {"name": name, "args": args}
+                return {"name": name, "args": args}, usage
 
             if name in HELPER_TOOL_NAMES:
                 result = await run_helper_tool(name, args)
@@ -787,11 +883,81 @@ class ScoutAssistantService:
                 continue
 
             # Unknown tool name: degrade to a safe answer.
-            return {"name": "answer", "args": {"text": "Could you say that another way?"}}
+            return {"name": "answer", "args": {"text": "Could you say that another way?"}}, usage
 
         # Steps exhausted without a terminal tool (the final step is
         # terminal-only, so this should not happen). Degrade safely.
-        return {"name": "answer", "args": {"text": "Could you say that another way?"}}
+        return {"name": "answer", "args": {"text": "Could you say that another way?"}}, usage
+
+    def _log_turn(
+        self,
+        served_by: str,
+        turn_start: float,
+        result: Dict[str, Any],
+        message: str,
+        usage: Optional[Dict[str, int]] = None,
+        near_miss: Optional[float] = None,
+    ) -> None:
+        """Record one Scout turn's metrics. Best-effort; never raises."""
+        try:
+            latency_ms = (time.time() - turn_start) * 1000.0
+            kwargs: Dict[str, Any] = {
+                "served_by": served_by,
+                "latency_ms": latency_ms,
+                "final_tool": result.get("tool", "answer"),
+                "near_miss_cosine": near_miss,
+            }
+            # Every non-regex turn embedded the message once (Tier B). Embedding
+            # cost is negligible; estimate tokens from message length.
+            if served_by != "regex":
+                kwargs["embed_tokens"] = max(1, len(message) // 4)
+            if usage is not None:
+                kwargs["model"] = self.DEFAULT_MODEL
+                kwargs["input_tokens"] = usage.get("input_tokens", 0)
+                kwargs["cached_input_tokens"] = usage.get("cached_input_tokens", 0)
+                kwargs["output_tokens"] = usage.get("output_tokens", 0)
+            metrics.log_turn(**kwargs)
+        except Exception as e:
+            print(f"[ScoutMetrics] log_turn failed: {e}")
+
+    def _populate_caches(
+        self,
+        tool_call: Dict[str, Any],
+        message: str,
+        embedding: Optional[List[float]],
+        uid: Optional[str],
+    ) -> None:
+        """Feed an LLM result into the Tier B promotion buffers.
+
+        Only empty-prefill navigations (confidence >= 0.85) and answers are
+        eligible; a navigate carrying message-specific prefill is not cached,
+        and clarify is never cached. Best-effort; never raises.
+        """
+        if embedding is None:
+            return
+        try:
+            name = tool_call.get("name")
+            args = tool_call.get("args", {}) or {}
+            if name == "navigate":
+                if args.get("prefill"):
+                    return  # message-specific prefill; not safe to cache
+                try:
+                    confidence = float(args.get("confidence", 0))
+                except (TypeError, ValueError):
+                    confidence = 0.0
+                if confidence < 0.85:
+                    return
+                promoted = pending_navigate.note(embedding, tool_call, message, uid or "")
+                if promoted is not None:
+                    emb, plan, intent = promoted
+                    navigate_cache.add(emb, plan, intent)
+            elif name == "answer":
+                promoted = pending_answer.note(embedding, tool_call, message, uid or "")
+                if promoted is not None:
+                    emb, plan, intent = promoted
+                    answer_cache.add(emb, plan, intent)
+        except Exception as e:
+            print(f"[ScoutCache] populate failed: {e}")
 
     def _build_tool_response(self, tool_call: Dict[str, Any], current_page: str) -> Dict[str, Any]:
         """Turn the model's tool call into the response the frontend consumes.
@@ -826,7 +992,7 @@ class ScoutAssistantService:
             prefill = {
                 k: str(v).strip()
                 for k, v in (args.get("prefill") or {}).items()
-                if k in allowed and str(v).strip()
+                if k in allowed and str(v).strip() and _prefill_value_ok(k, v)
             }
             missing_required = [
                 f for f in (page.get("required_inputs") or []) if f not in prefill
