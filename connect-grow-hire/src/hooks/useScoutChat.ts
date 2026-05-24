@@ -9,6 +9,10 @@ import { useLocation } from 'react-router-dom';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { BACKEND_URL } from '@/services/api';
 import { clearActiveThread } from '@/services/scoutConversations';
+import {
+  getScoutChat,
+  type ScoutPersistedMessage,
+} from '@/services/scoutChats';
 
 // Key an earlier build used to persist the chat thread to localStorage. Scout
 // no longer saves chat history; this is referenced only to clear stale data.
@@ -115,6 +119,11 @@ export interface UseScoutChatReturn {
   clearChat: () => void;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   inputRef: React.RefObject<HTMLInputElement>;
+  // Phase 5 Stage 3: persisted chat thread surface.
+  chatId: string | null;
+  startNewChat: () => void;
+  loadChat: (chatId: string) => Promise<void>;
+  isLoadingChat: boolean;
 }
 
 /**
@@ -128,12 +137,21 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
   // Determine current page - use override if provided, otherwise use location
   const currentPage = currentPageOverride || location.pathname;
 
-  // Chat state. Scout does not persist chat history: the thread lives only in
-  // memory for the current page session. Navigating between pages keeps it
-  // (the panel is mounted once, app-wide); a full reload starts fresh.
+  // Chat state. Phase 5 Stage 3: the thread is persisted in Firestore (every
+  // turn round-trips through the backend, which appends to
+  // users/{uid}/scoutChats/{chatId}/messages). Local state is the in-memory
+  // view of the active thread; `chatId` keys us to the persisted doc so each
+  // outbound request reaches the same chat and so the sidebar can swap
+  // threads in place. A full reload starts a new chat unless the sidebar
+  // loads one.
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [isLoadingChat, setIsLoadingChat] = useState(false);
+  // Track the chat we're currently loading so a slow response from an earlier
+  // click does not overwrite a later one if the user opens two chats quickly.
+  const loadingChatTargetRef = useRef<string | null>(null);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -157,10 +175,62 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Clear chat - the thread is in-memory only, so this just resets state.
+  // Clear chat -- starts a fresh thread. The next send creates a new
+  // persisted chat in Firestore; the previous one stays in the sidebar.
   const clearChat = useCallback(() => {
     setMessages([]);
+    setChatId(null);
     inputRef.current?.focus();
+  }, []);
+
+  const startNewChat = clearChat;
+
+  /** Load a persisted chat into the panel. Fetches the parent doc + messages
+   *  from the backend, hydrates them into ChatMessage shape, and swaps. Safe
+   *  to call mid-typing; the typed input is preserved. */
+  const loadChat = useCallback(async (targetChatId: string) => {
+    const id = (targetChatId || '').trim();
+    if (!id) return;
+    setIsLoadingChat(true);
+    loadingChatTargetRef.current = id;
+    try {
+      const detail = await getScoutChat(id);
+      // If a newer loadChat call started while this one was in flight, drop
+      // the stale result so the latest click wins.
+      if (loadingChatTargetRef.current !== id) return;
+      const hydrated: ChatMessage[] = (detail.messages || []).map((m: ScoutPersistedMessage) => {
+        // The terminal-tool args were stamped on the assistant turn so we
+        // can rebuild the navigate card on resume. The shape mirrors what
+        // _persist_assistant_turn writes on the backend.
+        const terminal = Array.isArray(m.tool_calls)
+          ? [...m.tool_calls].reverse().find((t) => {
+              const name = (t as any)?.name;
+              return name === 'navigate' || name === 'answer' || name === 'clarify';
+            })
+          : null;
+        const navigate = terminal && (terminal as any).navigate ? ((terminal as any).navigate as ScoutNavigate) : null;
+        const tool = terminal ? ((terminal as any).name as ChatMessage['tool']) : (m.role === 'assistant' ? 'answer' : null);
+        return {
+          id: m.message_id,
+          role: m.role,
+          content: m.content,
+          tool,
+          navigate,
+          // A resumed navigate is already history: never auto-execute it.
+          approveResolved: tool === 'navigate' ? true : undefined,
+          timestamp: m.created_at ? new Date(m.created_at) : new Date(),
+        };
+      });
+      setMessages(hydrated);
+      setChatId(id);
+    } finally {
+      if (loadingChatTargetRef.current === id) {
+        loadingChatTargetRef.current = null;
+      }
+      setIsLoadingChat(false);
+      // Focus the input so the user can continue typing immediately.
+      setTimeout(() => inputRef.current?.focus(), 0);
+    }
   }, []);
 
   // Get Firebase token helper
@@ -191,6 +261,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       message: text,
       conversation_history: conversationHistory,
       current_page: currentPage,
+      chat_id: chatId,
       user_info: {
         name: user?.name || 'there',
         tier: user?.tier || 'free',
@@ -271,8 +342,14 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
                   m.id === assistantId ? { ...m, content: accumulatedText, isStreaming: true } : m
                 ));
               } else if (eventType === 'done') {
-                // Final update with the structured tool response.
+                // Final update with the structured tool response. The backend
+                // also returns chat_id; we capture it so subsequent sends
+                // ride the same persisted chat (and so the sidebar can
+                // refresh with the new title once it generates).
                 receivedTerminal = true;
+                if (typeof data.chat_id === 'string' && data.chat_id) {
+                  setChatId(data.chat_id);
+                }
                 setMessages(prev => prev.map(m =>
                   m.id === assistantId ? {
                     ...m,
@@ -349,6 +426,9 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       }
 
       const data = await response.json();
+      if (typeof data?.chat_id === 'string' && data.chat_id) {
+        setChatId(data.chat_id);
+      }
 
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -427,7 +507,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       setIsLoading(false);
       inputRef.current?.focus();
     }
-  }, [input, isLoading, messages, currentPage, user]);
+  }, [input, isLoading, messages, currentPage, user, chatId]);
 
   return {
     messages,
@@ -438,6 +518,10 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     clearChat,
     messagesEndRef,
     inputRef,
+    chatId,
+    startNewChat,
+    loadChat,
+    isLoadingChat,
   };
 }
 

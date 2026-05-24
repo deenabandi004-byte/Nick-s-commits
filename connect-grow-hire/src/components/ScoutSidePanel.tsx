@@ -12,9 +12,9 @@
  * across navigation. The conversation lives in useScoutChat (localStorage +
  * Firestore backed); the open/closed flag lives in ScoutContext.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, Send, Loader2, Trash2 } from 'lucide-react';
+import { X, Send, Loader2, Trash2, MessageSquarePlus, History, Lock } from 'lucide-react';
 import { useScout, SearchHelpResponse } from '@/contexts/ScoutContext';
 import { useScoutChat, formatMessage, type ScoutNavigate } from '@/hooks/useScoutChat';
 import { SUGGESTED_QUESTIONS, SCOUT_CHIPS_BY_PAGE } from '@/data/scout-knowledge';
@@ -24,6 +24,11 @@ import { ScoutApproveCard } from '@/components/ScoutApproveCard';
 import { writeScoutPrefill, SCOUT_PREFILL_EVENT } from '@/lib/scoutBridge';
 import ScoutWavingWhite from '@/assets/ScoutWavingWhite.mp4';
 import { BACKEND_URL } from '@/services/api';
+import {
+  listScoutChats,
+  formatRelativeTime,
+  type ScoutChatSummary,
+} from '@/services/scoutChats';
 
 // Legacy sessionStorage key. Still used only by the failed-search recovery
 // flow below; the Scout chat navigate path uses scoutBridge instead.
@@ -93,7 +98,78 @@ export function ScoutSidePanel() {
     clearChat,
     messagesEndRef,
     inputRef,
+    chatId,
+    startNewChat,
+    loadChat,
+    isLoadingChat,
   } = useScoutChat(location.pathname);
+
+  // -------------------------------------------------------------------------
+  // Sidebar (Phase 5 Stage 3): persisted chat history
+  // -------------------------------------------------------------------------
+  // Free tier: shows just the current chat row + upgrade affordance, no past
+  // chat list (the backend caps list_chats to one for Free). Pro/Elite: shows
+  // up to 20 recent chats with a relative timestamp and a strategy dot.
+  const userTier = (user?.tier as 'free' | 'pro' | 'elite' | undefined) ?? 'free';
+  const isPaidTier = userTier === 'pro' || userTier === 'elite';
+  const [chats, setChats] = useState<ScoutChatSummary[]>([]);
+  const [chatsLoading, setChatsLoading] = useState(false);
+  const [chatsError, setChatsError] = useState(false);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+
+  const refreshChats = useCallback(async () => {
+    if (!user?.uid) {
+      setChats([]);
+      return;
+    }
+    setChatsLoading(true);
+    setChatsError(false);
+    try {
+      const list = await listScoutChats(20);
+      setChats(list);
+    } catch (e) {
+      console.error('[Scout] sidebar list failed:', e);
+      setChatsError(true);
+    } finally {
+      setChatsLoading(false);
+    }
+  }, [user?.uid]);
+
+  // Refresh the sidebar each time the panel opens, and again whenever the
+  // active chat_id changes (so a fresh thread shows up immediately after the
+  // first turn lands and the title generation finishes).
+  useEffect(() => {
+    if (!isPanelOpen) return;
+    void refreshChats();
+  }, [isPanelOpen, refreshChats]);
+
+  useEffect(() => {
+    if (!isPanelOpen) return;
+    // Small debounce: the backend writes the title asynchronously after the
+    // turn responds, so wait briefly before refetching so we pick the new
+    // title up on the same render that surfaced the chat_id.
+    const t = setTimeout(() => {
+      void refreshChats();
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [chatId, isPanelOpen, refreshChats]);
+
+  const handleSidebarChatClick = useCallback(
+    async (id: string) => {
+      if (id === chatId) return;
+      setActiveRowId(id);
+      try {
+        await loadChat(id);
+      } finally {
+        setActiveRowId(null);
+      }
+    },
+    [chatId, loadChat],
+  );
+
+  const handleNewChatClick = useCallback(() => {
+    startNewChat();
+  }, [startNewChat]);
 
   // -------------------------------------------------------------------------
   // Navigate execution + the auto-execute effect
@@ -283,10 +359,14 @@ export function ScoutSidePanel() {
         aria-hidden="true"
       />
 
-      {/* Panel */}
+      {/* Panel. Chat mode is wider to accommodate the persisted-chat sidebar
+          (Phase 5 Stage 3); search-help mode keeps the legacy width. */}
       <div
         ref={panelRef}
-        className="fixed right-0 top-0 z-50 h-full w-full sm:w-[420px] bg-white shadow-xl flex flex-col transform transition-transform duration-300 ease-out rounded-l-2xl"
+        className={
+          'fixed right-0 top-0 z-50 h-full w-full bg-white shadow-xl flex flex-col transform transition-transform duration-300 ease-out rounded-l-2xl ' +
+          (isSearchHelpMode ? 'sm:w-[420px]' : 'sm:w-[600px]')
+        }
         style={{ animation: 'slideIn 0.3s ease-out forwards' }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -419,7 +499,116 @@ export function ScoutSidePanel() {
 
           {/* Chat mode */}
           {!isSearchHelpMode && (
-            <>
+            <div className="flex-1 flex overflow-hidden">
+              {/* Sidebar (chat history). Always rendered, even on Free, so the
+                  current chat row stays visible and the upgrade affordance has
+                  somewhere to live. */}
+              <aside className="w-44 flex-shrink-0 border-r border-gray-100 bg-white flex flex-col">
+                <div className="px-3 pt-3 pb-2 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
+                    <History className="h-3.5 w-3.5" />
+                    <span>Chats</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleNewChatClick}
+                    className="p-1 text-gray-400 hover:text-[#3B82F6] hover:bg-[#FAFBFF] rounded-md transition-colors"
+                    aria-label="Start a new chat"
+                    title="New chat"
+                  >
+                    <MessageSquarePlus className="h-4 w-4" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto px-2 pb-2">
+                  {chatsLoading && chats.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-gray-400">Loading...</div>
+                  ) : chatsError ? (
+                    <div className="px-2 py-3 text-xs text-gray-500">
+                      Could not load history.{' '}
+                      <button
+                        type="button"
+                        onClick={() => void refreshChats()}
+                        className="text-[#3B82F6] hover:underline"
+                      >
+                        Retry
+                      </button>
+                    </div>
+                  ) : chats.length === 0 ? (
+                    <div className="px-2 py-3 text-xs text-gray-400">
+                      No chats yet.
+                    </div>
+                  ) : (
+                    <ul className="space-y-0.5">
+                      {chats.map((row) => {
+                        const isActive = row.chat_id === chatId;
+                        const isLoadingRow = activeRowId === row.chat_id && isLoadingChat;
+                        return (
+                          <li key={row.chat_id}>
+                            <button
+                              type="button"
+                              onClick={() => void handleSidebarChatClick(row.chat_id)}
+                              disabled={isLoadingRow}
+                              className={
+                                'w-full text-left px-2.5 py-2 rounded-md transition-colors group ' +
+                                (isActive
+                                  ? 'bg-[#FAFBFF] border border-[#E0EAFF]'
+                                  : 'border border-transparent hover:bg-gray-50')
+                              }
+                              title={row.title}
+                            >
+                              <div className="flex items-start gap-1.5">
+                                {row.active_strategy_id ? (
+                                  <span
+                                    className="mt-1.5 h-1.5 w-1.5 rounded-full bg-[#3B82F6] flex-shrink-0"
+                                    aria-label="Chat had an active strategy"
+                                  />
+                                ) : (
+                                  <span className="mt-1.5 h-1.5 w-1.5 flex-shrink-0" />
+                                )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="text-xs font-medium text-gray-900 truncate">
+                                    {row.title || 'New chat'}
+                                  </div>
+                                  <div className="text-[11px] text-gray-400 flex items-center gap-1">
+                                    {isLoadingRow ? (
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                    ) : (
+                                      <span>{formatRelativeTime(row.last_active_at)}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+
+                {!isPaidTier && (
+                  <div className="px-3 py-2.5 border-t border-gray-100 flex items-start gap-1.5 text-[11px] text-gray-500 leading-snug">
+                    <Lock className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                    <span>
+                      Upgrade to Pro to keep chat history beyond today.{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          closePanel();
+                          navigate('/pricing');
+                        }}
+                        className="text-[#3B82F6] hover:underline font-medium"
+                      >
+                        See plans
+                      </button>
+                    </span>
+                  </div>
+                )}
+              </aside>
+
+              {/* Chat column */}
+              <div className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto">
                 <div className="px-5 py-4">
                   {/* Empty state */}
@@ -555,7 +744,8 @@ export function ScoutSidePanel() {
                 </div>
                 <p className="text-xs text-gray-400 text-center mt-2">Free to chat</p>
               </div>
-            </>
+              </div>
+            </div>
           )}
         </div>
       </div>

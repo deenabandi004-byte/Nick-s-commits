@@ -44,6 +44,13 @@ from app.services.scout.strategy import (
     get_active_strategy,
     render_active_strategy_block,
 )
+from app.services.scout.chat_persistence import (
+    append_message as chat_append_message,
+    create_chat as chat_create_chat,
+    get_chat as chat_get_chat,
+    set_active_strategy as chat_set_active_strategy,
+    update_chat_title as chat_update_chat_title,
+)
 
 _ERROR_RECOVERY_LINES = [
     "Try again in a sec?",
@@ -436,8 +443,10 @@ Call them in two situations. One: when the answer depends on workflow state ("ho
 
 When you reference workflow state in chat, do it with specifics, not aggregates. Not "you have some emails in your outbox" but "you sent 4 emails to BCG alums last week and only Sarah at the Chicago office has replied". Not "you have some saved cover letters" but "your BCG cover letter is two weeks old and BCG's full-time cycle opens in six weeks; want me to help refresh it?". The data is there; use it.
 
-## Continuity
-The user's recent messages are included for context. If they're continuing a topic, pick up where you left off. Don't re-introduce yourself or repeat information you already gave.
+## Chat continuity
+You have access to the recent conversation history in this chat. Use it: if the user is continuing a topic, pick up where you left off, refer back to specific things they already said, and never repeat a question they already answered or re-introduce yourself.
+
+On Pro and Elite, the user can browse past chats from a sidebar inside Scout. You do not load past chats yourself; only the current chat is in your context. If the user references a prior conversation that is not in the messages you can see, point them to the sidebar so they can reopen that chat.
 
 ## Your name
 You're Scout. Use it sparingly."""
@@ -737,12 +746,21 @@ class ScoutAssistantService:
         user_context: Optional[Dict[str, Any]] = None,
         user_memory: Optional[Dict[str, Any]] = None,
         uid: Optional[str] = None,
+        chat_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Handle one chat turn.
 
         Scout answers by calling exactly one tool (navigate / answer / clarify).
         The result is a structured dict the frontend approve flow consumes; see
         _build_tool_response for the shape.
+
+        Chat persistence (Phase 5 Stage 3): when uid is present, this method
+        owns the persisted chat thread. If chat_id is None it creates a new
+        chat (stamped with the user's active strategy if any), appends the
+        user message, builds the LLM context from a windowed Firestore read
+        (overrides the client-supplied conversation_history), runs the
+        pipeline, persists the assistant turn, and returns chat_id in the
+        response so the frontend can resume the same thread on the next call.
         """
         message = (message or "").strip()
         conversation_history = conversation_history or []
@@ -756,11 +774,49 @@ class ScoutAssistantService:
 
         turn_start = time.time()
 
+        # Chat persistence: figure out which chat this turn belongs to. We only
+        # attempt persistence when we have a uid; anonymous turns still work
+        # but live only in the request lifecycle.
+        active_strategy = await self._fetch_active_strategy(uid)
+        is_first_turn = False
+        if uid:
+            chat_id, is_first_turn = await self._ensure_chat(
+                uid=uid, tier=tier, chat_id=chat_id, active_strategy=active_strategy,
+            )
+            if chat_id:
+                await self._append_chat_message(
+                    uid=uid, chat_id=chat_id, role="user", content=message,
+                )
+                if is_first_turn:
+                    # Background task: shape the sidebar title from the first
+                    # user message. The chat already has a default title, so a
+                    # failed or slow title write degrades to "New chat".
+                    asyncio.create_task(
+                        self._generate_title_in_background(uid, chat_id, message)
+                    )
+
+        # Resolve history: Firestore-loaded for a persisted chat, otherwise the
+        # client-supplied list. The persisted read is the source of truth for a
+        # signed-in user and may include messages the client never had in
+        # memory (resumed sessions, sidebar swap).
+        if uid and chat_id:
+            history_for_llm = await self._load_history_window(
+                uid=uid, chat_id=chat_id, current_user_message=message,
+            )
+        else:
+            history_for_llm = self._window_client_history(conversation_history)
+
         # Tier A pre-LLM router: a cheap, high-precision regex hit resolves the
         # turn with no LLM call. Falls through to the model when nothing matches.
         pre_plan = try_pre_llm(message, current_page, user_context)
         if pre_plan is not None:
             result = self._build_tool_response(pre_plan, current_page)
+            await self._persist_assistant_turn(
+                uid=uid, chat_id=chat_id, result=result, tool_call=pre_plan,
+                helper_calls=None, helper_results=None,
+                metrics_data={"served_by": "regex"},
+            )
+            self._attach_chat_id(result, chat_id)
             self._log_turn("regex", turn_start, result, message)
             return result
 
@@ -772,11 +828,23 @@ class ScoutAssistantService:
             nav_entry, nav_score = navigate_cache.lookup(embedding)
             if nav_entry is not None:
                 result = self._build_tool_response(nav_entry.plan, current_page)
+                await self._persist_assistant_turn(
+                    uid=uid, chat_id=chat_id, result=result, tool_call=nav_entry.plan,
+                    helper_calls=None, helper_results=None,
+                    metrics_data={"served_by": "embedding_cache_navigate"},
+                )
+                self._attach_chat_id(result, chat_id)
                 self._log_turn("embedding_cache_navigate", turn_start, result, message)
                 return result
             ans_entry, ans_score = answer_cache.lookup(embedding)
             if ans_entry is not None:
                 result = self._build_tool_response(ans_entry.plan, current_page)
+                await self._persist_assistant_turn(
+                    uid=uid, chat_id=chat_id, result=result, tool_call=ans_entry.plan,
+                    helper_calls=None, helper_results=None,
+                    metrics_data={"served_by": "embedding_cache_answer"},
+                )
+                self._attach_chat_id(result, chat_id)
                 self._log_turn("embedding_cache_answer", turn_start, result, message)
                 return result
             best = max(nav_score, ans_score)
@@ -795,12 +863,11 @@ class ScoutAssistantService:
         # The active strategy is per-user and can change within a turn (Scout
         # can rewrite it via save_strategy), so it rides in the live block
         # appended to the user message, not in the cached system prompt.
-        active_strategy = await self._fetch_active_strategy(uid)
         strategy_block = render_active_strategy_block(active_strategy)
         live_tail = live_context + (f"\n\n{strategy_block}" if strategy_block else "")
 
         messages: List[Dict[str, str]] = [{"role": "system", "content": combined_system}]
-        for msg in conversation_history[-6:]:
+        for msg in history_for_llm:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             if role in ("user", "assistant") and content:
@@ -808,12 +875,16 @@ class ScoutAssistantService:
         messages.append({"role": "user", "content": f"{live_tail}\n\n{message}"})
 
         # Context flows into the helper tools (uid for strategy writes, tier
-        # for archive-vs-delete on replace). The strategy helpers set
-        # strategy_touched on a successful write, which gates answer-caching.
-        tool_context: Dict[str, Any] = {"uid": uid, "tier": tier}
+        # for archive-vs-delete on replace, chat_id so a strategy write can
+        # stamp itself on the current chat for the sidebar). The strategy
+        # helpers set strategy_touched on a successful write, which gates
+        # answer-caching.
+        tool_context: Dict[str, Any] = {"uid": uid, "tier": tier, "chat_id": chat_id}
 
         try:
-            tool_call, usage = await self._call_scout_tools(messages, tool_context)
+            tool_call, usage, helper_calls, helper_results = await self._call_scout_tools(
+                messages, tool_context,
+            )
             result = self._build_tool_response(tool_call, current_page)
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
@@ -829,6 +900,32 @@ class ScoutAssistantService:
                 tool_call, message, embedding, uid,
                 allow_answer_cache=allow_answer_cache,
             )
+            # If the strategy helpers wrote a new active strategy this turn,
+            # stamp it on the current chat so the sidebar's strategy dot
+            # reflects the swap.
+            if uid and chat_id and tool_context.get("strategy_touched"):
+                try:
+                    new_strategy = await asyncio.to_thread(get_active_strategy, uid)
+                    new_strategy_id = (new_strategy or {}).get("id")
+                    await asyncio.to_thread(
+                        chat_set_active_strategy, uid, chat_id, new_strategy_id,
+                    )
+                except Exception as e:
+                    print(f"[ScoutChat] strategy stamp failed: {e}")
+
+            await self._persist_assistant_turn(
+                uid=uid, chat_id=chat_id, result=result, tool_call=tool_call,
+                helper_calls=helper_calls, helper_results=helper_results,
+                metrics_data={
+                    "served_by": "llm",
+                    "tier_used": tier,
+                    "input_tokens": usage.get("input_tokens", 0),
+                    "cached_input_tokens": usage.get("cached_input_tokens", 0),
+                    "output_tokens": usage.get("output_tokens", 0),
+                    "near_miss_cosine": near_miss,
+                },
+            )
+            self._attach_chat_id(result, chat_id)
             self._log_turn("llm", turn_start, result, message,
                            usage=usage, near_miss=near_miss)
             return result
@@ -841,6 +938,9 @@ class ScoutAssistantService:
                 "message": f"I'm having a moment! {random.choice(_ERROR_RECOVERY_LINES)}",
                 "navigate": None,
             }
+            # We do not persist a fallback error message: it carries no useful
+            # content for the next turn and would clutter the resumed thread.
+            self._attach_chat_id(result, chat_id)
             self._log_turn("llm", turn_start, result, message, near_miss=near_miss)
             return result
 
@@ -884,15 +984,241 @@ class ScoutAssistantService:
             print(f"[ScoutStrategy] fetch failed: {type(e).__name__}: {e}")
             return None
 
+    # ========================================================================
+    # CHAT PERSISTENCE (Phase 5 Stage 3)
+    # ========================================================================
+    #
+    # The chat thread lives in Firestore at users/{uid}/scoutChats/{chat_id}
+    # with a messages subcollection. Methods below are best-effort: a write
+    # failure does not abort the turn, it just leaves that turn out of the
+    # persisted thread. A read failure degrades to an empty history; the
+    # response still goes through.
+
+    # Per-turn budget for the LLM context window. The full transcript stays in
+    # Firestore; only this slice rides into the model. Whichever cap hits
+    # first wins (the older messages are dropped).
+    CONTEXT_MESSAGE_CAP = 20
+    CONTEXT_TOKEN_CAP = 8000
+
+    async def _ensure_chat(
+        self,
+        *,
+        uid: str,
+        tier: str,
+        chat_id: Optional[str],
+        active_strategy: Optional[Dict[str, Any]],
+    ) -> Tuple[Optional[str], bool]:
+        """Return (chat_id, is_first_turn). Creates a new chat when needed.
+
+        When the caller passes an existing chat_id we keep it; the first-turn
+        flag fires only on a freshly created chat so title generation runs
+        exactly once per chat.
+        """
+        if chat_id:
+            return chat_id, False
+        strategy_id = (active_strategy or {}).get("id")
+        try:
+            res = await asyncio.to_thread(
+                chat_create_chat, uid, tier, strategy_id,
+            )
+        except Exception as e:
+            print(f"[ScoutChat] create failed: {type(e).__name__}: {e}")
+            return None, False
+        if not res.get("ok"):
+            print(f"[ScoutChat] create returned not-ok: {res.get('error')}")
+            return None, False
+        return res.get("chat_id"), True
+
+    async def _append_chat_message(
+        self,
+        *,
+        uid: str,
+        chat_id: str,
+        role: str,
+        content: str,
+        tool_calls: Optional[List[Dict[str, Any]]] = None,
+        tool_results: Optional[List[Dict[str, Any]]] = None,
+        metrics_data: Optional[Dict[str, Any]] = None,
+    ) -> None:
+        """Best-effort append. Logs but never raises."""
+        try:
+            await asyncio.to_thread(
+                chat_append_message, uid, chat_id, role, content,
+                tool_calls, tool_results, metrics_data,
+            )
+        except Exception as e:
+            print(f"[ScoutChat] append failed: {type(e).__name__}: {e}")
+
+    async def _load_history_window(
+        self,
+        *,
+        uid: str,
+        chat_id: str,
+        current_user_message: str,
+    ) -> List[Dict[str, str]]:
+        """Load the chat from Firestore and return the windowed context.
+
+        Windowing: take the last CONTEXT_MESSAGE_CAP messages, then walk
+        backward summing a rough token estimate (len/4) until CONTEXT_TOKEN_CAP
+        is reached. Whichever cap fires first wins. The just-appended user
+        message is dropped from the tail so the caller can add it explicitly
+        with the live-context block attached.
+        """
+        try:
+            res = await asyncio.to_thread(chat_get_chat, uid, chat_id)
+        except Exception as e:
+            print(f"[ScoutChat] history load failed: {type(e).__name__}: {e}")
+            return []
+        messages = res.get("messages") or []
+        if not messages:
+            return []
+        # Drop the just-appended user message at the tail. We compare by role
+        # and (trimmed) content rather than message_id since the route-level
+        # caller has no id to pass back here.
+        if messages and messages[-1].get("role") == "user":
+            tail_content = (messages[-1].get("content") or "").strip()
+            if tail_content == (current_user_message or "").strip():
+                messages = messages[:-1]
+        if not messages:
+            return []
+
+        # Apply the count cap from the newest end.
+        tail = messages[-self.CONTEXT_MESSAGE_CAP:]
+        # Apply the token cap, walking from newest back. Cheap len/4 estimate
+        # matches what _log_turn uses elsewhere.
+        budget = self.CONTEXT_TOKEN_CAP
+        kept_reversed: List[Dict[str, str]] = []
+        for msg in reversed(tail):
+            content = (msg.get("content") or "").strip()
+            if not content:
+                continue
+            est_tokens = max(1, len(content) // 4)
+            if est_tokens > budget and kept_reversed:
+                break
+            budget -= est_tokens
+            kept_reversed.append({"role": msg.get("role", "user"), "content": content})
+        kept_reversed.reverse()
+        return kept_reversed
+
+    def _window_client_history(
+        self, conversation_history: List[Dict[str, str]],
+    ) -> List[Dict[str, str]]:
+        """Fallback windowing for unauthenticated chats.
+
+        Mirrors the previous in-memory behavior: last 6 turns. No persisted
+        thread means no Firestore read; the client carries the history.
+        """
+        out: List[Dict[str, str]] = []
+        for msg in conversation_history[-6:]:
+            role = msg.get("role", "user")
+            content = (msg.get("content") or "").strip()
+            if role in ("user", "assistant") and content:
+                out.append({"role": role, "content": content})
+        return out
+
+    async def _persist_assistant_turn(
+        self,
+        *,
+        uid: Optional[str],
+        chat_id: Optional[str],
+        result: Dict[str, Any],
+        tool_call: Dict[str, Any],
+        helper_calls: Optional[List[Dict[str, Any]]],
+        helper_results: Optional[List[Dict[str, Any]]],
+        metrics_data: Dict[str, Any],
+    ) -> None:
+        """Persist the assistant turn (terminal tool + helper trail + metrics).
+
+        No-op when chat persistence is not available for this turn (anonymous
+        user or chat creation failed). The terminal tool is stored alongside
+        any helper calls under tool_calls; tool_results carries the helper
+        results so a resumed view can render what Scout actually did.
+        """
+        if not uid or not chat_id:
+            return
+        # The assistant content is whatever the user actually sees; the
+        # terminal-tool args (route, prefill, etc.) are the structured side.
+        content = result.get("message") or ""
+        terminal_entry = {"name": tool_call.get("name"), "args": tool_call.get("args", {})}
+        if result.get("navigate") is not None:
+            terminal_entry["navigate"] = result["navigate"]
+        combined_calls: List[Dict[str, Any]] = list(helper_calls or []) + [terminal_entry]
+        combined_results: Optional[List[Dict[str, Any]]] = (
+            list(helper_results) if helper_results else None
+        )
+        await self._append_chat_message(
+            uid=uid,
+            chat_id=chat_id,
+            role="assistant",
+            content=content,
+            tool_calls=combined_calls,
+            tool_results=combined_results,
+            metrics_data=metrics_data,
+        )
+
+    def _attach_chat_id(self, result: Dict[str, Any], chat_id: Optional[str]) -> None:
+        """Stamp chat_id on the response so the frontend can track the thread."""
+        result["chat_id"] = chat_id
+
+    async def _generate_title_in_background(
+        self, uid: str, chat_id: str, first_message: str,
+    ) -> None:
+        """Summarize the first user message into a sidebar title.
+
+        Runs as an asyncio task so the user-facing turn does not wait. The
+        chat already carries a "New chat" default, so a slow or failed title
+        write degrades to that. The LLM call uses the same model and the
+        async OpenAI client the rest of the service uses.
+        """
+        try:
+            from app.services.scout.chat_persistence import (
+                _is_trivial_first_message, _truncate_for_title, _strip_em_dashes,
+                MAX_TITLE_LEN,
+            )
+            if _is_trivial_first_message(first_message):
+                title = _truncate_for_title(first_message) if first_message.strip() else "New chat"
+            else:
+                client = self._get_openai()
+                resp = await asyncio.wait_for(
+                    client.chat.completions.create(
+                        model=self.DEFAULT_MODEL,
+                        messages=[
+                            {"role": "system", "content": "You write short, concrete chat titles."},
+                            {
+                                "role": "user",
+                                "content": (
+                                    "Summarize the following user message into a short chat title "
+                                    "(under 60 characters, no quotes, no trailing period, no em "
+                                    f"dashes). Name the goal or topic. Message: {first_message[:400]}"
+                                ),
+                            },
+                        ],
+                        temperature=0.2,
+                        max_tokens=30,
+                    ),
+                    timeout=10.0,
+                )
+                raw = (resp.choices[0].message.content or "").strip().strip('"').strip("'").rstrip(".")
+                title = _strip_em_dashes(raw) or _truncate_for_title(first_message)
+                if len(title) > MAX_TITLE_LEN:
+                    title = title[: MAX_TITLE_LEN - 3].rstrip() + "..."
+            await asyncio.to_thread(chat_update_chat_title, uid, chat_id, title)
+        except Exception as e:
+            print(f"[ScoutChat] title gen failed: {type(e).__name__}: {e}")
+
     async def _call_scout_tools(
         self,
         messages: List[Dict[str, Any]],
         context: Optional[Dict[str, Any]] = None,
-    ) -> Tuple[Dict[str, Any], Dict[str, int]]:
-        """Run one Scout turn and return (terminal tool, token usage).
+    ) -> Tuple[Dict[str, Any], Dict[str, int], List[Dict[str, Any]], List[Dict[str, Any]]]:
+        """Run one Scout turn and return (terminal tool, usage, helper_calls, helper_results).
 
         The tool is {name, args}. The usage dict sums tokens across every LLM
         call in the chain: {input_tokens, cached_input_tokens, output_tokens}.
+        helper_calls and helper_results are the trail of any non-terminal
+        tools the model invoked this turn (each entry is {name, args} or
+        {name, result}); they get persisted on the assistant message so a
+        resumed chat can show what Scout actually did, not just what it said.
 
         Each step the model calls exactly one tool (parallel_tool_calls=False,
         tool_choice="required"). It may call helper tools (parse_job_url,
@@ -901,14 +1227,17 @@ class ScoutAssistantService:
         step is offered only the terminal tools, so a turn always ends on
         exactly one of navigate / answer / clarify.
 
-        `context` is the per-turn state helpers may need (uid, tier). Strategy
-        helpers also set context["strategy_touched"] on a successful write, so
-        handle_chat can refuse to cache an answer that wrote to user memory.
+        `context` is the per-turn state helpers may need (uid, tier, chat_id).
+        Strategy helpers also set context["strategy_touched"] on a successful
+        write, so handle_chat can refuse to cache an answer that wrote to
+        user memory.
         """
         client = self._get_openai()
         convo: List[Dict[str, Any]] = list(messages)
         MAX_STEPS = 4  # at most a few helper calls, then a forced terminal tool
         usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
+        helper_calls: List[Dict[str, Any]] = []
+        helper_results: List[Dict[str, Any]] = []
 
         for step in range(MAX_STEPS):
             final_step = step == MAX_STEPS - 1
@@ -936,7 +1265,10 @@ class ScoutAssistantService:
             tool_calls = message.tool_calls or []
             if not tool_calls:
                 # tool_choice="required" should make this unreachable.
-                return {"name": "answer", "args": {"text": "Could you say that another way?"}}, usage
+                return (
+                    {"name": "answer", "args": {"text": "Could you say that another way?"}},
+                    usage, helper_calls, helper_results,
+                )
 
             call = tool_calls[0]
             try:
@@ -948,10 +1280,12 @@ class ScoutAssistantService:
             name = call.function.name
 
             if name in TERMINAL_TOOL_NAMES:
-                return {"name": name, "args": args}, usage
+                return {"name": name, "args": args}, usage, helper_calls, helper_results
 
             if name in HELPER_TOOL_NAMES:
                 result = await run_helper_tool(name, args, context)
+                helper_calls.append({"name": name, "args": args})
+                helper_results.append({"name": name, "result": result})
                 # Echo the model's tool call, then feed the result back so the
                 # next step can use it.
                 convo.append({
@@ -974,11 +1308,17 @@ class ScoutAssistantService:
                 continue
 
             # Unknown tool name: degrade to a safe answer.
-            return {"name": "answer", "args": {"text": "Could you say that another way?"}}, usage
+            return (
+                {"name": "answer", "args": {"text": "Could you say that another way?"}},
+                usage, helper_calls, helper_results,
+            )
 
         # Steps exhausted without a terminal tool (the final step is
         # terminal-only, so this should not happen). Degrade safely.
-        return {"name": "answer", "args": {"text": "Could you say that another way?"}}, usage
+        return (
+            {"name": "answer", "args": {"text": "Could you say that another way?"}},
+            usage, helper_calls, helper_results,
+        )
 
     def _log_turn(
         self,
@@ -1192,6 +1532,7 @@ class ScoutAssistantService:
         user_context: Optional[Dict[str, Any]] = None,
         user_memory: Optional[Dict[str, Any]] = None,
         uid: Optional[str] = None,
+        chat_id: Optional[str] = None,
         queue: "asyncio.Queue[Optional[Dict[str, Any]]]" = None,
     ) -> None:
         """SSE shim for the /chat/stream route.
@@ -1218,6 +1559,7 @@ class ScoutAssistantService:
                 user_context=user_context,
                 user_memory=user_memory,
                 uid=uid,
+                chat_id=chat_id,
             )
             await queue.put({"event": "done", "data": result})
         except Exception as e:

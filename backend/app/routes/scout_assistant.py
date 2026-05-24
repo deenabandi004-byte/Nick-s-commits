@@ -15,6 +15,10 @@ from flask import Blueprint, jsonify, request, g, Response
 from cachetools import TTLCache
 
 from app.services.scout_assistant_service import scout_assistant_service
+from app.services.scout.chat_persistence import (
+    get_chat as chat_get_chat,
+    list_chats as chat_list_chats,
+)
 from app.extensions import require_firebase_auth, get_db
 from app.utils.async_runner import run_async
 
@@ -320,6 +324,13 @@ def scout_assistant_chat():
     conversation_history = payload.get("conversation_history", [])
     current_page = (payload.get("current_page") or "/home")[:200]
     user_info = payload.get("user_info", {})
+    # chat_id resumes an existing persisted chat; None starts a fresh one
+    # (the service creates the parent doc and returns the id in the response).
+    chat_id_in = payload.get("chat_id")
+    if isinstance(chat_id_in, str):
+        chat_id_in = chat_id_in.strip()[:64] or None
+    else:
+        chat_id_in = None
     # user_memory: client-derived signals (recent searches, tried-and-failed
     # prompts, school×company combos exhausted in PDL). Cross-session context
     # the chat thread itself doesn't capture. Validated/sanitized in the
@@ -376,6 +387,7 @@ def scout_assistant_chat():
                 user_context=user_context,
                 user_memory=user_memory,
                 uid=uid,
+                chat_id=chat_id_in,
             )
         )
         return jsonify(result)
@@ -389,6 +401,7 @@ def scout_assistant_chat():
             "navigate_to": None,
             "action_buttons": [],
             "auto_populate": None,
+            "chat_id": chat_id_in,
         }), 200  # Return 200 so frontend doesn't show error state
 
 
@@ -415,6 +428,11 @@ def scout_assistant_chat_stream():
     conversation_history = payload.get("conversation_history", [])
     current_page = (payload.get("current_page") or "/home")[:200]
     user_info = payload.get("user_info", {})
+    chat_id_in = payload.get("chat_id")
+    if isinstance(chat_id_in, str):
+        chat_id_in = chat_id_in.strip()[:64] or None
+    else:
+        chat_id_in = None
     user_memory = payload.get("user_memory") or {}
     if not isinstance(user_memory, dict):
         user_memory = {}
@@ -477,6 +495,7 @@ def scout_assistant_chat_stream():
                             user_context=user_context,
                             user_memory=user_memory,
                             uid=uid,
+                            chat_id=chat_id_in,
                             queue=async_queue,
                         )
                     except Exception as exc:
@@ -631,6 +650,97 @@ def scout_search_help():
                 "search_type": "firm",
                 "action": "retry_search",
             }), 200
+
+
+@scout_assistant_bp.route("/chats", methods=["GET", "OPTIONS"])
+@require_firebase_auth
+def scout_assistant_list_chats():
+    """List recent persisted chats for the sidebar (Pro/Elite).
+
+    Tier gating happens inside chat_persistence.list_chats: Free callers get
+    at most one chat back, Pro/Elite get up to ?limit (default 20). The
+    sidebar is a Pro/Elite surface; we still serve Free here so the panel
+    can show the current chat row consistently.
+
+    Query params:
+      limit  - optional, max chats to return for Pro/Elite (default 20)
+    Response:
+      { "chats": [ {chat_id, title, created_at, last_active_at,
+                    message_count, active_strategy_id, tier_when_created,
+                    expires_at}, ... ] }
+    """
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    uid = None
+    if hasattr(request, "firebase_user"):
+        uid = request.firebase_user.get("uid")
+    if not uid:
+        return jsonify({"chats": []}), 401
+
+    tier = (request.firebase_user.get("subscriptionTier")
+            or request.firebase_user.get("tier")
+            or "free")
+    # The token's tier claim is informational; treat the user doc as the
+    # source of truth so a stale token does not show the wrong sidebar.
+    try:
+        snap = get_db().collection("users").document(uid).get()
+        data = snap.to_dict() or {}
+        tier = data.get("subscriptionTier") or data.get("tier") or tier or "free"
+    except Exception as e:
+        print(f"[ScoutAssistant] list_chats tier read failed: {e}")
+
+    try:
+        raw_limit = int(request.args.get("limit", 20))
+    except (TypeError, ValueError):
+        raw_limit = 20
+    limit = max(1, min(50, raw_limit))
+
+    try:
+        chats = chat_list_chats(uid, tier, limit=limit)
+    except Exception as exc:
+        print(f"[ScoutAssistant] list_chats failed: {type(exc).__name__}: {exc}")
+        return jsonify({"chats": []}), 200
+
+    return jsonify({"chats": chats, "tier": tier})
+
+
+@scout_assistant_bp.route("/chats/<chat_id>", methods=["GET", "OPTIONS"])
+@require_firebase_auth
+def scout_assistant_get_chat(chat_id: str):
+    """Load a single chat's parent doc + messages for resume in the sidebar.
+
+    Returns 200 with the chat envelope on success, or 200 with {"chat": null,
+    "messages": []} when the chat does not exist (the frontend recovers by
+    starting a fresh thread; never serve a 404 here, which would route the
+    user into the global error path).
+    """
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    uid = None
+    if hasattr(request, "firebase_user"):
+        uid = request.firebase_user.get("uid")
+    if not uid:
+        return jsonify({"chat": None, "messages": []}), 401
+
+    chat_id = (chat_id or "").strip()[:64]
+    if not chat_id:
+        return jsonify({"chat": None, "messages": []}), 200
+
+    try:
+        result = chat_get_chat(uid, chat_id)
+    except Exception as exc:
+        print(f"[ScoutAssistant] get_chat failed: {type(exc).__name__}: {exc}")
+        return jsonify({"chat": None, "messages": []}), 200
+
+    if not result.get("ok"):
+        return jsonify({"chat": None, "messages": []}), 200
+
+    return jsonify({
+        "chat": result.get("chat"),
+        "messages": result.get("messages") or [],
+    })
 
 
 @scout_assistant_bp.route("/health", methods=["GET"])
