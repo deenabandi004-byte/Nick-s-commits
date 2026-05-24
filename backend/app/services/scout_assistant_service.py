@@ -40,6 +40,10 @@ from app.services.scout.tools import (
     HELPER_TOOL_NAMES,
     run_helper_tool,
 )
+from app.services.scout.strategy import (
+    get_active_strategy,
+    render_active_strategy_block,
+)
 
 _ERROR_RECOVERY_LINES = [
     "Try again in a sec?",
@@ -412,6 +416,13 @@ Today's date, the user's current page, plan, and credits arrive each turn in a C
 ## Timing and the recruiting calendar
 Use today's date. When a user is planning or asks about timing, ground your advice in the real date: what season it is, and how many weeks or months until key moments. Recruiting runs earlier than students expect and differs by industry: investment banking recruits earliest (often more than a year ahead of the start date), consulting leans on fall cycles, and tech tends to be more rolling. When a user is building a recruiting plan, factor the calendar in, and point them to the Calendar page, which holds their personalized recruiting timeline with key dates and milestones.
 
+## Strategy memory
+The user has one active multi-step strategy at a time, persisted across sessions. The save_strategy and update_strategy_progress helper tools manage it; their descriptions say when to call each. The user's current plan is in the CURRENT CONTEXT block each turn.
+
+Goal switch (the user pivots to a different multi-step goal while an active strategy exists): act, do not gate it behind a yes / no question. On Pro or Elite, swap silently: call save_strategy with the new plan this turn and acknowledge the pivot naturally in chat (something like "switching gears, here is the SWE plan"). Their old strategy is archived automatically (14 days on Pro, 30 on Elite). On Free, take one turn first to give a one-sentence heads-up that you are switching the plan and that on Free the old plan is not kept later; do NOT call save_strategy on this turn. On the next turn, call save_strategy with the new plan unless the user explicitly said wait, stop, or save the old one first. If they push back, do not swap; offer upgrading to Pro to keep the archive.
+
+Loop is Offerloop's SMS agent that runs plans between sessions; mention it once in passing when you save a new strategy, when the active strategy has stalled, or when the plan has parallel tracks the user cannot run by hand at once.
+
 ## Continuity
 The user's recent messages are included for context. If they're continuing a topic, pick up where you left off. Don't re-introduce yourself or repeat information you already gave.
 
@@ -724,7 +735,11 @@ class ScoutAssistantService:
         conversation_history = conversation_history or []
 
         if not message:
-            return self._greeting_response(user_name)
+            # The greeting is where cross-session memory first shows itself: a
+            # returning user with an active plan should be picked up where they
+            # left off, not greeted blank.
+            active_strategy = await self._fetch_active_strategy(uid)
+            return self._greeting_response(user_name, active_strategy)
 
         turn_start = time.time()
 
@@ -764,18 +779,39 @@ class ScoutAssistantService:
         live_context = _build_live_context(current_page, tier, credits, max_credits)
         combined_system = static_system + (("\n\n" + dynamic_context) if dynamic_context else "")
 
+        # The active strategy is per-user and can change within a turn (Scout
+        # can rewrite it via save_strategy), so it rides in the live block
+        # appended to the user message, not in the cached system prompt.
+        active_strategy = await self._fetch_active_strategy(uid)
+        strategy_block = render_active_strategy_block(active_strategy)
+        live_tail = live_context + (f"\n\n{strategy_block}" if strategy_block else "")
+
         messages: List[Dict[str, str]] = [{"role": "system", "content": combined_system}]
         for msg in conversation_history[-6:]:
             role = msg.get("role", "user")
             content = msg.get("content", "")
             if role in ("user", "assistant") and content:
                 messages.append({"role": role, "content": content})
-        messages.append({"role": "user", "content": f"{live_context}\n\n{message}"})
+        messages.append({"role": "user", "content": f"{live_tail}\n\n{message}"})
+
+        # Context flows into the helper tools (uid for strategy writes, tier
+        # for archive-vs-delete on replace). The strategy helpers set
+        # strategy_touched on a successful write, which gates answer-caching.
+        tool_context: Dict[str, Any] = {"uid": uid, "tier": tier}
 
         try:
-            tool_call, usage = await self._call_scout_tools(messages)
+            tool_call, usage = await self._call_scout_tools(messages, tool_context)
             result = self._build_tool_response(tool_call, current_page)
-            self._populate_caches(tool_call, message, embedding, uid)
+            # An answer colored by a user-specific strategy must never be
+            # promoted into the shared answer cache. Both reading the active
+            # strategy this turn and writing to it disqualify the answer.
+            allow_answer_cache = not (
+                bool(active_strategy) or tool_context.get("strategy_touched")
+            )
+            self._populate_caches(
+                tool_call, message, embedding, uid,
+                allow_answer_cache=allow_answer_cache,
+            )
             self._log_turn("llm", turn_start, result, message,
                            usage=usage, near_miss=near_miss)
             return result
@@ -791,17 +827,50 @@ class ScoutAssistantService:
             self._log_turn("llm", turn_start, result, message, near_miss=near_miss)
             return result
 
-    def _greeting_response(self, user_name: str) -> Dict[str, Any]:
-        """Opening message when the user opens Scout with no input yet."""
+    def _greeting_response(
+        self,
+        user_name: str,
+        active_strategy: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Opening message when the user opens Scout with no input yet.
+
+        When the user has an active strategy, the greeting names it instead of
+        starting from zero. That is the most visible payoff of strategy memory:
+        a returning user is picked up where they left off.
+        """
         name = f", {user_name}" if user_name and user_name != "there" else ""
-        return {
-            "tool": "answer",
-            "message": f"Hey{name}! I'm Scout. What are you trying to get done?",
-            "navigate": None,
-        }
+        goal = (active_strategy or {}).get("goal", "").strip()
+        if goal:
+            message = (
+                f"Hey{name}, picking up where we left off. Your active plan is "
+                f"to {goal[0].lower() + goal[1:] if goal[:1].isupper() else goal}. "
+                "Want to keep moving on that, or work on something else?"
+            )
+        else:
+            message = f"Hey{name}! I'm Scout. What are you trying to get done?"
+        return {"tool": "answer", "message": message, "navigate": None}
+
+    async def _fetch_active_strategy(
+        self, uid: Optional[str]
+    ) -> Optional[Dict[str, Any]]:
+        """Best-effort fetch of the user's active strategy.
+
+        Runs the sync Firestore read on a thread so it never blocks the event
+        loop. Any error degrades to None and the turn proceeds without
+        strategy context.
+        """
+        if not uid:
+            return None
+        try:
+            return await asyncio.to_thread(get_active_strategy, uid)
+        except Exception as e:
+            print(f"[ScoutStrategy] fetch failed: {type(e).__name__}: {e}")
+            return None
 
     async def _call_scout_tools(
-        self, messages: List[Dict[str, Any]]
+        self,
+        messages: List[Dict[str, Any]],
+        context: Optional[Dict[str, Any]] = None,
     ) -> Tuple[Dict[str, Any], Dict[str, int]]:
         """Run one Scout turn and return (terminal tool, token usage).
 
@@ -809,10 +878,15 @@ class ScoutAssistantService:
         call in the chain: {input_tokens, cached_input_tokens, output_tokens}.
 
         Each step the model calls exactly one tool (parallel_tool_calls=False,
-        tool_choice="required"). It may call helper tools (parse_job_url, ...)
-        to gather data; their results are fed back and the loop continues. The
-        final step is offered only the terminal tools, so a turn always ends on
+        tool_choice="required"). It may call helper tools (parse_job_url,
+        save_strategy, update_strategy_progress) to gather data or write
+        memory; their results are fed back and the loop continues. The final
+        step is offered only the terminal tools, so a turn always ends on
         exactly one of navigate / answer / clarify.
+
+        `context` is the per-turn state helpers may need (uid, tier). Strategy
+        helpers also set context["strategy_touched"] on a successful write, so
+        handle_chat can refuse to cache an answer that wrote to user memory.
         """
         client = self._get_openai()
         convo: List[Dict[str, Any]] = list(messages)
@@ -860,7 +934,7 @@ class ScoutAssistantService:
                 return {"name": name, "args": args}, usage
 
             if name in HELPER_TOOL_NAMES:
-                result = await run_helper_tool(name, args)
+                result = await run_helper_tool(name, args, context)
                 # Echo the model's tool call, then feed the result back so the
                 # next step can use it.
                 convo.append({
@@ -926,12 +1000,16 @@ class ScoutAssistantService:
         message: str,
         embedding: Optional[List[float]],
         uid: Optional[str],
+        allow_answer_cache: bool = True,
     ) -> None:
         """Feed an LLM result into the Tier B promotion buffers.
 
         Only empty-prefill navigations (confidence >= 0.85) and answers are
         eligible; a navigate carrying message-specific prefill is not cached,
-        and clarify is never cached. Best-effort; never raises.
+        and clarify is never cached. When the turn involved the user's
+        strategy (read or written), allow_answer_cache is False and the
+        answer-cache promotion is skipped, since that answer is user-specific
+        and must not be served to anyone else. Best-effort; never raises.
         """
         if embedding is None:
             return
@@ -951,7 +1029,7 @@ class ScoutAssistantService:
                 if promoted is not None:
                     emb, plan, intent = promoted
                     navigate_cache.add(emb, plan, intent)
-            elif name == "answer":
+            elif name == "answer" and allow_answer_cache:
                 promoted = pending_answer.note(embedding, tool_call, message, uid or "")
                 if promoted is not None:
                     emb, plan, intent = promoted
