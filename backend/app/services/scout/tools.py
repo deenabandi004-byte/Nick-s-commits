@@ -250,6 +250,111 @@ UPDATE_STRATEGY_PROGRESS_TOOL: Dict[str, Any] = {
     },
 }
 
+# Workflow state read tools (Phase 5, Stage 2). Read-only Firestore wrappers
+# that let Scout pull state from across the product when grounding a reply or
+# a strategy discussion. The returned summaries are JSON-safe and compact (one
+# limit knob per tool, no raw documents).
+
+GET_OUTBOX_STATUS_TOOL: Dict[str, Any] = {
+    "name": "get_outbox_status",
+    "description": (
+        "Read-only. Returns the user's email outreach pipeline summary: "
+        "total contacts in the outbox, how many are awaiting a reply, how "
+        "many have replied, and the most recent ones with status and "
+        "days-since-last-send. Call this whenever the answer depends on the "
+        "user's actual outreach state (\"how many people did I email?\", "
+        "\"did anyone reply?\", \"who has gone quiet?\"). Read only, no "
+        "writes."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max recent contacts to return (default 10).",
+            },
+        },
+        "required": [],
+    },
+}
+
+GET_RECENT_SEARCHES_TOOL: Dict[str, Any] = {
+    "name": "get_recent_searches",
+    "description": (
+        "Read-only. Returns the user's recent natural-language contact "
+        "searches (the prompt-search history on the Find page), newest "
+        "first. Call this when the answer depends on what the user has been "
+        "looking for lately."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max recent searches to return (default 5).",
+            },
+        },
+        "required": [],
+    },
+}
+
+GET_RECENT_COVER_LETTERS_TOOL: Dict[str, Any] = {
+    "name": "get_recent_cover_letters",
+    "description": (
+        "Read-only. Returns metadata for the user's recent cover letters "
+        "(company, role, created_at, length), newest first. The letter body "
+        "itself is not included; ask for it separately if needed."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max recent cover letters to return (default 5).",
+            },
+        },
+        "required": [],
+    },
+}
+
+GET_MEETING_PREP_DRAFTS_TOOL: Dict[str, Any] = {
+    "name": "get_meeting_prep_drafts",
+    "description": (
+        "Read-only. Returns the user's recent meeting prep drafts (coffee "
+        "chats and informational meetings) with the contact name, meeting "
+        "type, scheduled date, and created date, newest first."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max recent meeting preps to return (default 5).",
+            },
+        },
+        "required": [],
+    },
+}
+
+GET_RECENT_FIRM_SEARCHES_TOOL: Dict[str, Any] = {
+    "name": "get_recent_firm_searches",
+    "description": (
+        "Read-only. Returns the user's recent firm searches (structured "
+        "company-discovery searches with filters and result counts), newest "
+        "first. Distinct from get_recent_searches, which covers people."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max recent firm searches to return (default 5).",
+            },
+        },
+        "required": [],
+    },
+}
+
 # Terminal tools end a turn (exactly one per turn). Helper tools gather data
 # or write memory mid-turn and the model keeps going. parallel_tool_calls=False
 # caps each step at one tool; the caller offers only terminal tools on the
@@ -259,6 +364,11 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     PARSE_JOB_URL_TOOL,
     SAVE_STRATEGY_TOOL,
     UPDATE_STRATEGY_PROGRESS_TOOL,
+    GET_OUTBOX_STATUS_TOOL,
+    GET_RECENT_SEARCHES_TOOL,
+    GET_RECENT_COVER_LETTERS_TOOL,
+    GET_MEETING_PREP_DRAFTS_TOOL,
+    GET_RECENT_FIRM_SEARCHES_TOOL,
 ]
 SCOUT_TOOLS: List[Dict[str, Any]] = TERMINAL_TOOLS + HELPER_TOOLS
 
@@ -356,6 +466,41 @@ async def _run_update_strategy_progress(
     return result
 
 
+async def _run_workflow_read(
+    fn_name: str,
+    args: Dict[str, Any],
+    context: Dict[str, Any],
+    default_limit: int,
+    empty_envelope: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Shared body for the six workflow-state read tools.
+
+    Resolves uid, normalizes the limit, dispatches to the named function in
+    workflow_state, and marks context["workflow_state_touched"] so handle_chat
+    refuses to cache an answer colored by user-specific workflow state.
+    """
+    from app.services.scout import workflow_state
+    uid = context.get("uid")
+    if not uid:
+        return dict(empty_envelope)
+    try:
+        limit = int(args.get("limit") or default_limit)
+    except (TypeError, ValueError):
+        limit = default_limit
+    fn = getattr(workflow_state, fn_name, None)
+    if fn is None:
+        return dict(empty_envelope)
+    result = await asyncio.to_thread(fn, uid, limit)
+    context["workflow_state_touched"] = True
+    return result
+
+
+# Per-tool defaults and empty envelopes. Kept here (not imported from
+# workflow_state) so the dispatch table stays self-contained.
+_OUTBOX_EMPTY = {"total_contacts": 0, "awaiting_reply": 0, "replied": 0, "recent": []}
+_LIST_EMPTY = {"count": 0, "recent": []}
+
+
 async def run_helper_tool(
     name: str,
     args: Dict[str, Any],
@@ -364,8 +509,9 @@ async def run_helper_tool(
     """Execute a helper (non-terminal) tool by name and return its result.
 
     The optional context carries per-turn state the helper may need (uid,
-    tier, and a strategy_touched flag the strategy helpers set on a write).
-    Older helpers (parse_job_url) ignore context, so it stays optional.
+    tier, and the strategy_touched / workflow_state_touched flags the
+    write-side and read-side helpers set). Older helpers (parse_job_url)
+    ignore context, so it stays optional.
     """
     args = args if isinstance(args, dict) else {}
     ctx = context if context is not None else {}
@@ -375,4 +521,19 @@ async def run_helper_tool(
         return await _run_save_strategy(args, ctx)
     if name == "update_strategy_progress":
         return await _run_update_strategy_progress(args, ctx)
+    if name == "get_outbox_status":
+        return await _run_workflow_read(
+            "get_outbox_status", args, ctx, 10, _OUTBOX_EMPTY)
+    if name == "get_recent_searches":
+        return await _run_workflow_read(
+            "get_recent_searches", args, ctx, 5, _LIST_EMPTY)
+    if name == "get_recent_cover_letters":
+        return await _run_workflow_read(
+            "get_recent_cover_letters", args, ctx, 5, _LIST_EMPTY)
+    if name == "get_meeting_prep_drafts":
+        return await _run_workflow_read(
+            "get_meeting_prep_drafts", args, ctx, 5, _LIST_EMPTY)
+    if name == "get_recent_firm_searches":
+        return await _run_workflow_read(
+            "get_recent_firm_searches", args, ctx, 5, _LIST_EMPTY)
     return {"error": f"unknown helper tool: {name}"}

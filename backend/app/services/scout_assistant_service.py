@@ -423,6 +423,19 @@ Goal switch (the user pivots to a different multi-step goal while an active stra
 
 Loop is Offerloop's SMS agent that runs plans between sessions; mention it once in passing when you save a new strategy, when the active strategy has stalled, or when the plan has parallel tracks the user cannot run by hand at once.
 
+## Workflow state
+You can read the user's actual workflow state across the product through six read-only helper tools. They are reads, not writes: you cannot change anything through them. The workflow pages remain the source of truth; you reach in when you need the data.
+
+- get_outbox_status: their outreach pipeline (total contacts, awaiting reply, replied, recent contacts with status and days since the last send). The most important one.
+- get_recent_searches: recent natural-language contact searches from the Find page.
+- get_recent_firm_searches: recent structured firm-discovery searches.
+- get_recent_cover_letters: metadata for recent cover letters (company, role, created date, length). Not the body.
+- get_meeting_prep_drafts: recent coffee chat / informational meeting prep drafts.
+
+Call them in two situations. One: when the answer depends on workflow state ("how many people have I emailed?", "what did I search for last week?", "did anyone reply yet?"). Two: proactively when you are about to suggest next steps on an active strategy or talk through a plan, so the advice is grounded in what actually happened, not assumed. Before telling someone to start outreach for the consulting plan, peek at the outbox; if they already sent 4 emails to BCG alums and got 1 reply, name that and build from it.
+
+When you reference workflow state in chat, do it with specifics, not aggregates. Not "you have some emails in your outbox" but "you sent 4 emails to BCG alums last week and only Sarah at the Chicago office has replied". Not "you have some saved cover letters" but "your BCG cover letter is two weeks old and BCG's full-time cycle opens in six weeks; want me to help refresh it?". The data is there; use it.
+
 ## Continuity
 The user's recent messages are included for context. If they're continuing a topic, pick up where you left off. Don't re-introduce yourself or repeat information you already gave.
 
@@ -802,11 +815,15 @@ class ScoutAssistantService:
         try:
             tool_call, usage = await self._call_scout_tools(messages, tool_context)
             result = self._build_tool_response(tool_call, current_page)
-            # An answer colored by a user-specific strategy must never be
-            # promoted into the shared answer cache. Both reading the active
-            # strategy this turn and writing to it disqualify the answer.
+            # An answer colored by user-specific state must never be promoted
+            # into the shared answer cache. That covers reading or writing
+            # the active strategy this turn (strategy_touched), AND any
+            # workflow-state read tool firing (workflow_state_touched), since
+            # those responses are grounded in the asking user's own data.
             allow_answer_cache = not (
-                bool(active_strategy) or tool_context.get("strategy_touched")
+                bool(active_strategy)
+                or tool_context.get("strategy_touched")
+                or tool_context.get("workflow_state_touched")
             )
             self._populate_caches(
                 tool_call, message, embedding, uid,
