@@ -4,13 +4,10 @@ DEPRECATED - legacy "Scout Chat" assistant. Do not build on this module.
 Scout now runs on scout_assistant_service.py (OpenAI gpt-4.1-mini, the
 navigate / answer / clarify tool contract). This file is the old Scout Chat
 engine and has no live frontend consumers: its routes in app/routes/scout.py
-were deleted in Phase 3. The only thing still importing this module is
-Application Lab, which pulls five dataclasses (EnhancedFitAnalysis,
-RequirementMatch, ResumeEdit, CoverLetter, ResumeMatch) and format_resume_pdf
-from it. It is kept solely for those imports and is slated for deletion once
-the Application Lab dependency is relocated. That relocation is blocked on
-cross-branch drift: application_lab_service.py already calls fit-analysis
-helper methods that do not exist in this branch's ScoutService.
+were deleted in Phase 3, and the Application Lab dependency that previously
+pinned it has been removed end-to-end. The file is now a deletion candidate
+in its own follow-up; left in place this commit to keep the dead-code
+removal scoped to Application Lab and Interview Prep.
 
 Scout Service v2.0 - Conversational job search assistant with URL parsing,
 job discovery, and SERP-powered research capabilities.

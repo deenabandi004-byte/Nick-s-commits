@@ -23,12 +23,10 @@ Collection paths (audited against the production code, not invented):
   meeting preps   users/{uid}/coffee-chat-preps
   firm searches   users/{uid}/firmSearches
 
-Phase 5 follow-ups:
-  When the interview prep feature ships, restore get_interview_prep_drafts.
-  The reader function pattern matches get_meeting_prep_drafts (the
-  users/{uid}/interview-preps subcollection already exists and the writers
-  in backend/app/routes/interview_prep.py persist companyName / jobTitle /
-  createdAt, but the feature is held back from Phase 5).
+When the interview prep feature is rebuilt later, add a reader function
+following the get_meeting_prep_drafts pattern. The Application Lab and
+Interview Prep backends were removed end-to-end in the Phase 5 cleanup;
+restoring either is a fresh build, not a revert.
 """
 from __future__ import annotations
 

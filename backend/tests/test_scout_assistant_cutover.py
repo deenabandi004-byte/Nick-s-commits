@@ -130,12 +130,10 @@ def test_04_meeting_prep_missing_linkedin_url_clarifies(scout_client):
 
 
 # Case 5 -------------------------------------------------------------------
-def test_05_interview_prep_ambiguous_clarifies(scout_client):
-    status, data = _chat(scout_client, "help me prep for my interview")
-    assert status == 200, data
-    assert data["tool"] == "clarify", (
-        f"expected clarify (interview-prep vs meeting-prep), got {data['tool']}: {data}"
-    )
+# Removed: the Interview Prep feature was deleted end-to-end in the Phase 5
+# cleanup, so there is no /interview-prep route to be ambiguous against
+# /meeting-prep anymore. test_18 still covers the meta question "help me
+# prep for my interview" under any of {clarify, navigate, answer}.
 
 
 # Case 6 -------------------------------------------------------------------
@@ -240,24 +238,26 @@ def test_13_chat_first_brainstorm_targets_answers(scout_client):
 
 
 # Case 14 ------------------------------------------------------------------
-# The over-correction guard's twin: "talk me through" is a chat cue, so this
-# stays an answer even though /interview-prep exists.
+# The over-correction guard's twin: "talk me through" is a chat cue, so a
+# strategy-style question stays an answer. After the Phase 5 cleanup there is
+# no /interview-prep route, which makes the guarantee even firmer.
 def test_14_chat_first_interview_strategy_answers_not_navigate(scout_client):
     status, data = _chat(scout_client, "talk me through interview prep strategy")
     assert status == 200, data
     assert data["tool"] == "answer", (
-        f"'talk me through' must answer in chat, not navigate to /interview-prep: {data}"
+        f"'talk me through' must answer in chat, not navigate: {data}"
     )
     assert data["navigate"] is None, data
 
 
 # Case 15 ------------------------------------------------------------------
 # Counter-case: the chat-first rule must not over-correct. A direct command
-# with no chat cue still navigates.
+# with no chat cue still navigates. Uses a live route (cover letter) since
+# /interview-prep was removed in the Phase 5 cleanup.
 def test_15_explicit_command_still_navigates(scout_client):
-    status, data = _chat(scout_client, "take me to interview prep")
+    status, data = _chat(scout_client, "take me to cover letter")
     assert status == 200, data
-    _assert_navigate(data, "/interview-prep")
+    _assert_navigate(data, "/write/cover-letter")
 
 
 # Case 16 ------------------------------------------------------------------

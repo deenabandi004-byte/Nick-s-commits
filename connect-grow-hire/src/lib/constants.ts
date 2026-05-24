@@ -1,5 +1,4 @@
 export const MEETING_CREDITS = 15;
-export const INTERVIEW_PREP_CREDITS = 25;
 export const TIMELINE_CREDITS = 10;
 
 export const TIER_CONFIGS = {
@@ -10,7 +9,6 @@ export const TIER_CONFIGS = {
     credits: 500,
     description: "Try out the platform free - up to 5 contacts per search + AI email drafts",
     meeting: true,
-    interviewPrep: false,
     timeSavedMinutes: 1680,
     usesResume: false,
     agentMaxConcurrent: 0,
@@ -22,7 +20,6 @@ export const TIER_CONFIGS = {
     credits: 3000,
     description: "Up to 15 contacts/search, unlimited meeting prep, The Agent (1 at a time), all networking features",
     meeting: true,
-    interviewPrep: true,
     timeSavedMinutes: 12600,
     usesResume: true,
     agentMaxConcurrent: 1,
@@ -34,7 +31,6 @@ export const TIER_CONFIGS = {
     credits: 12000,
     description: "Run up to 5 agents simultaneously, 30 contacts/search, priority queue, founder kickoff call",
     meeting: true,
-    interviewPrep: true,
     timeSavedMinutes: 67200,
     usesResume: true,
     agentMaxConcurrent: 5,

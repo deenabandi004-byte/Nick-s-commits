@@ -17,7 +17,6 @@ from .app.routes.runs import runs_bp
 from .app.routes.enrichment import enrichment_bp
 from .app.routes.resume import resume_bp
 from .app.routes.meeting_prep import meeting_bp
-from .app.routes.interview_prep import interview_prep_bp
 from .app.routes.billing import billing_bp
 from .app.routes.users import users_bp
 from .app.routes.outbox import outbox_bp
@@ -198,7 +197,6 @@ def create_app() -> Flask:
     app.register_blueprint(
         meeting_bp, url_prefix="/api/coffee-chat-prep", name="meeting_prep_legacy"
     )
-    app.register_blueprint(interview_prep_bp)
     app.register_blueprint(billing_bp)
     app.register_blueprint(users_bp)
     app.register_blueprint(outbox_bp)

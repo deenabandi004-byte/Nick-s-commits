@@ -84,7 +84,7 @@ export function useFeatureGate(feature: string) {
   }, [subscription, feature]);
 
   // Client-side quick check for usage-based features
-  const canUse = (usageType: 'alumniSearches' | 'coffeeChatPreps' | 'interviewPreps'): boolean => {
+  const canUse = (usageType: 'alumniSearches' | 'coffeeChatPreps'): boolean => {
     if (!subscription) return false;
     return canUseFeature(
       subscription.tier as Tier,

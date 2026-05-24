@@ -49,8 +49,6 @@ const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
 const MeetingPrepPage = React.lazy(() => import("./pages/MeetingPrepPage"));
 const FindPage = React.lazy(() => import("./pages/FindPage"));
 const EmailTemplatesPage = React.lazy(() => import("./pages/EmailTemplatesPage"));
-const InterviewPrepPage = React.lazy(() => import("./pages/InterviewPrepPage"));
-const ApplicationLabPage = React.lazy(() => import("./pages/ApplicationLabPage"));
 const RecruitingTimelinePage = React.lazy(() => import("./pages/RecruitingTimelinePage"));
 const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
 const AgentPage = React.lazy(() => import("./pages/AgentPage"));
@@ -86,7 +84,6 @@ const CompanyComparisonPage = React.lazy(() => import("./pages/CompanyComparison
 const MeetingPrepPreview = React.lazy(() => import("./pages/seo-preview/MeetingPrepPreview"));
 const ColdEmailPreview = React.lazy(() => import("./pages/seo-preview/ColdEmailPreview"));
 const FindAlumniPreview = React.lazy(() => import("./pages/seo-preview/FindAlumniPreview"));
-const InterviewPrepPreview = React.lazy(() => import("./pages/seo-preview/InterviewPrepPreview"));
 const ResumeCheckerPreview = React.lazy(() => import("./pages/seo-preview/ResumeCheckerPreview"));
 const RecruitingTimelinePreview = React.lazy(() => import("./pages/seo-preview/RecruitingTimelinePreview"));
 const NetworkingEmailGeneratorPreview = React.lazy(() => import("./pages/seo-preview/NetworkingEmailGeneratorPreview"));
@@ -305,14 +302,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/coffee-chat-prep" element={<Navigate to="/meeting-prep" replace />} />
       <Route path="/contact-search/templates" element={<Navigate to="/find/templates" replace />} />
       <Route path="/find/templates" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><EmailTemplatesPage /></Suspense></ProtectedRoute>} />
-      <Route path="/interview-prep" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><InterviewPrepPage /></Suspense></ProtectedRoute>} />
       <Route path="/firm-search" element={<Navigate to="/find?tab=companies" replace />} />
       <Route path="/job-board" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><JobBoardPage /></Suspense></ProtectedRoute>} />
       <Route path="/recruiter-spreadsheet" element={<Navigate to="/find?tab=hiring-managers" replace />} />
       <Route path="/hiring-manager-tracker" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><HiringManagerTrackerPage /></Suspense></ProtectedRoute>} />
       <Route path="/company-tracker" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CompanyTrackerPage /></Suspense></ProtectedRoute>} />
       <Route path="/scout" element={<ProtectedRoute><ScoutRedirect /></ProtectedRoute>} />
-      <Route path="/application-lab" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><ApplicationLabPage /></Suspense></ProtectedRoute>} />
       <Route path="/recruiting-timeline" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><RecruitingTimelinePage /></Suspense></ProtectedRoute>} />
       <Route path="/agent" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AgentPage /></Suspense></ProtectedRoute>} />
       <Route path="/agent/setup" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AgentSetup /></Suspense></ProtectedRoute>} />
@@ -337,7 +332,6 @@ const AppRoutes: React.FC = () => {
       <Route path="/seo-preview/meeting-mckinsey" element={<Suspense fallback={<PageLoader />}><MeetingPrepPreview /></Suspense>} />
       <Route path="/seo-preview/cold-email-goldman" element={<Suspense fallback={<PageLoader />}><ColdEmailPreview /></Suspense>} />
       <Route path="/seo-preview/find-usc-goldman" element={<Suspense fallback={<PageLoader />}><FindAlumniPreview /></Suspense>} />
-      <Route path="/seo-preview/interview-prep-goldman-superday" element={<Suspense fallback={<PageLoader />}><InterviewPrepPreview /></Suspense>} />
       <Route path="/seo-preview/resume-checker" element={<Suspense fallback={<PageLoader />}><ResumeCheckerPreview /></Suspense>} />
       <Route path="/seo-preview/ib-recruiting-timeline" element={<Suspense fallback={<PageLoader />}><RecruitingTimelinePreview /></Suspense>} />
       <Route path="/seo-preview/networking-email-generator" element={<Suspense fallback={<PageLoader />}><NetworkingEmailGeneratorPreview /></Suspense>} />

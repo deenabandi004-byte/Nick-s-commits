@@ -104,7 +104,6 @@ def check_and_reset_usage(user_ref, user_data):
             user_ref.update({
                 'alumniSearchesUsed': 0,
                 'coffeeChatPrepsUsed': 0,
-                'interviewPrepsUsed': 0,
                 'lastUsageReset': now.isoformat()
             })
             logger.info("Usage counters reset (%s tier)", tier)
@@ -144,7 +143,6 @@ def can_access_feature(tier: str, feature: str, user_data: dict, tier_config: di
     usage_map = {
         'alumni_search': ('alumniSearchesUsed', 'alumni_searches'),
         'meeting_prep': ('coffeeChatPrepsUsed', 'coffee_chat_preps'),
-        'interview_prep': ('interviewPrepsUsed', 'interview_preps'),
     }
     
     if feature in usage_map:

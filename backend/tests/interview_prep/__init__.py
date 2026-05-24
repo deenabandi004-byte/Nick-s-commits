@@ -1,2 +1,0 @@
-# Interview Prep Test Suite
-

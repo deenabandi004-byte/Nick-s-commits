@@ -77,36 +77,6 @@ class MeetingPrepRequest(BaseModel):
         return v
 
 
-class InterviewPrepRequest(BaseModel):
-    """Validation schema for interview prep requests"""
-    # Use str instead of HttpUrl to avoid serialization issues with Firestore
-    job_posting_url: Optional[str] = Field(None, description="Job posting URL")
-    company_name: Optional[str] = Field(None, min_length=1, max_length=200, description="Company name (if no URL)")
-    job_title: Optional[str] = Field(None, min_length=1, max_length=200, description="Job title (if no URL)")
-    
-    @field_validator('job_posting_url')
-    @classmethod
-    def validate_job_url(cls, v):
-        if v is None:
-            return None
-        v = str(v).strip()  # Force string conversion
-        if not v:
-            return None
-        # Basic URL validation
-        if not v.startswith(('http://', 'https://')):
-            raise ValueError('Job posting URL must start with http:// or https://')
-        return v
-    
-    @field_validator('company_name', 'job_title')
-    @classmethod
-    def validate_manual_input(cls, v, info):
-        # If no URL, both company_name and job_title are required
-        if not info.data.get('job_posting_url'):
-            if not v:
-                raise ValueError('Company name and job title are required when no URL is provided')
-        return v.strip() if v else v
-
-
 class ContactCreateRequest(BaseModel):
     """Validation schema for creating a contact"""
     firstName: str = Field(..., min_length=1, max_length=100)

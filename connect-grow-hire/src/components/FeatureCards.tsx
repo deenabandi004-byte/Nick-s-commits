@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import FirmSearchImage from '@/assets/Firm_Search.png';
 import ContactSearchImage from '@/assets/Contact_search.png';
 import MeetingImage from '@/assets/Meeting.png';
-import InterviewPrepImage from '@/assets/Interview_Prep.png';
 import DashboardImage from '@/assets/Dashboard.png';
 
 interface FeatureCard {
@@ -50,17 +49,6 @@ const featureData: FeatureCard[] = [
   },
   {
     number: 4,
-    header: "Nail every interview",
-    headerEmphasis: "every interview",
-    bullets: [
-      "Input the role and company you're interviewing for",
-      "Receive a prep sheet with common questions, frameworks, company insights, and talking points"
-    ],
-    image: InterviewPrepImage,
-    stepLabel: "Step 4 · Prepare for interviews",
-  },
-  {
-    number: 5,
     header: "Your recruiting command center",
     headerEmphasis: "command center",
     bullets: [
@@ -68,7 +56,7 @@ const featureData: FeatureCard[] = [
       "Track outreach in the Outbox with follow-up suggestions and an integrated calendar"
     ],
     image: DashboardImage,
-    stepLabel: "Step 5 · Track everything",
+    stepLabel: "Step 4 · Track everything",
   },
 ];
 

@@ -6,7 +6,6 @@ from app.utils.validation import (
     ContactSearchRequest,
     FirmSearchRequest,
     MeetingPrepRequest,
-    InterviewPrepRequest,
     validate_request
 )
 from app.utils.exceptions import ValidationError
@@ -98,32 +97,3 @@ class TestMeetingPrepValidation:
             validate_request(MeetingPrepRequest, data)
 
 
-class TestInterviewPrepValidation:
-    """Test interview prep request validation"""
-    
-    def test_valid_url(self):
-        """Test valid job posting URL"""
-        data = {
-            "job_posting_url": "https://example.com/job"
-        }
-        result = validate_request(InterviewPrepRequest, data)
-        assert result["job_posting_url"] is not None
-    
-    def test_valid_manual_input(self):
-        """Test valid manual input"""
-        data = {
-            "company_name": "Google",
-            "job_title": "Software Engineer"
-        }
-        result = validate_request(InterviewPrepRequest, data)
-        assert result["company_name"] == "Google"
-        assert result["job_title"] == "Software Engineer"
-    
-    def test_missing_manual_input(self):
-        """Test missing manual input when no URL"""
-        data = {
-            "company_name": "Google"
-            # Missing job_title
-        }
-        with pytest.raises(ValidationError):
-            validate_request(InterviewPrepRequest, data)

@@ -605,7 +605,6 @@ export default function DashboardPage() {
   const tools = [
     { icon: <Mail className="h-3.5 w-3.5" />, label: "Tracker", to: "/tracker" },
     { icon: <Coffee className="h-3.5 w-3.5" />, label: "Meeting Prep", to: "/meeting-prep" },
-    { icon: <MessageSquare className="h-3.5 w-3.5" />, label: "Interview Prep", to: "/interview-prep" },
     { icon: <Briefcase className="h-3.5 w-3.5" />, label: "Job Board", to: "/job-board" },
     { icon: <FileText className="h-3.5 w-3.5" />, label: "Resume", to: "/write/resume" },
     { icon: <Calendar className="h-3.5 w-3.5" />, label: "Calendar", to: "/calendar" },

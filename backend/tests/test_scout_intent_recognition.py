@@ -70,7 +70,8 @@ def test_tier_a_ignores_find_out():
 # need away. A genuinely ambiguous target accepts more than one route.
 _LLM_NAVIGATE = [
     ("email ey portland auditors", ("/contact-search",)),
-    ("prep me for my interview at jane street", ("/interview-prep",)),
+    # Removed Jane Street interview prep case: /interview-prep no longer
+    # exists in the page registry after the Phase 5 cleanup.
     ("draft a cover letter for the stripe pm role", ("/write/cover-letter",)),
     ("who do i know at anthropic", ("/contact-directory", "/contact-search")),
     ("auto apply to swe jobs in nyc", ("/job-board",)),

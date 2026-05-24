@@ -50,8 +50,6 @@ const getActivityIcon = (type: string) => {
       return <Users size={14} style={iconStyle} />;
     case 'coffeePrep':
       return <Coffee size={14} style={iconStyle} />;
-    case 'interviewPrep':
-      return <Briefcase size={14} style={iconStyle} />;
     default:
       return <Clock size={14} style={iconStyle} />;
   }
@@ -65,8 +63,6 @@ const getActivityRoute = (type: string): string => {
       return '/find';
     case 'coffeePrep':
       return '/meeting-prep';
-    case 'interviewPrep':
-      return '/interview-prep';
     default:
       return '/find';
   }

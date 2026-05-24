@@ -30,7 +30,6 @@ CASES = [
     ("take me to contact search", _HIT, "/contact-search", {}, True),
     ("go to the job board", _HIT, "/job-board", {}, True),
     ("show me my outbox", _HIT, "/outbox", {}, True),
-    ("navigate to interview prep", _HIT, "/interview-prep", {}, True),
     # --- Rule (c): find <role> at <company> -------------------------------
     ("find engineers at Datadog",
      _HIT, "/contact-search", {"company": "Datadog", "job_title": "engineers"}, False),

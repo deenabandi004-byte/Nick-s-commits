@@ -26,7 +26,7 @@ BLOCKED_FIELDS = {
     "tier", "subscriptionTier", "credits", "maxCredits",
     "lastCreditReset", "stripeCustomerId", "stripeSubscriptionId",
     "subscriptionStatus", "alumniSearchesUsed", "coffeeChatPrepsUsed",
-    "interviewPrepsUsed", "email",  # email comes from Firebase Auth, not user input
+    "email",  # email comes from Firebase Auth, not user input
 }
 
 JOB_RELEVANT_FIELDS = {

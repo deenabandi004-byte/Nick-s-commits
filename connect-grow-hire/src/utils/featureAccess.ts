@@ -8,7 +8,6 @@ export interface TierLimits {
   credits: number;
   alumniSearches: number | 'unlimited';
   coffeeChatPreps: number | 'unlimited';
-  interviewPreps: number | 'unlimited';
   firmSearch: boolean;
   smartFilters: boolean;
   bulkDrafting: boolean;
@@ -24,7 +23,6 @@ export const TIER_LIMITS: Record<Tier, TierLimits> = {
     credits: 300,
     alumniSearches: 10,
     coffeeChatPreps: 3,
-    interviewPreps: 2,
     firmSearch: false,
     smartFilters: false,
     bulkDrafting: false,
@@ -38,7 +36,6 @@ export const TIER_LIMITS: Record<Tier, TierLimits> = {
     credits: 1500,
     alumniSearches: 'unlimited',
     coffeeChatPreps: 10,
-    interviewPreps: 5,
     firmSearch: true,
     smartFilters: true,
     bulkDrafting: true,
@@ -52,7 +49,6 @@ export const TIER_LIMITS: Record<Tier, TierLimits> = {
     credits: 3000,
     alumniSearches: 'unlimited',
     coffeeChatPreps: 'unlimited',
-    interviewPreps: 'unlimited',
     firmSearch: true,
     smartFilters: true,
     bulkDrafting: true,
@@ -74,7 +70,7 @@ export function hasFeatureAccess(tier: Tier, feature: keyof TierLimits): boolean
 /**
  * Get the limit for a usage-based feature
  */
-export function getFeatureLimit(tier: Tier, feature: 'alumniSearches' | 'coffeeChatPreps' | 'interviewPreps'): number | 'unlimited' {
+export function getFeatureLimit(tier: Tier, feature: 'alumniSearches' | 'coffeeChatPreps'): number | 'unlimited' {
   return TIER_LIMITS[tier][feature];
 }
 
@@ -83,7 +79,7 @@ export function getFeatureLimit(tier: Tier, feature: 'alumniSearches' | 'coffeeC
  */
 export function canUseFeature(
   tier: Tier,
-  feature: 'alumniSearches' | 'coffeeChatPreps' | 'interviewPreps',
+  feature: 'alumniSearches' | 'coffeeChatPreps',
   currentUsage: number
 ): boolean {
   const limit = getFeatureLimit(tier, feature);
@@ -96,7 +92,7 @@ export function canUseFeature(
  */
 export function getRemainingUses(
   tier: Tier,
-  feature: 'alumniSearches' | 'coffeeChatPreps' | 'interviewPreps',
+  feature: 'alumniSearches' | 'coffeeChatPreps',
   currentUsage: number
 ): number | 'unlimited' {
   const limit = getFeatureLimit(tier, feature);

@@ -3,14 +3,12 @@ import { motion } from 'framer-motion';
 import { ContactSearchDemoPlaceholder } from './demo/ContactSearchDemoPlaceholder';
 import { FirmSearchDemoPlaceholder } from './demo/FirmSearchDemoPlaceholder';
 import { MeetingDemoPlaceholder } from './demo/MeetingDemoPlaceholder';
-import { InterviewPrepDemoPlaceholder } from './demo/InterviewPrepDemoPlaceholder';
 import { DashboardDemoPlaceholder } from './demo/DashboardDemoPlaceholder';
 import proSearchVideo from '@/assets/Offerloop Professional Search.mp4';
 import scoutWavingWhite from '@/assets/ScoutWavingWhite.mp4';
 import dashboardVideo from '@/assets/Dashboard.mov';
 import contactSearchVideo from '@/assets/Contact Search.mov';
 import firmSearchVideo from '@/assets/FirmSearch.mov';
-import interviewPrepVideo from '@/assets/Interview Prep.mov';
 import meetingVideo from '@/assets/Meeting.mov';
 import TextType from './TextType';
 import Marquee from "react-fast-marquee";
@@ -140,41 +138,6 @@ export const ProductTour: React.FC = () => {
                 />
               </div>
               <div className="absolute -bottom-4 -left-4 w-24 h-24 bg-emerald-500/10 bg-emerald-200/40 rounded-full blur-3xl"></div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Feature 4: Interview Prep - Text on Right, Video on Left */}
-        <motion.div
-          variants={cardVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="mb-32"
-        >
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            {/* Video - Left Side */}
-            <div className="relative">
-              <div className="aspect-video rounded-[3px] overflow-hidden border border-[#3B82F6]/60 bg-[#F8FAFC] shadow-lg shadow-[#E2E8F0]/50">
-                <video
-                  src={interviewPrepVideo}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-purple-500/10 bg-purple-200/40 rounded-full blur-3xl"></div>
-            </div>
-            
-            {/* Text - Right Side */}
-            <div className="space-y-6">
-              <h3 className="text-4xl font-bold text-section-heading mb-4">Interview Prep</h3>
-              <p className="text-xl text-section-body leading-relaxed">
-                Nail every interview. Input the role and company you're interviewing for and receive a prep sheet with common questions, frameworks, company insights, and talking points.
-              </p>
             </div>
           </div>
         </motion.div>

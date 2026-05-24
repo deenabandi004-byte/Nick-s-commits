@@ -86,15 +86,6 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         "tier_required": None,
     },
     {
-        "route": "/interview-prep",
-        "purpose": "Generate interview preparation guides based on job postings with real interview experiences from Reddit and online sources.",
-        "inputs": ["company", "job_title", "job_url"],
-        "required_inputs": [],
-        "send_user_here_when": "the user has an interview coming up and wants to prepare for it",
-        "credit_cost": 25,
-        "tier_required": None,
-    },
-    {
         "route": "/meeting-library",
         "purpose": "Library of the meeting prep documents you have already generated.",
         "inputs": [],
@@ -185,15 +176,6 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         "tier_required": None,
     },
     {
-        "route": "/application-lab",
-        "purpose": "Deep job fit analysis and application strengthening. Get detailed fit scores, resume edits, and cover letters.",
-        "inputs": [],
-        "required_inputs": [],
-        "send_user_here_when": "the user wants a deep fit analysis of a specific job or wants to strengthen an application",
-        "credit_cost": None,
-        "tier_required": None,
-    },
-    {
         "route": "/job-board",
         "purpose": "Browse job listings, optimize your resume for specific jobs, generate cover letters, and find recruiters.",
         "inputs": ["query"],
@@ -257,7 +239,7 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
 # version it was built against. A lookup ignores entries from an older
 # version, and stale entries are evicted on the next write cycle. Bumping this
 # is how a registry change invalidates the caches without a manual flush.
-REGISTRY_VERSION = 1
+REGISTRY_VERSION = 2
 
 
 # ---------------------------------------------------------------------------
@@ -282,7 +264,6 @@ ROUTE_ALIASES: Dict[str, str] = {
     "hiring manager search": "/recruiter-spreadsheet",
     "meeting prep": "/meeting-prep",
     "coffee chat prep": "/meeting-prep",
-    "interview prep": "/interview-prep",
     "meeting library": "/meeting-library",
     "resume": "/write/resume",
     "resume builder": "/write/resume",
@@ -302,7 +283,6 @@ ROUTE_ALIASES: Dict[str, str] = {
     "my contacts": "/contact-directory",
     "hiring manager tracker": "/hiring-manager-tracker",
     "company tracker": "/company-tracker",
-    "application lab": "/application-lab",
     "job board": "/job-board",
     "jobs": "/job-board",
     "job listings": "/job-board",

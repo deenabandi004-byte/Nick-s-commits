@@ -119,6 +119,24 @@ export interface FollowUpReminder {
 }
 
 // ================================
+// MANUAL FIRM TYPES
+// ================================
+// Manually-added companies live alongside firms found via Find > Companies
+// (firm-search history). MyNetwork > Companies merges both sources keyed on
+// lower-cased name so a manual entry that later shows up in a search dedupes.
+export interface ManualFirm {
+  id?: string;
+  name: string;
+  industry?: string;
+  hq?: string;
+  website?: string;
+  linkedinUrl?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ================================
 // RECRUITER TYPES
 // ================================
 export interface Recruiter {
@@ -426,7 +444,7 @@ export const firebaseApi = {
   // ================================
   async logActivity(
     uid: string,
-    type: 'firmSearch' | 'contactSearch' | 'coffeePrep' | 'interviewPrep',
+    type: 'firmSearch' | 'contactSearch' | 'coffeePrep',
     summary: string,
     metadata?: any
   ): Promise<void> {
@@ -876,6 +894,36 @@ export const firebaseApi = {
       console.error('❌ Error getting timeline:', error);
       return null;
     }
+  },
+
+  // ================================
+  // MANUAL FIRM MANAGEMENT
+  // ================================
+  async getManualFirms(uid: string): Promise<ManualFirm[]> {
+    try {
+      const ref = collection(db, 'users', uid, 'manual_firms');
+      const snapshot = await getDocs(ref);
+      return snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as ManualFirm[];
+    } catch (error) {
+      console.error('Error fetching manual firms:', error);
+      return [];
+    }
+  },
+
+  async createManualFirm(uid: string, firm: Omit<ManualFirm, 'id'>): Promise<string> {
+    const ref = collection(db, 'users', uid, 'manual_firms');
+    const newRef = doc(ref);
+    await setDoc(newRef, {
+      ...firm,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    return newRef.id;
+  },
+
+  async deleteManualFirm(uid: string, firmId: string): Promise<void> {
+    const ref = doc(db, 'users', uid, 'manual_firms', firmId);
+    await deleteDoc(ref);
   },
 
   // ================================

@@ -7,7 +7,7 @@ import { Tier, getRemainingUses } from '@/utils/featureAccess';
 
 interface UsageMeterProps {
   tier: Tier;
-  feature: 'alumniSearches' | 'coffeeChatPreps' | 'interviewPreps';
+  feature: 'alumniSearches' | 'coffeeChatPreps';
   currentUsage: number;
   showWarning?: boolean;
   warningThreshold?: number;
@@ -21,10 +21,10 @@ export function UsageMeter({
   warningThreshold = 2,
 }: UsageMeterProps) {
   const remaining = getRemainingUses(tier, feature, currentUsage);
-  const limit = tier === 'free' 
-    ? (feature === 'alumniSearches' ? 10 : feature === 'coffeeChatPreps' ? 3 : feature === 'interviewPreps' ? 2 : 1)
+  const limit = tier === 'free'
+    ? (feature === 'alumniSearches' ? 10 : feature === 'coffeeChatPreps' ? 3 : 1)
     : tier === 'pro'
-    ? (feature === 'coffeeChatPreps' ? 10 : feature === 'interviewPreps' ? 5 : 'unlimited')
+    ? (feature === 'coffeeChatPreps' ? 10 : 'unlimited')
     : 'unlimited';
 
   if (remaining === 'unlimited') {
@@ -40,7 +40,6 @@ export function UsageMeter({
         <span className="text-slate-600 dark:text-slate-400">
           {feature === 'alumniSearches' && 'Alumni Searches'}
           {feature === 'coffeeChatPreps' && 'Meeting Preps'}
-          {feature === 'interviewPreps' && 'Interview Preps'}
         </span>
         <span className={`font-medium ${isLow ? 'text-orange-600 dark:text-orange-400' : 'text-slate-700 dark:text-slate-300'}`}>
           {remaining} remaining
