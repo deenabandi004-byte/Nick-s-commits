@@ -26,6 +26,7 @@ import {
 import { apiService } from "@/services/api";
 import type { Firm, SearchHistoryItem } from "@/services/api";
 import FirmSearchResults from "@/components/FirmSearchResults";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { LoadingSkeleton } from "@/components/LoadingSkeleton";
 import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { StickyCTA } from "@/components/StickyCTA";
@@ -35,18 +36,26 @@ import { getUniversityShortName } from "@/lib/universityUtils";
 import { PromptCard } from "@/components/find/PromptCard";
 import { generateFirmDiscoveryPrompts, getGenericFirmPrompts, isContextEmpty, type UserContext, type PromptChip } from "@/utils/suggestionChips";
 import { firebaseApi } from "@/services/firebaseApi";
-import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
+import {
+  readScoutPrefillEnvelope,
+  SCOUT_PREFILL_EVENT,
+  SCOUT_SEARCH_COMPLETED_EVENT,
+} from "@/lib/scoutBridge";
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
 
-function getFirmPlaceholders(schoolShort: string | null): string[] {
+function getFirmPlaceholders(_schoolShort: string | null): string[] {
+  // Companies-only placeholders. The Find > Companies tab searches for FIRMS,
+  // never for people - so the rotating examples must describe a company set
+  // (industry + location + optional size), not a person or role.
   return [
-    'Netflix hiring managers in LA',
-    schoolShort ? `${schoolShort} grads at McKinsey` : 'Top grads at McKinsey',
-    'AI startups hiring data scientists',
-    'Boutique banks in New York',
+    'Streaming companies in LA',
+    'Bulge bracket banks in New York',
+    'AI startups in San Francisco',
+    'Boutique consulting firms in Chicago',
     'Gaming studios in Los Angeles',
+    'Climate tech companies in Boston',
   ];
 }
 
@@ -105,6 +114,13 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
 
   // Track deleted firm IDs to prevent them from reappearing
   const deletedFirmIds = useRef<Set<string>>(new Set());
+
+  // Scout auto_submit machinery. pendingAutoSearch fires handleSearch the
+  // moment query is set; scoutDrivenSearch flags that the running search
+  // came from Scout so the success path can post a celebration message
+  // back into the chat via SCOUT_SEARCH_COMPLETED_EVENT.
+  const pendingAutoSearch = useRef(false);
+  const scoutDrivenSearch = useRef(false);
 
   // Credit system state
   const [batchSize, setBatchSize] = useState<number>(10);
@@ -201,9 +217,39 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
     resultsRef.current = results;
   }, [results]);
 
+  // Embedded mode used to auto-redirect to /my-network/companies 900ms after
+  // a successful search. We now render the just-found firms inline below the
+  // search bar instead (matching the Find > People success view), so the user
+  // can see exactly what they just discovered without losing context.
+
   // Handle Scout auto-populate from failed search, chat "Take me there", or navigation state
   useEffect(() => {
-    const applyPopulate = (populateData: { industry?: string; location?: string; size?: string }) => {
+    const applyPopulate = (
+      populateData: {
+        industry?: string;
+        location?: string;
+        size?: string;
+        prompt?: string;
+        autoSubmit?: boolean;
+      },
+    ) => {
+      // Prompt-mode: when Scout supplies a full natural-language prompt, it
+      // goes straight into the search bar. Wins over the structured assembly
+      // below so the prompt carries qualifiers the structured fields drop
+      // (size descriptors, alumni framing, hiring posture, etc.).
+      if (populateData.prompt && populateData.prompt.trim()) {
+        setQuery(populateData.prompt.trim());
+        if (populateData.autoSubmit) {
+          pendingAutoSearch.current = true;
+          scoutDrivenSearch.current = true;
+        } else {
+          toast({
+            title: "Search pre-filled",
+            description: "Scout has filled in your search. Click Search to find firms.",
+          });
+        }
+        return;
+      }
       const { industry, location: autoLocation, size } = populateData;
       let newQuery = '';
       if (industry) newQuery += industry;
@@ -211,10 +257,15 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
       if (size) newQuery += (newQuery ? ', ' : '') + size;
       if (newQuery) {
         setQuery(newQuery);
-        toast({
-          title: "Search pre-filled",
-          description: "Scout has filled in your search fields. Click Search to find firms.",
-        });
+        if (populateData.autoSubmit) {
+          pendingAutoSearch.current = true;
+          scoutDrivenSearch.current = true;
+        } else {
+          toast({
+            title: "Search pre-filled",
+            description: "Scout has filled in your search fields. Click Search to find firms.",
+          });
+        }
       }
     };
 
@@ -251,12 +302,14 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
     // approved. The legacy handleAutoPopulate above stays for failed-search
     // recovery, which still uses the scout_auto_populate channel.
     const handleScoutPrefill = () => {
-      const prefill = readScoutPrefill('/firm-search');
-      if (prefill) {
+      const envelope = readScoutPrefillEnvelope('/firm-search');
+      if (envelope) {
         applyPopulate({
-          industry: prefill.industry,
-          location: prefill.location,
-          size: prefill.size,
+          industry: envelope.prefill.industry,
+          location: envelope.prefill.location,
+          size: envelope.prefill.size,
+          prompt: envelope.prefill.prompt,
+          autoSubmit: envelope.auto_submit,
         });
       }
     };
@@ -270,6 +323,16 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
       window.removeEventListener(SCOUT_PREFILL_EVENT, handleScoutPrefill);
     };
   }, [routerLocation.state, routerLocation.pathname, navigate]);
+
+  // Fire handleSearch automatically once query is set from a Scout
+  // auto_submit prefill. Mirrors the pattern in ContactSearchPage.
+  useEffect(() => {
+    if (pendingAutoSearch.current && query.trim() && user) {
+      pendingAutoSearch.current = false;
+      void handleSearch();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, user]);
 
   // Track recently deleted firm IDs to filter them out during reload
   const recentlyDeletedFirmIds = useRef<Set<string>>(new Set());
@@ -452,6 +515,20 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
               });
               if (checkCredits) checkCredits();
               loadHistory();
+              // Scout-driven search celebration. ScoutSidePanel will post a
+              // synthetic message in chat. One-shot per Scout-driven search.
+              // The chip points at the Companies tab of My Network, where the
+              // saved-firm spreadsheet lives.
+              if (scoutDrivenSearch.current) {
+                scoutDrivenSearch.current = false;
+                window.dispatchEvent(new CustomEvent(SCOUT_SEARCH_COMPLETED_EVENT, {
+                  detail: {
+                    count: result.firms.length,
+                    route: '/firm-search',
+                    results_route: '/my-network/companies',
+                  },
+                }));
+              }
             } else if (result.firms?.length === 0) {
               setFirmSuggestions(result.suggestions || []);
               setError('Hmm, nothing matched that exactly. Try broadening to just the city or industry - or ask Scout.');
@@ -819,7 +896,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
   };
 
   const userTier: "free" | "pro" = effectiveUser?.tier === "pro" ? "pro" : "free";
-  const maxBatchSize = userTier === 'free' ? 10 : 15;
+  const maxBatchSize = userTier === 'free' ? 10 : 20;
 
 
   // --- Embedded content (rendered inside FindPage wrapper) ---
@@ -1042,15 +1119,17 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                       )}
 
                       {/* ── Quantity slider ── */}
-                      <div style={{ marginBottom: 12 }}>
+                      <div style={{ marginTop: 8, marginBottom: 24 }}>
                         <div style={{
-                          fontFamily: "'JetBrains Mono', monospace",
-                          fontSize: 10, letterSpacing: '0.12em', color: '#94A3B8', marginBottom: 8,
+                          fontSize: 13,
+                          fontWeight: 500,
+                          color: '#475569',
+                          marginBottom: 14,
                         }}>
-                          HOW MANY TO FIND?
+                          How many companies to find?
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <span style={{ fontSize: 11, color: '#94A3B8', minWidth: 12 }}>5</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <span style={{ fontSize: 12, color: '#94A3B8', minWidth: 14 }}>5</span>
                           <div className="slider-input-wrapper" style={{ flex: 1, position: 'relative', height: 4, background: '#E5E3DE', borderRadius: 2 }}>
                             <div style={{
                               position: 'absolute', left: 0, top: 0, height: 4,
@@ -1081,28 +1160,30 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                               pointerEvents: 'none',
                             }} />
                           </div>
-                          <span style={{ fontSize: 11, color: '#94A3B8', minWidth: 16, textAlign: 'right' }}>{maxBatchSize}</span>
+                          <span style={{ fontSize: 12, color: '#94A3B8', minWidth: 18, textAlign: 'right' }}>{maxBatchSize}</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
-                          <div style={{
-                            fontFamily: "var(--serif, 'Instrument Serif', Georgia, serif)",
-                            fontStyle: 'italic', fontSize: 13.5, color: '#111418',
-                          }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16 }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: '#111418' }}>
                             Find {batchSize} companies
                           </div>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#4A4F57' }}>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#475569' }}>
                             <span style={{
-                              display: 'inline-flex', padding: '3px 8px',
-                              background: '#FAFAF8', border: '1px solid #E5E3DE', borderRadius: 4,
-                              fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#111418',
+                              display: 'inline-flex',
+                              padding: '3px 9px',
+                              background: '#F8FAFC',
+                              border: '1px solid #E2E8F0',
+                              borderRadius: 4,
+                              fontSize: 12,
+                              fontWeight: 500,
+                              color: '#111418',
                             }}>
                               {batchSize * creditsPerFirm} credits
                             </span>
-                            <span style={{ color: '#94A3B8' }}>of {effectiveUser.credits ?? 0}</span>
+                            <span style={{ fontSize: 13, color: '#94A3B8' }}>of {effectiveUser.credits ?? 0}</span>
                           </div>
                         </div>
                         {effectiveUser.credits !== undefined && effectiveUser.credits < (batchSize * creditsPerFirm) && (
-                          <p style={{ fontSize: 11, color: '#D97706', marginTop: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <p style={{ fontSize: 12, color: '#D97706', marginTop: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
                             <AlertCircle style={{ width: 12, height: 12 }} />
                             Insufficient credits. Need {batchSize * creditsPerFirm}, have {effectiveUser.credits}.
                           </p>
@@ -1118,13 +1199,13 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                           width: '100%',
                           height: 52,
                           borderRadius: 12,
-                          background: isSearching ? 'var(--warm-border, #E2E8F0)'
-                            : (!query.trim() || !isValidQuery || !user) ? 'transparent'
-                            : 'var(--ink, #1A1D23)',
+                          background: isSearching ? 'var(--warm-border, #E5E7EB)'
+                            : (!query.trim() || !isValidQuery || !user) ? 'var(--brand-blue-subtle, rgba(59,130,246,0.04))'
+                            : 'var(--brand-blue, #3B82F6)',
                           color: isSearching ? 'var(--warm-ink-tertiary, #94A3B8)'
-                            : (!query.trim() || !isValidQuery || !user) ? '#64748B'
-                            : 'var(--paper, #FFFFFF)',
-                          border: (!query.trim() || !isValidQuery || !user) && !isSearching ? '1.5px solid #D5D0C9' : '1.5px solid transparent',
+                            : (!query.trim() || !isValidQuery || !user) ? 'var(--brand-blue, #3B82F6)'
+                            : '#FFFFFF',
+                          border: (!query.trim() || !isValidQuery || !user) && !isSearching ? '1.5px solid var(--brand-blue, #3B82F6)' : '1.5px solid transparent',
                           fontSize: 15,
                           fontWeight: 600,
                           cursor: isSearching ? 'not-allowed' : (query.trim() && isValidQuery ? 'pointer' : 'default'),
@@ -1135,6 +1216,22 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                           transition: 'all .15s ease',
                           fontFamily: 'inherit',
                           marginBottom: hasSearched ? 0 : 8,
+                        }}
+                        onMouseEnter={(e) => {
+                          if (isSearching) return;
+                          const idle = !query.trim() || !isValidQuery || !user;
+                          (e.currentTarget as HTMLButtonElement).style.background = idle
+                            ? 'var(--brand-blue-soft, rgba(59,130,246,0.10))'
+                            : 'var(--brand-blue-hover, #2563EB)';
+                          (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 8px rgba(59,130,246,0.18)';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (isSearching) return;
+                          const idle = !query.trim() || !isValidQuery || !user;
+                          (e.currentTarget as HTMLButtonElement).style.background = idle
+                            ? 'var(--brand-blue-subtle, rgba(59,130,246,0.04))'
+                            : 'var(--brand-blue, #3B82F6)';
+                          (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
                         }}
                       >
                         {isSearching ? (
@@ -1155,6 +1252,158 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                         <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 6, textAlign: 'center' }}>
                           Include an industry and location for best results
                         </p>
+                      )}
+
+                      {/* Inline results - shown immediately after a successful
+                          firm search instead of redirecting to My Network. The
+                          row visual mirrors Find > People's success view so the
+                          two tabs feel like the same family. */}
+                      {searchComplete && results.length > 0 && (
+                        <div
+                          style={{
+                            marginTop: 24,
+                            paddingTop: 24,
+                            borderTop: '0.5px solid #EEF2F8',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                            <div
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 5,
+                                padding: '4px 10px',
+                                background: '#DCFCE7',
+                                color: '#15803D',
+                                border: '0.5px solid #BBF7D0',
+                                borderRadius: 100,
+                                fontSize: 11,
+                                fontWeight: 500,
+                              }}
+                            >
+                              <CheckCircle className="w-3 h-3" />
+                              Found {results.length} {results.length === 1 ? 'company' : 'companies'}
+                            </div>
+                            <span style={{ fontSize: 11, color: '#94A3B8' }}>
+                              saved to your network
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => navigate('/my-network/companies')}
+                              style={{
+                                marginLeft: 'auto',
+                                fontSize: 12,
+                                fontWeight: 600,
+                                color: '#FFFFFF',
+                                background: '#3B82F6',
+                                border: '1px solid #3B82F6',
+                                borderRadius: 6,
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                padding: '6px 12px',
+                                transition: 'background .12s, box-shadow .12s',
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#2563EB';
+                                e.currentTarget.style.boxShadow = '0 2px 8px rgba(59,130,246,0.25)';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#3B82F6';
+                                e.currentTarget.style.boxShadow = 'none';
+                              }}
+                            >
+                              View in My Network →
+                            </button>
+                          </div>
+
+                          {results.map((firm) => {
+                            const hq = firm.location?.display
+                              || [firm.location?.city, firm.location?.state].filter(Boolean).join(', ')
+                              || '';
+                            return (
+                              <div
+                                key={firm.id || firm.name}
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: 12,
+                                  padding: '11px 13px',
+                                  background: '#fff',
+                                  border: '0.5px solid #E2E8F0',
+                                  borderRadius: 3,
+                                  marginBottom: 6,
+                                  transition: 'all .12s',
+                                }}
+                                onMouseEnter={(e) => {
+                                  (e.currentTarget as HTMLDivElement).style.borderColor = '#3B82F6';
+                                  (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px rgba(59,130,246,.08)';
+                                }}
+                                onMouseLeave={(e) => {
+                                  (e.currentTarget as HTMLDivElement).style.borderColor = '#E2E8F0';
+                                  (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+                                }}
+                              >
+                                <CompanyLogo company={firm.name} size={32} rounded={6} />
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div
+                                    style={{
+                                      fontSize: 13.5,
+                                      fontWeight: 600,
+                                      color: '#0F172A',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                      textTransform: 'capitalize',
+                                    }}
+                                    title={firm.name}
+                                  >
+                                    {firm.name}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 11.5,
+                                      color: '#94A3B8',
+                                      marginTop: 2,
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    {[firm.industry, hq].filter(Boolean).join(' · ') || '—'}
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewContacts(firm)}
+                                  style={{
+                                    fontSize: 11.5,
+                                    fontWeight: 500,
+                                    color: '#3B82F6',
+                                    background: 'white',
+                                    border: '1px solid #3B82F6',
+                                    borderRadius: 4,
+                                    padding: '5px 10px',
+                                    cursor: 'pointer',
+                                    whiteSpace: 'nowrap',
+                                    transition: 'background .12s, color .12s',
+                                    fontFamily: 'inherit',
+                                    flexShrink: 0,
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.background = '#3B82F6';
+                                    e.currentTarget.style.color = 'white';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.background = 'white';
+                                    e.currentTarget.style.color = '#3B82F6';
+                                  }}
+                                >
+                                  Find people →
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
 
 
@@ -1182,7 +1431,8 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                     </div>
                   </TabsContent>
 
-                  {/* TAB 2: Company Tracker */}
+                  {/* TAB 2: Company Tracker - hidden in embedded (Find) mode; live spreadsheet now lives on My Network */}
+                  {!embedded && (
                   <TabsContent value="firm-library" className="mt-0">
 <div
                       style={{
@@ -1288,6 +1538,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
                       </div>
                     </div>
                   </TabsContent>
+                  )}
                 </Tabs>
               </div>
             </div>
@@ -1401,36 +1652,9 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
           </div>
         )}
 
-        {/* Success Modal */}
-        {searchComplete && results.length > 0 && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 max-w-md text-center animate-scaleIn" style={{ borderRadius: 3, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}>
-              <div className="w-16 h-16 bg-green-100 flex items-center justify-center mx-auto mb-4" style={{ borderRadius: 3 }}>
-                <CheckCircle className="w-10 h-10 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold mb-1" style={{ color: '#0F172A', fontFamily: "'Lora', Georgia, serif" }}>Found {results.length} companies!</h3>
-              <p className="mb-2" style={{ color: '#6B7280' }}>Matching your criteria</p>
-              <p className="text-sm font-medium mb-6" style={{ color: '#3B82F6' }}>Saved to your Company Tracker</p>
-
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={() => { setSearchComplete(false); setActiveTab('firm-library'); }}
-                  className="px-6 py-3 text-white font-semibold transition-all"
-                  style={{ background: '#3B82F6', borderRadius: 3 }}
-                >
-                  View Companies →
-                </button>
-                <button
-                  onClick={() => { setSearchComplete(false); setQuery(''); setHasSearched(false); }}
-                  className="px-6 py-3 font-semibold transition-colors"
-                  style={{ background: '#EEF2F8', color: '#0F172A', borderRadius: 3 }}
-                >
-                  Search again
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Success modal removed - the inline results section below the search
+            bar now serves as the success signal in both standalone and
+            embedded (Find) modes. */}
 
         {/* Delete All Confirmation Dialog */}
         <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>

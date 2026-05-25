@@ -132,8 +132,8 @@ def search_firms_route():
         query = validated_data['query']
         batch_size = validated_data.get('batchSize', 10)
 
-        # Cap batch size server-side (max 15 firms regardless of tier)
-        batch_size = max(1, min(batch_size, 15))
+        # Cap batch size server-side (max 20 firms regardless of tier)
+        batch_size = max(1, min(batch_size, 20))
 
         # Get user's tier and credits
         current_credits, tier, max_credits = get_user_credits_and_tier(db, uid)
@@ -423,8 +423,8 @@ def search_firms_async():
         query = validated_data['query']
         batch_size = validated_data.get('batchSize', 10)
 
-        # Cap batch size server-side (max 15 firms regardless of tier)
-        batch_size = max(1, min(batch_size, 15))
+        # Cap batch size server-side (max 20 firms regardless of tier)
+        batch_size = max(1, min(batch_size, 20))
 
         # Pre-flight credit check
         current_credits, tier, max_credits_val = get_user_credits_and_tier(db, uid)

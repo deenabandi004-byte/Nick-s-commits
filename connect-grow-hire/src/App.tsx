@@ -27,7 +27,6 @@ import UscBeta from "@/pages/UscBeta";
 const AboutUs = React.lazy(() => import("./pages/AboutUs"));
 const ForStudents = React.lazy(() => import("./pages/ForStudents"));
 const NetworkTracker = React.lazy(() => import("./pages/NetworkTracker"));
-const CompanyTrackerPage = React.lazy(() => import("./pages/CompanyTrackerPage"));
 const CalendarPage = React.lazy(() => import("./pages/CalendarPage"));
 const Contact = React.lazy(() => import("./pages/Contact"));
 const MeetingLibrary = React.lazy(() => import("./pages/MeetingLibrary"));
@@ -306,7 +305,9 @@ const AppRoutes: React.FC = () => {
       <Route path="/job-board" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><JobBoardPage /></Suspense></ProtectedRoute>} />
       <Route path="/recruiter-spreadsheet" element={<Navigate to="/find?tab=hiring-managers" replace />} />
       <Route path="/hiring-manager-tracker" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><HiringManagerTrackerPage /></Suspense></ProtectedRoute>} />
-      <Route path="/company-tracker" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CompanyTrackerPage /></Suspense></ProtectedRoute>} />
+      {/* /company-tracker retired. Bookmarks and any stale link still land
+          on the canonical Companies tab of My Network. */}
+      <Route path="/company-tracker" element={<Navigate to="/my-network/companies" replace />} />
       <Route path="/scout" element={<ProtectedRoute><ScoutRedirect /></ProtectedRoute>} />
       <Route path="/recruiting-timeline" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><RecruitingTimelinePage /></Suspense></ProtectedRoute>} />
       <Route path="/agent" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AgentPage /></Suspense></ProtectedRoute>} />

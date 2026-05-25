@@ -77,6 +77,19 @@ NAVIGATE_TOOL: Dict[str, Any] = {
                     "what they described rather than an explicit command."
                 ),
             },
+            "auto_submit": {
+                "type": "boolean",
+                "description": (
+                    "When true, the destination page populates the form AND "
+                    "runs the search/action automatically - the user does not "
+                    "have to click Search. Set true ONLY when the query is "
+                    "complete: a clear target (company/role/people) AND a "
+                    "specific count (or the count slider can default sanely). "
+                    "Set false when the user might still want to tweak the "
+                    "search before running it (broad query, ambiguous scope). "
+                    "Currently honored by /contact-search and /firm-search."
+                ),
+            },
         },
         "required": [
             "route",
@@ -100,6 +113,45 @@ ANSWER_TOOL: Dict[str, Any] = {
             "text": {
                 "type": "string",
                 "description": "Your reply to the user, in Scout's voice.",
+            },
+            "cta": {
+                "type": "object",
+                "description": (
+                    "Optional. EXACTLY ONE end-of-message chip that bridges "
+                    "the answer to a runnable Offerloop workflow. Omit "
+                    "entirely when no relevant workflow exists. NEVER write "
+                    "prose bridges like 'want me to...' or 'you might want "
+                    "to...' instead of this chip - the chip IS the bridge. "
+                    "Pick a route from PAGES YOU CAN NAVIGATE TO and prefill "
+                    "fields the user named or that follow from the question."
+                ),
+                "properties": {
+                    "label": {
+                        "type": "string",
+                        "description": (
+                            "Short, concrete chip label, ideally under 10 "
+                            "words. Example: 'Find 5 Bain alumni at USC'."
+                        ),
+                    },
+                    "route": {
+                        "type": "string",
+                        "description": (
+                            "Destination route. Must be exactly one of the "
+                            "routes from PAGES YOU CAN NAVIGATE TO."
+                        ),
+                    },
+                    "prefill": {
+                        "type": "object",
+                        "description": (
+                            "Form fields to pre-fill on the destination "
+                            "page. Same rules as navigate.prefill: only that "
+                            "route's prefillable field names, only values "
+                            "the user gave or that follow obviously."
+                        ),
+                        "additionalProperties": {"type": "string"},
+                    },
+                },
+                "required": ["label", "route"],
             },
         },
         "required": ["text"],

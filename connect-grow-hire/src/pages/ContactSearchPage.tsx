@@ -38,7 +38,11 @@ import { TemplateButton } from "@/components/TemplateButton";
 
 import { DEV_MOCK_USER } from "@/lib/devPreview";
 import { getUniversityShortName } from "@/lib/universityUtils";
-import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
+import {
+  readScoutPrefillEnvelope,
+  SCOUT_PREFILL_EVENT,
+  SCOUT_SEARCH_COMPLETED_EVENT,
+} from "@/lib/scoutBridge";
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
@@ -216,6 +220,11 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   // redirecting them into the sign-up flow. We consume it once on mount so
   // their first in-app experience is the exact search they asked for.
   const pendingAutoSearch = useRef(false);
+  // When Scout drove this search (auto_submit flag through the bridge), set
+  // this so the success path below can fire SCOUT_SEARCH_COMPLETED_EVENT.
+  // ScoutSidePanel listens and posts a synthetic celebration message into
+  // the chat with a chip to /contact-directory. Cleared once consumed.
+  const scoutDrivenSearch = useRef(false);
   const [searchPrompt, setSearchPrompt] = useState(() => {
     try {
       const pending = typeof window !== 'undefined'
@@ -250,6 +259,18 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   const [progressValue, setProgressValue] = useState(0);
   const [searchComplete, setSearchComplete] = useState(false);
   const [lastResults, setLastResults] = useState<any[]>([]);
+  // Embedded (Find) mode: after a successful save, redirect to My Network so
+  // the user sees the saved contacts in the single source-of-truth spreadsheet.
+  useEffect(() => {
+    if (!embedded) return;
+    if (!searchComplete) return;
+    if (lastResults.length === 0) return;
+    const t = setTimeout(() => {
+      setSearchComplete(false);
+      navigate('/my-network/people');
+    }, 900);
+    return () => clearTimeout(t);
+  }, [embedded, searchComplete, lastResults.length, navigate]);
   const [expandedEmailIdx, setExpandedEmailIdx] = useState<number | null>(null);
   const [smartPlaceholder, setSmartPlaceholder] = useState<string | null>(null);
   const [alreadySavedResults, setAlreadySavedResults] = useState<any[]>([]);
@@ -590,6 +611,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         setSearchPrompt(populateData.prompt.trim());
         if (populateData.autoSubmit) {
           pendingAutoSearch.current = true;
+          scoutDrivenSearch.current = true;
         } else {
           toast({
             title: "Search pre-filled",
@@ -606,10 +628,15 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       if (autoLocation != null && autoLocation !== '') parts.push(`in ${autoLocation}`);
       if (parts.length) {
         setSearchPrompt(parts.join(' '));
-        toast({
-          title: "Search pre-filled",
-          description: "Scout has filled in your search. Click Search to find contacts.",
-        });
+        if (populateData.autoSubmit) {
+          pendingAutoSearch.current = true;
+          scoutDrivenSearch.current = true;
+        } else {
+          toast({
+            title: "Search pre-filled",
+            description: "Scout has filled in your search. Click Search to find contacts.",
+          });
+        }
       }
     };
 
@@ -649,12 +676,22 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     // approved. The legacy handleAutoPopulate above stays for failed-search
     // recovery, which still uses the scout_auto_populate channel.
     const handleScoutPrefill = () => {
-      const prefill = readScoutPrefill('/contact-search');
-      if (prefill) {
+      const envelope = readScoutPrefillEnvelope('/contact-search');
+      if (envelope) {
         applyPopulate({
-          job_title: prefill.job_title,
-          company: prefill.company,
-          location: prefill.location,
+          // Scout's preferred carrier: the full natural-language prompt.
+          // applyPopulate short-circuits on this so the search bar reads
+          // exactly what Scout's reasoning promised. Without forwarding it
+          // here, a prompt-mode navigate landed on an empty search box.
+          prompt: envelope.prefill.prompt,
+          job_title: envelope.prefill.job_title,
+          company: envelope.prefill.company,
+          location: envelope.prefill.location,
+          // auto_submit ships through the envelope sibling field (not as a
+          // string in prefill) so it is type-safe end to end. applyPopulate
+          // sets pendingAutoSearch.current = true and the existing useEffect
+          // fires handleSearch as soon as searchPrompt updates.
+          autoSubmit: envelope.auto_submit,
         });
       }
     };
@@ -1401,6 +1438,22 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       setSearchComplete(true);
       searchSucceeded = true;
 
+      // Scout-driven search celebration: when this search was started by a
+      // Scout auto_submit, fire a CustomEvent so ScoutSidePanel can post a
+      // synthetic "results landed" message in the chat with a CTA back to
+      // the People tab of My Network. One-shot - ref is cleared after dispatch.
+      if (scoutDrivenSearch.current) {
+        scoutDrivenSearch.current = false;
+        const total = result.contacts.length + ((result as any)?.already_saved_contacts?.length || 0);
+        window.dispatchEvent(new CustomEvent(SCOUT_SEARCH_COMPLETED_EVENT, {
+          detail: {
+            count: total,
+            route: '/contact-search',
+            results_route: '/my-network/people',
+          },
+        }));
+      }
+
       const savedCount = alreadySavedFromServer.length;
       const newCount = result.contacts.length;
       if (newCount === 0 && savedCount === 0) {
@@ -2092,7 +2145,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           {isSearching || linkedInLoading ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>{linkedInLoading ? 'Importing...' : 'Networking...'}</span>
+              <span>{linkedInLoading ? 'Importing...' : 'Searching...'}</span>
             </>
           ) : isLinkedInUrl(searchPrompt) ? (
             <>
@@ -2102,7 +2155,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           ) : (
             <>
               <Search className="w-4 h-4" />
-              <span>Network</span>
+              <span>Search</span>
             </>
           )}
         </button>
@@ -2759,7 +2812,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       >
         {isLinkedInUrl(searchPrompt)
           ? <span className="flex items-center gap-2"><Linkedin className="w-4 h-4" />Import from LinkedIn</span>
-          : <span>Network</span>
+          : <span>Search</span>
         }
       </StickyCTA>}
 

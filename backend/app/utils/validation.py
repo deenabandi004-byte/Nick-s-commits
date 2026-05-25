@@ -45,7 +45,7 @@ class ContactSearchRequest(BaseModel):
 class FirmSearchRequest(BaseModel):
     """Validation schema for firm search requests"""
     query: str = Field(..., min_length=1, max_length=500, description="Search query")
-    batchSize: Optional[int] = Field(None, ge=1, le=15, description="Number of firms to return")
+    batchSize: Optional[int] = Field(None, ge=1, le=20, description="Number of firms to return")
     
     @field_validator('query')
     @classmethod

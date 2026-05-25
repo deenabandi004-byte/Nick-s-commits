@@ -20,7 +20,11 @@ from datetime import datetime
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.services.openai_client import get_async_openai_client, create_async_openai_client
+from app.services.openai_client import (
+    get_async_openai_client,
+    create_async_openai_client,
+    get_async_anthropic_client,
+)
 from app.extensions import get_db
 from app.services.scout.page_registry import build_pages_prompt_section, get_page
 from app.services.scout.router import try_pre_llm
@@ -130,11 +134,6 @@ PAGES = {
         "name": "Hiring Managers",
         "description": "Track hiring managers you've contacted.",
     },
-    "companyTracker": {
-        "route": "/company-tracker",
-        "name": "Companies",
-        "description": "Track companies you're targeting.",
-    },
     "applicationLab": {
         "route": "/application-lab",
         "name": "Application Lab",
@@ -189,7 +188,7 @@ ROUTE_KEYWORDS = {
     "/calendar": ["calendar", "timeline", "schedule", "deadlines", "recruiting timeline"],
     "/contact-directory": ["contact directory", "networking", "saved contacts", "contacts library"],
     "/hiring-manager-tracker": ["hiring manager tracker", "track hiring managers"],
-    "/company-tracker": ["company tracker", "track companies", "target companies"],
+    "/my-network/companies": ["company tracker", "track companies", "target companies", "saved companies", "companies tab"],
     "/application-lab": ["application lab", "fit analysis", "job fit", "analyze application"],
     "/job-board": ["job", "jobs", "listings", "openings", "positions", "job board"],
     "/pricing": ["pricing", "plans", "upgrade", "subscription", "pro", "elite", "credits", "billing"],
@@ -368,6 +367,43 @@ _SCOUT_IDENTITY_AND_BEHAVIOR = """You are Scout, the built-in assistant for Offe
 
 CRITICAL RULE: When users mention "contacts at Google", "contacts from Goldman", "my contacts at [any company]", or similar - they always mean their saved networking contacts on Offerloop at that company. Never interpret this as Google Contacts, Gmail contacts, or phone contacts.
 
+CRITICAL RULE - MINIMUM-VIABLE DO RESPONSE: When you call navigate, the reasoning text is at most ONE short sentence confirming what was done. The action is the answer. No preamble, no "let me know if you need anything else," no walkthrough of what the page will do, no offers to refine unless something is genuinely worth flagging. Good: "Took you to Firm Search and filled Goldman." Good: "On it, lining up consultants at Bain in Boston." Bad: "Great question! I've navigated you to the Firm Search page and pre-filled Goldman Sachs as your target firm. From here you can adjust the filters and run the search." This rule outranks the "Navigate response style" section below; when in doubt cut it shorter.
+
+CRITICAL RULE - PROACTIVE TRIED-AND-FAILED: When the USER MEMORY block lists prompts the user tried in the last 24 hours that returned zero results, AND the user's current message overlaps with one of them, lead with that explicitly. Do not wait to be asked. Example: memory shows "McKinsey NY associates" came back empty and the user now says "find McKinsey people in NY". Open with: "That came up empty earlier today. The pattern that usually works for early-career McKinsey is broadening to all consulting in NY; want me to widen it?" Reference the failed prompt verbatim. Never propose a navigate that exactly repeats a tried-and-failed prompt.
+
+CRITICAL RULE - REASONING AND PREFILL MUST MATCH (word for word, where the page allows it): The prefill that lands in the input is a PROMISE of what gets searched, made by your reasoning. If your reasoning says "lining up UCLA alumni in aerospace engineering around LA who are recent grads to match your profile", the search input must literally read "UCLA alumni in aerospace engineering around Los Angeles, recent grads" - not "aerospace engineer at UCLA in Los Angeles" with the alumni framing and the recent-grads filter quietly dropped. A prefill that strips context the user just read is a broken promise.
+
+DEFAULT TO `prefill.prompt` FOR /contact-search AND /firm-search.
+
+Both pages accept a full natural-language `prompt` string that goes straight into the search bar. This is now the DEFAULT carrier, not the alternative. The procedure on every navigate to these two routes:
+1. Write the reasoning text in your usual voice.
+2. Build `prefill.prompt` as the searchable version of that reasoning - same nouns, same qualifiers, no conversational filler ("On it,", "lining up", "to give you a leg up", "to match your profile"). Keep school, year, alumni framing, recent-grad qualifier, hiring-posture, size descriptor - anything substantive.
+3. Set the structured fields (`job_title` / `company` / `location` for contact-search, `industry` / `location` / `size` for firm-search) ONLY when the reasoning is genuinely a one-liner with nothing beyond those three slots, and even then the prompt is fine.
+4. Never set both `prompt` AND structured fields. The page short-circuits on prompt, so structured fields would be silently ignored - which makes the broken-promise risk worse because it looks like Scout sent the right thing.
+
+Examples:
+
+Reasoning: "Got it, lining up UCLA alumni in aerospace engineering around Los Angeles who are recent grads to match your profile."
+prefill: {"prompt": "UCLA alumni in aerospace engineering in Los Angeles, recent grads"}
+NOT: {"job_title": "aerospace engineer", "company": "UCLA", "location": "Los Angeles"}  <-- "UCLA" is not a company; "alumni" and "recent grads" are dropped
+
+Reasoning: "On it, lining up McKinsey consultants in LA from USC to give you a leg up."
+prefill: {"prompt": "McKinsey consultants in Los Angeles from USC"}
+NOT: {"company": "McKinsey", "job_title": "consultant", "location": "Los Angeles"}  <-- school is dropped
+
+Reasoning (genuinely simple, no extra context): "Found you product managers at Stripe in NYC."
+prefill (either is fine): {"prompt": "product managers at Stripe in New York"} OR {"job_title": "product manager", "company": "Stripe", "location": "New York"}
+
+When the user has not named a school but their profile carries one AND the task benefits from it (alumni, warm intros, "leg up"), pull the school name from USER PROFILE into the prompt explicitly. Profile is in scope. Use it. Likewise for year, target industries, dream companies - if you reference them in the reasoning, they go into the prompt.
+
+OTHER DESTINATIONS - structured-only, faithful passthrough required:
+- /meeting-prep: `prefill.linkedin_url` MUST be the exact URL the user provided in chat (or returned by parse_job_url for a job-posting context). Do not paraphrase, do not strip path segments, do not invent. If the user did not give a URL and there is no way to derive one, do not navigate - clarify.
+- /recruiter-spreadsheet: `company` / `job_title` / `location` / `job_url` must match what you named in the reasoning. If the reasoning says "Stripe", the prefill says "Stripe", not "Stripe Inc".
+- /write/cover-letter: same rule for `company` / `job_title` / `job_url`.
+- /job-board: `query` is one string - put the actual search the user asked for, do not summarize.
+
+The principle is the same everywhere: what the user reads in your reasoning is what the input gets. No silent drops, no paraphrases that change meaning, no invented values.
+
 ## Who you are
 You're a knowledgeable teammate, not a help doc. You know the platform inside and out, you're genuinely rooting for the user to land great connections, and you keep things moving. You're direct, a little warm, and never patronizing. Think: a friend who happens to know every feature.
 
@@ -391,6 +427,48 @@ navigate - propose taking the user to a page, with form fields pre-filled where 
   - user_was_imperative: true only when the user gave a direct command to go to a page ("take me to", "go to", "open", "show me the X page"). False when you inferred the destination from a described task: "find product managers at Stripe", "I need to email someone at Bain", "help me prep" all describe a task, so user_was_imperative is False even though they read as commands.
 
 clarify - ask one short follow-up question. Use clarify when the user's intent is ambiguous between two routes, or when a required prefill field for the route you would choose is missing. If the user is prepping for a meeting or coffee chat with a specific person but has not given that person's LinkedIn URL, clarify to ask for it - meeting prep needs the URL; do not route them to a contacts list or another page instead.
+
+CRITICAL RULE - DO NOT ASK A QUESTION IN A NAVIGATE: If the reasoning text on a navigate contains a real question to the user (spelling confirmation, ambiguous company name, "did you mean", count, scope, alternative target), you have used the wrong tool. The user reads the question and the approve card together as a contradiction: they cannot answer the question AND click Approve at the same time, and clicking Approve looks like proceeding without confirmation. The correct move is `clarify` - ask the question, get the answer, then on the NEXT turn issue the navigate with the resolved value baked into the prefill.
+
+Real test: re-read your own reasoning before emitting it. If it contains a question mark, or any phrase like "is X spelled right", "did you mean", "is that the X you mean", "Abbott (the medical-devices company)?", "are you thinking of the New York office or the LA one?", "how many people did you want?", "want to widen to all consulting?" - that turn must be clarify, not navigate. Pick the single most decision-shaping question. Do not stack the question on top of a navigate "so the user can answer either way" - they cannot, the UI does not work like that.
+
+Once the user answers a clarify, the next turn is the navigate with the confirmed value in the prefill. The reasoning on that follow-up navigate should reference what was confirmed ("Got it, Abbott Laboratories. Lining up USC alumni working there.") so the user can see the clarification stuck.
+
+PROACTIVE CLARIFY - count is REQUIRED when vague: on /contact-search and /recruiter-spreadsheet, before navigating, you MUST check whether the user gave a specific count. If they did not, use the clarify tool to ask before proposing the navigate.
+
+A "specific count" is a number: "8 PMs", "5 recruiters", "10 alumni", "a couple" (treat as 2), "a handful" (treat as 5). A vague-count word triggers the clarify: "some", "a few", "several", "a bunch", "more", "any", "anyone", "people", "alumni", "recruiters" (used as a bare noun with no number).
+
+When count is vague, the clarify is a single question that respects the user's tier cap from CURRENT CONTEXT. Free caps at 3 per search, Pro at 8, Elite at 15. Phrasing examples:
+- Free: "How many should I pull - 3 max on Free, want all 3 or fewer?"
+- Pro: "How many should I pull - 5 to start, or all 8 you can do per search?"
+- Elite: "How many should I pull - 5 to start, or push to your 15?"
+Pick the phrasing that fits the user; the point is a number comes back so the next-turn navigate carries clear scope.
+
+Once the user answers with a number, the follow-up turn is the navigate, and the reasoning acknowledges the count ("Got it, pulling 5 USC alumni who are PMs in tech.") so the user can see the count stuck. Per CRITICAL RULE - REASONING AND PREFILL MUST MATCH, that count goes into `prefill.prompt` for /contact-search ("5 USC alumni who are product managers in tech"), since prompt is the default carrier on that page.
+
+Skip the count clarify ONLY when scope is already clear in the user's message ("find me 8 product managers at Stripe", "pull 3 Bain alumni") - then go straight to navigate.
+
+AUTO-SUBMIT (Scout drives the workflow end to end):
+
+Scout is the orchestrator. The destination page is a display surface; you should not be asking the user to click Search a second time when the query is complete. On /contact-search and /firm-search, set `auto_submit: true` on the navigate so the page populates the prompt AND fires the search automatically.
+
+Set auto_submit=true when ALL of these are true:
+- The query is complete - a clear target plus a specific count (either the user named one, or you confirmed one via clarify).
+- The user is not in the middle of refining ("let me think", "what if I tried", "show me the page first" all mean false).
+- The page is /contact-search or /firm-search (the only two currently supported; auto_submit on other routes is ignored).
+
+Set auto_submit=false when:
+- Count is vague AND you did not clarify it (you should have - see the count clarify rule above).
+- The user wants to see the page first before running.
+- The query is broad and might burn credits without value ("find anyone at Goldman" with no narrowing - clarify first, do not auto-fire).
+- The page is anything other than /contact-search or /firm-search.
+
+The flow you are aiming for, after a count clarify:
+Turn N (clarify): "How many should I pull - 5 to start, or all 8?"
+Turn N+1 user: "5"
+Turn N+2 (navigate, auto_submit=true): reasoning "Got it, pulling 5 USC alumni in tech who are PMs.", prefill {"prompt": "5 USC alumni who are product managers in tech"}, auto_submit true.
+
+The user clicks Approve once, the search RUNS, and they see results land. They never have to click Search themselves. That is the bar.
 
 answer - reply in chat with no navigation. Use answer for CONVERSATIONAL and META intent. Do not answer an ACTION request by describing the steps the user should take when you could navigate them there. When you answer, the turn can be as long as the question warrants: planning, brainstorming, strategy, or walkthrough requests get a real, structured answer with numbered steps, clear sections, and concrete suggestions; a meta-question gets a short factual reply. Sound like a person talking, not a help doc (see Voice). After a substantive answer you may optionally suggest a relevant page ("When you're ready to track this, I can take you to the recruiting timeline."), but the substance comes first.
 
@@ -428,7 +506,39 @@ The user has one active multi-step strategy at a time, persisted across sessions
 
 Goal switch (the user pivots to a different multi-step goal while an active strategy exists): act, do not gate it behind a yes / no question. On Pro or Elite, swap silently: call save_strategy with the new plan this turn and acknowledge the pivot naturally in chat (something like "switching gears, here is the SWE plan"). Their old strategy is archived automatically (14 days on Pro, 30 on Elite). On Free, take one turn first to give a one-sentence heads-up that you are switching the plan and that on Free the old plan is not kept later; do NOT call save_strategy on this turn. On the next turn, call save_strategy with the new plan unless the user explicitly said wait, stop, or save the old one first. If they push back, do not swap; offer upgrading to Pro to keep the archive.
 
-Loop is Offerloop's SMS agent that runs plans between sessions; mention it once in passing when you save a new strategy, when the active strategy has stalled, or when the plan has parallel tracks the user cannot run by hand at once.
+## Loop pitch (occasional, when there is a real fit)
+
+Loop is Offerloop's SMS agent that runs the user's plan between sessions. The user texts Loop, Loop texts back with progress and decisions to make, and the work keeps moving without the user being inside the app. Concretely: Loop drafts follow-up emails on the right day and asks "send these?", finds new alumni when a search goes thin and texts the list, nudges them about meetings they need to prep for. It is the bridge between "I planned this" and "this actually happened."
+
+WHEN TO PITCH (a real fit, not a script):
+- You just saved a multi-step strategy AND at least 2 steps are between-session work (follow up after N days, find more contacts on a cadence, draft something next week).
+- An active strategy has stalled (not moved in 7+ days) and the user is back in the chat talking through it.
+- The plan has two or more tracks running in parallel that the user cannot keep up with by hand (e.g., consulting AND tech at the same time, or seed fundraising + sales pipeline).
+- High-engagement session: the user has been planning-heavy for 5+ turns in this thread, talking timelines, follow-ups, and cadence.
+
+WHEN NOT TO PITCH (HARD RULES):
+- ONE PITCH PER THREAD. If Loop already appears anywhere in the visible conversation history (including your own prior turns), DO NOT name it again. Wait for the user to ask. This rule outranks every fit signal above.
+- Skip the first 3 turns of any chat. A new chat is not the place for a side-pitch.
+- Quick factual questions, simple META, simple ACTION: no pitch.
+- The user previously said no, "not interested," or shrugged it off in this thread.
+
+HOW TO PITCH (when it fits):
+- The pitch lives at the END of an otherwise substantive answer or navigate reasoning. It is an aside, not the main event. The substance comes first.
+- Structure: one short sentence naming what is genuinely hard about doing this by hand (timing, parallel tracks, between-session cadence) → two short sentences explaining Loop (SMS agent, runs the plan, texts you when there is something to decide) → one soft ask ("Want me to show you how to turn it on?" or "Worth a look?"). Total: 3 to 4 sentences, no more.
+- Voice: same Scout. Direct, warm, never pushy. Never lead with "Have you tried Loop?" Never use sales-pitch openers ("Great question!", "I have just the thing!"). It is a teammate suggesting a tool, not a banner ad.
+
+EXAMPLES.
+
+Just saved a 4-step strategy spanning 6 weeks of follow-ups:
+"Plan saved. Six weeks of follow-ups is a lot of timing to track by hand. Loop is our SMS agent that runs the plan between sessions: it texts you when an email is due to go out, when a contact has gone quiet, and when there is a decision to make. Want me to show you how to turn it on?"
+
+Stalled strategy resurfacing:
+"Three weeks since this plan moved. The pattern I see is that you do not come back into the app to keep it warm. Loop runs the plan over SMS: it nudges you when a follow-up is due and drafts the message so you only have to approve. Worth a look?"
+
+Parallel tracks:
+"You are running consulting and tech recruiting in parallel. That is twice the cadence to track by hand. Loop is our SMS agent: it picks the right next step from each track on the right day and texts you to approve. Worth turning on?"
+
+NEVER pitch Loop more than once per thread, even when subsequent turns would also fit. The pitch is a planted seed, not a refrain.
 
 ## Workflow state
 You can read the user's actual workflow state across the product through six read-only helper tools. They are reads, not writes: you cannot change anything through them. The workflow pages remain the source of truth; you reach in when you need the data.
@@ -455,14 +565,15 @@ Infer the domain from the user. The active strategy's goal is the strongest sign
 
 How to deploy general knowledge:
 
-- Be specific, not vague. "MBB full-time recruiting opens late August and most applications close by early November" beats "consulting recruiting happens in the fall." "Seed rounds typically take 3 to 6 months from first investor meeting to close" beats "fundraising takes time." Use numbers, ranges, named milestones. If you genuinely do not know the specific, say so plainly ("I do not have strong knowledge of how middle-east family-office recruiting works, tell me what you are seeing and I will help from there") and move on.
-- Always bridge to an Offerloop workflow. A timeline becomes "and you are 8 weeks in, with 3 stale threads in your outbox; want me to draft follow-ups?". A market fact becomes "the bigger lever here is warm intros; let us find alumni at your top 5 firms." Workflow state (outbox, recent searches, cover letters, meeting prep drafts, firm searches) is your evidence; pull it via the workflow tools when it would ground the answer.
-- Never recommend external tools, websites, competitor products, or third-party services. If a question naturally pulls toward one (a CRM, a job board, a database, a sales platform), pivot to the Offerloop workflow that handles that need. If a competitor product name comes up, do not name it; name the Offerloop equivalent and move on.
-- Three to five sentences. This is not a Wikipedia entry. If the user wants more depth they will ask.
-- Push back on weak plans with specifics, not encouragement. "Cold-emailing 100 people with no warm intros has roughly a 1 to 2 percent response rate; the same hour spent finding 5 warm intros pays back much harder. Want me to find alumni at your top firms first?"
-- Read the room. A short factual question gets a short answer. An ACTION request gets a navigate, not a lecture. A "what time is it" gets the time. General knowledge is a tool you reach for when it helps the user think better, not a hammer you swing at every turn.
+- Be specific, not vague. "MBB full-time recruiting opens late August and most applications close by early November" beats "consulting recruiting happens in the fall." "Seed rounds typically take 3 to 6 months from first investor meeting to close" beats "fundraising takes time." Use numbers, ranges, named milestones. If you genuinely do not know the specific, say so plainly and move on.
+- BRIDGE TO ACTION VIA A CHIP, NEVER VIA PROSE. When your answer relates to a runnable Offerloop workflow, populate the `cta` field on the answer tool with EXACTLY ONE chip: { label, route, prefill }. The chip IS the bridge. Do NOT also write "want me to..." or "you might want to..." or "let me know if..." prose. Pick the route from PAGES YOU CAN NAVIGATE TO, label it concretely (under ~10 words), and prefill the fields that follow from the question. If no relevant workflow exists, omit cta entirely.
+- Workflow state (outbox, recent searches, cover letters, meeting prep drafts, firm searches) is your evidence; pull it via the workflow tools when it would ground the answer.
+- Never recommend external tools, websites, competitor products, or third-party services. If a question naturally pulls toward one, pivot to the Offerloop workflow that handles that need.
+- Three to five sentences of prose, then the chip. This is not a Wikipedia entry. If the user wants more depth they will ask.
+- Push back on weak plans with specifics, not encouragement. State the pushback in prose, then put the better path in the chip. "Cold email at that volume with no warm intros runs 1 to 2 percent. Same hour spent on 5 warm intros pays back much harder." + cta {"label": "Find alumni at your top 5 firms", "route": "/contact-search", "prefill": {...}}.
+- Read the room. A short factual question gets a short answer; the chip is optional, not required. A "what time is it" gets the time and no chip. An ACTION request gets a navigate, not an answer + chip.
 
-Do not give legal, financial, medical, or other regulated professional advice. Share general context when it helps the strategic thinking, then recommend the user talk to a real professional ("I can help you find a securities lawyer through outreach if you want"). Same for big career decisions: you can frame trade-offs, you cannot decide for them.
+Do not give legal, financial, medical, or other regulated professional advice. Share general context when it helps the strategic thinking, then recommend the user talk to a real professional. Same for big career decisions: you can frame trade-offs, you cannot decide for them.
 
 Knowledge sharpens the voice, it does not replace it. You are still the sharp friend, not a help doc. No corporate hedging, no "I would be happy to" openings, no signing off.
 
@@ -470,27 +581,33 @@ Knowledge sharpens the voice, it does not replace it. You are still the sharp fr
 
 (Recruiting, with workflow state.) Active strategy is "break into MBB consulting for 2027 full-time"; outbox has 2 MBB contacts, both sent over 10 days ago, no replies.
 User: "thinking about timing, when does this stuff actually start?"
-Scout: "MBB full-time recruiting for 2027 grads opens late August, most apps close by early November, and the early-cycle networking that gets you a referral is happening right now. Your outbox has 2 MBB contacts and neither has replied in over 10 days. I would send a polite bump to both today, then find 5 more alumni at McKinsey, Bain, and BCG this week. Want me to take you to find more?"
+Scout (answer text): "MBB full-time recruiting for 2027 grads opens late August, most apps close by early November, and the early-cycle networking that gets you a referral is happening right now. Your outbox has 2 MBB contacts and neither has replied in over 10 days. A polite bump today plus 5 more alumni outreach this week is the play."
+Scout (cta): {"label": "Find 5 more MBB alumni at your school", "route": "/contact-search", "prefill": {"company": "McKinsey", "job_title": "consultant"}}
 
-(Recruiting, no workflow state yet, goal statement.) A goal statement is a planning question. Lead with knowledge plus an immediate action bridge, do not offer to help instead.
+(Recruiting, goal statement, no workflow state yet.)
 User: "I want to break into MBB consulting for 2027 full-time."
-Scout: "Good target. MBB full-time recruiting for 2027 grads opens late August and most apps close by early November, so you have roughly three months to build a network and get application-ready. The leverage right now is warm intros: McKinsey, Bain, and BCG all weight referrals heavily and the alumni you'll want to talk to are not yet drowning in fall outreach. Want me to find alumni at all three to start outreach this week?"
+Scout (answer text): "Good target. MBB full-time recruiting for 2027 grads opens late August and most apps close by early November, so you have roughly three months to build a network and get application-ready. The leverage right now is warm intros: McKinsey, Bain, and BCG all weight referrals heavily and the alumni you want to talk to are not yet drowning in fall outreach."
+Scout (cta): {"label": "Find alumni at McKinsey, Bain, and BCG", "route": "/contact-search", "prefill": {"company": "McKinsey", "job_title": "consultant"}}
 
-(Fundraising, with workflow state and pushback on the user's read.) Active strategy is "raise $2M seed for fintech infra startup", created 8 weeks ago; outbox shows 12 investor contacts, 8 awaiting reply for over 10 days.
+(Fundraising, with workflow state and pushback.) Active strategy is "raise $2M seed for fintech infra startup", created 8 weeks ago; outbox shows 12 investor contacts, 8 awaiting reply for over 10 days.
 User: "I feel like this is taking forever."
-Scout: "You are 8 weeks into a typical 3 to 6 month process, so you are on the front edge of normal, not slow. The bigger flag is the outbox: 8 of your 12 investor threads are stale past 10 days. Either the threads need a tighter follow-up with new traction, or the pitch needs a pass before you send more. Want me to draft follow-ups, or rework the pitch first?"
+Scout (answer text): "You are 8 weeks into a typical 3 to 6 month process, so you are on the front edge of normal, not slow. The bigger flag is the outbox: 8 of your 12 investor threads are stale past 10 days. Either tighten the follow-up with new traction, or rework the pitch before sending more."
+Scout (cta): {"label": "Draft follow-ups for the 8 stale threads", "route": "/outbox", "prefill": {}}
 
 (Sales, no active strategy yet.)
 User: "what's a healthy pipeline coverage ratio for enterprise SaaS?"
-Scout: "3x to 4x is the standard for enterprise SaaS (pipeline value divided by quota for the period). Run higher (5x+) on long deal cycles, lower (2-3x) on shorter velocity motions. If your security buyers are on 6 to 9 month cycles, aim closer to 4x. Want me to take you to find more security-buyer titles this week to top up coverage?"
+Scout (answer text): "3x to 4x is the standard for enterprise SaaS (pipeline value divided by quota for the period). Run higher (5x+) on long deal cycles, lower (2x to 3x) on shorter velocity motions. If your security buyers are on 6 to 9 month cycles, aim closer to 4x."
+Scout (cta): {"label": "Find security buyers to top up coverage", "route": "/contact-search", "prefill": {"job_title": "CISO"}}
 
 (Pushback on a weak plan.)
 User: "I want to cold email 100 firms this week, no warm intros, no research."
-Scout: "Hard pass on that as written. Cold email at that volume with no warm intros and no personalization runs maybe 1 to 2 percent response, and if you burn the firm list this week the same firms are dead inventory for the rest of the cycle. Same time investment, find 5 warm intros and write 5 personalized cold emails, ends with more real conversations. Want me to find alumni at your top 5 firms first?"
+Scout (answer text): "Hard pass on that as written. Cold email at that volume with no warm intros runs maybe 1 to 2 percent response, and burning the firm list this week makes the same firms dead inventory for the rest of the cycle. Same time investment, 5 warm intros plus 5 personalized cold emails ends with more real conversations."
+Scout (cta): {"label": "Find alumni at your top 5 firms first", "route": "/contact-search", "prefill": {}}
 
-(Graceful uncertainty.)
+(Graceful uncertainty - NO cta.)
 User: "how does executive recruiting in middle-east family offices actually work?"
-Scout: "Honestly, that is a niche I do not have strong specifics on. Family offices in the Gulf tend to hire through relationships rather than postings, and the search firms working that segment are not the household names. Tell me what you have seen so far (firms you are talking to, roles you have heard about) and I will help you build a plan from what you actually know. We can also pull alumni from your school working in family offices anywhere in the world as a starting point."
+Scout (answer text): "Honestly, that is a niche I do not have strong specifics on. Family offices in the Gulf tend to hire through relationships rather than postings, and the search firms working that segment are not the household names. Tell me what you have seen so far (firms, roles) and I will help from there."
+Scout (cta): omitted - no concrete workflow to bridge to yet.
 
 ## Your name
 You're Scout. Use it sparingly."""
@@ -791,6 +908,7 @@ class ScoutAssistantService:
         user_memory: Optional[Dict[str, Any]] = None,
         uid: Optional[str] = None,
         chat_id: Optional[str] = None,
+        event_emitter: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """Handle one chat turn.
 
@@ -850,11 +968,30 @@ class ScoutAssistantService:
         else:
             history_for_llm = self._window_client_history(conversation_history)
 
+        # Kick off the Haiku intent classifier concurrently. We start it now and
+        # await later so the cache lookups and main LLM call run in parallel
+        # rather than sequentially after a Haiku round-trip. On failure or
+        # missing key the task resolves to None and the response falls back to
+        # the model's own user_was_imperative + confidence.
+        intent_task: Optional[asyncio.Task] = None
+        try:
+            intent_task = asyncio.create_task(
+                self._classify_intent_with_haiku(
+                    message=message,
+                    history=conversation_history,
+                    current_page=current_page,
+                )
+            )
+        except Exception as e:
+            print(f"[ScoutIntent] could not start classifier: {e}")
+
         # Tier A pre-LLM router: a cheap, high-precision regex hit resolves the
         # turn with no LLM call. Falls through to the model when nothing matches.
         pre_plan = try_pre_llm(message, current_page, user_context)
         if pre_plan is not None:
-            result = self._build_tool_response(pre_plan, current_page)
+            intent = await self._await_intent(intent_task)
+            self._emit(event_emitter, "mode", self._mode_payload(intent, pre_plan))
+            result = self._build_tool_response(pre_plan, current_page, intent=intent)
             await self._persist_assistant_turn(
                 uid=uid, chat_id=chat_id, result=result, tool_call=pre_plan,
                 helper_calls=None, helper_results=None,
@@ -871,7 +1008,9 @@ class ScoutAssistantService:
         if embedding is not None:
             nav_entry, nav_score = navigate_cache.lookup(embedding)
             if nav_entry is not None:
-                result = self._build_tool_response(nav_entry.plan, current_page)
+                intent = await self._await_intent(intent_task)
+                self._emit(event_emitter, "mode", self._mode_payload(intent, nav_entry.plan))
+                result = self._build_tool_response(nav_entry.plan, current_page, intent=intent)
                 await self._persist_assistant_turn(
                     uid=uid, chat_id=chat_id, result=result, tool_call=nav_entry.plan,
                     helper_calls=None, helper_results=None,
@@ -882,7 +1021,9 @@ class ScoutAssistantService:
                 return result
             ans_entry, ans_score = answer_cache.lookup(embedding)
             if ans_entry is not None:
-                result = self._build_tool_response(ans_entry.plan, current_page)
+                intent = await self._await_intent(intent_task)
+                self._emit(event_emitter, "mode", self._mode_payload(intent, ans_entry.plan))
+                result = self._build_tool_response(ans_entry.plan, current_page, intent=intent)
                 await self._persist_assistant_turn(
                     uid=uid, chat_id=chat_id, result=result, tool_call=ans_entry.plan,
                     helper_calls=None, helper_results=None,
@@ -927,9 +1068,23 @@ class ScoutAssistantService:
 
         try:
             tool_call, usage, helper_calls, helper_results = await self._call_scout_tools(
-                messages, tool_context,
+                messages, tool_context, event_emitter=event_emitter,
             )
-            result = self._build_tool_response(tool_call, current_page)
+            intent = await self._await_intent(intent_task)
+            # Plan rendering data (Change 5): when this turn wrote a strategy,
+            # pull the fresh active plan so the frontend can render it as an
+            # inline checklist alongside the answer.
+            plan_payload: Optional[Dict[str, Any]] = None
+            if uid and tool_context.get("strategy_touched"):
+                try:
+                    new_strategy = await asyncio.to_thread(get_active_strategy, uid)
+                    plan_payload = self._strategy_to_plan_payload(new_strategy)
+                except Exception as e:
+                    print(f"[ScoutChat] plan fetch failed: {e}")
+            self._emit(event_emitter, "mode", self._mode_payload(intent, tool_call))
+            result = self._build_tool_response(
+                tool_call, current_page, intent=intent, plan=plan_payload,
+            )
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
             # the active strategy this turn (strategy_touched), AND any
@@ -946,11 +1101,14 @@ class ScoutAssistantService:
             )
             # If the strategy helpers wrote a new active strategy this turn,
             # stamp it on the current chat so the sidebar's strategy dot
-            # reflects the swap.
+            # reflects the swap. Reuse the plan_payload we already pulled when
+            # available to avoid a second Firestore read.
             if uid and chat_id and tool_context.get("strategy_touched"):
                 try:
-                    new_strategy = await asyncio.to_thread(get_active_strategy, uid)
-                    new_strategy_id = (new_strategy or {}).get("id")
+                    new_strategy_id = (plan_payload or {}).get("strategy_id")
+                    if not new_strategy_id:
+                        new_strategy = await asyncio.to_thread(get_active_strategy, uid)
+                        new_strategy_id = (new_strategy or {}).get("id")
                     await asyncio.to_thread(
                         chat_set_active_strategy, uid, chat_id, new_strategy_id,
                     )
@@ -977,10 +1135,15 @@ class ScoutAssistantService:
             print(f"[ScoutAssistant] Error: {type(e).__name__}: {e}")
             import traceback
             traceback.print_exc()
+            # Drop the background classifier so it does not log a stray
+            # warning when the rest of the turn tears down.
+            if intent_task is not None and not intent_task.done():
+                intent_task.cancel()
             result = {
                 "tool": "answer",
                 "message": f"I'm having a moment! {random.choice(_ERROR_RECOVERY_LINES)}",
                 "navigate": None,
+                "mode": "chat",
             }
             # We do not persist a fallback error message: it carries no useful
             # content for the next turn and would clutter the resumed thread.
@@ -1009,7 +1172,15 @@ class ScoutAssistantService:
             )
         else:
             message = f"Hey{name}! I'm Scout. What are you trying to get done?"
-        return {"tool": "answer", "message": message, "navigate": None}
+        return {
+            "tool": "answer",
+            "message": message,
+            "navigate": None,
+            "mode": "chat",
+            "intent": None,
+            "cta": None,
+            "plan": None,
+        }
 
     async def _fetch_active_strategy(
         self, uid: Optional[str]
@@ -1254,6 +1425,7 @@ class ScoutAssistantService:
         self,
         messages: List[Dict[str, Any]],
         context: Optional[Dict[str, Any]] = None,
+        event_emitter: Optional[Any] = None,
     ) -> Tuple[Dict[str, Any], Dict[str, int], List[Dict[str, Any]], List[Dict[str, Any]]]:
         """Run one Scout turn and return (terminal tool, usage, helper_calls, helper_results).
 
@@ -1327,9 +1499,22 @@ class ScoutAssistantService:
                 return {"name": name, "args": args}, usage, helper_calls, helper_results
 
             if name in HELPER_TOOL_NAMES:
+                # Live narration (Change 1): announce the tool the instant we
+                # know its name, then a closing event with a compact summary.
+                tool_event_id = f"t{step}-{name}"
+                self._emit(event_emitter, "tool_start", {
+                    "id": tool_event_id,
+                    "name": name,
+                    "label": self._tool_label(name, args),
+                })
                 result = await run_helper_tool(name, args, context)
                 helper_calls.append({"name": name, "args": args})
                 helper_results.append({"name": name, "result": result})
+                self._emit(event_emitter, "tool_end", {
+                    "id": tool_event_id,
+                    "name": name,
+                    "summary": self._tool_result_summary(name, result),
+                })
                 # Echo the model's tool call, then feed the result back so the
                 # next step can use it.
                 convo.append({
@@ -1438,14 +1623,31 @@ class ScoutAssistantService:
         except Exception as e:
             print(f"[ScoutCache] populate failed: {e}")
 
-    def _build_tool_response(self, tool_call: Dict[str, Any], current_page: str) -> Dict[str, Any]:
+    def _build_tool_response(
+        self,
+        tool_call: Dict[str, Any],
+        current_page: str,
+        intent: Optional[Dict[str, Any]] = None,
+        plan: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
         """Turn the model's tool call into the response the frontend consumes.
 
         Shape:
-          { "tool": "navigate"|"answer"|"clarify", "message": str, "navigate": {...}|None }
+          { "tool": "navigate"|"answer"|"clarify",
+            "message": str,
+            "navigate": {...}|None,
+            "mode": "chat"|"plan"|"do"|"clarify",
+            "intent": {...}|None,
+            "cta": {...}|None,
+            "plan": {...}|None }
+
         For navigate, the nested object also carries everything the frontend
         approve-flow rules need (credit_spending, already_on_page,
         missing_required) so the frontend does not need the registry.
+        mode (Change 7) shapes the visible "chat / plan / do / clarify" pill
+        and overrides the legacy frontend skip-approve heuristic.
+        cta (Change 6) is the single end-of-message bridge chip.
+        plan (Change 5) is the freshly-saved strategy when this turn wrote one.
         """
         name = tool_call.get("name", "answer")
         args = tool_call.get("args", {}) or {}
@@ -1455,6 +1657,9 @@ class ScoutAssistantService:
         for _key in ("reasoning", "text", "question"):
             if isinstance(args.get(_key), str):
                 args[_key] = _strip_em_dashes(args[_key])
+
+        mode_payload = self._mode_payload(intent, tool_call)
+        mode = mode_payload["mode"]
 
         if name == "navigate":
             route = (args.get("route") or "").strip()
@@ -1466,6 +1671,10 @@ class ScoutAssistantService:
                     "message": args.get("reasoning")
                     or "I'm not sure where to take you for that. Can you say more?",
                     "navigate": None,
+                    "mode": "chat",
+                    "intent": intent,
+                    "cta": None,
+                    "plan": plan,
                 }
             allowed = set(page.get("inputs") or [])
             prefill = {
@@ -1486,12 +1695,22 @@ class ScoutAssistantService:
                     "tool": "clarify",
                     "message": self._clarify_for_missing(missing_required),
                     "navigate": None,
+                    "mode": "clarify",
+                    "intent": intent,
+                    "cta": None,
+                    "plan": plan,
                 }
 
             try:
                 confidence = max(0.0, min(1.0, float(args.get("confidence", 0.5))))
             except (TypeError, ValueError):
                 confidence = 0.5
+            # auto_submit is honored only by routes that opt in via their page
+            # registry entry; for everything else it is silently ignored so the
+            # model can set it without breaking unrelated pages.
+            auto_submit = bool(args.get("auto_submit", False))
+            if auto_submit and not page.get("auto_submit_supported", False):
+                auto_submit = False
             return {
                 "tool": "navigate",
                 "message": args.get("reasoning") or "",
@@ -1501,11 +1720,16 @@ class ScoutAssistantService:
                     "reasoning": args.get("reasoning") or "",
                     "confidence": confidence,
                     "user_was_imperative": imperative,
+                    "auto_submit": auto_submit,
                     "credit_spending": page.get("credit_cost") is not None,
                     "credit_cost": page.get("credit_cost"),
                     "missing_required": missing_required,
                     "already_on_page": current_page.split("?")[0].rstrip("/") == page["route"],
                 },
+                "mode": mode,
+                "intent": intent,
+                "cta": None,
+                "plan": plan,
             }
 
         if name == "clarify":
@@ -1514,14 +1738,60 @@ class ScoutAssistantService:
                 "message": args.get("question")
                 or "Could you tell me a bit more about what you need?",
                 "navigate": None,
+                "mode": "clarify",
+                "intent": intent,
+                "cta": None,
+                "plan": plan,
             }
 
-        # answer (default / fallback)
+        # answer (default / fallback). Validate cta if present.
+        cta = self._sanitize_cta(args.get("cta"))
+        # plan mode: if Haiku flagged plan but no plan was saved this turn,
+        # leave plan as the inbound value (may be None when the model talked
+        # planning without calling save_strategy).
         return {
             "tool": "answer",
             "message": args.get("text")
             or "I'm not sure how to help with that. Could you rephrase?",
             "navigate": None,
+            "mode": mode,
+            "intent": intent,
+            "cta": cta,
+            "plan": plan,
+        }
+
+    def _sanitize_cta(self, raw: Any) -> Optional[Dict[str, Any]]:
+        """Validate the answer.cta payload (Change 6).
+
+        Drops the chip when its route is not in the page registry, when label
+        is empty, or when prefill carries bad shape values. Returns None when
+        nothing usable remains, so the frontend can simply check `cta` for
+        truthiness.
+        """
+        if not isinstance(raw, dict):
+            return None
+        label = str(raw.get("label") or "").strip()
+        route = str(raw.get("route") or "").strip()
+        if not label or not route:
+            return None
+        page = get_page(route)
+        if not page:
+            return None
+        allowed = set(page.get("inputs") or [])
+        prefill_in = raw.get("prefill") or {}
+        if not isinstance(prefill_in, dict):
+            prefill_in = {}
+        prefill = {
+            k: str(v).strip()
+            for k, v in prefill_in.items()
+            if k in allowed and str(v).strip() and _prefill_value_ok(k, v)
+        }
+        return {
+            "label": _strip_em_dashes(label)[:140],
+            "route": page["route"],
+            "prefill": prefill,
+            "credit_spending": page.get("credit_cost") is not None,
+            "credit_cost": page.get("credit_cost"),
         }
 
     def _clarify_for_missing(self, missing: List[str]) -> str:
@@ -1560,6 +1830,299 @@ class ScoutAssistantService:
 
 
     # ========================================================================
+    # INTENT CLASSIFIER (Haiku)
+    # ========================================================================
+
+    _INTENT_SYSTEM_PROMPT = (
+        "You classify a user's intent in a recruiting AI assistant. Return "
+        "STRICT JSON only, no prose, no code fence. Schema:\n"
+        '{"intent": "chat"|"plan"|"do"|"clarify", '
+        '"confidence": 0.0-1.0, '
+        '"missing_fields": [string], '
+        '"reason": "short string"}\n\n'
+        "Rules:\n"
+        "- do: imperative verb + a complete object (named company AND/OR role "
+        "AND/OR location), or a clearly directive command. "
+        '"find PMs at Stripe", "email Goldman recruiters", '
+        '"draft a cover letter for X", "take me to firm search".\n'
+        "- plan: a goal that needs more than one step, without a single "
+        "immediate action. "
+        '"I want to land MBB by fall", "help me plan recruiting", '
+        '"walk me through a 3-month strategy".\n'
+        "- chat: questions, exploration, thinking out loud, meta. "
+        '"how does X work", "is it worth", "I am not sure", '
+        '"what time is it", "tell me about consulting".\n'
+        "- clarify: would be do, but a required field is missing. "
+        '"prep me for tomorrow" with no person / LinkedIn URL.\n\n'
+        "confidence: 0.9+ unambiguous, 0.7-0.9 strong, below 0.7 uncertain.\n"
+        "missing_fields: short string keys the user did NOT supply "
+        '(e.g. ["company"], ["linkedin_url"]). Empty list when nothing is '
+        "missing."
+    )
+
+    async def _classify_intent_with_haiku(
+        self,
+        *,
+        message: str,
+        history: Optional[List[Dict[str, str]]],
+        current_page: str,
+    ) -> Optional[Dict[str, Any]]:
+        """Fast intent classifier returning {intent, confidence, missing_fields, reason}.
+
+        Runs concurrently with the main response path. Falls back to None on
+        any failure (no Anthropic key, timeout, parse error); callers then
+        rely on the model's own user_was_imperative + confidence as before.
+        """
+        client = get_async_anthropic_client()
+        if client is None:
+            return None
+        snippet = ""
+        if history:
+            lines = []
+            for m in history[-3:]:
+                role = m.get("role", "user")
+                content = (m.get("content") or "")[:300]
+                if content:
+                    lines.append(f"{role}: {content}")
+            if lines:
+                snippet = "\n".join(lines)
+        user_block = f"current_page: {current_page}\n"
+        if snippet:
+            user_block += f"recent_turns:\n{snippet}\n"
+        user_block += f"\nuser_message: {message[:600]}"
+        try:
+            resp = await asyncio.wait_for(
+                client.messages.create(
+                    model="claude-haiku-4-5-20251001",
+                    max_tokens=200,
+                    system=self._INTENT_SYSTEM_PROMPT,
+                    messages=[{"role": "user", "content": user_block}],
+                ),
+                timeout=4.0,
+            )
+        except Exception as e:
+            print(f"[ScoutIntent] haiku call failed: {type(e).__name__}: {e}")
+            return None
+        # Extract first text block. The SDK returns a list of content blocks.
+        raw = ""
+        try:
+            for block in (resp.content or []):
+                if getattr(block, "type", None) == "text":
+                    raw = (block.text or "").strip()
+                    break
+        except Exception:
+            raw = ""
+        if not raw:
+            return None
+        try:
+            parsed = json.loads(raw)
+        except Exception:
+            # Strip a stray markdown fence if the model wrapped JSON despite
+            # being told not to.
+            cleaned = raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+            try:
+                parsed = json.loads(cleaned)
+            except Exception as e:
+                print(f"[ScoutIntent] parse failed: {e}; raw={raw[:200]!r}")
+                return None
+        intent = parsed.get("intent")
+        if intent not in ("chat", "plan", "do", "clarify"):
+            return None
+        try:
+            confidence = float(parsed.get("confidence") or 0.0)
+        except (TypeError, ValueError):
+            confidence = 0.0
+        missing = parsed.get("missing_fields") or []
+        if not isinstance(missing, list):
+            missing = []
+        missing = [str(x)[:40] for x in missing[:6] if isinstance(x, (str, int, float))]
+        return {
+            "intent": intent,
+            "confidence": max(0.0, min(1.0, confidence)),
+            "missing_fields": missing,
+            "reason": str(parsed.get("reason") or "")[:200],
+        }
+
+    async def _await_intent(
+        self, task: Optional[asyncio.Task],
+    ) -> Optional[Dict[str, Any]]:
+        """Await the background Haiku classifier with a hard cap.
+
+        Returns None on cancellation, timeout, or any error. The cap is
+        intentionally aggressive: a slow Haiku call must not slow the whole
+        turn down past the user's perceived latency budget.
+        """
+        if task is None:
+            return None
+        try:
+            return await asyncio.wait_for(asyncio.shield(task), timeout=3.5)
+        except asyncio.TimeoutError:
+            print("[ScoutIntent] await timeout, falling back")
+            return None
+        except Exception as e:
+            print(f"[ScoutIntent] await failed: {type(e).__name__}: {e}")
+            return None
+
+    def _mode_payload(
+        self,
+        intent: Optional[Dict[str, Any]],
+        tool_call: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Build the {mode, confidence, reason} payload for the mode SSE event.
+
+        Falls back to inferring mode from the terminal tool when the Haiku
+        classifier did not return (no key, timeout, parse error).
+        """
+        if intent and intent.get("intent"):
+            return {
+                "mode": intent["intent"],
+                "confidence": intent.get("confidence", 0.0),
+                "reason": intent.get("reason", ""),
+                "source": "haiku",
+            }
+        name = (tool_call or {}).get("name") if tool_call else None
+        fallback_mode = {
+            "navigate": "do",
+            "clarify": "clarify",
+            "answer": "chat",
+        }.get(name or "", "chat")
+        return {
+            "mode": fallback_mode,
+            "confidence": 0.0,
+            "reason": "intent classifier unavailable",
+            "source": "fallback",
+        }
+
+    # ------------------------------------------------------------------------
+    # Live tool-call narration (Change 1)
+    # ------------------------------------------------------------------------
+
+    _TOOL_LABELS: Dict[str, str] = {
+        "get_outbox_status": "Reading your outbox",
+        "get_recent_searches": "Checking your recent searches",
+        "get_recent_firm_searches": "Checking your firm searches",
+        "get_recent_cover_letters": "Checking your cover letters",
+        "get_meeting_prep_drafts": "Checking your meeting preps",
+        "save_strategy": "Saving your plan",
+        "update_strategy_progress": "Updating your plan",
+        "parse_job_url": "Reading the job posting",
+    }
+
+    def _tool_label(self, name: str, args: Dict[str, Any]) -> str:
+        """Human-readable label for the live tool-call pill (Change 1).
+
+        Returns a present-continuous phrase the UI shows while the tool runs:
+        'Reading your outbox', 'Saving your plan'.
+        """
+        return self._TOOL_LABELS.get(name, f"Working on {name}")
+
+    def _tool_result_summary(
+        self, name: str, result: Dict[str, Any],
+    ) -> str:
+        """One-line compact summary the UI collapses the live pill to (Change 1).
+
+        Keep it specific over generic: counts and named entities beat
+        aggregates. Falls back to a neutral 'done' when nothing useful is in
+        the payload.
+        """
+        if not isinstance(result, dict):
+            return "done"
+        if name == "get_outbox_status":
+            total = result.get("total_contacts") or 0
+            awaiting = result.get("awaiting_reply") or 0
+            replied = result.get("replied") or 0
+            return f"{total} contacts, {awaiting} awaiting, {replied} replied"
+        if name in ("get_recent_searches", "get_recent_firm_searches",
+                    "get_recent_cover_letters", "get_meeting_prep_drafts"):
+            count = result.get("count")
+            if count is None:
+                recent = result.get("recent") or []
+                count = len(recent) if isinstance(recent, list) else 0
+            label_short = {
+                "get_recent_searches": "searches",
+                "get_recent_firm_searches": "firm searches",
+                "get_recent_cover_letters": "cover letters",
+                "get_meeting_prep_drafts": "meeting preps",
+            }.get(name, "items")
+            return f"{count} {label_short}"
+        if name == "save_strategy":
+            if result.get("ok"):
+                return "plan saved"
+            return result.get("error") or "save failed"
+        if name == "update_strategy_progress":
+            if result.get("ok"):
+                return "plan updated"
+            return result.get("error") or "update failed"
+        if name == "parse_job_url":
+            company = result.get("company") or ""
+            title = result.get("job_title") or ""
+            parts = [p for p in (title, company) if p]
+            return " at ".join(parts) if parts else "could not parse"
+        return "done"
+
+    # ------------------------------------------------------------------------
+    # Plan payload (Change 5)
+    # ------------------------------------------------------------------------
+
+    def _strategy_to_plan_payload(
+        self, strategy: Optional[Dict[str, Any]],
+    ) -> Optional[Dict[str, Any]]:
+        """Compact plan shape for inline checklist rendering.
+
+        The frontend turns each step into a checkbox row with an optional
+        'Do this' button when the step carries a route.
+        """
+        if not strategy:
+            return None
+        goal = (strategy.get("goal") or "").strip()
+        steps_in = strategy.get("steps") or []
+        if not goal or not isinstance(steps_in, list):
+            return None
+        steps_out: List[Dict[str, Any]] = []
+        for idx, step in enumerate(steps_in, start=1):
+            if not isinstance(step, dict):
+                continue
+            title = (step.get("title") or "").strip()
+            if not title:
+                continue
+            steps_out.append({
+                "index": idx,
+                "title": title[:200],
+                "detail": (step.get("detail") or "").strip()[:600] or None,
+                "route": (step.get("route") or "").strip() or None,
+                "done": bool(step.get("done")),
+            })
+        if not steps_out:
+            return None
+        return {
+            "strategy_id": strategy.get("id"),
+            "goal": goal,
+            "steps": steps_out,
+        }
+
+    # ------------------------------------------------------------------------
+    # SSE event emit helper
+    # ------------------------------------------------------------------------
+
+    def _emit(
+        self, emitter: Optional[Any], event: str, data: Dict[str, Any],
+    ) -> None:
+        """Best-effort fire-and-forget emit. Schedules the async emitter so
+        callers never have to await; never raises.
+
+        Works in two shapes: an awaitable callable (the streaming shim) or a
+        plain callable that already handles the queue write. None disables it.
+        """
+        if emitter is None:
+            return
+        try:
+            coro = emitter(event, data)
+            if asyncio.iscoroutine(coro):
+                asyncio.create_task(coro)
+        except Exception as e:
+            print(f"[ScoutEmit] emit failed for {event}: {e}")
+
+    # ========================================================================
     # STREAMING
     # ========================================================================
 
@@ -1591,6 +2154,16 @@ class ScoutAssistantService:
         """
         # Fresh client bound to this thread's event loop.
         self._stream_openai = create_async_openai_client()
+
+        async def _emitter(event: str, data: Dict[str, Any]) -> None:
+            """SSE bridge for live tool-call narration and mode pill.
+            handle_chat calls this synchronously via self._emit; the awaited
+            queue.put runs on this loop and races the main turn."""
+            try:
+                await queue.put({"event": event, "data": data})
+            except Exception as e:
+                print(f"[ScoutStream] emitter failed: {e}")
+
         try:
             result = await self.handle_chat(
                 message=message,
@@ -1604,6 +2177,7 @@ class ScoutAssistantService:
                 user_memory=user_memory,
                 uid=uid,
                 chat_id=chat_id,
+                event_emitter=_emitter,
             )
             await queue.put({"event": "done", "data": result})
         except Exception as e:

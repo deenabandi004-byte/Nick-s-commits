@@ -20,6 +20,17 @@ export interface ScoutPrefillEnvelope {
   route: string;
   prefill: Record<string, string>;
   expires_at: number;
+  // When true, the destination page runs its primary action automatically
+  // (e.g. fires handleSearch on /contact-search and /firm-search) once the
+  // prefill has been applied. Used by the Scout "drive the whole workflow"
+  // flow so the user does not have to click Search after approving the
+  // navigate. Honored only by pages that have opted in.
+  auto_submit?: boolean;
+}
+
+export interface ScoutPrefillResult {
+  prefill: Record<string, string>;
+  auto_submit: boolean;
 }
 
 /**
@@ -29,13 +40,33 @@ export interface ScoutPrefillEnvelope {
  */
 export const SCOUT_PREFILL_EVENT = 'scout-prefill';
 
+/**
+ * Event a destination page emits when its primary action (search, lookup,
+ * etc.) finished and results are on-screen. ScoutSidePanel listens and posts
+ * a synthetic follow-up message into the chat so the user sees the full
+ * round trip without leaving Scout's flow. detail = { count, route,
+ * results_route? }.
+ */
+export const SCOUT_SEARCH_COMPLETED_EVENT = 'scout-search-completed';
+
+export interface ScoutSearchCompletedDetail {
+  count: number;
+  route: string;
+  results_route?: string;
+}
+
 /** Store prefill addressed to `route`, valid for the next 30 seconds. */
-export function writeScoutPrefill(route: string, prefill: Record<string, string>): void {
+export function writeScoutPrefill(
+  route: string,
+  prefill: Record<string, string>,
+  options?: { auto_submit?: boolean },
+): void {
   try {
     const envelope: ScoutPrefillEnvelope = {
       route: (route || '').split('?')[0],
       prefill: prefill || {},
       expires_at: Date.now() + TTL_MS,
+      auto_submit: !!options?.auto_submit,
     };
     sessionStorage.setItem(KEY, JSON.stringify(envelope));
   } catch (e) {
@@ -50,8 +81,20 @@ export function writeScoutPrefill(route: string, prefill: Record<string, string>
  * or it has expired. A matching envelope is always removed (applied at most
  * once); an envelope for a different route is left in place so that page can
  * still read it.
+ *
+ * Returns just the prefill map for backward compatibility; callers that need
+ * auto_submit should use readScoutPrefillEnvelope instead.
  */
 export function readScoutPrefill(route: string): Record<string, string> | null {
+  const env = readScoutPrefillEnvelope(route);
+  return env ? env.prefill : null;
+}
+
+/**
+ * Read and consume the full envelope (prefill + auto_submit flag). Same
+ * route-keyed + 30s TTL + consume-on-match semantics as readScoutPrefill.
+ */
+export function readScoutPrefillEnvelope(route: string): ScoutPrefillResult | null {
   try {
     const raw = sessionStorage.getItem(KEY);
     if (!raw) return null;
@@ -60,7 +103,10 @@ export function readScoutPrefill(route: string): Record<string, string> | null {
     if ((env.route || '') !== here) return null; // addressed to another page
     sessionStorage.removeItem(KEY); // consume on match
     if (Date.now() >= env.expires_at) return null; // stale, ignore
-    return env.prefill || {};
+    return {
+      prefill: env.prefill || {},
+      auto_submit: !!env.auto_submit,
+    };
   } catch (e) {
     console.error('[ScoutBridge] read failed:', e);
     return null;

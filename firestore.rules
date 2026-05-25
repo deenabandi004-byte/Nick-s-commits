@@ -78,6 +78,11 @@ service cloud.firestore {
       match /recruiters/{recruiterId} {
         allow read, write: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Manually-added firms (My Network > Companies > Add company)
+      match /manual_firms/{firmId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
       
       // Notifications (outbox is a fixed doc: notifications/outbox)
       match /notifications/{notificationId} {

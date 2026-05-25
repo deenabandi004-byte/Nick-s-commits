@@ -5,9 +5,8 @@ import { Button } from '@/components/ui/button';
 import { MobileMenuButton } from '@/components/ui/sidebar';
 import ScoutHeaderButton from './ScoutHeaderButton';
 import { useTour } from '@/contexts/TourContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useToast } from '@/hooks/use-toast';
 import type { NotificationItem } from '@/hooks/useNotifications';
 
 interface AppHeaderProps {
@@ -48,34 +47,14 @@ export function AppHeader({
   onJobTitleSuggestion,
 }: AppHeaderProps) {
   const navigate = useNavigate();
-  const location = useLocation();
   const { startTour } = useTour();
   const { notifications, markAllRead, markOneRead } = useNotifications();
-  const { toast } = useToast();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const prevUnreadCountRef = useRef(notifications.unreadReplyCount);
-  const hasInitializedRef = useRef(false);
 
-  useEffect(() => {
-    if (!hasInitializedRef.current) {
-      prevUnreadCountRef.current = notifications.unreadReplyCount;
-      hasInitializedRef.current = true;
-      return;
-    }
-    const prev = prevUnreadCountRef.current;
-    const curr = notifications.unreadReplyCount;
-    prevUnreadCountRef.current = curr;
-    if (curr > prev && location.pathname !== '/tracker') {
-      const firstUnread = notifications.items.find((i) => !i.read) ?? notifications.items[0];
-      if (firstUnread) {
-        toast({
-          title: `${firstUnread.contactName} responded to you!`,
-          description: firstUnread.snippet ? firstUnread.snippet.slice(0, 80) + (firstUnread.snippet.length > 80 ? '…' : '') : undefined,
-        });
-      }
-    }
-  }, [notifications.unreadReplyCount, notifications.items, location.pathname, toast]);
+  // Reply notifications surface only via the bell dropdown - no toast popups
+  // anywhere in the app. Previously every new reply fired a toast on every
+  // page, which the user found intrusive.
 
   useEffect(() => {
     if (!dropdownOpen) return;

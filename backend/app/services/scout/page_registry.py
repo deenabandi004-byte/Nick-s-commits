@@ -51,21 +51,35 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
     },
     {
         "route": "/contact-search",
-        "purpose": "Find professionals at companies to network with. Enter job title, company, and location to discover contacts and generate personalized outreach emails.",
-        "inputs": ["job_title", "company", "location"],
+        "purpose": "Find professionals at companies to network with. Enter job title, company, and location to discover contacts and generate personalized outreach emails. The search box accepts a full natural-language prompt, so school context, alumni framing, year, or other profile signals can be carried via the `prompt` field.",
+        # `prompt` carries a full natural-language search ("McKinsey
+        # consultants in LA from USC") that goes straight into the search bar.
+        # Use it whenever the reasoning depends on context that does not fit
+        # the three structured fields - school, year, alumni framing. The
+        # structured fields are still accepted for simple cases.
+        "inputs": ["job_title", "company", "location", "prompt"],
         "required_inputs": [],
         "send_user_here_when": "the user wants to find people, contacts, professionals, or alumni to network with or email",
         "credit_cost": 15,
         "tier_required": None,
+        # The page honors auto_submit on the Scout navigate payload: when set,
+        # the prefill lands AND the search runs automatically.
+        "auto_submit_supported": True,
     },
     {
         "route": "/firm-search",
-        "purpose": "Discover companies and firms matching your criteria. Search by industry, location, and size.",
-        "inputs": ["industry", "location", "size"],
+        "purpose": "Discover companies and firms matching your criteria. The search box accepts a full natural-language prompt, so size qualifiers, hiring posture, alumni density, or any other framing can be carried via the `prompt` field.",
+        # `prompt` carries a full natural-language search ("AI startups in SF
+        # actively hiring", "mid-market PE firms in Chicago with USC alumni").
+        # Use it whenever the reasoning depends on context that does not fit
+        # the three structured fields. Structured fields are kept for simple
+        # terse cases.
+        "inputs": ["industry", "location", "size", "prompt"],
         "required_inputs": [],
         "send_user_here_when": "the user wants to find or research companies, firms, or employers rather than individual people",
         "credit_cost": 5,
         "tier_required": "pro",
+        "auto_submit_supported": True,
     },
     {
         "route": "/recruiter-spreadsheet",
@@ -167,11 +181,11 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         "tier_required": None,
     },
     {
-        "route": "/company-tracker",
-        "purpose": "Track companies you're targeting.",
+        "route": "/my-network/companies",
+        "purpose": "The Companies tab of My Network: the spreadsheet of every firm the user has saved from a Find Companies search. This is the canonical home for saved firms; the legacy /company-tracker standalone page was retired and now redirects here.",
         "inputs": [],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to track the companies they are targeting",
+        "send_user_here_when": "the user wants to see the companies they have saved or are tracking",
         "credit_cost": None,
         "tier_required": None,
     },
@@ -282,7 +296,9 @@ ROUTE_ALIASES: Dict[str, str] = {
     "saved contacts": "/contact-directory",
     "my contacts": "/contact-directory",
     "hiring manager tracker": "/hiring-manager-tracker",
-    "company tracker": "/company-tracker",
+    "company tracker": "/my-network/companies",
+    "companies tab": "/my-network/companies",
+    "saved companies": "/my-network/companies",
     "job board": "/job-board",
     "jobs": "/job-board",
     "job listings": "/job-board",

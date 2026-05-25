@@ -83,10 +83,70 @@ export interface ScoutNavigate {
   reasoning: string;
   confidence: number;
   user_was_imperative: boolean;
+  /** When true, the destination page populates the form AND fires its
+   *  primary action automatically once the prefill lands. Scout sets this
+   *  for complete queries on pages that opt in via the page registry
+   *  (auto_submit_supported flag). The backend silently zeroes this for
+   *  pages that have not opted in, so it is always safe to forward. */
+  auto_submit: boolean;
   credit_spending: boolean;
   credit_cost: number | null;
   missing_required: string[];
   already_on_page: boolean;
+}
+
+/** The Haiku intent classifier output (Change 7). Stamped on every turn so
+ *  the UI can render the mode pill and the panel can route skip-approve vs
+ *  approve-card based on intent rather than the model's self-rated confidence.
+ *  Mode falls back to 'chat' on classifier failure. */
+export type ScoutMode = 'chat' | 'plan' | 'do' | 'clarify';
+
+export interface ScoutIntent {
+  intent: ScoutMode;
+  confidence: number;
+  missing_fields: string[];
+  reason: string;
+}
+
+/** End-of-message CTA chip (Change 6). The single bridge from a chat answer
+ *  to a runnable Offerloop workflow. Never paired with prose like "want
+ *  me to..." - the chip is the entire bridge. */
+export interface ScoutCta {
+  label: string;
+  route: string;
+  prefill: Record<string, string>;
+  credit_spending: boolean;
+  credit_cost: number | null;
+}
+
+/** A multi-step plan rendered inline as a checklist (Change 5). Produced when
+ *  Scout's save_strategy helper fires; the strategy is persisted separately
+ *  but this view is what shows up in the conversation. */
+export interface ScoutPlanStep {
+  index: number;
+  title: string;
+  detail?: string | null;
+  route?: string | null;
+  done: boolean;
+}
+
+export interface ScoutPlan {
+  strategy_id?: string | null;
+  goal: string;
+  steps: ScoutPlanStep[];
+}
+
+/** Live tool-call pill (Change 1). One entry per helper-tool invocation in
+ *  the turn. While running it renders as a pulsing pill with `label`; on
+ *  completion it collapses to a chip showing `summary`, expandable to the
+ *  raw result. */
+export interface ScoutToolEvent {
+  id: string;
+  name: string;
+  label: string;
+  summary?: string;
+  result?: unknown;
+  done: boolean;
 }
 
 export interface ChatMessage {
@@ -108,6 +168,12 @@ export interface ChatMessage {
   // sent to the model as history, so a failed turn leaves no orphaned,
   // reply-less message at the top of the thread on reload.
   transient?: boolean;
+  // New fields surfaced by the unified Scout interaction model (May 2026).
+  mode?: ScoutMode | null;
+  intentDetail?: ScoutIntent | null;
+  cta?: ScoutCta | null;
+  plan?: ScoutPlan | null;
+  toolEvents?: ScoutToolEvent[];
 }
 
 export interface UseScoutChatReturn {
@@ -124,6 +190,17 @@ export interface UseScoutChatReturn {
   startNewChat: () => void;
   loadChat: (chatId: string) => Promise<void>;
   isLoadingChat: boolean;
+  /** Push a synthetic assistant message into the chat without a backend
+   *  round trip. Used for "the workflow just completed" follow-ups (e.g.
+   *  the contact search returned 5 results, post a celebration with a
+   *  chip back to the network). Local-only: not persisted to Firestore,
+   *  so it disappears on reload of the chat. That is intentional - the
+   *  message is contextual to the just-completed action and stale
+   *  afterwards. */
+  appendSyntheticAssistant: (
+    content: string,
+    extras?: { mode?: ScoutMode; cta?: ScoutCta | null },
+  ) => void;
 }
 
 /**
@@ -336,6 +413,52 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
                 setMessages(prev => prev.map(m =>
                   m.id === assistantId ? { ...m, intent: data.intent } : m
                 ));
+              } else if (eventType === 'mode') {
+                // Mode receipt pill (Change 7): the Haiku classifier output,
+                // emitted before the final response so the pill appears
+                // ahead of the prose and gives the user an immediate read
+                // on how Scout is going to handle the turn.
+                const m = (data?.mode as ScoutMode) || 'chat';
+                setMessages(prev => prev.map(msg =>
+                  msg.id === assistantId ? {
+                    ...msg,
+                    mode: m,
+                    intentDetail: {
+                      intent: m,
+                      confidence: typeof data?.confidence === 'number' ? data.confidence : 0,
+                      missing_fields: [],
+                      reason: typeof data?.reason === 'string' ? data.reason : '',
+                    },
+                  } : msg
+                ));
+              } else if (eventType === 'tool_start') {
+                // Live tool-call narration (Change 1): start a pill the moment
+                // we know the tool name.
+                const evt: ScoutToolEvent = {
+                  id: typeof data?.id === 'string' ? data.id : `tool-${Date.now()}`,
+                  name: typeof data?.name === 'string' ? data.name : 'tool',
+                  label: typeof data?.label === 'string' ? data.label : 'Working',
+                  done: false,
+                };
+                setMessages(prev => prev.map(msg =>
+                  msg.id === assistantId ? {
+                    ...msg,
+                    toolEvents: [...(msg.toolEvents || []), evt],
+                  } : msg
+                ));
+              } else if (eventType === 'tool_end') {
+                // Collapse the matching pill to its result chip.
+                const id = typeof data?.id === 'string' ? data.id : '';
+                const name = typeof data?.name === 'string' ? data.name : '';
+                const summary = typeof data?.summary === 'string' ? data.summary : '';
+                setMessages(prev => prev.map(msg => {
+                  if (msg.id !== assistantId) return msg;
+                  const events = (msg.toolEvents || []).map(e => {
+                    const matches = id ? e.id === id : (!e.done && e.name === name);
+                    return matches ? { ...e, summary, done: true } : e;
+                  });
+                  return { ...msg, toolEvents: events };
+                }));
               } else if (eventType === 'token') {
                 accumulatedText += data.text;
                 setMessages(prev => prev.map(m =>
@@ -358,6 +481,12 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
                     navigate: data.navigate || null,
                     isStreaming: false,
                     intent: null,
+                    // Mode may have been delivered ahead by the 'mode' event;
+                    // fall back to whatever the done payload carries.
+                    mode: (data.mode as ScoutMode) || m.mode || 'chat',
+                    intentDetail: data.intent || m.intentDetail || null,
+                    cta: data.cta || null,
+                    plan: data.plan || null,
                   } : m
                 ));
               } else if (eventType === 'error') {
@@ -437,6 +566,10 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
         tool: data.tool || 'answer',
         navigate: data.navigate || null,
         timestamp: new Date(),
+        mode: (data.mode as ScoutMode) || 'chat',
+        intentDetail: data.intent || null,
+        cta: data.cta || null,
+        plan: data.plan || null,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -509,6 +642,30 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     }
   }, [input, isLoading, messages, currentPage, user, chatId]);
 
+  /** Push a synthetic assistant message into the chat (local-only).
+   *  Useful for "the workflow you started just finished" follow-ups: a
+   *  Scout-driven contact search completes, the page dispatches
+   *  SCOUT_SEARCH_COMPLETED_EVENT, ScoutSidePanel calls this to drop a
+   *  celebration message with a chip back to the network. */
+  const appendSyntheticAssistant = useCallback((
+    content: string,
+    extras?: { mode?: ScoutMode; cta?: ScoutCta | null },
+  ) => {
+    const trimmed = (content || '').trim();
+    if (!trimmed) return;
+    setMessages(prev => [
+      ...prev,
+      {
+        id: `synthetic-${Date.now()}`,
+        role: 'assistant',
+        content: trimmed,
+        timestamp: new Date(),
+        mode: extras?.mode ?? 'chat',
+        cta: extras?.cta ?? null,
+      },
+    ]);
+  }, []);
+
   return {
     messages,
     input,
@@ -522,6 +679,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     startNewChat,
     loadChat,
     isLoadingChat,
+    appendSyntheticAssistant,
   };
 }
 

@@ -397,11 +397,17 @@ def scout_assistant_chat():
         traceback.print_exc()
         # Always return a valid response, even on error
         return jsonify({
+            "tool": "answer",
             "message": "I'm having trouble right now. Please try again!",
+            "navigate": None,
             "navigate_to": None,
             "action_buttons": [],
             "auto_populate": None,
             "chat_id": chat_id_in,
+            "mode": "chat",
+            "intent": None,
+            "cta": None,
+            "plan": None,
         }), 200  # Return 200 so frontend doesn't show error state
 
 

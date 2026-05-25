@@ -16,12 +16,24 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { X, Send, Loader2, Trash2, MessageSquarePlus, History, Lock } from 'lucide-react';
 import { useScout, SearchHelpResponse } from '@/contexts/ScoutContext';
-import { useScoutChat, formatMessage, type ScoutNavigate } from '@/hooks/useScoutChat';
+import { useScoutChat, formatMessage, type ScoutNavigate, type ScoutMode, type ScoutCta, type ScoutPlanStep } from '@/hooks/useScoutChat';
 import { SUGGESTED_QUESTIONS, SCOUT_CHIPS_BY_PAGE } from '@/data/scout-knowledge';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { toast } from '@/hooks/use-toast';
 import { ScoutApproveCard } from '@/components/ScoutApproveCard';
-import { writeScoutPrefill, SCOUT_PREFILL_EVENT } from '@/lib/scoutBridge';
+import {
+  ScoutModePill,
+  ScoutToolPill,
+  ScoutPlanChecklist,
+  ScoutCtaChip,
+  ScoutTriedFailedHint,
+} from '@/components/ScoutChatExtras';
+import {
+  writeScoutPrefill,
+  SCOUT_PREFILL_EVENT,
+  SCOUT_SEARCH_COMPLETED_EVENT,
+  type ScoutSearchCompletedDetail,
+} from '@/lib/scoutBridge';
 import ScoutWavingWhite from '@/assets/ScoutWavingWhite.mp4';
 import { BACKEND_URL } from '@/services/api';
 import {
@@ -34,28 +46,27 @@ import {
 // flow below; the Scout chat navigate path uses scoutBridge instead.
 const AUTO_POPULATE_KEY = 'scout_auto_populate';
 
-const SCOUT_LOADING_MESSAGES: Record<string, string> = {
-  contacts: 'Searching your contacts...',
-  email: 'Drafting an email...',
-  strategy: 'Building a strategy...',
-  general: 'Thinking...',
-  default: 'On it...',
-};
+// LocalStorage keys for the tried-and-failed hint (Change 3). We never want
+// to surface the same dismissed prompt twice in the same session.
+const TRIED_HINT_DISMISSED_KEY = 'scout_tried_hint_dismissed';
+const TRIED_PROMPTS_KEY = 'ofl_tried_prompts';
 
 // ---------------------------------------------------------------------------
 // Three-rule decision for a navigate tool call.
+// Mode is the new primary signal (Change 7 - the Haiku intent classifier).
+// The legacy 0.9+imperative rule remains a fallback so local dev still works
+// when CLAUDE_API_KEY is unset and Haiku falls back silently.
 // ---------------------------------------------------------------------------
 type NavAction = 'in-place' | 'skip-approve' | 'approve-card';
 
-/**
- * Decide what to do with a navigate proposal:
- *  - in-place    : user is already on the destination; fill fields, no nav.
- *  - skip-approve: explicit command, high confidence, no credit spend; just go.
- *  - approve-card: everything else (inferred, mid-confidence, or paid page).
- */
-function decideNavAction(nav: ScoutNavigate): NavAction {
+function decideNavAction(nav: ScoutNavigate, mode?: ScoutMode | null): NavAction {
   if (nav.already_on_page) return 'in-place';
-  if (nav.user_was_imperative && nav.confidence >= 0.9 && !nav.credit_spending) {
+  if (mode === 'do' && !nav.credit_spending) return 'skip-approve';
+  // Fallback: when the classifier was unavailable (no key, timeout, parse
+  // error) the mode pill defaults to 'chat' regardless of navigate intent;
+  // honor the model's own user_was_imperative + confidence so a clear
+  // command still skips the card.
+  if (!mode && nav.user_was_imperative && nav.confidence >= 0.9 && !nav.credit_spending) {
     return 'skip-approve';
   }
   return 'approve-card';
@@ -64,6 +75,37 @@ function decideNavAction(nav: ScoutNavigate): NavAction {
 function summarizePrefill(prefill: Record<string, string>): string {
   const vals = Object.values(prefill || {}).filter(Boolean);
   return vals.join(', ');
+}
+
+// Picks the most recent zero-result prompt from localStorage that has not
+// already been dismissed this session. Used by the proactive hint at the
+// top of the panel. Returns null when nothing applies.
+function pickTriedFailedHint(): string | null {
+  try {
+    const dismissed = new Set(
+      JSON.parse(sessionStorage.getItem(TRIED_HINT_DISMISSED_KEY) || '[]') as string[],
+    );
+    const tried = JSON.parse(localStorage.getItem(TRIED_PROMPTS_KEY) || '{}') as Record<string, number>;
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    const entries = Object.entries(tried)
+      .filter(([p, ts]) => ts >= cutoff && !dismissed.has(p))
+      .sort((a, b) => b[1] - a[1]);
+    return entries.length ? entries[0][0] : null;
+  } catch {
+    return null;
+  }
+}
+
+function markTriedFailedDismissed(prompt: string): void {
+  try {
+    const dismissed = new Set(
+      JSON.parse(sessionStorage.getItem(TRIED_HINT_DISMISSED_KEY) || '[]') as string[],
+    );
+    dismissed.add(prompt);
+    sessionStorage.setItem(TRIED_HINT_DISMISSED_KEY, JSON.stringify(Array.from(dismissed)));
+  } catch {
+    /* sessionStorage may be disabled */
+  }
 }
 
 export function ScoutSidePanel() {
@@ -102,6 +144,7 @@ export function ScoutSidePanel() {
     startNewChat,
     loadChat,
     isLoadingChat,
+    appendSyntheticAssistant,
   } = useScoutChat(location.pathname);
 
   // -------------------------------------------------------------------------
@@ -176,23 +219,56 @@ export function ScoutSidePanel() {
   // -------------------------------------------------------------------------
 
   /** Carry a navigate to its destination: write the bridge, then either
-   *  navigate or (if in place) tell the current page to re-read the bridge. */
+   *  navigate or (if in place) tell the current page to re-read the bridge.
+   *  Auto-fired actions (skip-approve, in-place) drop a 5s undo toast that
+   *  reverses the navigation - this is the trust hook that lets us be
+   *  aggressive about skip-approve without spooking the user (Change 4).
+   *  Approve-card actions skip the toast since they were already an explicit
+   *  confirmation. */
   const runNavigate = (nav: ScoutNavigate, prefill: Record<string, string>, action: NavAction) => {
-    writeScoutPrefill(nav.route, prefill);
+    const previousPath = location.pathname + location.search;
+    writeScoutPrefill(nav.route, prefill, { auto_submit: !!nav.auto_submit });
     const summary = summarizePrefill(prefill);
-    if (action === 'in-place') {
+    const wasInPlace = action === 'in-place';
+    if (wasInPlace) {
       window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
-      toast({
-        title: 'Scout filled in the search',
-        description: summary || undefined,
-      });
     } else {
       navigate(nav.route);
-      toast({
-        title: `Scout took you to ${nav.route}`,
-        description: summary || undefined,
-      });
     }
+    if (action === 'approve-card') return;
+    // Toast copy depends on whether the page is going to run the search
+    // automatically or just populate the form. Auto-submit means "Scout is
+    // running it for you"; non-auto means "Scout set it up, you click Search."
+    const title = nav.auto_submit
+      ? `Scout is running your search`
+      : wasInPlace
+      ? `Scout filled in ${nav.route}`
+      : `Scout took you to ${nav.route}`;
+    toast({
+      title,
+      description: summary || undefined,
+      duration: 5000,
+      action: (
+        <button
+          type="button"
+          onClick={() => {
+            // Clear the prefill envelope first so a stray re-mount of the
+            // destination page does not pick it up after we leave.
+            try {
+              sessionStorage.removeItem('scout_prefill');
+            } catch {
+              /* sessionStorage may be disabled */
+            }
+            if (!wasInPlace && previousPath) {
+              navigate(previousPath);
+            }
+          }}
+          className="text-xs font-medium text-[var(--brand-blue)] hover:underline"
+        >
+          Undo
+        </button>
+      ) as React.ReactElement,
+    });
   };
 
   // Auto-run the navigates that need no card: in-place populate and
@@ -203,18 +279,119 @@ export function ScoutSidePanel() {
     if (!last || last.role !== 'assistant' || last.isStreaming) return;
     if (last.tool !== 'navigate' || !last.navigate) return;
     if (resolvedIds.has(last.id)) return;
-    const action = decideNavAction(last.navigate);
+    const action = decideNavAction(last.navigate, last.mode);
     if (action === 'approve-card') return;
     setResolvedIds((prev) => new Set(prev).add(last.id));
     runNavigate(last.navigate, last.navigate.prefill, action);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [messages, resolvedIds]);
 
-  /** Approve-card click: the user OK'd (and maybe edited) the prefill. */
+  /** Approve-card click: the user OK'd (and maybe edited) the prefill.
+   *  runNavigate handles the bridge write + navigation; passing
+   *  'approve-card' as the action suppresses the undo toast since this was
+   *  already an explicit confirmation. */
   const handleApprove = (id: string, nav: ScoutNavigate, prefill: Record<string, string>) => {
     setResolvedIds((prev) => new Set(prev).add(id));
-    runNavigate(nav, prefill, 'skip-approve'); // a card is only shown for a real nav
+    runNavigate(nav, prefill, 'approve-card');
   };
+
+  /** CTA chip click (Change 6): single-chip bridge to a workflow. */
+  const handleCtaAction = useCallback((cta: ScoutCta) => {
+    writeScoutPrefill(cta.route, cta.prefill || {});
+    if (location.pathname === cta.route) {
+      window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
+    } else {
+      navigate(cta.route);
+    }
+    closePanel();
+  }, [location.pathname, navigate, closePanel]);
+
+  /** Plan-checklist "Do this" click (Change 5): take a single step to its
+   *  page. The step's route is the same shape as a navigate route, so we use
+   *  the bridge. */
+  const handlePlanStep = useCallback((step: ScoutPlanStep) => {
+    if (!step.route) return;
+    writeScoutPrefill(step.route, {});
+    if (location.pathname === step.route) {
+      window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
+    } else {
+      navigate(step.route);
+    }
+    closePanel();
+  }, [location.pathname, navigate, closePanel]);
+
+  // -------------------------------------------------------------------------
+  // Tried-and-failed proactive hint (Change 3)
+  // -------------------------------------------------------------------------
+  const [triedHint, setTriedHint] = useState<string | null>(null);
+  useEffect(() => {
+    if (!isPanelOpen) {
+      setTriedHint(null);
+      return;
+    }
+    // Only show the hint on a fresh empty chat where the user hasn't typed
+    // anything yet. After they engage, the hint stops being relevant.
+    if (messages.length === 0) {
+      setTriedHint(pickTriedFailedHint());
+    }
+  }, [isPanelOpen, messages.length]);
+
+  const handleHintWiden = useCallback((prompt: string) => {
+    setTriedHint(null);
+    markTriedFailedDismissed(prompt);
+    void sendMessage(`Last time I tried "${prompt}" and got nothing. Widen it for me.`);
+  }, [sendMessage]);
+
+  const handleHintDismiss = useCallback(() => {
+    if (triedHint) markTriedFailedDismissed(triedHint);
+    setTriedHint(null);
+  }, [triedHint]);
+
+  // -------------------------------------------------------------------------
+  // Post-result celebration: when a Scout-driven workflow (auto_submit
+  // contact / firm search) lands its results on the destination page, the
+  // page dispatches SCOUT_SEARCH_COMPLETED_EVENT. We listen here and post a
+  // synthetic assistant message into the chat with a CTA chip back to the
+  // results page. The chat is the orchestrator surface: even when the user
+  // is on the destination page, the celebration belongs in the chat so the
+  // round trip is visible from Scout.
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    const onCompleted = (e: Event) => {
+      const detail = (e as CustomEvent<ScoutSearchCompletedDetail>).detail;
+      if (!detail) return;
+      const count = typeof detail.count === 'number' ? detail.count : 0;
+      // Default to the My Network tab matching the source page. The
+      // unified /my-network/{tab} view is the canonical home for saved
+      // people and companies (legacy standalone trackers were retired),
+      // so anything Scout drives points there.
+      const wasContacts = detail.route === '/contact-search';
+      const resultsRoute = detail.results_route
+        || (wasContacts ? '/my-network/people' : '/my-network/companies');
+      const subject = wasContacts ? 'contact' : 'firm';
+      const subjectPlural = wasContacts ? 'contacts' : 'firms';
+      const chipLabel = wasContacts ? 'Open your network' : 'Open your companies';
+      const content = count === 0
+        ? `Search ran, no ${subjectPlural} this time. Want me to widen it?`
+        : count === 1
+        ? `Found 1 ${subject}. Pick who to reach out to or open your full list.`
+        : `Found ${count} ${subjectPlural}. Pick who to reach out to or open your full list.`;
+      appendSyntheticAssistant(content, {
+        mode: 'do',
+        cta: count === 0
+          ? null
+          : {
+              label: chipLabel,
+              route: resultsRoute,
+              prefill: {},
+              credit_spending: false,
+              credit_cost: null,
+            },
+      });
+    };
+    window.addEventListener(SCOUT_SEARCH_COMPLETED_EVENT, onCompleted);
+    return () => window.removeEventListener(SCOUT_SEARCH_COMPLETED_EVENT, onCompleted);
+  }, [appendSyntheticAssistant]);
 
   // -------------------------------------------------------------------------
   // Search help (failed-search recovery) - unchanged, legacy channel
@@ -422,7 +599,7 @@ export function ScoutSidePanel() {
                       <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
                     </div>
                     <div className="flex-1 max-w-[85%]">
-                      <div className="bg-gray-100 rounded-[3px] rounded-tl-md px-4 py-3">
+                      <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
                         <p className="text-sm text-gray-900 leading-relaxed">{searchHelpResponse.message}</p>
                       </div>
 
@@ -624,7 +801,7 @@ export function ScoutSidePanel() {
                           <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
                         </div>
                         <div className="max-w-[85%]">
-                          <div className="bg-gray-100 rounded-[3px] rounded-tl-md px-4 py-3">
+                          <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
                             <p className="text-sm text-gray-900 leading-relaxed">
                               Need help finding people, companies, or something else?
                             </p>
@@ -645,6 +822,16 @@ export function ScoutSidePanel() {
                     </div>
                   )}
 
+                  {/* Tried-and-failed proactive hint (Change 3). Only on a
+                      fresh empty chat. */}
+                  {messages.length === 0 && triedHint && (
+                    <ScoutTriedFailedHint
+                      triedPrompt={triedHint}
+                      onWiden={handleHintWiden}
+                      onDismiss={handleHintDismiss}
+                    />
+                  )}
+
                   {/* Messages */}
                   {messages.length > 0 && (
                     <div className="space-y-4">
@@ -653,7 +840,10 @@ export function ScoutSidePanel() {
                           message.role === 'assistant' &&
                           message.tool === 'navigate' &&
                           !!message.navigate &&
-                          decideNavAction(message.navigate) === 'approve-card';
+                          decideNavAction(message.navigate, message.mode) === 'approve-card';
+                        const showModePill = message.role === 'assistant' && !!message.mode && !message.isStreaming;
+                        const liveEvents = (message.toolEvents || []).filter(e => !e.done);
+                        const doneEvents = (message.toolEvents || []).filter(e => e.done);
                         return (
                           <div
                             key={message.id}
@@ -664,14 +854,55 @@ export function ScoutSidePanel() {
                                 <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
                                   <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
                                 </div>
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1.5">
+                                  {/* Mode receipt pill above the response */}
+                                  {showModePill && (
+                                    <div>
+                                      <ScoutModePill mode={message.mode!} />
+                                    </div>
+                                  )}
+                                  {/* Done tool pills (Change 1) - sit above
+                                      the prose so the user sees what Scout
+                                      looked at before reading the answer. */}
+                                  {doneEvents.length > 0 && (
+                                    <div className="flex flex-col gap-1">
+                                      {doneEvents.map(evt => (
+                                        <ScoutToolPill key={evt.id} event={evt} />
+                                      ))}
+                                    </div>
+                                  )}
                                   {message.content && (
-                                    <div className="bg-gray-100 rounded-[3px] rounded-tl-md px-4 py-3">
+                                    <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
                                       <div
                                         className="text-sm text-gray-900 leading-relaxed"
                                         dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
                                       />
                                     </div>
+                                  )}
+                                  {/* Live tool pills (still running) - shown
+                                      below the prose so they animate without
+                                      pushing earlier content up. */}
+                                  {liveEvents.length > 0 && (
+                                    <div className="flex flex-col gap-1">
+                                      {liveEvents.map(evt => (
+                                        <ScoutToolPill key={evt.id} event={evt} />
+                                      ))}
+                                    </div>
+                                  )}
+                                  {/* Plan checklist (Change 5) */}
+                                  {message.plan && (
+                                    <ScoutPlanChecklist
+                                      plan={message.plan}
+                                      onStepAction={handlePlanStep}
+                                    />
+                                  )}
+                                  {/* CTA chip (Change 6) - single bridge,
+                                      never paragraphed prose. */}
+                                  {message.cta && (
+                                    <ScoutCtaChip
+                                      cta={message.cta}
+                                      onAction={handleCtaAction}
+                                    />
                                   )}
                                   {showCard && message.navigate && (
                                     <ScoutApproveCard
@@ -684,7 +915,7 @@ export function ScoutSidePanel() {
                               </div>
                             ) : (
                               <div className="max-w-[85%]">
-                                <div className="bg-[#0F172A] text-white rounded-[3px] rounded-tr-md px-4 py-3">
+                                <div className="bg-[var(--brand-blue)] text-white rounded-3xl rounded-br-md px-4 py-2.5">
                                   <p className="text-sm leading-relaxed">{message.content}</p>
                                 </div>
                               </div>
@@ -693,23 +924,20 @@ export function ScoutSidePanel() {
                         );
                       })}
 
-                      {/* Loading indicator */}
-                      {isLoading && !messages.some((m) => m.isStreaming && m.content) && (
+                      {/* Loading indicator (Change 1). The old cycling
+                          SCOUT_LOADING_MESSAGES is gone: live tool pills
+                          render inline on each assistant message instead.
+                          We still show a minimal "thinking" dot while we
+                          wait for the very first event of the turn so the
+                          panel does not feel frozen. */}
+                      {isLoading && !messages.some((m) => m.isStreaming && (m.content || (m.toolEvents && m.toolEvents.length > 0))) && (
                         <div className="flex gap-3">
                           <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
                             <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
                           </div>
-                          <div className="bg-gray-100 rounded-[3px] rounded-tl-md px-4 py-3">
-                            <div className="flex items-center gap-2 text-gray-500">
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                              <span className="text-sm">
-                                {(() => {
-                                  const streamingMsg = messages.find((m) => m.isStreaming);
-                                  const intent = streamingMsg?.intent || 'default';
-                                  return SCOUT_LOADING_MESSAGES[intent] || SCOUT_LOADING_MESSAGES.default;
-                                })()}
-                              </span>
-                            </div>
+                          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-border)] bg-[var(--brand-bg-surface)] px-2.5 py-1 text-xs text-[var(--brand-ink-secondary)]">
+                            <Loader2 className="h-3 w-3 animate-spin text-[var(--brand-blue)]" />
+                            <span>Thinking…</span>
                           </div>
                         </div>
                       )}

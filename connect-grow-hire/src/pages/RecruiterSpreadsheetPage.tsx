@@ -433,8 +433,13 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
             // Trigger refresh of RecruiterSpreadsheet component
             setRefreshKey(prev => prev + 1);
 
-            // Switch to tracker tab to show the saved hiring managers
-            setActiveTab('hiring-manager-tracker');
+            // In embedded (Find) mode, the spreadsheet lives on My Network so
+            // jump there. Standalone keeps the internal tracker-tab switch.
+            if (embedded) {
+              navigate('/my-network/managers');
+            } else {
+              setActiveTab('hiring-manager-tracker');
+            }
           } else {
             console.log('⚠️ All hiring managers were duplicates, nothing saved');
           }
@@ -492,7 +497,11 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
   const handleViewResults = () => {
     setSearchComplete(false);
-    setActiveTab('hiring-manager-tracker');
+    if (embedded) {
+      navigate('/my-network/managers');
+    } else {
+      setActiveTab('hiring-manager-tracker');
+    }
   };
 
   const resetForm = () => {
@@ -1053,7 +1062,8 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                         </div>
                       )}
 
-                      {/* CTA button - matches People/Companies style */}
+                      {/* CTA button - matches the People page Search button:
+                          faint-blue idle state, brand-blue active. */}
                       <button
                         ref={originalButtonRef}
                         onClick={handleFindHiringManagers}
@@ -1062,13 +1072,13 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                           width: '100%',
                           height: 52,
                           borderRadius: 12,
-                          background: isSearching ? 'var(--warm-border, #E2E8F0)'
-                            : !canSearch ? 'transparent'
-                            : 'var(--ink, #1A1D23)',
+                          background: isSearching ? 'var(--warm-border, #E5E7EB)'
+                            : !canSearch ? 'var(--brand-blue-subtle, rgba(59,130,246,0.04))'
+                            : 'var(--brand-blue, #3B82F6)',
                           color: isSearching ? 'var(--warm-ink-tertiary, #94A3B8)'
-                            : !canSearch ? '#64748B'
-                            : 'var(--paper, #FFFFFF)',
-                          border: !canSearch && !isSearching ? '1.5px solid #D5D0C9' : '1.5px solid transparent',
+                            : !canSearch ? 'var(--brand-blue, #3B82F6)'
+                            : '#FFFFFF',
+                          border: !canSearch && !isSearching ? '1.5px solid var(--brand-blue, #3B82F6)' : '1.5px solid transparent',
                           fontSize: 15,
                           fontWeight: 600,
                           cursor: !canSearch ? 'default' : (isSearching ? 'not-allowed' : 'pointer'),
@@ -1078,6 +1088,20 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                           gap: 8,
                           transition: 'all .15s',
                           fontFamily: 'inherit',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (isSearching) return;
+                          (e.currentTarget as HTMLButtonElement).style.background = !canSearch
+                            ? 'var(--brand-blue-soft, rgba(59,130,246,0.10))'
+                            : 'var(--brand-blue-hover, #2563EB)';
+                          (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 2px 8px rgba(59,130,246,0.18)';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (isSearching) return;
+                          (e.currentTarget as HTMLButtonElement).style.background = !canSearch
+                            ? 'var(--brand-blue-subtle, rgba(59,130,246,0.04))'
+                            : 'var(--brand-blue, #3B82F6)';
+                          (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
                         }}
                       >
                         {isSearching ? (
@@ -1141,7 +1165,8 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                     </div>
                   </TabsContent>
 
-                  {/* TAB 2: Hiring Manager Tracker */}
+                  {/* TAB 2: Hiring Manager Tracker - hidden in embedded (Find) mode; live spreadsheet lives on My Network */}
+                  {!embedded && (
                   <TabsContent value="hiring-manager-tracker" className="mt-0">
                     <div className="animate-fadeInUp" style={{ animationDelay: '200ms', maxWidth: '900px', margin: '0 auto' }}>
                       <div className="py-4">
@@ -1149,6 +1174,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                       </div>
                     </div>
                   </TabsContent>
+                  )}
                 </Tabs>
               </div>
             </div>

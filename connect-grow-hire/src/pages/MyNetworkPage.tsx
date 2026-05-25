@@ -12,7 +12,7 @@ import {
   Download,
   ChevronUp,
   ChevronDown,
-  ChevronRight,
+  ChevronLeft,
   Search as SearchIcon,
   Mail,
   ExternalLink,
@@ -22,9 +22,189 @@ import {
   StickyNote,
 } from "lucide-react";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
-import { firebaseApi } from "@/services/firebaseApi";
+import { firebaseApi, type ManualFirm } from "@/services/firebaseApi";
+import { apiService, type Firm } from "@/services/api";
 import { getCompanyLogoUrl } from "@/utils/suggestionChips";
 import { CompanyLogo } from "@/components/CompanyLogo";
+import { toast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
+// LinkedIn URLs from PDL and contact imports often arrive without a scheme
+// (e.g. "linkedin.com/in/foo"). A schemeless href is treated as a relative
+// path by the browser, so the "view" link silently does nothing. Normalize
+// to an absolute https URL before rendering.
+function normalizeLinkedInUrl(url?: string): string {
+  if (!url) return "";
+  const trimmed = url.trim();
+  if (!trimmed) return "";
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  if (trimmed.startsWith("linkedin.com") || trimmed.startsWith("www.linkedin.com")) return `https://${trimmed}`;
+  if (trimmed.startsWith("/in/")) return `https://www.linkedin.com${trimmed}`;
+  if (trimmed.includes("linkedin") && trimmed.includes("/in/")) {
+    const match = trimmed.match(/\/in\/[^\/\s]+/);
+    if (match) return `https://www.linkedin.com${match[0]}`;
+  }
+  return `https://www.linkedin.com/in/${trimmed}`;
+}
+
+// Renders a list of company groups with a list/grid view toggle and a
+// grid-mode drill-in. Used by both People and Hiring Manager tabs when
+// "Group by company" is on. Each group renders inside its own bordered
+// rounded card; the inner table is supplied by the caller via renderTable.
+interface CompanyGroup<T> {
+  company: string;
+  items: T[];
+}
+
+function GroupedShell<T>({
+  groups,
+  renderTable,
+  viewMode,
+}: {
+  groups: CompanyGroup<T>[];
+  renderTable: (group: CompanyGroup<T>) => React.ReactNode;
+  viewMode: "list" | "grid";
+}) {
+  const [focused, setFocused] = useState<string | null>(null);
+
+  // Reset drill-in whenever the parent flips view modes so we don't strand
+  // the user on a focused company card after switching to List.
+  useEffect(() => { setFocused(null); }, [viewMode]);
+
+  const focusedGroup = focused ? groups.find((g) => g.company === focused) : null;
+
+  const BackBar = focusedGroup && viewMode === "grid" ? (
+    <div className="mb-3">
+      <button
+        type="button"
+        onClick={() => setFocused(null)}
+        className="inline-flex items-center gap-1 text-[12px] text-ink-3 hover:text-ink-2"
+      >
+        <ChevronLeft className="h-3.5 w-3.5" />
+        Back to companies
+      </button>
+    </div>
+  ) : null;
+
+  const CompanyCard: React.FC<{ group: CompanyGroup<T> }> = ({ group }) => (
+    <div className="border border-line rounded-st-xl overflow-hidden bg-white">
+      <div
+        className="flex items-center gap-2.5 border-b border-line-2"
+        style={{ padding: "10px 16px", background: "var(--paper-2, #FAFBFF)" }}
+      >
+        {group.company !== "(no company)" && (
+          <CompanyLogo company={group.company} size={22} rounded={5} />
+        )}
+        <span
+          style={{
+            fontFamily: "'JetBrains Mono', monospace",
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            color: "var(--ink, #0F172A)",
+          }}
+        >
+          {group.company === "(no company)" ? "NO COMPANY" : group.company}
+        </span>
+        <span className="font-mono text-[10px] text-ink-3 ml-1">
+          {group.items.length}
+        </span>
+      </div>
+      {renderTable(group)}
+    </div>
+  );
+
+  if (groups.length === 0) {
+    return (
+      <div className="border border-line rounded-st-xl bg-white py-16 text-center">
+        <p className="font-serif italic text-ink-3 text-[15px]">
+          Nothing to group yet. Save some contacts and they'll bucket up here.
+        </p>
+      </div>
+    );
+  }
+
+  // Grid mode, focused: single company card with a back affordance above.
+  if (viewMode === "grid" && focusedGroup) {
+    return (
+      <>
+        {BackBar}
+        <CompanyCard group={focusedGroup} />
+      </>
+    );
+  }
+
+  // Grid mode, overview: tile of clickable company cards.
+  if (viewMode === "grid") {
+    return (
+      <>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+            gap: 12,
+          }}
+        >
+          {groups.map((g) => (
+            <button
+              key={g.company}
+              type="button"
+              onClick={() => setFocused(g.company)}
+              className="border border-line rounded-st-xl bg-white hover:bg-paper-2 transition-colors text-left"
+              style={{ padding: "14px 14px 12px", cursor: "pointer", fontFamily: "inherit" }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(91,119,153,0.08)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "white"; }}
+            >
+              <div className="flex items-center gap-2.5 mb-2">
+                {g.company !== "(no company)" && (
+                  <CompanyLogo company={g.company} size={32} rounded={6} />
+                )}
+              </div>
+              <div
+                style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: 11.5,
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: "var(--ink, #0F172A)",
+                  marginBottom: 4,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}
+              >
+                {g.company === "(no company)" ? "NO COMPANY" : g.company}
+              </div>
+              <div className="font-mono text-[10.5px] text-ink-3">
+                {g.items.length} {g.items.length === 1 ? "contact" : "contacts"}
+              </div>
+            </button>
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  // List mode: stack of bordered cards, one per company.
+  return (
+    <div className="flex flex-col gap-3">
+      {groups.map((g) => (
+        <CompanyCard key={g.company} group={g} />
+      ))}
+    </div>
+  );
+}
 
 type TabId = "people" | "companies" | "managers";
 
@@ -50,17 +230,162 @@ interface PersonRow {
   warmthTier?: string;
   isAlumni?: boolean;
   notes?: string;
+  createdAt?: string;
 }
 
 type SortCol = "name" | "company" | "role" | "school" | null;
+
+// Compact set of styles shared by every inline-add cell. Keeps the editable
+// row visually distinct from data rows (white pill on tinted background) so
+// the user knows the row is in draft state.
+const ADD_INPUT_STYLE: React.CSSProperties = {
+  width: "100%",
+  fontSize: 12.5,
+  padding: "5px 7px",
+  border: "1px solid var(--line, #E2E8F0)",
+  borderRadius: 4,
+  background: "white",
+  outline: "none",
+  fontFamily: "inherit",
+  color: "var(--ink, #0F172A)",
+};
+
+const ADD_ROW_BG = "rgba(91,119,153,0.06)";
+
+const AddPersonRow: React.FC<{
+  cols: string;
+  onCancel: () => void;
+  onSave: (draft: {
+    name: string; email?: string; linkedinUrl?: string;
+    company?: string; role?: string; school?: string;
+  }) => Promise<void>;
+}> = ({ cols, onCancel, onSave }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [linkedinUrl, setLinkedin] = useState("");
+  const [company, setCompany] = useState("");
+  const [role, setRole] = useState("");
+  const [school, setSchool] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try {
+      await onSave({ name, email, linkedinUrl, company, role, school });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") { e.preventDefault(); handleSave(); }
+    if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+  };
+
+  return (
+    <div
+      className="grid items-center px-4 py-2.5 border-b border-line-2"
+      style={{ gridTemplateColumns: cols, background: ADD_ROW_BG }}
+      onKeyDown={handleKey}
+    >
+      <div /> {/* checkbox slot */}
+      <div /> {/* logo slot */}
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Full name"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+        placeholder="Company"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={role}
+        onChange={(e) => setRole(e.target.value)}
+        placeholder="Role / title"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={school}
+        onChange={(e) => setSchool(e.target.value)}
+        placeholder="School"
+        style={ADD_INPUT_STYLE}
+      />
+      <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="text-[11px] px-2 py-1 text-ink-3 hover:text-ink-2"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!name.trim() || saving}
+          className="text-[11px] px-2.5 py-1 rounded-st-sm bg-ink text-white font-medium disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+      {/* Secondary line for email + LinkedIn URL - tucked under the primary
+          inputs so the row stays compact. Spans from the name column to the
+          end of the grid. */}
+      <div
+        style={{
+          gridColumn: "3 / -1",
+          marginTop: 6,
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 6,
+        }}
+      >
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="Email (optional)"
+          style={ADD_INPUT_STYLE}
+        />
+        <input
+          value={linkedinUrl}
+          onChange={(e) => setLinkedin(e.target.value)}
+          placeholder="LinkedIn URL (optional)"
+          style={ADD_INPUT_STYLE}
+        />
+      </div>
+    </div>
+  );
+};
 
 interface PeopleTableProps {
   rows: PersonRow[];
   query: string;
   companyFilter: string | null;
   groupByCompany: boolean;
+  groupedView: "list" | "grid";
+  recencyDir: "newest" | "oldest";
+  highlightSince: number;
   onDelete?: (id: string) => void;
   onSaveNote?: (id: string, note: string) => void;
+  // Selection is controlled by the parent so the bulk-delete pill can live
+  // next to "Add person" in the filter bar instead of inside the table.
+  selected: Set<string>;
+  onSelectionChange: (next: Set<string>) => void;
+  // Inline-add row controls: when addingMode is true the table renders a
+  // blank editable row above the data; onSaveNew is called on save with the
+  // collected fields; onCancelAdd dismisses the row without saving.
+  addingMode?: boolean;
+  onCancelAdd?: () => void;
+  onSaveNew?: (draft: {
+    name: string; email?: string; linkedinUrl?: string;
+    company?: string; role?: string; school?: string;
+  }) => Promise<void>;
 }
 
 const PeopleTable: React.FC<PeopleTableProps> = ({
@@ -68,13 +393,19 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
   query,
   companyFilter,
   groupByCompany,
+  groupedView,
+  recencyDir,
+  highlightSince,
   onDelete,
   onSaveNote,
+  selected,
+  onSelectionChange,
+  addingMode,
+  onCancelAdd,
+  onSaveNew,
 }) => {
   const [sortCol, setSortCol] = useState<SortCol>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [collapsedCompanies, setCollapsedCompanies] = useState<Set<string>>(new Set());
   // Track which row's note panel is open + the in-flight draft text. Drafts
   // commit to Firestore via onSaveNote on blur or panel-close so we don't
   // hammer the network on every keystroke.
@@ -98,11 +429,9 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
   };
 
   const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    const next = new Set(selected);
+    next.has(id) ? next.delete(id) : next.add(id);
+    onSelectionChange(next);
   };
 
   // Apply search query + company filter + sort
@@ -126,13 +455,23 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
         const bv = ((b as any)[key] || "").toString().toLowerCase();
         return av.localeCompare(bv) * dirMul;
       });
+    } else {
+      // Default order: most recently added contacts first (or oldest first
+      // if the user flipped the sort dropdown). Missing createdAt sinks to
+      // the bottom rather than jumbling with newer rows.
+      const dirMul = recencyDir === "oldest" ? -1 : 1;
+      out = [...out].sort((a, b) => {
+        const at = a.createdAt ? Date.parse(a.createdAt) : 0;
+        const bt = b.createdAt ? Date.parse(b.createdAt) : 0;
+        return (bt - at) * dirMul;
+      });
     }
     return out;
-  }, [rows, query, companyFilter, sortCol, sortDir]);
+  }, [rows, query, companyFilter, sortCol, sortDir, recencyDir]);
 
   const toggleAll = () => {
-    if (selected.size === filtered.length && filtered.length > 0) setSelected(new Set());
-    else setSelected(new Set(filtered.map((r) => r.id)));
+    if (selected.size === filtered.length && filtered.length > 0) onSelectionChange(new Set());
+    else onSelectionChange(new Set(filtered.map((r) => r.id)));
   };
 
   // Group rows by company if enabled
@@ -157,28 +496,33 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
     );
   };
 
-  // Column widths - 7 columns (Status also removed; not enough signal yet to
-  // justify the column). Each cell uses overflow truncation so long values
-  // like "investment banking analyst" don't bleed into adjacent cells.
-  const COLS = "28px minmax(180px, 1.5fr) 64px minmax(140px, 1.1fr) minmax(170px, 1.25fr) minmax(150px, 1.1fr) 76px";
+  // Column widths - 7 columns: checkbox | company logo | name+linkedin |
+  // company text | role | school | actions. The logo sits in its own column
+  // right after the checkbox so the row visually echoes the Companies tab.
+  // Each cell uses overflow truncation so long values don't bleed into
+  // adjacent cells.
+  const COLS = "28px 36px minmax(180px, 1.5fr) minmax(140px, 1.1fr) minmax(170px, 1.25fr) minmax(150px, 1.1fr) 76px";
 
   const HeaderRow = (
     <div
-      className="grid items-center px-4 py-2.5 border-b border-line"
-      style={{ gridTemplateColumns: COLS, background: "var(--paper-2, #FAFBFF)" }}
+      className="grid items-center border-b border-line"
+      style={{
+        gridTemplateColumns: COLS,
+        gap: 14,
+        padding: "10px 16px",
+        background: "var(--paper-2, #FAFBFF)",
+      }}
     >
       <Checkbox
         checked={selected.size === filtered.length && filtered.length > 0}
         onCheckedChange={toggleAll}
       />
+      <span /> {/* logo column - no header label */}
       <button className="text-left" onClick={() => toggleSort("name")}>
         <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">
           Name<SortIcon col="name" />
         </span>
       </button>
-      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">
-        LinkedIn
-      </span>
       <button className="text-left" onClick={() => toggleSort("company")}>
         <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">
           Company<SortIcon col="company" />
@@ -200,6 +544,15 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
     </div>
   );
 
+  // Rows created after the last visit get a faint blue tint so the user can
+  // spot what's new at a glance. The tint replaces the normal alternating
+  // background for that row.
+  const rowBaseBg = (row: PersonRow, idx: number): string => {
+    const ts = row.createdAt ? Date.parse(row.createdAt) : 0;
+    if (highlightSince && ts > highlightSince) return "rgba(59,130,246,0.08)";
+    return idx % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white";
+  };
+
   const renderRow = (row: PersonRow, isLast: boolean, idx: number) => {
     const noteOpen = openNoteId === row.id;
     const draftValue = noteDrafts[row.id] ?? row.notes ?? "";
@@ -207,38 +560,58 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
     return (
       <React.Fragment key={row.id}>
         <div
-      className={`grid items-center px-4 py-2.5 transition-colors ${
+      className={`grid items-center transition-colors ${
         isLast && !noteOpen ? "" : "border-b border-line-2"
-      } ${idx % 2 === 1 ? "bg-paper-2/30" : ""} hover:bg-brand/[0.03]`}
-      style={{ gridTemplateColumns: COLS }}
+      }`}
+      style={{
+        gridTemplateColumns: COLS,
+        gap: 14,
+        padding: "12px 16px",
+        background: rowBaseBg(row, idx),
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(91,119,153,0.08)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = rowBaseBg(row, idx); }}
     >
       <Checkbox
         checked={selected.has(row.id)}
         onCheckedChange={() => toggleSelect(row.id)}
       />
-      <div style={{ minWidth: 0 }}>
-        <div className="text-[13px] font-medium text-ink truncate">{row.name}</div>
-        {row.email && (
-          <div className="font-mono text-[10.5px] text-ink-3 truncate">{row.email}</div>
-        )}
-      </div>
-      <div>
-        {row.linkedinUrl ? (
-          <a
-            href={row.linkedinUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] text-[#64748B] hover:underline inline-flex items-center gap-1"
-          >
-            <ExternalLink className="h-3 w-3" /> view
-          </a>
+      <div className="flex items-center justify-center">
+        {row.company ? (
+          <CompanyLogo company={row.company} size={28} rounded={6} />
         ) : (
-          <span className="text-ink-3"> - </span>
+          <div
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 6,
+              background: "var(--paper-2, #FAFBFF)",
+              border: "1px dashed var(--line, #E2E8F0)",
+            }}
+          />
         )}
       </div>
-      <div className="flex items-center gap-2 text-[12px] text-ink-2" style={{ minWidth: 0 }}>
-        {row.company ? <CompanyLogo company={row.company} size={18} rounded={4} /> : null}
-        <span className="truncate">{row.company || " - "}</span>
+      <div style={{ minWidth: 0 }}>
+        <div className="truncate" style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink, #0F172A)" }}>{row.name}</div>
+        <div className="flex items-center gap-2 mt-0.5">
+          {row.email && (
+            <span className="font-mono text-[10.5px] text-ink-3 truncate">{row.email}</span>
+          )}
+          {row.linkedinUrl && (
+            <a
+              href={normalizeLinkedInUrl(row.linkedinUrl)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-[11px] text-[#64748B] hover:underline inline-flex items-center gap-1 shrink-0"
+            >
+              <ExternalLink className="h-3 w-3" /> view
+            </a>
+          )}
+        </div>
+      </div>
+      <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
+        {row.company || " - "}
       </div>
       <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>{row.role || " - "}</div>
       <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
@@ -366,50 +739,43 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
     );
   };
 
+  const AddRow = addingMode && onSaveNew ? (
+    <AddPersonRow
+      cols={COLS}
+      onCancel={() => onCancelAdd?.()}
+      onSave={onSaveNew}
+    />
+  ) : null;
+
+  // Grouped view renders one bordered card per company (via GroupedShell).
+  // Each card's body is HeaderRow + that company's rows; the outer table
+  // wrapper is supplied by GroupedShell's CompanyCard.
+  if (groupByCompany && grouped) {
+    return (
+      <GroupedShell
+        groups={grouped.map(([company, items]) => ({ company, items }))}
+        viewMode={groupedView}
+        renderTable={(group) => (
+          <>
+            {HeaderRow}
+            {group.items.map((row, i) => renderRow(row, i === group.items.length - 1, i))}
+          </>
+        )}
+      />
+    );
+  }
+
   return (
     <div className="border border-line rounded-st-xl overflow-hidden bg-white">
       {HeaderRow}
-      {filtered.length === 0 ? (
+      {AddRow}
+      {filtered.length === 0 && !addingMode ? (
         <div className="py-16 text-center">
           <p className="font-serif italic text-ink-3 text-[15px]">
             No matches. Try clearing the filter or importing a CSV.
           </p>
         </div>
-      ) : groupByCompany && grouped ? (
-        grouped.map(([company, items]) => {
-          const collapsed = collapsedCompanies.has(company);
-          return (
-            <div key={company}>
-              <button
-                type="button"
-                onClick={() => {
-                  setCollapsedCompanies((prev) => {
-                    const next = new Set(prev);
-                    next.has(company) ? next.delete(company) : next.add(company);
-                    return next;
-                  });
-                }}
-                className="w-full flex items-center gap-2 px-4 py-2 bg-paper-2/60 border-b border-line-2 text-left hover:bg-paper-2"
-              >
-                {collapsed ? (
-                  <ChevronRight className="h-3.5 w-3.5 text-ink-3" />
-                ) : (
-                  <ChevronDown className="h-3.5 w-3.5 text-ink-3" />
-                )}
-                {company !== "(no company)" && (
-                  <CompanyLogo company={company} size={18} rounded={4} />
-                )}
-                <span className="text-[13px] font-medium text-ink">{company}</span>
-                <span className="font-mono text-[10px] text-ink-3 ml-1">
-                  {items.length}
-                </span>
-              </button>
-              {!collapsed &&
-                items.map((row, i) => renderRow(row, i === items.length - 1, i))}
-            </div>
-          );
-        })
-      ) : (
+      ) : filtered.length === 0 && addingMode ? null : (
         filtered.map((row, i) => renderRow(row, i === filtered.length - 1, i))
       )}
     </div>
@@ -426,6 +792,14 @@ interface CompanyRow {
   hq?: string;
   alumni?: number;
   size?: string;
+  // Set only when this row corresponds to a user-saved manual_firms doc.
+  // The Companies list is a merged view (saved people + saved firms + manual
+  // entries + exploring), so most rows are derived and have nothing to delete
+  // server-side. Only rows with a manualFirmId can participate in bulk-delete.
+  manualFirmId?: string;
+  // Most recent underlying timestamp (max of contact.createdAt, manual firm
+  // createdAt, exploring ts) - used for recency highlight in My Network.
+  recencyTs?: number;
 }
 
 // Soft-blue color tokens used across both the list and grid views - picked to
@@ -496,10 +870,97 @@ const ContactAvatar: React.FC<ContactAvatarProps> = ({ name, size }) => {
   );
 };
 
+const COMPANIES_LIST_COLS =
+  "28px 44px minmax(180px, 1.5fr) 110px minmax(160px, 1.2fr) minmax(180px, 1.2fr) 130px";
+
+const AddCompanyRow: React.FC<{
+  onCancel: () => void;
+  onSave: (draft: { name: string; industry?: string; hq?: string }) => Promise<void>;
+}> = ({ onCancel, onSave }) => {
+  const [name, setName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [hq, setHq] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try { await onSave({ name, industry, hq }); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div
+      className="grid items-center border-b border-line-2"
+      style={{
+        gridTemplateColumns: COMPANIES_LIST_COLS,
+        gap: 14,
+        padding: "12px 16px",
+        background: ADD_ROW_BG,
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") { e.preventDefault(); handleSave(); }
+        if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+      }}
+    >
+      <div /> {/* checkbox slot */}
+      <div /> {/* logo slot */}
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Company name"
+        style={ADD_INPUT_STYLE}
+      />
+      <div /> {/* contacts badge slot */}
+      <input
+        value={industry}
+        onChange={(e) => setIndustry(e.target.value)}
+        placeholder="Industry"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={hq}
+        onChange={(e) => setHq(e.target.value)}
+        placeholder="HQ / location"
+        style={ADD_INPUT_STYLE}
+      />
+      <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="text-[11px] px-2 py-1 text-ink-3 hover:text-ink-2"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!name.trim() || saving}
+          className="text-[11px] px-2.5 py-1 rounded-st-sm bg-ink text-white font-medium disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const CompaniesTable: React.FC<{
   rows: CompanyRow[];
   onSelectCompany?: (name: string) => void;
-}> = ({ rows, onSelectCompany }) => {
+  onFindPeople?: (row: CompanyRow) => void;
+  // Bulk-selection is only enabled for rows backed by a manual_firms doc -
+  // the other rows are derived from saved people / exploring localStorage
+  // entries and have nothing to delete server-side.
+  selected: Set<string>;
+  onSelectionChange: (next: Set<string>) => void;
+  highlightSince?: number;
+  addingMode?: boolean;
+  onCancelAdd?: () => void;
+  onSaveNew?: (draft: { name: string; industry?: string; hq?: string }) => Promise<void>;
+}> = ({ rows, onSelectCompany, onFindPeople, selected, onSelectionChange, highlightSince = 0, addingMode, onCancelAdd, onSaveNew }) => {
   // Companies sub-tab - defaults to list view (denser, scannable, matches the
   // rest of the network), with a toggle for grid view (visual cards).
   // Persists the user's choice in localStorage so it survives reloads.
@@ -556,7 +1017,7 @@ const CompaniesTable: React.FC<{
     </div>
   );
 
-  if (rows.length === 0) {
+  if (rows.length === 0 && !addingMode) {
     return (
       <div className="border border-line rounded-st-xl bg-white py-16 text-center">
         <p className="font-serif italic text-ink-3 text-[15px]">
@@ -566,45 +1027,94 @@ const CompaniesTable: React.FC<{
     );
   }
 
+  const addRow = addingMode && onSaveNew ? (
+    <AddCompanyRow onCancel={() => onCancelAdd?.()} onSave={onSaveNew} />
+  ) : null;
+
   // ── LIST VIEW (default) ──────────────────────────────────────────────────
   if (view === "list") {
+    const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
+    const toggleAll = () => {
+      if (allSelected) onSelectionChange(new Set());
+      else onSelectionChange(new Set(rows.map((r) => r.id)));
+    };
     return (
       <>
         {ViewToggle}
         <div
           className="border border-line rounded-st-xl overflow-hidden bg-white"
         >
+          <div
+            className="grid items-center border-b border-line"
+            style={{
+              gridTemplateColumns: COMPANIES_LIST_COLS,
+              gap: 14,
+              padding: "10px 16px",
+              background: "var(--paper-2, #FAFBFF)",
+            }}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox checked={allSelected} onCheckedChange={toggleAll} />
+            </div>
+            <span /> {/* logo column */}
+            <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Company</span>
+            <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Contacts</span>
+            <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Industry</span>
+            <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">HQ</span>
+            <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3 text-right">Actions</span>
+          </div>
+          {addRow}
           {rows.map((row, i) => {
             const isExploring = row.industry === "exploring";
             const count = row.alumni ?? 0;
             const isLast = i === rows.length - 1;
+            const rowClickable = !!onSelectCompany;
             return (
-              <button
+              <div
                 key={row.id}
-                type="button"
+                role={rowClickable ? "button" : undefined}
+                tabIndex={rowClickable ? 0 : undefined}
                 onClick={() => onSelectCompany?.(row.name)}
-                disabled={!onSelectCompany}
+                onKeyDown={(e) => {
+                  if (!rowClickable) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelectCompany?.(row.name);
+                  }
+                }}
                 className={`w-full grid items-center transition-colors text-left ${
                   isLast ? "" : "border-b border-line-2"
                 }`}
                 style={{
-                  gridTemplateColumns:
-                    "44px minmax(180px, 1.5fr) 110px minmax(160px, 1.2fr) minmax(180px, 1.2fr)",
+                  gridTemplateColumns: COMPANIES_LIST_COLS,
                   gap: 14,
                   padding: "12px 16px",
-                  background: i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white",
-                  cursor: onSelectCompany ? "pointer" : "default",
+                  background: (highlightSince && (row.recencyTs || 0) > highlightSince)
+                    ? "rgba(59,130,246,0.08)"
+                    : (i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white"),
+                  cursor: rowClickable ? "pointer" : "default",
                   fontFamily: "inherit",
                 }}
                 onMouseEnter={(e) => {
-                  if (!onSelectCompany) return;
+                  if (!rowClickable) return;
                   e.currentTarget.style.background = COMPANY_BLUE_TINT;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background =
-                    i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white";
+                  e.currentTarget.style.background = (highlightSince && (row.recencyTs || 0) > highlightSince)
+                    ? "rgba(59,130,246,0.08)"
+                    : (i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white");
                 }}
               >
+                <div onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selected.has(row.id)}
+                    onCheckedChange={() => {
+                      const next = new Set(selected);
+                      next.has(row.id) ? next.delete(row.id) : next.add(row.id);
+                      onSelectionChange(next);
+                    }}
+                  />
+                </div>
                 <ContactAvatar name={row.name} size={32} />
                 <div style={{ minWidth: 0 }}>
                   <div
@@ -666,7 +1176,42 @@ const CompaniesTable: React.FC<{
                 >
                   {row.hq || " - "}
                 </div>
-              </button>
+                <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                  {onFindPeople && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onFindPeople(row);
+                      }}
+                      title={`Find people at ${row.name}`}
+                      style={{
+                        fontSize: 11.5,
+                        fontWeight: 500,
+                        fontFamily: "inherit",
+                        color: COMPANY_BLUE,
+                        background: "white",
+                        border: `1px solid ${COMPANY_BLUE}`,
+                        borderRadius: 4,
+                        padding: "5px 10px",
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                        transition: "background .12s, color .12s",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = COMPANY_BLUE;
+                        e.currentTarget.style.color = "white";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "white";
+                        e.currentTarget.style.color = COMPANY_BLUE;
+                      }}
+                    >
+                      Find people →
+                    </button>
+                  )}
+                </div>
+              </div>
             );
           })}
         </div>
@@ -678,6 +1223,11 @@ const CompaniesTable: React.FC<{
   return (
     <>
       {ViewToggle}
+      {addRow && (
+        <div className="border border-line rounded-st-xl overflow-hidden bg-white mb-3">
+          {addRow}
+        </div>
+      )}
       <div
         style={{
           display: "grid",
@@ -688,19 +1238,27 @@ const CompaniesTable: React.FC<{
         {rows.map((row) => {
           const isExploring = row.industry === "exploring";
           const count = row.alumni ?? 0;
+          const cardClickable = !!onSelectCompany;
           return (
-            <button
+            <div
               key={row.id}
-              type="button"
+              role={cardClickable ? "button" : undefined}
+              tabIndex={cardClickable ? 0 : undefined}
               onClick={() => onSelectCompany?.(row.name)}
-              disabled={!onSelectCompany}
+              onKeyDown={(e) => {
+                if (!cardClickable) return;
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  onSelectCompany?.(row.name);
+                }
+              }}
               style={{
                 textAlign: "left",
                 padding: "14px 16px",
                 background: "white",
                 border: "1px solid var(--line, #E2E8F0)",
                 borderRadius: 8,
-                cursor: onSelectCompany ? "pointer" : "default",
+                cursor: cardClickable ? "pointer" : "default",
                 transition: "border-color .15s, background .15s",
                 display: "flex",
                 flexDirection: "column",
@@ -709,7 +1267,7 @@ const CompaniesTable: React.FC<{
                 fontFamily: "inherit",
               }}
               onMouseEnter={(e) => {
-                if (!onSelectCompany) return;
+                if (!cardClickable) return;
                 e.currentTarget.style.borderColor = COMPANY_BLUE;
                 e.currentTarget.style.background = COMPANY_BLUE_TINT;
               }}
@@ -791,7 +1349,42 @@ const CompaniesTable: React.FC<{
                   )}
                 </div>
               ) : null}
-            </button>
+              {onFindPeople && (
+                <div style={{ marginTop: "auto", display: "flex", justifyContent: "flex-end" }}>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onFindPeople(row);
+                    }}
+                    title={`Find people at ${row.name}`}
+                    style={{
+                      fontSize: 11.5,
+                      fontWeight: 500,
+                      fontFamily: "inherit",
+                      color: COMPANY_BLUE,
+                      background: "white",
+                      border: `1px solid ${COMPANY_BLUE}`,
+                      borderRadius: 4,
+                      padding: "5px 10px",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      transition: "background .12s, color .12s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = COMPANY_BLUE;
+                      e.currentTarget.style.color = "white";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "white";
+                      e.currentTarget.style.color = COMPANY_BLUE;
+                    }}
+                  >
+                    Find people →
+                  </button>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
@@ -814,20 +1407,115 @@ interface ManagerRow {
   dateAdded?: string;
 }
 
-const ManagersTable: React.FC<{ rows: ManagerRow[] }> = ({ rows }) => {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+const AddManagerRow: React.FC<{
+  cols: string;
+  onCancel: () => void;
+  onSave: (draft: {
+    name: string; email?: string; linkedinUrl?: string;
+    title?: string; company?: string;
+  }) => Promise<void>;
+}> = ({ cols, onCancel, onSave }) => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [linkedinUrl, setLinkedin] = useState("");
+  const [title, setTitle] = useState("");
+  const [company, setCompany] = useState("");
+  const [saving, setSaving] = useState(false);
 
+  const handleSave = async () => {
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try { await onSave({ name, email, linkedinUrl, title, company }); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <div
+      className="grid items-center px-4 py-2.5 border-b border-line-2"
+      style={{ gridTemplateColumns: cols, background: ADD_ROW_BG }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") { e.preventDefault(); handleSave(); }
+        if (e.key === "Escape") { e.preventDefault(); onCancel(); }
+      }}
+    >
+      <div /> {/* checkbox slot */}
+      <div /> {/* logo slot */}
+      <input
+        autoFocus
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Full name"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={linkedinUrl}
+        onChange={(e) => setLinkedin(e.target.value)}
+        placeholder="LinkedIn URL"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Title"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email (optional)"
+        style={ADD_INPUT_STYLE}
+      />
+      <input
+        value={company}
+        onChange={(e) => setCompany(e.target.value)}
+        placeholder="Company"
+        style={ADD_INPUT_STYLE}
+      />
+      <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={saving}
+          className="text-[11px] px-2 py-1 text-ink-3 hover:text-ink-2"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={!name.trim() || saving}
+          className="text-[11px] px-2.5 py-1 rounded-st-sm bg-ink text-white font-medium disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const ManagersTable: React.FC<{
+  rows: ManagerRow[];
+  selected: Set<string>;
+  onSelectionChange: (next: Set<string>) => void;
+  groupByCompany?: boolean;
+  groupedView?: "list" | "grid";
+  highlightSince?: number;
+  addingMode?: boolean;
+  onCancelAdd?: () => void;
+  onSaveNew?: (draft: {
+    name: string; email?: string; linkedinUrl?: string;
+    title?: string; company?: string;
+  }) => Promise<void>;
+}> = ({ rows, selected, onSelectionChange, groupByCompany, groupedView = "list", highlightSince = 0, addingMode, onCancelAdd, onSaveNew }) => {
   const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    const next = new Set(selected);
+    next.has(id) ? next.delete(id) : next.add(id);
+    onSelectionChange(next);
   };
 
   const toggleAll = () => {
-    if (selected.size === rows.length) setSelected(new Set());
-    else setSelected(new Set(rows.map((r) => r.id)));
+    if (selected.size === rows.length && rows.length > 0) onSelectionChange(new Set());
+    else onSelectionChange(new Set(rows.map((r) => r.id)));
   };
 
   // Format dateAdded → "3d", "2w", "1mo" relative
@@ -843,97 +1531,166 @@ const ManagersTable: React.FC<{ rows: ManagerRow[] }> = ({ rows }) => {
     return `${Math.floor(days / 365)}y`;
   };
 
-  // 7 columns: checkbox | Name+email | LinkedIn | Title | Role hiring for | Company | Added.
-  // Location dropped - it isn't captured for most rows so the column was just
-  // a sea of em-dashes that wasted horizontal space.
-  const COLS = "28px minmax(190px, 1.5fr) 64px minmax(150px, 1.1fr) minmax(190px, 1.4fr) minmax(150px, 1.1fr) 64px";
+  // 8 columns: checkbox | company logo | Name+email | LinkedIn | Title |
+  // Role hiring for | Company text | Added. Logo sits to the left of the
+  // name, matching the People tab layout.
+  const COLS = "28px 36px minmax(190px, 1.5fr) 64px minmax(150px, 1.1fr) minmax(190px, 1.4fr) minmax(150px, 1.1fr) 64px";
+
+  const HeaderRow = (
+    <div
+      className="grid items-center border-b border-line"
+      style={{
+        gridTemplateColumns: COLS,
+        gap: 14,
+        padding: "10px 16px",
+        background: "var(--paper-2, #FAFBFF)",
+      }}
+    >
+      <Checkbox
+        checked={selected.size === rows.length && rows.length > 0}
+        onCheckedChange={toggleAll}
+      />
+      <span /> {/* logo column - no header label */}
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Name</span>
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">LinkedIn</span>
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Title</span>
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Hiring for</span>
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Company</span>
+      <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3 text-right">Added</span>
+    </div>
+  );
+
+  const rowBaseBg = (row: ManagerRow, i: number): string => {
+    const ts = row.dateAdded ? Date.parse(row.dateAdded) : 0;
+    if (highlightSince && ts > highlightSince) return "rgba(59,130,246,0.08)";
+    return i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white";
+  };
+
+  const renderRow = (row: ManagerRow, isLast: boolean, i: number) => (
+    <div
+      key={row.id}
+      className={`grid items-center transition-colors ${isLast ? "" : "border-b border-line-2"}`}
+      style={{
+        gridTemplateColumns: COLS,
+        gap: 14,
+        padding: "12px 16px",
+        background: rowBaseBg(row, i),
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(91,119,153,0.08)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.background = rowBaseBg(row, i); }}
+    >
+      <Checkbox
+        checked={selected.has(row.id)}
+        onCheckedChange={() => toggleSelect(row.id)}
+      />
+      <div className="flex items-center justify-center">
+        {row.company ? (
+          <CompanyLogo company={row.company} size={32} rounded={6} />
+        ) : (
+          <div
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 6,
+              background: "var(--paper-2, #FAFBFF)",
+              border: "1px dashed var(--line, #E2E8F0)",
+            }}
+          />
+        )}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <div className="truncate" style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink, #0F172A)" }}>{row.name}</div>
+        {row.email && (
+          <div className="font-mono text-[10.5px] text-ink-3 truncate">{row.email}</div>
+        )}
+      </div>
+      <div>
+        {row.linkedinUrl ? (
+          <a
+            href={normalizeLinkedInUrl(row.linkedinUrl)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] text-[#64748B] hover:underline inline-flex items-center gap-1"
+          >
+            <ExternalLink className="h-3 w-3" /> view
+          </a>
+        ) : (
+          <span className="text-ink-3"> - </span>
+        )}
+      </div>
+      <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
+        {row.title || " - "}
+      </div>
+      <div className="truncate" style={{ minWidth: 0 }}>
+        {row.jobUrl ? (
+          <a
+            href={row.jobUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[12px] text-[#64748B] hover:underline truncate inline-block max-w-full align-bottom"
+            title={row.roleHiringFor || ""}
+          >
+            {row.roleHiringFor || "view posting"}
+          </a>
+        ) : (
+          <span className="text-[12px] text-ink-2 truncate inline-block max-w-full align-bottom">
+            {row.roleHiringFor || " - "}
+          </span>
+        )}
+      </div>
+      <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
+        {row.company || " - "}
+      </div>
+      <div className="font-mono text-[10.5px] text-ink-3 text-right">
+        {formatAdded(row.dateAdded)}
+      </div>
+    </div>
+  );
+
+  if (groupByCompany) {
+    const m = new Map<string, ManagerRow[]>();
+    for (const r of rows) {
+      const key = (r.company || "").trim() || "(no company)";
+      if (!m.has(key)) m.set(key, []);
+      m.get(key)!.push(r);
+    }
+    const groups = [...m.entries()]
+      .sort((a, b) => b[1].length - a[1].length)
+      .map(([company, items]) => ({ company, items }));
+    return (
+      <GroupedShell
+        groups={groups}
+        viewMode={groupedView}
+        renderTable={(group) => (
+          <>
+            {HeaderRow}
+            {group.items.map((row, i) => renderRow(row, i === group.items.length - 1, i))}
+          </>
+        )}
+      />
+    );
+  }
 
   return (
     <div className="border border-line rounded-st-xl overflow-hidden bg-white">
-      <div
-        className="grid items-center px-4 py-2.5 border-b border-line"
-        style={{ gridTemplateColumns: COLS, background: "var(--paper-2, #FAFBFF)" }}
-      >
-        <Checkbox
-          checked={selected.size === rows.length && rows.length > 0}
-          onCheckedChange={toggleAll}
-        />
-        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Name</span>
-        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">LinkedIn</span>
-        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Title</span>
-        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Hiring for</span>
-        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Company</span>
-        <span className="font-mono text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3 text-right">Added</span>
-      </div>
+      {HeaderRow}
 
-      {rows.length === 0 ? (
+      {addingMode && onSaveNew && (
+        <AddManagerRow
+          cols={COLS}
+          onCancel={() => onCancelAdd?.()}
+          onSave={onSaveNew}
+        />
+      )}
+
+      {rows.length === 0 && !addingMode ? (
         <div className="py-16 text-center">
           <p className="font-serif italic text-ink-3 text-[15px]">
             No hiring managers yet. Save them from Job Board → Find Hiring Manager.
           </p>
         </div>
-      ) : (
-        rows.map((row, i) => (
-          <div
-            key={row.id}
-            className={`grid items-center px-4 py-2.5 transition-colors hover:bg-brand/[0.03] ${
-              i % 2 === 1 ? "bg-paper-2/30" : ""
-            } ${i < rows.length - 1 ? "border-b border-line-2" : ""}`}
-            style={{ gridTemplateColumns: COLS }}
-          >
-            <Checkbox
-              checked={selected.has(row.id)}
-              onCheckedChange={() => toggleSelect(row.id)}
-            />
-            <div style={{ minWidth: 0 }}>
-              <div className="text-[13px] font-medium text-ink truncate">{row.name}</div>
-              {row.email && (
-                <div className="font-mono text-[10.5px] text-ink-3 truncate">{row.email}</div>
-              )}
-            </div>
-            <div>
-              {row.linkedinUrl ? (
-                <a
-                  href={row.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] text-[#64748B] hover:underline inline-flex items-center gap-1"
-                >
-                  <ExternalLink className="h-3 w-3" /> view
-                </a>
-              ) : (
-                <span className="text-ink-3"> - </span>
-              )}
-            </div>
-            <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
-              {row.title || " - "}
-            </div>
-            <div className="truncate" style={{ minWidth: 0 }}>
-              {row.jobUrl ? (
-                <a
-                  href={row.jobUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[12px] text-[#64748B] hover:underline truncate inline-block max-w-full align-bottom"
-                  title={row.roleHiringFor || ""}
-                >
-                  {row.roleHiringFor || "view posting"}
-                </a>
-              ) : (
-                <span className="text-[12px] text-ink-2 truncate inline-block max-w-full align-bottom">
-                  {row.roleHiringFor || " - "}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-[12px] text-ink-2" style={{ minWidth: 0 }}>
-              {row.company ? <CompanyLogo company={row.company} size={18} rounded={4} /> : null}
-              <span className="truncate">{row.company || " - "}</span>
-            </div>
-            <div className="font-mono text-[10.5px] text-ink-3 text-right">
-              {formatAdded(row.dateAdded)}
-            </div>
-          </div>
-        ))
+      ) : rows.length === 0 ? null : (
+        rows.map((row, i) => renderRow(row, i === rows.length - 1, i))
       )}
     </div>
   );
@@ -953,6 +1710,21 @@ const MyNetworkPage: React.FC = () => {
 
   const [people, setPeople] = useState<PersonRow[]>([]);
   const [managers, setManagers] = useState<ManagerRow[]>([]);
+  // Saved firms from Find > Companies (firm-search history). The Companies tab
+  // merges these with companies derived from saved People so the user sees the
+  // same set Find used to display - one source of truth.
+  // Saved firms from Find > Companies, each tagged with the search's
+  // createdAt so the My Network sort can place freshly-found firms at the top.
+  type SavedFirm = Firm & { _searchCreatedAt?: string };
+  const [savedFirms, setSavedFirms] = useState<SavedFirm[]>([]);
+  // Manually-added firms (users/{uid}/manual_firms). Live alongside savedFirms
+  // in the Companies merge so the user-entered rows persist across reloads.
+  const [manualFirms, setManualFirms] = useState<ManualFirm[]>([]);
+  // Inline-add UI state - one flag per tab. Clicking "Add X" flips the
+  // corresponding flag on; the table renders an empty editable row at the top.
+  const [addingPerson, setAddingPerson] = useState(false);
+  const [addingCompany, setAddingCompany] = useState(false);
+  const [addingManager, setAddingManager] = useState(false);
 
   // "Exploring" companies - a localStorage watch-list populated when the user
   // clicks a company card on Find > Companies. These bubble to the top of the
@@ -970,6 +1742,25 @@ const MyNetworkPage: React.FC = () => {
       }
     },
   );
+
+  // Companies the user explicitly removed via bulk-delete. Stored as a
+  // lowercase-name set so the merge can filter them out. Persisted to
+  // localStorage so the dismissal sticks across reloads. The underlying People
+  // contacts are NEVER deleted - the user keeps the network, just hides the
+  // company row from this view.
+  const [dismissedCompanies, setDismissedCompanies] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem("ofl_dismissed_companies") || "[]";
+      const list = JSON.parse(raw);
+      return new Set(Array.isArray(list) ? list.map((s: string) => s.toLowerCase()) : []);
+    } catch {
+      return new Set();
+    }
+  });
+  const persistDismissed = (next: Set<string>) => {
+    setDismissedCompanies(next);
+    try { localStorage.setItem("ofl_dismissed_companies", JSON.stringify([...next])); } catch {}
+  };
   useEffect(() => {
     // Re-read on every focus so newly-explored companies show up after the
     // user navigates back from Find without a full page reload.
@@ -984,25 +1775,109 @@ const MyNetworkPage: React.FC = () => {
     return () => window.removeEventListener("focus", handler);
   }, []);
 
-  // Companies are derived from saved People + the "exploring" watch list.
-  // Saved-people companies always come first (sorted by count); exploring
-  // companies that aren't already in the saved set fill in below with a
-  // count of 0 and a "exploring" indicator.
+  // Sort direction per tab. Default newest-first so the user always sees what
+  // they just added at the top. Declared before the companies useMemo because
+  // that memo reads companiesSortDir.
+  type SortDir = "newest" | "oldest";
+  const [peopleSortDir, setPeopleSortDir] = useState<SortDir>(() => {
+    try { return localStorage.getItem("ofl_my_network_people_sort") === "oldest" ? "oldest" : "newest"; } catch { return "newest"; }
+  });
+  const [companiesSortDir, setCompaniesSortDir] = useState<SortDir>(() => {
+    try { return localStorage.getItem("ofl_my_network_companies_sort") === "oldest" ? "oldest" : "newest"; } catch { return "newest"; }
+  });
+  const [managersSortDir, setManagersSortDir] = useState<SortDir>(() => {
+    try { return localStorage.getItem("ofl_my_network_managers_sort") === "oldest" ? "oldest" : "newest"; } catch { return "newest"; }
+  });
+  const persistPeopleSort = (v: SortDir) => {
+    setPeopleSortDir(v);
+    try { localStorage.setItem("ofl_my_network_people_sort", v); } catch {}
+  };
+  const persistCompaniesSort = (v: SortDir) => {
+    setCompaniesSortDir(v);
+    try { localStorage.setItem("ofl_my_network_companies_sort", v); } catch {}
+  };
+  const persistManagersSort = (v: SortDir) => {
+    setManagersSortDir(v);
+    try { localStorage.setItem("ofl_my_network_managers_sort", v); } catch {}
+  };
+
+  // Companies are merged from three sources into a single deduped list keyed
+  // by lower-cased company name:
+  //   1. Saved People → contributes the "# contacts" count and people-derived
+  //      location (used only if no saved firm record has a canonical HQ).
+  //   2. Saved Firms from Find > Companies → contributes canonical INDUSTRY
+  //      and HQ. People-derived rows that match by name pick these up too,
+  //      so a row only appears once no matter where the company came from.
+  //   3. The localStorage "exploring" watch list → companies the user clicked
+  //      on Find but hasn't saved any people from yet.
+  // Industry is ALWAYS the real industry from the firm record (or blank) -
+  // never a derived job title, which was the previous behavior and surfaced
+  // titles like "investment banking analyst" in the industry column.
   const companies = useMemo<CompanyRow[]>(() => {
-    const buckets = new Map<string, { count: number; roles: Map<string, number>; locations: Map<string, number> }>();
+    const norm = (s: string) => s.trim().toLowerCase();
+    type Bucket = {
+      display: string;
+      count: number;
+      locations: Map<string, number>;
+      firm?: Firm;
+      manualFirmId?: string;
+      latestTs: number;
+    };
+    const map = new Map<string, Bucket>();
+    const tsOf = (s?: string): number => (s ? Date.parse(s) || 0 : 0);
+
     for (const p of people) {
-      const co = (p.company || "").trim();
-      if (!co) continue;
-      let bucket = buckets.get(co);
-      if (!bucket) {
-        bucket = { count: 0, roles: new Map(), locations: new Map() };
-        buckets.set(co, bucket);
+      const raw = (p.company || "").trim();
+      if (!raw) continue;
+      const key = norm(raw);
+      let b = map.get(key);
+      if (!b) {
+        b = { display: raw, count: 0, locations: new Map(), latestTs: 0 };
+        map.set(key, b);
       }
-      bucket.count += 1;
-      if (p.role) bucket.roles.set(p.role, (bucket.roles.get(p.role) || 0) + 1);
-      if (p.location) bucket.locations.set(p.location, (bucket.locations.get(p.location) || 0) + 1);
+      b.count += 1;
+      if (p.location) b.locations.set(p.location, (b.locations.get(p.location) || 0) + 1);
+      const t = tsOf(p.createdAt);
+      if (t > b.latestTs) b.latestTs = t;
     }
-    const top = (m: Map<string, number>): string => {
+
+    for (const f of savedFirms) {
+      if (!f.name) continue;
+      const key = norm(f.name);
+      let b = map.get(key);
+      if (!b) {
+        b = { display: f.name, count: 0, locations: new Map(), latestTs: 0 };
+        map.set(key, b);
+      }
+      b.firm = f;
+      const t = tsOf((f as any)._searchCreatedAt);
+      if (t > b.latestTs) b.latestTs = t;
+    }
+
+    // Manually-added firms (from the inline "Add company" row). Use them only
+    // to fill in industry/HQ when no firm-search record beat us to it.
+    for (const mf of manualFirms) {
+      if (!mf.name) continue;
+      const key = norm(mf.name);
+      let b = map.get(key);
+      if (!b) {
+        b = { display: mf.name, count: 0, locations: new Map(), latestTs: 0 };
+        map.set(key, b);
+      }
+      if (mf.id) b.manualFirmId = mf.id;
+      const t = tsOf(mf.createdAt);
+      if (t > b.latestTs) b.latestTs = t;
+      if (!b.firm) {
+        b.firm = {
+          id: mf.id || `manual:${key}`,
+          name: mf.name,
+          industry: mf.industry,
+          location: mf.hq ? { display: mf.hq } : undefined,
+        } as Firm;
+      }
+    }
+
+    const topLocation = (m: Map<string, number>): string => {
       let best = "";
       let bestCount = 0;
       for (const [k, v] of m) {
@@ -1010,33 +1885,125 @@ const MyNetworkPage: React.FC = () => {
       }
       return best;
     };
-    const saved = [...buckets.entries()]
-      .sort((a, b) => b[1].count - a[1].count || a[0].localeCompare(b[0]))
-      .map(([name, b]) => ({
-        id: name,
-        name,
-        industry: top(b.roles),
-        hq: top(b.locations),
+
+    // Tag each row with its underlying recency so the final merge can sort
+    // exploring + main rows in a single most-recent-first pass. recencyTs is
+    // also surfaced to consumers for the "added since last visit" highlight.
+    const main: CompanyRow[] = [...map.values()].map((b) => {
+      const firmHq = b.firm?.location?.display
+        || [b.firm?.location?.city, b.firm?.location?.state].filter(Boolean).join(", ");
+      return {
+        id: b.firm?.id || `co:${norm(b.display)}`,
+        name: b.display,
+        industry: b.firm?.industry || "",
+        hq: firmHq || topLocation(b.locations),
         alumni: b.count,
-      }));
-    const savedKeys = new Set(saved.map((s) => s.name.toLowerCase()));
-    const exploring = exploringCompanies
-      .filter((e) => !savedKeys.has(e.name.toLowerCase()))
+        manualFirmId: b.manualFirmId,
+        recencyTs: b.latestTs,
+      };
+    });
+
+    const seen = new Set(main.map((r) => norm(r.name)));
+    const exploring: CompanyRow[] = exploringCompanies
+      .filter((e) => !seen.has(norm(e.name)))
       .map((e) => ({
         id: `exploring:${e.name}`,
         name: e.name,
         industry: "exploring",
         hq: "",
         alumni: 0,
+        recencyTs: e.ts || 0,
       }));
-    return [...saved, ...exploring];
-  }, [people, exploringCompanies]);
+
+    const dirMul = companiesSortDir === "oldest" ? -1 : 1;
+    const merged: CompanyRow[] = [...main, ...exploring]
+      .sort((a, b) => (((b.recencyTs || 0) - (a.recencyTs || 0)) * dirMul) || a.name.localeCompare(b.name));
+    return dismissedCompanies.size === 0
+      ? merged
+      : merged.filter((r) => !dismissedCompanies.has(norm(r.name)));
+  }, [people, savedFirms, manualFirms, exploringCompanies, dismissedCompanies, companiesSortDir]);
 
   // Filter / view state for the People table (lifted to parent so the filter
-  // bar and the table render from one source of truth).
+  // bar and the table render from one source of truth). The same searchQuery
+  // is reused across all three tabs so a single text field per tab can drive
+  // filtering uniformly - tabs render only one at a time so there's no overlap.
   const [searchQuery, setSearchQuery] = useState("");
   const [companyFilter, setCompanyFilter] = useState<string | null>(null);
   const [groupByCompany, setGroupByCompany] = useState(false);
+  const [managersGroupByCompany, setManagersGroupByCompany] = useState(false);
+  // List/Grid view inside the grouped view, persisted per tab in localStorage.
+  const [peopleGroupedView, setPeopleGroupedView] = useState<"list" | "grid">(() => {
+    try { return localStorage.getItem("ofl_my_network_people_grouped_view") === "grid" ? "grid" : "list"; } catch { return "list"; }
+  });
+  const [managersGroupedView, setManagersGroupedView] = useState<"list" | "grid">(() => {
+    try { return localStorage.getItem("ofl_my_network_managers_grouped_view") === "grid" ? "grid" : "list"; } catch { return "list"; }
+  });
+  const setPeopleGroupedViewPersisted = (v: "list" | "grid") => {
+    setPeopleGroupedView(v);
+    try { localStorage.setItem("ofl_my_network_people_grouped_view", v); } catch {}
+  };
+  const setManagersGroupedViewPersisted = (v: "list" | "grid") => {
+    setManagersGroupedView(v);
+    try { localStorage.setItem("ofl_my_network_managers_grouped_view", v); } catch {}
+  };
+
+  // Recency highlight: only the items from the *most recent batch* in each
+  // tab get a faint blue background. When a fresh search adds newer items,
+  // their timestamp becomes the new max and the previous batch loses its
+  // highlight automatically - no localStorage tracking needed. Per-tab so
+  // searches on one tab don't affect another. A 60s window catches all
+  // items saved together in one search (firms share the search's createdAt
+  // exactly; contacts/recruiters spread over a few seconds during bulk save).
+  const HIGHLIGHT_WINDOW_MS = 60_000;
+  const peopleHighlightSince = useMemo(() => {
+    let m = 0;
+    for (const p of people) {
+      const t = p.createdAt ? Date.parse(p.createdAt) : 0;
+      if (t > m) m = t;
+    }
+    return m > 0 ? m - HIGHLIGHT_WINDOW_MS : 0;
+  }, [people]);
+  const companiesHighlightSince = useMemo(() => {
+    let m = 0;
+    for (const c of companies) {
+      const t = c.recencyTs || 0;
+      if (t > m) m = t;
+    }
+    return m > 0 ? m - HIGHLIGHT_WINDOW_MS : 0;
+  }, [companies]);
+  const managersHighlightSince = useMemo(() => {
+    let m = 0;
+    for (const r of managers) {
+      const t = r.dateAdded ? Date.parse(r.dateAdded) : 0;
+      if (t > m) m = t;
+    }
+    return m > 0 ? m - HIGHLIGHT_WINDOW_MS : 0;
+  }, [managers]);
+
+  // Filtered companies (driven by the Companies tab search bar).
+  const filteredCompanies = useMemo<CompanyRow[]>(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return companies;
+    return companies.filter((c) => {
+      const hay = `${c.name} ${c.industry || ""} ${c.hq || ""}`.toLowerCase();
+      return hay.includes(q);
+    });
+  }, [companies, searchQuery]);
+
+  // Filtered managers (driven by the Hiring Managers tab search bar).
+  // Default order is most recently added first.
+  const filteredManagers = useMemo<ManagerRow[]>(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const base = q
+      ? managers.filter((m) => {
+          const hay = `${m.name} ${m.email || ""} ${m.title || ""} ${m.company || ""} ${m.roleHiringFor || ""}`.toLowerCase();
+          return hay.includes(q);
+        })
+      : managers;
+    const tsOf = (s?: string): number => (s ? Date.parse(s) || 0 : 0);
+    const dirMul = managersSortDir === "oldest" ? -1 : 1;
+    return [...base].sort((a, b) => (tsOf(b.dateAdded) - tsOf(a.dateAdded)) * dirMul);
+  }, [managers, searchQuery, managersSortDir]);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -1064,6 +2031,7 @@ const MyNetworkPage: React.FC = () => {
             warmthTier: c.warmthTier || undefined,
             isAlumni: !!c.isAlumni,
             notes: c.notes || undefined,
+            createdAt: c.createdAt || c.firstContactDate || undefined,
           };
         })
       );
@@ -1073,6 +2041,47 @@ const MyNetworkPage: React.FC = () => {
     // who-do-I-know-where view: for every distinct company in the user's saved
     // contacts, aggregate count + a representative role/location so the user
     // can scan their network by company instead of by person.
+
+    // Load saved firms from Find > Companies (firm-search history). This is the
+    // same data Find used to render its "188 companies saved" view, so the two
+    // surfaces stay in sync.
+    apiService.getFirmSearchHistory(100, true).then((history: any[]) => {
+      console.log('[MyNetwork] firm-search/history returned', {
+        searchCount: (history || []).length,
+        sample: (history || []).slice(0, 2).map((h: any) => ({
+          id: h?.id,
+          query: h?.query,
+          createdAt: h?.createdAt,
+          resultsCount: Array.isArray(h?.results) ? h.results.length : 'no-results-field',
+        })),
+      });
+      const seen = new Set<string>();
+      const flat: SavedFirm[] = [];
+      // Iterate history newest-first so the first occurrence of any firm (the
+      // dedup winner) carries the most recent search's createdAt.
+      const sortedHistory = [...(history || [])].sort((a: any, b: any) => {
+        const ta = a?.createdAt ? Date.parse(a.createdAt) : 0;
+        const tb = b?.createdAt ? Date.parse(b.createdAt) : 0;
+        return tb - ta;
+      });
+      for (const item of sortedHistory) {
+        const itemCreatedAt = (item as any).createdAt;
+        const results = Array.isArray((item as any).results) ? (item as any).results : [];
+        for (const f of results) {
+          const key = f.id || `${(f.name || '').toLowerCase()}|${f.location?.display || ''}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          flat.push({ ...f, _searchCreatedAt: itemCreatedAt });
+        }
+      }
+      console.log('[MyNetwork] savedFirms after dedup:', flat.length, 'unique firms');
+      setSavedFirms(flat);
+    }).catch((err) => {
+      console.error('[MyNetwork] firm-search/history FAILED:', err);
+    });
+
+    // Load manually-added firms (Add company → Firestore).
+    firebaseApi.getManualFirms(user.uid).then(setManualFirms).catch(() => {});
 
     // Load hiring managers. Same field-mapping fix as People - Firestore docs
     // use camelCase firstName/lastName/jobTitle/etc., NOT PDL's raw schema.
@@ -1097,6 +2106,148 @@ const MyNetworkPage: React.FC = () => {
     }).catch(() => {});
   }, [user?.uid]);
 
+  // ─── Inline-add save handlers ─────────────────────────────────────────────
+  // Each table opens an empty row when its adding flag is true. The table
+  // collects input into a draft, then calls the matching save handler below
+  // on Save. The handler writes to Firestore, then updates local state with
+  // the persisted record so the row stays visible in its new state.
+  const splitName = (full: string): { first: string; last: string } => {
+    const parts = (full || "").trim().split(/\s+/);
+    if (parts.length === 0 || !parts[0]) return { first: "", last: "" };
+    if (parts.length === 1) return { first: parts[0], last: "" };
+    return { first: parts[0], last: parts.slice(1).join(" ") };
+  };
+
+  const handleSavePerson = async (draft: {
+    name: string; email?: string; linkedinUrl?: string;
+    company?: string; role?: string; school?: string;
+  }): Promise<void> => {
+    if (!user?.uid) return;
+    if (!draft.name.trim()) {
+      toast({ title: "Name required", variant: "destructive" });
+      return;
+    }
+    const { first, last } = splitName(draft.name);
+    const nowIso = new Date().toISOString();
+    try {
+      const id = await firebaseApi.createContact(user.uid, {
+        firstName: first,
+        lastName: last,
+        email: draft.email || "",
+        linkedinUrl: draft.linkedinUrl || "",
+        company: draft.company || "",
+        jobTitle: draft.role || "",
+        college: draft.school || "",
+        location: "",
+        firstContactDate: nowIso,
+        status: "manual",
+        lastContactDate: nowIso,
+      });
+      setPeople((prev) => [
+        {
+          id,
+          name: `${first} ${last}`.trim(),
+          email: draft.email || undefined,
+          linkedinUrl: draft.linkedinUrl || undefined,
+          role: draft.role || undefined,
+          company: draft.company || undefined,
+          school: draft.school || undefined,
+          status: "manual",
+        },
+        ...prev,
+      ]);
+      setAddingPerson(false);
+      toast({ title: "Person added", description: `${first} ${last}`.trim() });
+    } catch (err) {
+      console.error("Failed to save person:", err);
+      toast({ title: "Save failed", description: "Try again.", variant: "destructive" });
+    }
+  };
+
+  const handleSaveCompany = async (draft: {
+    name: string; industry?: string; hq?: string;
+  }): Promise<void> => {
+    if (!user?.uid) return;
+    if (!draft.name.trim()) {
+      toast({ title: "Company name required", variant: "destructive" });
+      return;
+    }
+    try {
+      const id = await firebaseApi.createManualFirm(user.uid, {
+        name: draft.name.trim(),
+        industry: draft.industry || "",
+        hq: draft.hq || "",
+      });
+      setManualFirms((prev) => [
+        { id, name: draft.name.trim(), industry: draft.industry || "", hq: draft.hq || "" },
+        ...prev,
+      ]);
+      setAddingCompany(false);
+      toast({ title: "Company added", description: draft.name.trim() });
+    } catch (err) {
+      console.error("Failed to save company:", err);
+      toast({ title: "Save failed", description: "Try again.", variant: "destructive" });
+    }
+  };
+
+  const handleSaveManager = async (draft: {
+    name: string; email?: string; linkedinUrl?: string;
+    title?: string; company?: string;
+  }): Promise<void> => {
+    if (!user?.uid) return;
+    if (!draft.name.trim()) {
+      toast({ title: "Name required", variant: "destructive" });
+      return;
+    }
+    const { first, last } = splitName(draft.name);
+    const nowIso = new Date().toISOString();
+    try {
+      await firebaseApi.bulkCreateRecruiters(user.uid, [{
+        firstName: first,
+        lastName: last,
+        email: draft.email || "",
+        linkedinUrl: draft.linkedinUrl || "",
+        company: draft.company || "",
+        jobTitle: draft.title || "",
+        location: "",
+        dateAdded: nowIso,
+        status: "manual",
+      }]);
+      // Reload managers to get the assigned IDs.
+      const recs = await firebaseApi.getRecruiters(user.uid);
+      setManagers(recs.map((r: any) => {
+        const fullName = `${r.firstName || ""} ${r.lastName || ""}`.trim();
+        return {
+          id: r.id || Math.random().toString(),
+          name: fullName || r.name || "Unknown",
+          email: r.email || r.workEmail || undefined,
+          linkedinUrl: r.linkedinUrl || undefined,
+          title: r.jobTitle || r.title || undefined,
+          roleHiringFor: r.associatedJobTitle || r.roleHiringFor || undefined,
+          jobUrl: r.associatedJobUrl || undefined,
+          company: r.company || undefined,
+          location: r.location || undefined,
+          dateAdded: r.dateAdded || r.createdAt || undefined,
+        };
+      }));
+      setAddingManager(false);
+      toast({ title: "Hiring manager added", description: `${first} ${last}`.trim() });
+    } catch (err) {
+      console.error("Failed to save manager:", err);
+      toast({ title: "Save failed", description: "Try again.", variant: "destructive" });
+    }
+  };
+
+  // Per-tab selection state. Lifted here so the "Delete selected (N)" pill
+  // can sit next to "Add X" in each tab's filter bar. Declared BEFORE the
+  // bare-/my-network redirect below so the hook count stays constant across
+  // the pre-redirect and post-redirect renders of the same component instance.
+  const [peopleSelected, setPeopleSelected] = useState<Set<string>>(new Set());
+  const [companiesSelected, setCompaniesSelected] = useState<Set<string>>(new Set());
+  const [managersSelected, setManagersSelected] = useState<Set<string>>(new Set());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   // Redirect bare /my-network to /my-network/people (AFTER all hooks)
   if (!tab) {
     return <Navigate to="/my-network/people" replace />;
@@ -1108,7 +2259,156 @@ const MyNetworkPage: React.FC = () => {
     managers: managers.length,
   };
 
-  const ctaLabel = activeTab === "companies" ? "Add company" : activeTab === "managers" ? "Add manager" : "Add person";
+  const addLabel = activeTab === "companies" ? "Add company" : activeTab === "managers" ? "Add manager" : "Add person";
+  const onClickAdd = () => {
+    if (activeTab === "companies") setAddingCompany(true);
+    else if (activeTab === "managers") setAddingManager(true);
+    else setAddingPerson(true);
+  };
+
+  const activeSelection: Set<string> =
+    activeTab === "companies" ? companiesSelected :
+    activeTab === "managers" ? managersSelected :
+    peopleSelected;
+
+  const clearActiveSelection = () => {
+    if (activeTab === "companies") setCompaniesSelected(new Set());
+    else if (activeTab === "managers") setManagersSelected(new Set());
+    else setPeopleSelected(new Set());
+  };
+
+  const runBulkDelete = async () => {
+    if (!user?.uid || activeSelection.size === 0) return;
+    setDeleting(true);
+    const ids = [...activeSelection];
+    try {
+      if (activeTab === "people") {
+        await Promise.all(ids.map((id) => firebaseApi.deleteContact(user.uid, id).catch(() => {})));
+        setPeople((prev) => prev.filter((p) => !activeSelection.has(p.id)));
+        toast({ title: `${ids.length} ${ids.length === 1 ? "person" : "people"} removed` });
+      } else if (activeTab === "managers") {
+        await Promise.all(ids.map((id) => firebaseApi.deleteRecruiter(user.uid, id).catch(() => {})));
+        setManagers((prev) => prev.filter((m) => !activeSelection.has(m.id)));
+        toast({ title: `${ids.length} hiring ${ids.length === 1 ? "manager" : "managers"} removed` });
+      } else {
+        // companies: rows can come from manual firms, saved firms, contact-
+        // derived aggregates, or the exploring list. Each case is handled
+        // independently; People contacts are NEVER deleted.
+        const idSet = new Set(ids);
+        const rowsToDelete = companies.filter((r) => idSet.has(r.id));
+        const manualIds = rowsToDelete.map((r) => r.manualFirmId).filter((x): x is string => !!x);
+        const exploringNames = rowsToDelete
+          .filter((r) => r.id.startsWith("exploring:"))
+          .map((r) => r.name);
+        const nameKeys = rowsToDelete.map((r) => r.name.trim().toLowerCase());
+
+        if (manualIds.length > 0) {
+          await Promise.all(manualIds.map((id) => firebaseApi.deleteManualFirm(user.uid, id).catch(() => {})));
+          const manualIdSet = new Set(manualIds);
+          setManualFirms((prev) => prev.filter((mf) => !manualIdSet.has(mf.id || "")));
+        }
+        if (exploringNames.length > 0) {
+          const exploringSet = new Set(exploringNames.map((n) => n.toLowerCase()));
+          const nextExploring = exploringCompanies.filter((e) => !exploringSet.has(e.name.toLowerCase()));
+          setExploringCompanies(nextExploring);
+          try { localStorage.setItem("ofl_exploring_companies", JSON.stringify(nextExploring)); } catch {}
+        }
+        // Dismiss every selected company by name so contact-derived rows
+        // (and any reincarnations after delete) stay hidden from this view.
+        const nextDismissed = new Set(dismissedCompanies);
+        for (const key of nameKeys) nextDismissed.add(key);
+        persistDismissed(nextDismissed);
+
+        toast({ title: `${ids.length} ${ids.length === 1 ? "company" : "companies"} removed` });
+      }
+      clearActiveSelection();
+    } finally {
+      setDeleting(false);
+      setConfirmOpen(false);
+    }
+  };
+
+  const bulkSubject =
+    activeTab === "companies" ? (activeSelection.size === 1 ? "company" : "companies") :
+    activeTab === "managers" ? (activeSelection.size === 1 ? "hiring manager" : "hiring managers") :
+    activeSelection.size === 1 ? "person" : "people";
+
+  // Shared compact "Add X" pill rendered inline next to each tab's filter bar.
+  const AddButton = (
+    <Button variant="default" size="sm" onClick={onClickAdd}>
+      <Plus className="h-3.5 w-3.5" />
+      {addLabel}
+    </Button>
+  );
+
+  // List/Grid toggle pill for the active tab's grouped view. Only renders
+  // when group-by-company is on for that tab.
+  const renderViewToggle = (
+    value: "list" | "grid",
+    onChange: (v: "list" | "grid") => void,
+  ) => (
+    <div
+      style={{
+        display: "inline-flex",
+        background: "var(--paper-2, #FAFBFF)",
+        border: "1px solid var(--line, #E2E8F0)",
+        borderRadius: 6,
+        padding: 2,
+      }}
+    >
+      {(["list", "grid"] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          onClick={() => onChange(v)}
+          style={{
+            padding: "5px 10px",
+            fontSize: 11.5,
+            fontWeight: 500,
+            background: value === v ? "white" : "transparent",
+            border: value === v ? "1px solid var(--line, #E2E8F0)" : "1px solid transparent",
+            borderRadius: 4,
+            color: value === v ? "#3F5878" : "var(--ink-3, #94A3B8)",
+            cursor: "pointer",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 5,
+            fontFamily: "inherit",
+            transition: "color .12s, background .12s",
+          }}
+        >
+          {v === "list" ? <List className="h-3 w-3" /> : <Layers className="h-3 w-3" />}
+          {v === "list" ? "List" : "Grid"}
+        </button>
+      ))}
+    </div>
+  );
+
+  // Sort-direction dropdown for the active tab. Newest-first is default.
+  const renderSortDropdown = (value: SortDir, onChange: (v: SortDir) => void) => (
+    <select
+      value={value}
+      onChange={(e) => onChange(e.target.value as SortDir)}
+      className="px-3 py-2 bg-paper-2/60 border border-line rounded-md text-[12.5px] text-ink-2 cursor-pointer outline-none"
+    >
+      <option value="newest">Newest first</option>
+      <option value="oldest">Oldest first</option>
+    </select>
+  );
+
+  // "Delete selected (N)" pill - only renders when something is selected on
+  // the active tab. Sits to the left of AddButton in each filter bar.
+  const BulkDeleteButton = activeSelection.size > 0 ? (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => setConfirmOpen(true)}
+      className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+    >
+      <Trash2 className="h-3.5 w-3.5" />
+      Delete selected ({activeSelection.size})
+    </Button>
+  ) : null;
 
   return (
     <SidebarProvider>
@@ -1126,10 +2426,6 @@ const MyNetworkPage: React.FC = () => {
                 <Button variant="secondary" size="sm">
                   <Download className="h-3.5 w-3.5" />
                   Export
-                </Button>
-                <Button variant="default" size="sm">
-                  <Plus className="h-3.5 w-3.5" />
-                  {ctaLabel}
                 </Button>
               </div>
             }
@@ -1159,7 +2455,7 @@ const MyNetworkPage: React.FC = () => {
                 ))}
               </div>
 
-              {/* Filter bar (people only) */}
+              {/* Filter bar - People */}
               {activeTab === "people" && (
                 <div className="flex items-center gap-2 mb-3 flex-wrap">
                   {/* Search */}
@@ -1202,6 +2498,8 @@ const MyNetworkPage: React.FC = () => {
                     })()}
                   </select>
 
+                  {renderSortDropdown(peopleSortDir, persistPeopleSort)}
+
                   {/* Group toggle */}
                   <button
                     type="button"
@@ -1221,6 +2519,9 @@ const MyNetworkPage: React.FC = () => {
                     {groupByCompany ? "Grouped by company" : "Group by company"}
                   </button>
 
+                  {/* List/Grid view toggle, only meaningful while grouped */}
+                  {groupByCompany && renderViewToggle(peopleGroupedView, setPeopleGroupedViewPersisted)}
+
                   {/* Clear */}
                   {(searchQuery || companyFilter) && (
                     <button
@@ -1234,6 +2535,111 @@ const MyNetworkPage: React.FC = () => {
                       Clear filters
                     </button>
                   )}
+
+                  {/* Inline Add CTA - moved out of the AppHeader so the action
+                      sits next to the filter controls instead of the page chrome. */}
+                  <div className="ml-auto flex items-center gap-2">
+                    {BulkDeleteButton}
+                    {AddButton}
+                  </div>
+                </div>
+              )}
+
+              {/* Filter bar - Companies */}
+              {activeTab === "companies" && (
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 bg-paper-2/60 border border-line rounded-md"
+                    style={{ minWidth: 240 }}
+                  >
+                    <SearchIcon className="h-3.5 w-3.5 text-ink-3" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search company, industry, location..."
+                      className="flex-1 bg-transparent outline-none text-[12.5px] text-ink placeholder:text-ink-3"
+                    />
+                  </div>
+                  {renderSortDropdown(companiesSortDir, persistCompaniesSort)}
+                  {dismissedCompanies.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => persistDismissed(new Set())}
+                      className="text-[12px] text-[#3B82F6] hover:underline underline-offset-2"
+                      title="Show companies you've previously bulk-deleted from this view"
+                    >
+                      Restore {dismissedCompanies.size} hidden
+                    </button>
+                  )}
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="text-[12px] text-ink-3 hover:text-ink-2 underline-offset-2 hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    {BulkDeleteButton}
+                    {AddButton}
+                  </div>
+                </div>
+              )}
+
+              {/* Filter bar - Hiring Managers */}
+              {activeTab === "managers" && (
+                <div className="flex items-center gap-2 mb-3 flex-wrap">
+                  <div
+                    className="flex items-center gap-2 px-3 py-2 bg-paper-2/60 border border-line rounded-md"
+                    style={{ minWidth: 240 }}
+                  >
+                    <SearchIcon className="h-3.5 w-3.5 text-ink-3" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search name, company, title, role..."
+                      className="flex-1 bg-transparent outline-none text-[12.5px] text-ink placeholder:text-ink-3"
+                    />
+                  </div>
+
+                  {renderSortDropdown(managersSortDir, persistManagersSort)}
+
+                  <button
+                    type="button"
+                    onClick={() => setManagersGroupByCompany((v) => !v)}
+                    className={`inline-flex items-center gap-1.5 px-3 py-2 border rounded-md text-[12px] font-medium transition-colors ${
+                      managersGroupByCompany
+                        ? "bg-[#64748B]/10 border-[#64748B] text-[#3F5878]"
+                        : "bg-paper-2/60 border-line text-ink-3 hover:text-ink-2"
+                    }`}
+                    title="Toggle company grouping"
+                  >
+                    {managersGroupByCompany ? (
+                      <Layers className="h-3.5 w-3.5" />
+                    ) : (
+                      <List className="h-3.5 w-3.5" />
+                    )}
+                    {managersGroupByCompany ? "Grouped by company" : "Group by company"}
+                  </button>
+
+                  {managersGroupByCompany && renderViewToggle(managersGroupedView, setManagersGroupedViewPersisted)}
+
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchQuery("")}
+                      className="text-[12px] text-ink-3 hover:text-ink-2 underline-offset-2 hover:underline"
+                    >
+                      Clear
+                    </button>
+                  )}
+                  <div className="ml-auto flex items-center gap-2">
+                    {BulkDeleteButton}
+                    {AddButton}
+                  </div>
                 </div>
               )}
 
@@ -1244,6 +2650,14 @@ const MyNetworkPage: React.FC = () => {
                   query={searchQuery}
                   companyFilter={companyFilter}
                   groupByCompany={groupByCompany}
+                  groupedView={peopleGroupedView}
+                  recencyDir={peopleSortDir}
+                  highlightSince={peopleHighlightSince}
+                  selected={peopleSelected}
+                  onSelectionChange={setPeopleSelected}
+                  addingMode={addingPerson}
+                  onCancelAdd={() => setAddingPerson(false)}
+                  onSaveNew={handleSavePerson}
                   onDelete={(id) => {
                     setPeople((prev) => prev.filter((p) => p.id !== id));
                     if (user?.uid) {
@@ -1273,7 +2687,13 @@ const MyNetworkPage: React.FC = () => {
                     know there.
                   </p>
                   <CompaniesTable
-                    rows={companies}
+                    rows={filteredCompanies}
+                    selected={companiesSelected}
+                    onSelectionChange={setCompaniesSelected}
+                    highlightSince={companiesHighlightSince}
+                    addingMode={addingCompany}
+                    onCancelAdd={() => setAddingCompany(false)}
+                    onSaveNew={handleSaveCompany}
                     onSelectCompany={(name) => {
                       // Drill down: switch to People tab with this company
                       // pre-applied as the filter. The People view's company
@@ -1283,14 +2703,64 @@ const MyNetworkPage: React.FC = () => {
                       setCompanyFilter(name);
                       navigate("/my-network/people", { replace: true });
                     }}
+                    onFindPeople={(row) => {
+                      // Pre-fill the Find > People prompt with the company +
+                      // HQ and jump there. ContactSearchPage reads this key on
+                      // mount (see its searchPrompt useState initializer).
+                      const parts = [`People at ${row.name}`];
+                      if (row.hq) parts.push(`in ${row.hq}`);
+                      try {
+                        localStorage.setItem("offerloop_pending_query", parts.join(" "));
+                      } catch {}
+                      navigate("/find?tab=people");
+                    }}
                   />
                 </>
               )}
-              {activeTab === "managers" && <ManagersTable rows={managers} />}
+              {activeTab === "managers" && (
+                <ManagersTable
+                  rows={filteredManagers}
+                  selected={managersSelected}
+                  onSelectionChange={setManagersSelected}
+                  groupByCompany={managersGroupByCompany}
+                  groupedView={managersGroupedView}
+                  highlightSince={managersHighlightSince}
+                  addingMode={addingManager}
+                  onCancelAdd={() => setAddingManager(false)}
+                  onSaveNew={handleSaveManager}
+                />
+              )}
             </div>
           </div>
         </MainContentWrapper>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={(o) => !deleting && setConfirmOpen(o)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {activeSelection.size} {bulkSubject}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the selected {bulkSubject} from your network.
+              This action can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                runBulkDelete();
+              }}
+              disabled={deleting}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              {deleting ? "Deleting..." : `Delete ${activeSelection.size}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SidebarProvider>
   );
 };
