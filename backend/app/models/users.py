@@ -60,6 +60,7 @@ def create_user_data(
         # Usage tracking fields
         'alumniSearchesUsed': 0,
         'coffeeChatPrepsUsed': 0,
+        'interviewPrepsUsed': 0,
         # Student verification - locks in lifetime student price
         'isStudent': is_student,
         'verifiedEduEmail': email if is_student else None,

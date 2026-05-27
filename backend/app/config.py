@@ -185,6 +185,7 @@ TIER_CONFIGS = {
         'description': 'Try it out for free',
         'alumni_searches': 'unlimited',
         'coffee_chat_preps': 'unlimited',  # credit-gated only, no per-feature cap
+        'interview_preps': 2,
         'firm_search': False,
         'smart_filters': False,
         'bulk_drafting': False,
@@ -211,6 +212,7 @@ TIER_CONFIGS = {
         'description': 'Best for Students',
         'alumni_searches': 'unlimited',
         'coffee_chat_preps': 'unlimited',
+        'interview_preps': 5,
         'firm_search': True,
         'smart_filters': True,
         'bulk_drafting': True,
@@ -237,6 +239,7 @@ TIER_CONFIGS = {
         'description': 'For serious recruiting season',
         'alumni_searches': 'unlimited',
         'coffee_chat_preps': 'unlimited',
+        'interview_preps': 'unlimited',
         'firm_search': True,
         'smart_filters': True,
         'bulk_drafting': True,

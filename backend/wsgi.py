@@ -34,6 +34,10 @@ from .app.routes.linkedin_import import linkedin_import_bp
 from .app.routes.resume_workshop import resume_workshop_bp
 from .app.routes.resume_pdf_patch import resume_pdf_patch_bp
 from .app.routes.cover_letter_workshop import cover_letter_workshop_bp
+from .app.routes.cover_letter_public import cover_letter_public_bp
+from .app.routes.interview_prep import interview_prep_bp
+from .app.routes.interview_prep_public import interview_prep_public_bp
+from .app.routes.resume_workshop_public import resume_workshop_public_bp
 from .app.routes.auth_extension import auth_extension_bp
 from .app.routes.email_template import email_template_bp
 from .app.routes.admin import admin_bp
@@ -214,6 +218,10 @@ def create_app() -> Flask:
     app.register_blueprint(resume_workshop_bp)
     app.register_blueprint(resume_pdf_patch_bp)
     app.register_blueprint(cover_letter_workshop_bp)
+    app.register_blueprint(cover_letter_public_bp)
+    app.register_blueprint(interview_prep_bp)
+    app.register_blueprint(interview_prep_public_bp)
+    app.register_blueprint(resume_workshop_public_bp)
     app.register_blueprint(auth_extension_bp)
     app.register_blueprint(email_template_bp)
     app.register_blueprint(admin_bp)

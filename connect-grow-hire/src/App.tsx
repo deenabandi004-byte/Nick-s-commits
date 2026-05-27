@@ -55,6 +55,13 @@ const AgentSetup = React.lazy(() => import("./pages/AgentSetup"));
 const ResumeWorkshopPage = React.lazy(() => import("./pages/ResumeWorkshopPage"));
 const ResumePage = React.lazy(() => import("./pages/ResumePage"));
 const CoverLetterPage = React.lazy(() => import("./pages/CoverLetterPage"));
+const InterviewPrepPage = React.lazy(() => import("./pages/InterviewPrepPage"));
+const InterviewPrepFree = React.lazy(() => import("./pages/InterviewPrepFree"));
+const ResumeReviewFree = React.lazy(() => import("./pages/ResumeReviewFree"));
+const WidgetSandbox = React.lazy(() => import("./pages/WidgetSandbox"));
+const CoverLetterWidgetSandbox = React.lazy(() => import("./pages/CoverLetterWidgetSandbox"));
+const InterviewPrepSandbox = React.lazy(() => import("./pages/InterviewPrepSandbox"));
+const CoverLetterFree = React.lazy(() => import("./pages/CoverLetterFree"));
 // New Lovable Onboarding Flow
 const OnboardingFlow = React.lazy(() => import("./pages/OnboardingFlow").then(m => ({ default: m.OnboardingFlow })));
 // Dev-only preview routes (no auth) for design iteration on the new Profile page
@@ -86,6 +93,14 @@ const FindAlumniPreview = React.lazy(() => import("./pages/seo-preview/FindAlumn
 const ResumeCheckerPreview = React.lazy(() => import("./pages/seo-preview/ResumeCheckerPreview"));
 const RecruitingTimelinePreview = React.lazy(() => import("./pages/seo-preview/RecruitingTimelinePreview"));
 const NetworkingEmailGeneratorPreview = React.lazy(() => import("./pages/seo-preview/NetworkingEmailGeneratorPreview"));
+const ResumeReviewGoldmanIBPreview = React.lazy(() => import("./pages/seo-preview/ResumeReviewGoldmanIBPreview"));
+const WhatIsAnATSPreview = React.lazy(() => import("./pages/seo-preview/WhatIsAnATSPreview"));
+const CoverLetterMckinseyBAPreview = React.lazy(() => import("./pages/seo-preview/CoverLetterMckinseyBAPreview"));
+const InterviewPrepMckinseyCasePreview = React.lazy(() => import("./pages/seo-preview/InterviewPrepMckinseyCasePreview"));
+const ResumeReviewTemplate = React.lazy(() => import("./pages/seo-preview/templates/ResumeReviewTemplate"));
+const CoverLetterTemplate = React.lazy(() => import("./pages/seo-preview/templates/CoverLetterTemplate"));
+const InterviewPrepTemplate = React.lazy(() => import("./pages/seo-preview/templates/InterviewPrepTemplate"));
+const ATSGuideTemplate = React.lazy(() => import("./pages/seo-preview/templates/ATSGuideTemplate"));
 
 // Optimized QueryClient with caching
 const queryClient = new QueryClient({
@@ -320,6 +335,15 @@ const AppRoutes: React.FC = () => {
       <Route path="/write/cover-letter" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CoverLetterPage /></Suspense></ProtectedRoute>} />
       <Route path="/write/cover-letter-library" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CoverLetterPage /></Suspense></ProtectedRoute>} />
 
+      {/* Interview Prep - restored from 6a7c91d for local testing, not in sidebar */}
+      <Route path="/interview-prep" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><InterviewPrepPage /></Suspense></ProtectedRoute>} />
+      <Route path="/tools/interview-prep" element={<Suspense fallback={<PageLoader />}><InterviewPrepFree /></Suspense>} />
+      <Route path="/tools/resume-review" element={<Suspense fallback={<PageLoader />}><ResumeReviewFree /></Suspense>} />
+      <Route path="/sandbox/resume-widget" element={<Suspense fallback={<PageLoader />}><WidgetSandbox /></Suspense>} />
+      <Route path="/sandbox/cover-letter-widget" element={<Suspense fallback={<PageLoader />}><CoverLetterWidgetSandbox /></Suspense>} />
+      <Route path="/sandbox/interview-prep-widget" element={<Suspense fallback={<PageLoader />}><InterviewPrepSandbox /></Suspense>} />
+      <Route path="/tools/cover-letter" element={<Suspense fallback={<PageLoader />}><CoverLetterFree /></Suspense>} />
+
       {/* Data & Stats */}
       <Route path="/data" element={<Suspense fallback={<PageLoader />}><DataStats /></Suspense>} />
 
@@ -336,6 +360,16 @@ const AppRoutes: React.FC = () => {
       <Route path="/seo-preview/resume-checker" element={<Suspense fallback={<PageLoader />}><ResumeCheckerPreview /></Suspense>} />
       <Route path="/seo-preview/ib-recruiting-timeline" element={<Suspense fallback={<PageLoader />}><RecruitingTimelinePreview /></Suspense>} />
       <Route path="/seo-preview/networking-email-generator" element={<Suspense fallback={<PageLoader />}><NetworkingEmailGeneratorPreview /></Suspense>} />
+      <Route path="/seo-preview/resume-review-goldman-ib" element={<Suspense fallback={<PageLoader />}><ResumeReviewGoldmanIBPreview /></Suspense>} />
+      <Route path="/seo-preview/what-is-an-ats" element={<Suspense fallback={<PageLoader />}><WhatIsAnATSPreview /></Suspense>} />
+      <Route path="/seo-preview/cover-letter-mckinsey-ba" element={<Suspense fallback={<PageLoader />}><CoverLetterMckinseyBAPreview /></Suspense>} />
+      <Route path="/seo-preview/interview-prep-mckinsey-case" element={<Suspense fallback={<PageLoader />}><InterviewPrepMckinseyCasePreview /></Suspense>} />
+
+      {/* Dynamic template routes (data-driven, see src/seo/data/) */}
+      <Route path="/seo-preview/resume-review/:slug" element={<Suspense fallback={<PageLoader />}><ResumeReviewTemplate /></Suspense>} />
+      <Route path="/seo-preview/cover-letter/:slug" element={<Suspense fallback={<PageLoader />}><CoverLetterTemplate /></Suspense>} />
+      <Route path="/seo-preview/interview-prep/:slug" element={<Suspense fallback={<PageLoader />}><InterviewPrepTemplate /></Suspense>} />
+      <Route path="/seo-preview/ats/:slug" element={<Suspense fallback={<PageLoader />}><ATSGuideTemplate /></Suspense>} />
 
       {/* SEO Landing Pages */}
       <Route path="/cold-email-consulting" element={<Suspense fallback={<PageLoader />}><ColdEmailConsulting /></Suspense>} />
