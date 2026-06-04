@@ -179,7 +179,7 @@ TIER_CONFIGS = {
         'uses_pdl': True,
         'uses_email_drafting': True,
         'uses_resume': False,
-        'credits': 500,
+        'credits': 300,
         'time_saved_minutes': 300,
         'description': 'Try it out for free',
         'alumni_searches': 10,

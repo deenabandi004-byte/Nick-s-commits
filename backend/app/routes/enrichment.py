@@ -20,6 +20,7 @@ from app.utils.linkedin_enrichment import (
     get_enrichment_tiers,
     llm_enrich_profile,
     merge_linkedin_into_resume_parsed,
+    backfill_education,
 )
 
 enrichment_bp = Blueprint('enrichment', __name__, url_prefix='/api')
@@ -231,6 +232,12 @@ def enrich_linkedin_for_onboarding():
                     f'for this profile (tried: {tried}).'
                 ),
             }), 200
+
+        # Bug 2 fix: Firecrawl (first scrape tier) omits education by schema and
+        # wins the tier loop, so academics would be empty. Backfill university/
+        # major/graduation from an education-capable provider when missing, so the
+        # onboarding Confirm step reliably prefills academics.
+        linkedin_parsed = backfill_education(linkedin_parsed, normalized)
 
         # Write enrichment metadata to Firestore
         enrichment_update = {

@@ -281,7 +281,7 @@ def update_user_preferences():
 def log_onboarding_event():
     """Log an onboarding step event (viewed or completed).
 
-    Request body: { "event": "viewed"|"completed", "step": "profile"|"academics"|"goals"|"location", "skipped": false }
+    Request body: { "event": "viewed"|"completed", "step": "source"|"confirm"|"direction"|"trial", "skipped": false }
     """
     try:
         uid = request.firebase_user["uid"]
@@ -291,7 +291,13 @@ def log_onboarding_event():
         skipped = bool(data.get("skipped", False))
 
         valid_events = {"viewed": "onboarding_step_viewed", "completed": "onboarding_step_completed"}
-        valid_steps = {"welcome", "profile", "academics", "goals", "location"}
+        # New 5-step flow: source/confirm/direction/trial. Legacy step names kept
+        # so historical/in-flight clients don't 400.
+        valid_steps = {
+            "profile", "source", "manual", "intent", "track", "trial",
+            "confirm", "direction",  # transitional names
+            "welcome", "academics", "goals", "location",  # legacy
+        }
 
         if event not in valid_events:
             return jsonify({"error": f"Invalid event: {event}"}), 400

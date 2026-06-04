@@ -6,7 +6,7 @@ export const TIER_CONFIGS = {
     maxContacts: 5,
     minContacts: 1,
     name: "Search Free Plan Tier",
-    credits: 500,
+    credits: 300,
     description: "Try out platform risk free - up to 5 contacts + Email drafts",
     coffeeChat: true,
     timeSavedMinutes: 200,

@@ -191,6 +191,7 @@ def save_resume_to_firebase(user_id, resume_text, resume_url, parsed_info=None, 
 
 
 @resume_bp.route('/parse-resume', methods=['POST'])
+@require_firebase_auth
 def parse_resume():
     """Parse uploaded resume (PDF, DOCX, or DOC), upload to storage, and extract user information"""
     try:
@@ -260,16 +261,13 @@ def parse_resume():
         
         try:
             db = get_db()
-            auth_header = request.headers.get('Authorization', '')
-            
-            if auth_header.startswith('Bearer '):
-                id_token = auth_header.split(' ', 1)[1].strip()
-                
+            # @require_firebase_auth guarantees a verified user on request.firebase_user.
+            user_id = request.firebase_user.get('uid')
+
+            if user_id:
                 try:
-                    decoded = fb_auth.verify_id_token(id_token, clock_skew_seconds=5)
-                    user_id = decoded.get('uid')
                     print(f"[Resume] Processing authenticated upload")
-                    
+
                     if user_id and db:
                         # STEP 4A: Upload file to Firebase Storage
                         print("\n📤 Uploading to Firebase Storage...")

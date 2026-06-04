@@ -1,27 +1,36 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { OnboardingWelcome } from "./OnboardingWelcome";
-import { OnboardingLocationPreferences } from "./OnboardingLocationPreferences";
-import { OnboardingProfile } from "./OnboardingProfile";
-import { OnboardingAcademics } from "./OnboardingAcademics";
-import { OnboardingGoals } from "./OnboardingGoals";
-import { User, GraduationCap, Briefcase, MapPin, Loader2 } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import { ArrowLeft } from "lucide-react";
+import { OnboardingProfileBasics, type ProfileBasicsData } from "./OnboardingProfileBasics";
+import { OnboardingSource, type SourceResult } from "./OnboardingSource";
+import { OnboardingManualEntry, type ManualEntryData } from "./OnboardingManualEntry";
+import { OnboardingIntent, type IntentData } from "./OnboardingIntent";
+import { OnboardingTrack, type TrackData } from "./OnboardingTrack";
+import { OnboardingTrial } from "./OnboardingTrial";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
-import { BACKEND_URL, enrichLinkedInOnboarding, mergeLinkedInData } from "@/services/api";
+import { BACKEND_URL } from "@/services/api";
 import { toast } from "sonner";
 import { auth } from "@/lib/firebase";
+import { careerTrackByLabel } from "@/utils/careerTrackMapping";
+import { EMPTY_PREFILL } from "@/utils/onboardingPrefill";
+import OfferloopLogo from "@/assets/offerloop_logo2.png";
 
-type OnboardingStep = "welcome" | "profile" | "academics" | "goals" | "location";
+// Mirrors Pricing.tsx — checkout adds the 30-day trial server-side.
+const STRIPE_PUBLISHABLE_KEY =
+  "pk_live_51S4BB8ERY2WrVHp1acXrKE6RBG7NBlfHcMZ2kf7XhCX2E5g8Lasedx6ntcaD1H4BsoUMBGYXIcKHcAB4JuohLa2B00j7jtmWnB";
+const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
 
-interface OnboardingData {
-  location?: any;
-  profile?: any;
-  academics?: any;
-  goals?: { careerTrack: string; dreamCompanies: string[] };
-}
+const BLUE = "#1E3A8A";
+
+type Step = "profile" | "source" | "manual" | "intent" | "track" | "trial";
+// Segments shown in the progress bar (5 — "manual" is a sub-step of "source").
+const STEP_ORDER: Step[] = ["profile", "source", "intent", "track", "trial"];
+// Progress index per step; "manual" shares the source phase so the bar stays 5-wide.
+const STEP_INDEX: Record<Step, number> = { profile: 0, source: 1, manual: 1, intent: 2, track: 3, trial: 4 };
 
 interface OnboardingFlowProps {
-  onComplete: (data: OnboardingData) => void;
+  onComplete: (data: unknown) => void;
 }
 
 export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
@@ -32,31 +41,28 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
   const sp = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const returnTo = useMemo(() => sp.get("returnTo") || "", [sp]);
 
-  const [currentStep, setCurrentStep] = useState<OnboardingStep>("welcome");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [linkedinLoading, setLinkedinLoading] = useState(false);
-  const [linkedinAcademics, setLinkedinAcademics] = useState<{
-    university?: string;
-    major?: string;
-    degree?: string;
-    graduationYear?: string;
-  } | null>(null);
-  const [onboardingData, setOnboardingData] = useState<OnboardingData>({
-    location: {},
-    profile: {},
-    academics: {},
-  });
+  const [currentStep, setCurrentStep] = useState<Step>("profile");
+  const [submitting, setSubmitting] = useState(false);
 
-  // Onboarding analytics: fire-and-forget step events
+  const [profileBasics, setProfileBasics] = useState<ProfileBasicsData | null>(null);
+  const [source, setSource] = useState<SourceResult | null>(null);
+  const [manualAcademics, setManualAcademics] = useState<ManualEntryData | null>(null);
+  const [intent, setIntent] = useState("");
+  const [track, setTrack] = useState<TrackData | null>(null);
+
+  // Onboarding analytics: fire-and-forget step events.
   const loggedSteps = useRef<Set<string>>(new Set());
   const logOnboardingEvent = (event: "viewed" | "completed", step: string, skipped = false) => {
-    auth.currentUser?.getIdToken().then((token) => {
-      fetch(`${BACKEND_URL}/api/users/onboarding-event`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ event, step, skipped }),
-      }).catch(() => {});
-    }).catch(() => {});
+    auth.currentUser
+      ?.getIdToken()
+      .then((token) => {
+        fetch(`${BACKEND_URL}/api/users/onboarding-event`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ event, step, skipped }),
+        }).catch(() => {});
+      })
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -66,284 +72,227 @@ export const OnboardingFlow = ({ onComplete }: OnboardingFlowProps) => {
     }
   }, [currentStep]);
 
-  const handleProfileData = async (profileData: any) => {
-    setOnboardingData((prev) => ({ ...prev, profile: profileData }));
-
-    // Use enrichment result already fetched on Profile page (onBlur)
-    if (profileData.linkedinEnrichment?.academics) {
-      setLinkedinAcademics(profileData.linkedinEnrichment.academics);
-    } else if (profileData.linkedinUrl && profileData.linkedinUrl.includes("linkedin.com/in/")) {
-      // Fallback: fetch if not already done on Profile page
-      setLinkedinLoading(true);
-      try {
-        const result = await Promise.race([
-          enrichLinkedInOnboarding(profileData.linkedinUrl),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
-        ]) as any;
-        if (result?.success && result?.academics) {
-          setLinkedinAcademics(result.academics);
-        } else {
-          setLinkedinAcademics(null);
-        }
-      } catch {
-        setLinkedinAcademics(null);
-      } finally {
-        setLinkedinLoading(false);
-      }
-    }
-
+  // ── Step handlers ─────────────────────────────────────────────────────────
+  const handleProfile = (data: ProfileBasicsData) => {
+    setProfileBasics(data);
     logOnboardingEvent("completed", "profile");
-    setCurrentStep("academics");
+    setCurrentStep("source");
   };
-
-  const handleAcademicsData = (academicsData: any) => {
-    setOnboardingData((prev) => ({ ...prev, academics: academicsData }));
-    logOnboardingEvent("completed", "academics");
-    setCurrentStep("goals");
+  const handleSource = (data: SourceResult) => {
+    setSource(data);
+    logOnboardingEvent("completed", "source", data.entryPath === "manual");
+    // Manual choice opens a form to type the academics the parse would provide.
+    setCurrentStep(data.entryPath === "manual" ? "manual" : "intent");
   };
-
-  const handleGoalsData = (goalsData: { careerTrack: string; dreamCompanies: string[] }) => {
-    setOnboardingData((prev) => ({
-      ...prev,
-      goals: { careerTrack: goalsData.careerTrack, dreamCompanies: goalsData.dreamCompanies },
-    }));
-    logOnboardingEvent("completed", "goals");
-    setCurrentStep("location");
+  const handleManualEntry = (data: ManualEntryData) => {
+    setManualAcademics(data);
+    logOnboardingEvent("completed", "manual");
+    setCurrentStep("intent");
   };
-
-  const handleGoalsSkip = () => {
-    logOnboardingEvent("completed", "goals", true);
-    setCurrentStep("location");
+  const handleIntent = (data: IntentData) => {
+    setIntent(data.intent);
+    logOnboardingEvent("completed", "intent", !data.intent);
+    setCurrentStep("track");
   };
-
-  const handleLocationData = async (locationData: any) => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-
-    try {
-      // 1. Process resume if uploaded during onboarding
-      if (onboardingData.profile.resume && onboardingData.profile.resume instanceof File) {
-        try {
-          const file = onboardingData.profile.resume;
-          const extension = file.name.split(".").pop()?.toLowerCase();
-          const validExtensions = ["pdf", "docx", "doc"];
-          if (!extension || !validExtensions.includes(extension)) {
-            toast.warning("Resume must be a PDF, DOCX, or DOC file. You can upload it later in Account Settings.");
-          } else {
-            const formData = new FormData();
-            formData.append("resume", file);
-            const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
-            const response = await fetch(`${BACKEND_URL}/api/parse-resume`, {
-              method: "POST",
-              headers: token ? { Authorization: `Bearer ${token}` } : {},
-              body: formData,
-            });
-            const result = await response.json();
-            if (!response.ok) {
-              throw new Error(result.error || "Failed to parse resume");
-            }
-            const parsed = {
-              name: result.data.name || "",
-              year: result.data.year || "",
-              major: result.data.major || "",
-              university: result.data.university || "",
-              fileName: file.name,
-              uploadDate: new Date().toISOString(),
-            };
-            localStorage.setItem("resumeData", JSON.stringify(parsed));
-
-            // Merge LinkedIn enrichment data with resume data
-            if (onboardingData.profile.linkedinUrl) {
-              await mergeLinkedInData();
-            }
-          }
-        } catch (resumeError) {
-          console.error("Error processing resume:", resumeError);
-          toast.error("Resume upload failed, but you can upload it later in Account Settings");
-        }
-      }
-
-      // 2. Fill gaps from resume/LinkedIn data
-      let resumeParsed: { university?: string; major?: string } = {};
-      try {
-        resumeParsed = JSON.parse(localStorage.getItem("resumeData") || "{}");
-      } catch { /* ignore */ }
-
-      const academicUniversity = onboardingData.academics.university || resumeParsed.university || "";
-      const academicMajor = onboardingData.academics.major || resumeParsed.major || "";
-
-      // 3. Transform data
-      const finalData = {
-        profile: {
-          fullName: `${onboardingData.profile.firstName} ${onboardingData.profile.lastName}`,
-          firstName: onboardingData.profile.firstName,
-          lastName: onboardingData.profile.lastName,
-          email: onboardingData.profile.email,
-          phone: onboardingData.profile.phone,
-          linkedinUrl: onboardingData.profile.linkedinUrl || "",
-        },
-        university: academicUniversity,
-        academics: {
-          university: academicUniversity,
-          college: academicUniversity,
-          degree: onboardingData.academics.degree,
-          major: academicMajor,
-          graduationMonth: onboardingData.academics.graduationMonth,
-          graduationYear: onboardingData.academics.graduationYear,
-        },
-        // Goals: written as flat top-level keys (not nested under goals.*)
-        // for backwards compat with backend reads that check both paths
-        ...(onboardingData.goals?.careerTrack ? { careerTrack: onboardingData.goals.careerTrack } : {}),
-        ...(onboardingData.goals?.dreamCompanies?.length ? { dreamCompanies: onboardingData.goals.dreamCompanies } : {}),
-        location: {
-          country: locationData.country,
-          state: locationData.state,
-          city: locationData.city,
-          jobTypes: locationData.jobTypes,
-          interests: locationData.interests,
-          careerInterests: locationData.interests,
-          career_interests: locationData.interests,
-          preferredLocation: locationData.preferredLocation,
-        },
-        onboarding: {
-          completedAt: new Date().toISOString(),
-        },
-      };
-
-      // 3. Log location step completion before Firestore write
-      logOnboardingEvent("completed", "location");
-
-      // 4. Persist to Firestore
-      await completeOnboarding(finalData);
-
-      // 4. Session flag
-      sessionStorage.setItem("onboarding_just_completed", "true");
-
-      // 5. Propagation delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // 6. Refresh user
-      await refreshUser();
-
-      // 7. Analytics callback
-      try {
-        onComplete(finalData);
-      } catch (e) {
-        console.error("Analytics error:", e);
-      }
-
-      // 8. Navigate
-      let destination = "/home";
-      if (returnTo) {
-        try {
-          let decoded = returnTo;
-          while (decoded !== decodeURIComponent(decoded)) {
-            decoded = decodeURIComponent(decoded);
-          }
-          if (!decoded.includes("/onboarding") && !decoded.includes("/signin")) {
-            destination = decoded;
-          }
-        } catch (e) {
-          console.error("Failed to decode returnTo:", e);
-        }
-      }
-      navigate(destination, { replace: true });
-    } catch (e) {
-      console.error("Onboarding failed:", e);
-      toast.error("Failed to complete onboarding. Please try again.");
-      setIsSubmitting(false);
-    }
+  const handleTrack = (data: TrackData) => {
+    setTrack(data);
+    logOnboardingEvent("completed", "track");
+    setCurrentStep("trial");
   };
 
   const handleBack = () => {
-    if (currentStep === "academics") setCurrentStep("profile");
-    else if (currentStep === "goals") setCurrentStep("academics");
-    else if (currentStep === "location") setCurrentStep("goals");
+    if (currentStep === "profile") navigate("/"); // first step → landing page
+    else if (currentStep === "source") setCurrentStep("profile");
+    else if (currentStep === "manual") setCurrentStep("source");
+    // intent's previous screen depends on whether the user went manual.
+    else if (currentStep === "intent") setCurrentStep(source?.entryPath === "manual" ? "manual" : "source");
+    else if (currentStep === "track") setCurrentStep("intent");
+    else if (currentStep === "trial") setCurrentStep("track");
   };
+
+  // ── Final Firestore write (approved write-map paths) ───────────────────────
+  const buildFinalData = (profile: ProfileBasicsData, src: SourceResult | null, intentValue: string, trk: TrackData) => {
+    const nameParts = profile.fullName.trim().split(/\s+/);
+    const firstName = nameParts[0] || "";
+    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
+    // Academics: typed manual entry on the manual path, else the résumé/LinkedIn resolve.
+    const academics =
+      src?.entryPath === "manual" && manualAcademics
+        ? { university: manualAcademics.university, major: manualAcademics.major, graduationYear: manualAcademics.graduationYear }
+        : src?.resolved || EMPTY_PREFILL;
+    const manualDegree = src?.entryPath === "manual" ? manualAcademics?.degree || "" : "";
+    const trackOpt = careerTrackByLabel(trk.careerTrackLabel);
+    const trackValue = trackOpt?.value || trk.careerTrackLabel;
+    const industries = trackOpt?.targetIndustries || [];
+    const hasCompanies = trk.dreamCompanies.length > 0;
+    const hasJobTypes = trk.jobTypes.length > 0;
+
+    return {
+      profile: {
+        fullName: profile.fullName,
+        firstName,
+        lastName,
+        email: profile.email,
+        phone: profile.phone,
+        linkedinUrl: src?.linkedinUrl || "",
+      },
+      university: academics.university,
+      academics: {
+        university: academics.university,
+        college: academics.university,
+        degree: manualDegree,
+        major: academics.major,
+        graduationYear: academics.graduationYear,
+      },
+      careerTrack: trackValue,
+      targetIndustries: industries,
+      goals: {
+        careerTrack: trackValue,
+        targetIndustries: industries,
+        ...(hasCompanies ? { dreamCompanies: trk.dreamCompanies } : {}),
+      },
+      ...(hasCompanies ? { dreamCompanies: trk.dreamCompanies, targetFirms: trk.dreamCompanies } : {}),
+      // jobTypes: top-level (RecommendedJobs) + location.jobTypes (job_board)
+      ...(hasJobTypes ? { jobTypes: trk.jobTypes, location: { jobTypes: trk.jobTypes } } : {}),
+      ...(intentValue ? { onboardingIntent: intentValue } : {}),
+      onboarding: { completedAt: new Date().toISOString() },
+    };
+  };
+
+  const persistOnboarding = async () => {
+    if (!profileBasics || !track) throw new Error("Missing onboarding data");
+    const finalData = buildFinalData(profileBasics, source, intent, track);
+    logOnboardingEvent("completed", "trial");
+    await completeOnboarding(finalData);
+    sessionStorage.setItem("onboarding_just_completed", "true");
+    await new Promise((r) => setTimeout(r, 300));
+    await refreshUser();
+    try {
+      onComplete(finalData);
+    } catch (e) {
+      console.error("Analytics error:", e);
+    }
+    return finalData;
+  };
+
+  const resolveDestination = () => {
+    let dest = "/home";
+    if (returnTo) {
+      try {
+        let decoded = returnTo;
+        while (decoded !== decodeURIComponent(decoded)) decoded = decodeURIComponent(decoded);
+        if (!decoded.includes("/onboarding") && !decoded.includes("/signin")) dest = decoded;
+      } catch {
+        /* ignore decode errors */
+      }
+    }
+    return dest;
+  };
+
+  const handleContinueFree = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await persistOnboarding();
+      navigate(resolveDestination(), { replace: true });
+    } catch (e) {
+      console.error("Onboarding failed:", e);
+      toast.error("Failed to finish onboarding. Please try again.");
+      setSubmitting(false);
+    }
+  };
+
+  const handleStartTrial = async (priceId: string) => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      await persistOnboarding();
+      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+      const res = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({
+          priceId,
+          userId: user?.uid,
+          userEmail: user?.email,
+          successUrl: `${window.location.origin}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+          cancelUrl: `${window.location.origin}/home`,
+        }),
+      });
+      const data = await res.json();
+      const stripe = await stripePromise;
+      if (res.ok && data.sessionId && stripe) {
+        await stripe.redirectToCheckout({ sessionId: data.sessionId });
+        return;
+      }
+      toast.error("Couldn't start checkout — you're on the free plan for now.");
+      navigate(resolveDestination(), { replace: true });
+    } catch (e) {
+      console.error("Trial checkout failed:", e);
+      toast.error("Couldn't start checkout — you're on the free plan for now.");
+      navigate(resolveDestination(), { replace: true });
+    }
+  };
+
+  const currentIndex = STEP_INDEX[currentStep];
 
   return (
     <div className="min-h-screen bg-background">
-      {linkedinLoading && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-lg font-medium text-foreground">Personalizing your experience...</p>
-          </div>
+      {/* Progress bar — sticky at the very top, stays put while scrolling */}
+      <div className="sticky top-0 z-50 bg-background px-4 pt-3 pb-3">
+        <div className="flex gap-1.5">
+          {STEP_ORDER.map((s, i) => (
+            <div
+              key={s}
+              className="h-1.5 flex-1 rounded-full transition-colors"
+              style={{ background: i <= currentIndex ? BLUE : "#E2E8F0" }}
+            />
+          ))}
         </div>
-      )}
-      <div className="container mx-auto px-4 py-8">
-        {/* Progress header */}
-        {(() => {
-          const steps = [
-            { key: "profile", icon: User },
-            { key: "academics", icon: GraduationCap },
-            { key: "goals", icon: Briefcase },
-            { key: "location", icon: MapPin },
-          ];
-          const order = ["welcome", "profile", "academics", "goals", "location"];
-          const currentIndex = order.indexOf(currentStep);
-          return (
-            <div className="flex items-center gap-2 mb-8">
-              {steps.map((step, i) => {
-                const stepIndex = i + 1; // offset by 1 since welcome is index 0
-                const isReached = currentIndex >= stepIndex;
-                const Icon = step.icon;
-                return (
-                  <React.Fragment key={step.key}>
-                    {i > 0 && (
-                      <div className={`h-[2px] flex-1 ${isReached ? "bg-primary" : "bg-muted"}`} />
-                    )}
-                    <span
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        isReached ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </span>
-                  </React.Fragment>
-                );
-              })}
-            </div>
-          );
-        })()}
+      </div>
+
+      <div className="container mx-auto px-4 pb-12 max-w-xl">
+        {/* Back — lowered, dark + bold so it's clearly visible */}
+        <div className="mt-4 mb-1">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="flex items-center gap-1.5 text-sm font-semibold text-[#0F172A] hover:text-[#1E3A8A] transition-colors"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+          >
+            <ArrowLeft className="h-4 w-4" /> Back
+          </button>
+        </div>
+
+        {/* Logo — big, with the PNG's transparent padding cropped via negative margins */}
+        <div className="text-center" style={{ marginTop: -16, marginBottom: -36 }}>
+          <img src={OfferloopLogo} alt="Offerloop" className="h-48 mx-auto" />
+        </div>
 
         {/* Steps */}
-        <div className="mt-8">
-          {currentStep === "welcome" && (
-            <OnboardingWelcome onNext={() => { logOnboardingEvent("completed", "welcome"); setCurrentStep("profile"); }} userName={user?.name || "there"} />
-          )}
-
+        <div>
           {currentStep === "profile" && (
-            <OnboardingProfile
-              onNext={handleProfileData}
-              onBack={() => setCurrentStep("welcome")}
-              initialData={onboardingData.profile}
+            <OnboardingProfileBasics
+              onNext={handleProfile}
+              // Prefill from the Google-authenticated user (sign-in happens on /signin).
+              initial={profileBasics || { fullName: user?.name || "", email: user?.email || "" }}
             />
           )}
-
-          {currentStep === "academics" && (
-            <OnboardingAcademics
-              onNext={handleAcademicsData}
-              onBack={handleBack}
-              initialData={onboardingData.academics}
-              linkedinData={linkedinAcademics}
-            />
+          {currentStep === "source" && (
+            <OnboardingSource onNext={handleSource} initialLinkedinUrl={source?.linkedinUrl} />
           )}
-
-          {currentStep === "goals" && (
-            <OnboardingGoals
-              onNext={handleGoalsData}
-              onSkip={handleGoalsSkip}
-              initialData={onboardingData.goals}
-            />
+          {currentStep === "manual" && (
+            <OnboardingManualEntry onNext={handleManualEntry} initial={manualAcademics || undefined} />
           )}
-
-          {currentStep === "location" && (
-            <OnboardingLocationPreferences
-              onNext={handleLocationData}
-              onBack={handleBack}
-              initialData={onboardingData.location}
-              isSubmitting={isSubmitting}
+          {currentStep === "intent" && <OnboardingIntent onNext={handleIntent} initial={intent} />}
+          {currentStep === "track" && (
+            <OnboardingTrack onNext={handleTrack} initial={track || undefined} />
+          )}
+          {currentStep === "trial" && (
+            <OnboardingTrial
+              onStartTrial={handleStartTrial}
+              onContinueFree={handleContinueFree}
+              submitting={submitting}
             />
           )}
         </div>

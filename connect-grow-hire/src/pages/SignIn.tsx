@@ -4,7 +4,6 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
-import { apiService } from "@/services/api";
 import OfferloopLogo from '@/assets/offerloop_logo2.png';
  
 
@@ -37,56 +36,10 @@ const SignIn: React.FC = () => {
     }, 600);
   };
 
-  // Check if Gmail connection is needed using Firebase auth directly
-  const checkNeedsGmailConnection = async (): Promise<boolean> => {
-    try {
-      const data = await apiService.gmailStatus();
-      return !data.connected;
-    } catch (error) {
-      return true;
-    }
-  };
-
-  const initiateGmailOAuth = async (autoClose = false) => {
-    try {
-      const authUrl = await apiService.startGmailOAuth();
-      if (!authUrl) return;
-
-      const destination = user?.needsOnboarding ? '/onboarding' : '/home';
-      localStorage.setItem('post_gmail_destination', destination);
-
-      if (autoClose) {
-        const popup = window.open(
-          authUrl,
-          `gmail-oauth-${Date.now()}`,
-          'width=600,height=700,scrollbars=yes,resizable=yes'
-        );
-        if (!popup) return;
-
-        const checkClosed = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(checkClosed);
-            setTimeout(async () => {
-              const needsGmail = await checkNeedsGmailConnection();
-              if (!needsGmail) {
-                toast({
-                  title: "Gmail Connected!",
-                  description: "Drafts will now appear in your Gmail account.",
-                });
-              }
-            }, 1000);
-          }
-        }, 500);
-      } else {
-        window.location.replace(authUrl);
-      }
-    } catch (error) {
-      if (!autoClose) {
-        const dest = user?.needsOnboarding ? "/onboarding" : "/home";
-        forceNavigate(dest);
-      }
-    }
-  };
+  // Gmail OAuth is no longer initiated from sign-in. It's deferred to the user's
+  // first outreach send (the Find/outreach surface prompts connection via its
+  // Gmail banner). The OAuth-return handling below still runs for when the user
+  // connects Gmail later and is redirected back here with ?connected=gmail.
 
   // ✅ useEffects come AFTER function definitions
   useEffect(() => setActiveTab(initialTab), [initialTab]);
@@ -211,33 +164,11 @@ const SignIn: React.FC = () => {
       const next = await signIn({ prompt: "consent" });
       
       console.log("✅ Firebase sign-in completed, next step:", next);
-      
-      // ✅ IMMEDIATELY check Gmail connection (no delay) and trigger OAuth if needed
-      // This prevents navigation to home before OAuth
-      const isNewUser = next === "onboarding";
-      console.log("🔍 User type check:", { isNewUser, next });
-      
-      // For both new and existing users, check Gmail connection immediately
-      console.log("🔍 Checking Gmail connection status...");
-      const needsGmail = await checkNeedsGmailConnection();
-      console.log("🔍 Gmail connection check result:", needsGmail);
-      
-      if (needsGmail) {
-        console.log("📧 Gmail not connected, starting OAuth flow IMMEDIATELY...");
-        console.log("📧 About to call initiateGmailOAuth(false)...");
-        // Immediately trigger Gmail OAuth - show permissions screen right away
-        // This redirects, so we don't navigate to home first
-        // CRITICAL: This should redirect to Gmail OAuth consent screen immediately
-        await initiateGmailOAuth(false); // false = redirect so user sees permissions screen
-        // This line should never execute because initiateGmailOAuth redirects
-        console.log("📧 initiateGmailOAuth completed (should have redirected)");
-        return; // OAuth redirects, stop here - don't navigate anywhere
-      }
-      
-      // Gmail already connected - navigate based on next route
-      console.log("✅ Gmail already connected, navigating to app");
-      const dest = (next as "onboarding" | "home") === "onboarding" ? "/onboarding" : "/home";
-      console.log("[signin] signIn returned:", next, "→", dest, "(Gmail already connected)");
+
+      // Gmail OAuth is deferred to the user's first outreach send (no longer part
+      // of the signup path). Navigate straight to onboarding / home after sign-in.
+      const dest = next === "onboarding" ? "/onboarding" : "/home";
+      console.log("[signin] signIn returned:", next, "→", dest);
       forceNavigate(dest);
     } catch (err: any) {
       console.error("[signin] failed:", err);

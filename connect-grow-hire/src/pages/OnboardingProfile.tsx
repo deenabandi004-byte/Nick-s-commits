@@ -7,6 +7,7 @@ import profileIllustration from "@/assets/profile-setup-illustration.png";
 import { ACCEPTED_RESUME_TYPES, isValidResumeFile } from "@/utils/resumeFileTypes";
 import { enrichLinkedInOnboarding, BACKEND_URL } from "@/services/api";
 import { auth } from "@/lib/firebase";
+import { resumePrefillFromParse } from "@/utils/onboardingPrefill";
 
 interface ProfileData {
   firstName: string;
@@ -119,33 +120,52 @@ export const OnboardingProfile = ({ onNext, onBack, initialData }: OnboardingPro
       });
       const result = await response.json();
       if (response.ok && result.data) {
-        const parsed = result.data;
-        const nameParts = (parsed.name || "").trim().split(" ", 2);
-        const contact = parsed.contact || {};
+        // Bug 1 fix: read the nested parse shape (name/contact + education.*)
+        // via the shared helper instead of non-existent flat fields.
+        const prefill = resumePrefillFromParse(result.data);
         const filled = new Set<string>(profileAutoFilled);
 
         setProfile(prev => {
           const updated = { ...prev };
-          if (!prev.firstName && nameParts[0]) {
-            updated.firstName = nameParts[0];
+          if (!prev.firstName && prefill.firstName) {
+            updated.firstName = prefill.firstName;
             filled.add("firstName");
           }
-          if (!prev.lastName && nameParts.length > 1) {
-            updated.lastName = nameParts.slice(1).join(" ");
+          if (!prev.lastName && prefill.lastName) {
+            updated.lastName = prefill.lastName;
             filled.add("lastName");
           }
-          if (!prev.email && contact.email) {
-            updated.email = contact.email;
+          if (!prev.email && prefill.email) {
+            updated.email = prefill.email;
             filled.add("email");
           }
-          if (!prev.phone && contact.phone) {
-            updated.phone = contact.phone;
+          if (!prev.phone && prefill.phone) {
+            updated.phone = prefill.phone;
             filled.add("phone");
           }
           return updated;
         });
 
         setProfileAutoFilled(filled);
+
+        // Persist parsed academics at upload time so the Confirm step can
+        // prefill university/major/graduationYear before final submit.
+        try {
+          const existing = JSON.parse(localStorage.getItem("resumeData") || "{}");
+          localStorage.setItem(
+            "resumeData",
+            JSON.stringify({
+              ...existing,
+              name: prefill.name || existing.name || "",
+              university: prefill.university || existing.university || "",
+              major: prefill.major || existing.major || "",
+              graduationYear: prefill.graduationYear || existing.graduationYear || "",
+              year: prefill.graduationYear || existing.year || "",
+            })
+          );
+        } catch {
+          /* ignore localStorage failures */
+        }
       }
     } catch {
       // Silent — user can fill manually

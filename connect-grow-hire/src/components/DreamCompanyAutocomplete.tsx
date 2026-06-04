@@ -9,6 +9,7 @@ import {
 import { X, Plus, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { companies } from "@/data/companies";
+import { EXTRA_DREAM_COMPANIES } from "@/data/dreamCompanies";
 
 export interface DreamCompanyAutocompleteHandle {
   /** Commit any text the user typed but didn't submit via Enter/comma.
@@ -17,21 +18,46 @@ export interface DreamCompanyAutocompleteHandle {
   flushPending: () => string[];
 }
 
-// Career-track → companies.ts industry buckets. Drives the
-// "Suggested for you" pills under the autocomplete input.
-const TRACK_TO_INDUSTRIES: Record<string, string[]> = {
-  "Investment Banking": ["investment-banking"],
-  "Management Consulting": ["consulting"],
-  "Private Equity / VC": ["private-equity", "finance"],
-  "Product Management": ["tech"],
-  "Software Engineering": ["tech"],
-  "Sales & Trading": ["investment-banking", "finance"],
-  "Corporate Finance / FP&A": ["finance", "investment-banking"],
-  Other: [],
-};
+// Combined free-text search pool: curated companies.ts names + the
+// supplementary dreamCompanies.ts names, deduped by lowercased name.
+const ALL_COMPANY_NAMES: string[] = (() => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const name of [...companies.map((c) => c.name), ...EXTRA_DREAM_COMPANIES]) {
+    const key = name.toLowerCase();
+    if (!seen.has(key)) {
+      seen.add(key);
+      out.push(name);
+    }
+  }
+  return out;
+})();
+
+// Map a career-track LABEL to companies.ts industry buckets via keywords, so the
+// "Common picks" row works across the full (110+) career-track list.
+function industriesForTrack(track: string): string[] {
+  const t = track.toLowerCase();
+  if (/private equity|growth equity|repe|buyout/.test(t)) return ["private-equity"];
+  if (/venture|vc\b/.test(t)) return ["venture-capital"];
+  if (/bank|m&a|capital markets|ecm|dcm|leveraged|restructuring/.test(t)) return ["investment-banking"];
+  if (/trading|equity research|quant|hedge|asset management|wealth|treasury|risk|compliance|insurance|actuarial|finance|fp&a/.test(t))
+    return ["finance", "investment-banking"];
+  if (/consult|advisory/.test(t)) return ["consulting"];
+  if (/software|engineer|data|machine learning|\bai\b|cloud|devops|security|cyber|product|design|ux|systems|fintech|blockchain|web3|tech|developer|game|it /.test(t))
+    return ["tech"];
+  if (/health|pharma|biotech|medical|clinical/.test(t)) return ["healthcare"];
+  if (/aerospace|defense/.test(t)) return ["defense"];
+  if (/energy|oil|gas|renewable|cleantech/.test(t)) return ["energy"];
+  if (/real estate/.test(t)) return ["real-estate"];
+  if (/media|entertainment|journalism|film|advertising|marketing|content|brand|public relations/.test(t))
+    return ["media", "consumer"];
+  if (/manufactur|automotive|industrial|supply chain|logistics|construction/.test(t)) return ["industrials"];
+  if (/retail|hospitality|consumer|sales|account|customer/.test(t)) return ["consumer"];
+  return [];
+}
 
 function suggestedCompanyNames(track: string, exclude: string[]): string[] {
-  const industries = TRACK_TO_INDUSTRIES[track] || [];
+  const industries = industriesForTrack(track);
   if (!industries.length) return [];
   const excludeLower = new Set(exclude.map((s) => s.toLowerCase()));
   return companies
@@ -45,11 +71,10 @@ function filterCompaniesByQuery(query: string, exclude: string[]): string[] {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   const excludeLower = new Set(exclude.map((s) => s.toLowerCase()));
-  return companies
-    .filter((c) => c.name.toLowerCase().includes(q))
-    .map((c) => c.name)
+  return ALL_COMPANY_NAMES
+    .filter((name) => name.toLowerCase().includes(q))
     .filter((name) => !excludeLower.has(name.toLowerCase()))
-    .slice(0, 6);
+    .slice(0, 8);
 }
 
 interface DreamCompanyAutocompleteProps {
@@ -148,7 +173,7 @@ export const DreamCompanyAutocomplete = forwardRef<
                 fontSize: 12,
                 background: "#EFF6FF",
                 border: "1px solid #BFDBFE",
-                color: "#1D4ED8",
+                color: "#1E3A8A",
               }}
             >
               {co}
@@ -316,8 +341,8 @@ export const DreamCompanyAutocomplete = forwardRef<
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.borderStyle = "solid";
-                  e.currentTarget.style.borderColor = "#3B82F6";
-                  e.currentTarget.style.color = "#2563EB";
+                  e.currentTarget.style.borderColor = "#1E3A8A";
+                  e.currentTarget.style.color = "#1E3A8A";
                   e.currentTarget.style.background = "#EFF6FF";
                 }}
                 onMouseLeave={(e) => {
