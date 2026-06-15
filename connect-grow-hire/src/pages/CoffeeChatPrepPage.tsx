@@ -404,7 +404,6 @@ const CoffeeChatPrepPage: React.FC = () => {
       };
       
       const handleCompletion = (statusResult: any) => {
-        const contactData = statusResult.contactData || {};
         if (firebaseUser?.uid && statusResult.contactData) {
           try {
             const contactName = statusResult.contactData.name ||
@@ -434,14 +433,7 @@ const CoffeeChatPrepPage: React.FC = () => {
           setCoffeeChatPrepId((statusResult as any).id || prepId);
         });
         
-        // TODO(#13): PostHog was reset and never re-configured. This event fired
-        // into a void. Rewire through /api/metrics/events or replacement analytics
-        // system per https://github.com/deenabandi004-byte/Final_offerloop/issues/13
-        // <ORIGINAL CALL COMMENTED BELOW>
-        // trackFeatureActionCompleted('coffee_chat_prep', 'generate', true, {
-        //   company: contactData.company || contactData.companyName || '',
-        //   role: contactData.jobTitle || contactData.title || undefined,
-        // });
+        trackFeatureActionCompleted('coffee_chat_prep', 'generate', true);
         
         toast({
           title: "Coffee Chat Prep Ready!",
