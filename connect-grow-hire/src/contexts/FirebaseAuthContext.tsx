@@ -236,6 +236,13 @@ const signIn = async (opts?: SignInOptions): Promise<NextRoute> => {
         createdAt: new Date().toISOString(),
         lastSignIn: new Date().toISOString(),
       });
+      // Brand-new account: no Firestore doc existed. Co-gate on Firebase's own
+      // isNewUser so this cannot misfire if a doc is ever missing for an
+      // existing account. No email or PII; attribution is handled by the
+      // onIdTokenChanged identify path.
+      if (info?.isNewUser) {
+        posthog.capture('sign_up', { signup_method: 'google' });
+      }
       return "onboarding";
     } else {
       await updateDoc(ref, { lastSignIn: new Date().toISOString() });
