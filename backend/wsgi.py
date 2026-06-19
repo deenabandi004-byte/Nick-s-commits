@@ -253,8 +253,12 @@ def create_app() -> Flask:
     app.register_blueprint(find_people_public_bp)
 
     # --- MCP server (anonymous IP-based, mounts /mcp + /api/mcp/health) ---
-    from .app.mcp_server.flask_mount import register_mcp_blueprint
-    register_mcp_blueprint(app)
+    # Skippable for local dev: the MCP mount refuses to boot against the prod
+    # Firestore project from a non-prod env, so DISABLE_MCP=1 lets a developer
+    # run the rest of the app locally without it.
+    if os.getenv("DISABLE_MCP") != "1":
+        from .app.mcp_server.flask_mount import register_mcp_blueprint
+        register_mcp_blueprint(app)
 
     # --- /claim?token=xyz attribution landing for MCP paywall ---
     from .app.routes.claim import claim_bp

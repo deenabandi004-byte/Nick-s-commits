@@ -1217,6 +1217,30 @@
   font-size: 14px;
 }
 
+/* Friendly note shown above the skeleton list while the feed loads. */
+.jb-loading-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 16px 8px;
+  text-align: center;
+  color: var(--ink-4);
+  font-size: 13px;
+}
+.jb-loading-note .spin {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--line-soft, #E2E8F0);
+  border-top-color: var(--ink-4, #94A3B8);
+  border-radius: 50%;
+  animation: jb-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes jb-spin {
+  to { transform: rotate(360deg); }
+}
+
 /* ============================================================
    Responsive (the user wants prototype fidelity; minimal mobile only)
    ============================================================ */

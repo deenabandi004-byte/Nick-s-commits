@@ -851,8 +851,16 @@ export const JobBoardPage: React.FC = () => {
                       </div>
                     )}
 
-                  {feedLoading && !isCatalogMode && <ListSkeleton />}
-                  {isCatalogMode && catalogLoading && <ListSkeleton />}
+                  {((feedLoading && !isCatalogMode) ||
+                    (isCatalogMode && catalogLoading)) && (
+                    <>
+                      <div className="jb-loading-note">
+                        <span className="spin" aria-hidden />
+                        Finding the best roles for you — give it a few seconds.
+                      </div>
+                      <ListSkeleton />
+                    </>
+                  )}
 
                   {isCatalogMode && catalogError && (
                     <div className="jb-empty" style={{ margin: "16px 8px" }}>
@@ -994,6 +1002,11 @@ export const JobBoardPage: React.FC = () => {
                       userPlan={user?.tier ?? "free"}
                       currentCredits={creditsView.balance}
                     />
+                  ) : feedLoading || catalogLoading ? (
+                    <div className="jb-loading-note" style={{ paddingTop: 48 }}>
+                      <span className="spin" aria-hidden />
+                      Loading jobs — give it a few seconds…
+                    </div>
                   ) : (
                     <div className="jb-loading">Select a role to see details.</div>
                   )}
