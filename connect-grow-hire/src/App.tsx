@@ -142,6 +142,7 @@ const ResumeReviewTemplate = React.lazy(() => import("./pages/seo-preview/templa
 const CoverLetterTemplate = React.lazy(() => import("./pages/seo-preview/templates/CoverLetterTemplate"));
 const InterviewPrepTemplate = React.lazy(() => import("./pages/seo-preview/templates/InterviewPrepTemplate"));
 const ATSGuideTemplate = React.lazy(() => import("./pages/seo-preview/templates/ATSGuideTemplate"));
+const FreeToolsHub = React.lazy(() => import("./pages/FreeToolsHub"));
 
 // Optimized QueryClient with caching
 const queryClient = new QueryClient({
@@ -461,6 +462,12 @@ const AppRoutes: React.FC = () => {
       <Route path="/seo-preview/cover-letter/:slug" element={<Suspense fallback={<PageLoader />}><CoverLetterTemplate /></Suspense>} />
       <Route path="/seo-preview/interview-prep/:slug" element={<Suspense fallback={<PageLoader />}><InterviewPrepTemplate /></Suspense>} />
       <Route path="/seo-preview/ats/:slug" element={<Suspense fallback={<PageLoader />}><ATSGuideTemplate /></Suspense>} />
+      {/* Clean, indexable production prefixes for live (published) SEO rows. The /seo-preview/* twins above stay noindex and canonicalize here. */}
+      <Route path="/free-tools" element={<Suspense fallback={<PageLoader />}><FreeToolsHub /></Suspense>} />
+      <Route path="/resume-review/:slug" element={<Suspense fallback={<PageLoader />}><ResumeReviewTemplate /></Suspense>} />
+      <Route path="/cover-letter/:slug" element={<Suspense fallback={<PageLoader />}><CoverLetterTemplate /></Suspense>} />
+      <Route path="/interview-prep/:slug" element={<Suspense fallback={<PageLoader />}><InterviewPrepTemplate /></Suspense>} />
+      <Route path="/ats/:slug" element={<Suspense fallback={<PageLoader />}><ATSGuideTemplate /></Suspense>} />
       <Route path="/seo-preview/find-hiring-manager" element={<Suspense fallback={<PageLoader />}><FindHiringManagerPreview /></Suspense>} />
       <Route path="/seo-preview/find-companies" element={<Suspense fallback={<PageLoader />}><FindCompaniesPreview /></Suspense>} />
       <Route path="/seo-preview/find-jobs" element={<Suspense fallback={<PageLoader />}><FindJobsPreview /></Suspense>} />

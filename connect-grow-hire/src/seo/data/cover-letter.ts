@@ -7,8 +7,10 @@
  * (where letters are still read) over tech.
  */
 import type { CoverLetterRow } from './types';
+import generatedCoverLetter from './generated/cover-letter.generated.json';
 
 export const COVER_LETTER_ROWS: CoverLetterRow[] = [
+  ...(generatedCoverLetter as unknown as CoverLetterRow[]),
   // ──────────────────────────────────────────────────────────────────
   // 1. McKinsey BA (hand-built reference)
   // ──────────────────────────────────────────────────────────────────

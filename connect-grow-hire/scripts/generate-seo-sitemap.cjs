@@ -20,7 +20,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = 'https://offerloop.ai';
+const BASE_URL = 'https://www.offerloop.ai';
 
 // CommonJS quasi-parser for the TS data files. We don't run TS in the
 // build script; instead we parse the data files with a regex match on
@@ -40,19 +40,40 @@ function extractRows(filePath, urlPrefix) {
 const here = __dirname;
 const dataDir = path.join(here, '..', 'src', 'seo', 'data');
 
+// Clean, indexable production prefixes. The templates emit index,follow only on
+// these prefixes (and only for published rows); the /seo-preview/* twins stay
+// noindex. find-people is still in review (noindex) so it is omitted here.
 const clusters = [
-  { file: 'resume-review.ts', prefix: '/seo-preview/resume-review' },
-  { file: 'cover-letter.ts', prefix: '/seo-preview/cover-letter' },
-  { file: 'interview-prep.ts', prefix: '/seo-preview/interview-prep' },
-  { file: 'ats.ts', prefix: '/seo-preview/ats' },
-  { file: 'find-people.ts', prefix: '/seo-preview/find-people' },
+  { file: 'resume-review.ts', prefix: '/resume-review' },
+  { file: 'cover-letter.ts', prefix: '/cover-letter' },
+  { file: 'interview-prep.ts', prefix: '/interview-prep' },
+  { file: 'ats.ts', prefix: '/ats' },
 ];
 
-const allUrls = [];
+// Generated rows (from backend/scripts/seo_build_pages.py) live as JSON next to
+// the hand-authored .ts files. Read their published rows too.
+function extractGeneratedRows(filePath, urlPrefix) {
+  if (!fs.existsSync(filePath)) return [];
+  let rows;
+  try { rows = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch { return []; }
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .filter((r) => r && r.published === true && r.slug)
+    .map((r) => ({ slug: r.slug, url: `${BASE_URL}${urlPrefix}/${r.slug}` }));
+}
+
+const allUrls = [{ slug: 'free-tools', url: `${BASE_URL}/free-tools` }];
 for (const c of clusters) {
-  const rows = extractRows(path.join(dataDir, c.file), c.prefix);
-  for (const r of rows) allUrls.push(r);
-  console.log(`[seo-sitemap] ${c.file}: ${rows.length} published rows`);
+  const handAuthored = extractRows(path.join(dataDir, c.file), c.prefix);
+  const generated = extractGeneratedRows(
+    path.join(dataDir, 'generated', c.file.replace('.ts', '.generated.json')),
+    c.prefix
+  );
+  // de-dupe by slug (hand-authored wins)
+  const seen = new Set(handAuthored.map((r) => r.slug));
+  const merged = handAuthored.concat(generated.filter((r) => !seen.has(r.slug)));
+  for (const r of merged) allUrls.push(r);
+  console.log(`[seo-sitemap] ${c.file}: ${handAuthored.length} hand + ${merged.length - handAuthored.length} generated published rows`);
 }
 
 const today = new Date().toISOString().slice(0, 10);

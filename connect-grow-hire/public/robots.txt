@@ -32,3 +32,4 @@ Disallow: /tracker
 Disallow: /settings
 
 Sitemap: https://www.offerloop.ai/sitemap.xml
+Sitemap: https://www.offerloop.ai/sitemap-seo.xml

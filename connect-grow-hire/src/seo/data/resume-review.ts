@@ -13,8 +13,10 @@
  * consulting roles + 10 tech x 4 tech roles.
  */
 import type { ResumeReviewRow } from './types';
+import generatedResumeReview from './generated/resume-review.generated.json';
 
 export const RESUME_REVIEW_ROWS: ResumeReviewRow[] = [
+  ...(generatedResumeReview as unknown as ResumeReviewRow[]),
   // ──────────────────────────────────────────────────────────────────
   // 1. Goldman Sachs IB Analyst (the hand-built reference)
   // ──────────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@
  * House style: no em dashes, no sparkle icons.
  */
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
   FileText, Upload, Target, BadgeCheck, Lightbulb, Download,
   AlertTriangle, Check, TrendingUp,
@@ -159,6 +159,7 @@ const principleChip: React.CSSProperties = {
 
 const ResumeReviewTemplate = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const row = slug ? getResumeReviewRow(slug) : undefined;
 
   if (!row) {
@@ -214,7 +215,8 @@ const ResumeReviewTemplate = () => {
     <div className="min-h-screen w-full" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: '#FFFFFF' }}>
       <Helmet>
         <title>{firm.name} {role.shortName} Resume Review (Free, Tailored to the JD) | Offerloop</title>
-        <meta name="robots" content="noindex" />
+        <meta name="robots" content={row.published && location.pathname.startsWith('/resume-review/') ? 'index,follow' : 'noindex'} />
+        <link rel="canonical" href={`https://www.offerloop.ai/${row.published && location.pathname.startsWith('/resume-review/') ? 'resume-review' : 'seo-preview/resume-review'}/${row.slug}`} />
         <meta name="description" content={row.metaDescription} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

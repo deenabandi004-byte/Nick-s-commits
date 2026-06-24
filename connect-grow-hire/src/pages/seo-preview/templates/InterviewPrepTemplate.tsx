@@ -3,7 +3,7 @@
  * Mounted at /seo-preview/interview-prep/:slug via the dynamic route.
  */
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
   Target, Download, FileText, BadgeCheck, Bot, ClipboardPaste, TrendingUp,
   Lightbulb, Calculator, MessageCircleQuestion, CalendarDays, Users,
@@ -149,6 +149,7 @@ const ghostBtn: React.CSSProperties = {
 
 const InterviewPrepTemplate = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const row = slug ? getInterviewPrepRow(slug) : undefined;
   if (!row) return <NotFound slug={slug} />;
   const firm = getFirm(row.firmSlug);
@@ -176,7 +177,8 @@ const InterviewPrepTemplate = () => {
     <div className="min-h-screen w-full" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: '#FFFFFF' }}>
       <Helmet>
         <title>{firm.name} {role.shortName} Interview Prep (Free, Tailored) | Offerloop</title>
-        <meta name="robots" content="noindex" />
+        <meta name="robots" content={row.published && location.pathname.startsWith('/interview-prep/') ? 'index,follow' : 'noindex'} />
+        <link rel="canonical" href={`https://www.offerloop.ai/${row.published && location.pathname.startsWith('/interview-prep/') ? 'interview-prep' : 'seo-preview/interview-prep'}/${row.slug}`} />
         <meta name="description" content={row.metaDescription} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

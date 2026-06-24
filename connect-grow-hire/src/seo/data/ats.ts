@@ -8,8 +8,10 @@
  * Waves 1-4 fill the remaining ~95 from the universe in SEO_KEYWORD_UNIVERSE.md.
  */
 import type { ATSRow } from './types';
+import generatedATS from './generated/ats.generated.json';
 
 export const ATS_ROWS: ATSRow[] = [
+  ...(generatedATS as unknown as ATSRow[]),
   // ──────────────────────────────────────────────────────────────────
   // 1. Generic "what is an ATS" (hand-built reference)
   // ──────────────────────────────────────────────────────────────────

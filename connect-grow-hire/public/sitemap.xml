@@ -86,11 +86,6 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/networking/goldman-sachs</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/networking/jpmorgan</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -101,32 +96,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/alumni/berkeley</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/management-consulting</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/cold-email/investment-banking</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/private-equity</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/tech</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/venture-capital</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -141,22 +111,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/bain</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/goldman-sachs</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/jpmorgan</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/morgan-stanley</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -171,27 +126,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/amazon</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking-for/product-manager-intern</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/networking/booz-allen</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
     <loc>https://www.offerloop.ai/networking/warburg-pincus</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking/palantir</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -212,16 +152,6 @@
   </url>
 <url>
     <loc>https://www.offerloop.ai/coffee-chat/accenture</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/uber</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/airbnb</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -261,27 +191,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/networking/guggenheim</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking/figma</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/networking/datadog</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
     <loc>https://www.offerloop.ai/coffee-chat/pwc</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/alumni/uiuc</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -306,22 +221,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/cold-email/government-policy</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/compare/goldman-sachs-vs-jpmorgan</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
     <loc>https://www.offerloop.ai/compare/jpmorgan-vs-morgan-stanley</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/amazon-vs-microsoft</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -336,22 +241,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/compare/bain-vs-deloitte</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/compare/mckinsey-vs-deloitte</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/bcg-vs-deloitte</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/goldman-sachs-vs-blackstone</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -361,17 +251,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/compare/jane-street-vs-citadel</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/compare/sequoia-vs-a16z</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/stripe-vs-shopify</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -416,11 +296,6 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/networking/bnp-paribas</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/networking/oaktree</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -432,16 +307,6 @@
   </url>
 <url>
     <loc>https://www.offerloop.ai/networking/anduril</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking/nuro</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking/pfizer</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -466,17 +331,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/networking/boston-scientific</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/networking/intuitive-surgical</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/strategy-and</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -487,11 +342,6 @@
   </url>
 <url>
     <loc>https://www.offerloop.ai/coffee-chat/deloitte-digital</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/kpmg-advisory</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -521,27 +371,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/blackrock</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/fidelity</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/first-round</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
     <loc>https://www.offerloop.ai/alumni/bentley</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/alumni/umn</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -576,11 +411,6 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/compare/citadel-vs-de-shaw</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/compare/two-sigma-vs-renaissance</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -601,17 +431,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/compare/visa-vs-mastercard</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/compare/airbnb-vs-doordash</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/snap-vs-pinterest</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -652,21 +472,6 @@
   </url>
 <url>
     <loc>https://www.offerloop.ai/compare/tiger-global-vs-coatue</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking-for/restructuring-analyst</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking-for/equity-research-analyst</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking-for/economic-consultant</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -731,37 +536,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/alumni/lafayette</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/alumni/franklin-marshall</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/alumni/colgate</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
     <loc>https://www.offerloop.ai/alumni/hamilton</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/alumni/middlebury</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/mckinsey-vs-oliver-wyman</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/bcg-vs-ey-parthenon</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -787,11 +567,6 @@
   </url>
 <url>
     <loc>https://www.offerloop.ai/compare/accenture-vs-ibm</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/compare/bain-capital-vs-tpg</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -866,11 +641,6 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/compare/airbnb-vs-uber</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/compare/openai-vs-mistral</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -901,17 +671,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/networking/iheartmedia</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/networking/bcg-full</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking/lockheed</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -936,47 +696,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/networking-for/congressional-staffer</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking-for/rotational-analyst</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/media-entertainment</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/cold-email/industrials</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/cold-email/nonprofit</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/sports-business-industry</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/networking/joby</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/target</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/hasbro</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1001,32 +726,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/tcs</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/cognizant</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/zs-associates</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/egon-zehnder</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/networking-for/chief-of-staff</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/accounting</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1051,47 +756,12 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/cold-email/data-science</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/human-resources</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/life-sciences</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/luxury-goods</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/cold-email/machine-learning-ai</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/cold-email/media-production</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/cold-email/pharma</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/cold-email/saas</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/airtable</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1106,17 +776,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/at-kearney</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/bcg-full</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/boeing</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1131,32 +791,7 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/cigna</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/citadel</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/d1-capital</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/fti</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/hinge-health</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/ibm</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -1176,11 +811,6 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/linkedin</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/lyft</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -1196,11 +826,6 @@
     <priority>0.7</priority>
   </url>
 <url>
-    <loc>https://www.offerloop.ai/coffee-chat/rbc</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
     <loc>https://www.offerloop.ai/coffee-chat/reddit</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
@@ -1212,11 +837,6 @@
   </url>
 <url>
     <loc>https://www.offerloop.ai/coffee-chat/sanofi</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
-  </url>
-<url>
-    <loc>https://www.offerloop.ai/coffee-chat/scotiabank</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
