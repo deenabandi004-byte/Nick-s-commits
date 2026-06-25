@@ -1,7 +1,7 @@
 // src/config/firebase.ts
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { initializeFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';  // ← ADD THIS LINE
 
 // Firebase configuration — read from VITE_ env vars with hardcoded fallbacks
@@ -22,8 +22,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 
-// Initialize Cloud Firestore and get a reference to the service  
-export const db = getFirestore(app);
+// Initialize Cloud Firestore. Force HTTP long-polling so we never attempt the
+// streaming WebChannel/QUIC transport — that transport stalls hard on this
+// network (ERR_QUIC_PROTOCOL_ERROR / QUIC_TOO_MANY_RTOS), and auto-detect still
+// tries it first. Long-polling is slightly less efficient but reliable; real-time
+// listeners still work. Revisit if the network/proxy issue is resolved.
+export const db = initializeFirestore(app, { experimentalForceLongPolling: true });
 
 // Initialize Firebase Storage and get a reference to the service  // ← ADD THIS LINE
 export const storage = getStorage(app);                             // ← ADD THIS LINE

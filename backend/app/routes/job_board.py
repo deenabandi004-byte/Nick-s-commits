@@ -8796,6 +8796,46 @@ Examples:
         return jsonify({"error": "Failed to parse prompt. Please try entering fields manually."}), 500
 
 
+def _build_hm_outreach_message(to_email, to_name, subject, body_html, body_plain,
+                               resume_content=None, resume_filename=None):
+    """Build the Hiring Manager outreach MIME message.
+
+    Shared by the HM draft path and the HM send path so a sent HM email is
+    byte-identical to the HM draft: it uses the recruiter generator's HTML
+    (body_html) plus its plain alternative, with the resume attached. This is
+    intentionally separate from People's _build_outreach_mime (recruiter
+    outreach and peer networking are different templates by design).
+    Returns a MIMEMultipart message ready to base64-encode.
+    """
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.base import MIMEBase
+    from email import encoders
+
+    # Sanitize to_name to prevent header injection.
+    safe_name = (to_name or '').replace('"', '').replace('\n', '').replace('\r', '')
+
+    message = MIMEMultipart('mixed')
+    message['to'] = f'"{safe_name}" <{to_email}>' if safe_name else to_email
+    message['subject'] = subject
+
+    # HTML plus plain alternative (the recruiter template).
+    alt = MIMEMultipart('alternative')
+    alt.attach(MIMEText(body_plain or '', 'plain'))
+    alt.attach(MIMEText(body_html or '', 'html'))
+    message.attach(alt)
+
+    # Resume attachment.
+    if resume_content and resume_filename:
+        part = MIMEBase('application', 'pdf')
+        part.set_payload(resume_content)
+        encoders.encode_base64(part)
+        part.add_header('Content-Disposition', f'attachment; filename="{resume_filename}"')
+        message.attach(part)
+
+    return message
+
+
 @job_board_bp.route("/find-hiring-manager", methods=["POST"])
 @require_firebase_auth
 def find_hiring_manager_endpoint():
@@ -8972,9 +9012,42 @@ def find_hiring_manager_endpoint():
             "linkedin": resume_linkedin or user_data.get('linkedin', '')
         }
 
-        # Check if user wants to generate emails (default to True)
-        generate_emails = data.get('generateEmails', True)
-        create_drafts = data.get('createDrafts', True)
+        # Outreach mode (preview / draft / send), validated against tier on the
+        # server. Mode is authoritative and supersedes the legacy generateEmails
+        # / createDrafts booleans. For backward compatibility, if no mode is sent
+        # we derive one from those booleans so older callers keep working.
+        # Same tier contract as runs.py prompt_search: Free is clamped to
+        # preview, Pro to draft, Elite to send. The client value is never trusted.
+        user_tier = user_data.get('subscriptionTier', user_data.get('tier', 'free'))
+        if user_tier not in ('free', 'pro', 'elite'):
+            user_tier = 'free'
+        TIER_ALLOWED_MODES = {
+            'free': {'preview'},
+            'pro': {'preview', 'draft'},
+            'elite': {'preview', 'draft', 'send'},
+        }
+        allowed_modes = TIER_ALLOWED_MODES.get(user_tier, {'preview'})
+
+        requested_mode = (data.get('mode') or '').strip().lower()
+        if requested_mode not in ('preview', 'draft', 'send'):
+            # Legacy callers (no mode): derive one from the old booleans.
+            legacy_generate = data.get('generateEmails', True)
+            legacy_drafts = data.get('createDrafts', True)
+            requested_mode = 'draft' if (legacy_generate and legacy_drafts) else 'preview'
+        if requested_mode not in allowed_modes:
+            # Requested a mode above this tier. Clamp to the best allowed.
+            requested_mode = 'draft' if 'draft' in allowed_modes else 'preview'
+        outreach_mode = requested_mode
+
+        # Derive the generation/draft/send flags from the resolved mode.
+        #   preview: generate nothing, draft nothing (contact info only).
+        #   draft:   generate emails, create Gmail drafts (existing behavior).
+        #   send:    generate emails, then send via the shared send function
+        #            (no draft is created).
+        generate_emails = outreach_mode in ('draft', 'send')
+        create_drafts = outreach_mode == 'draft'
+        do_send = outreach_mode == 'send'
+        logger.info(f"[FindHiringManager] Outreach mode: requested={data.get('mode')!r}, tier={user_tier}, resolved={outreach_mode}")
 
         # Find hiring managers
         result = find_hiring_manager(
@@ -9085,27 +9158,12 @@ def find_hiring_manager_endpoint():
                             body_html = email_data.get("body", "")
                             body_plain = email_data.get("plain_body", "")
 
-                            # Sanitize to_name to prevent header injection
-                            to_name = to_name.replace('"', '').replace('\n', '').replace('\r', '')
-
-                            # Create MIME message (mixed for attachment support)
-                            message = MIMEMultipart('mixed')
-                            message['to'] = f'"{to_name}" <{to_email}>' if to_name else to_email
-                            message['subject'] = subject
-
-                            # Add text/html alternative part
-                            alt = MIMEMultipart('alternative')
-                            alt.attach(MIMEText(body_plain, 'plain'))
-                            alt.attach(MIMEText(body_html, 'html'))
-                            message.attach(alt)
-
-                            # Add resume attachment if available
-                            if resume_content and resume_filename:
-                                part = MIMEBase('application', 'pdf')
-                                part.set_payload(resume_content)
-                                encoders.encode_base64(part)
-                                part.add_header('Content-Disposition', f'attachment; filename="{resume_filename}"')
-                                message.attach(part)
+                            # Build the recruiter MIME via the shared HM builder
+                            # so draft and send produce byte-identical content.
+                            message = _build_hm_outreach_message(
+                                to_email, to_name, subject, body_html, body_plain,
+                                resume_content=resume_content, resume_filename=resume_filename,
+                            )
 
                             # Encode message
                             raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
@@ -9204,10 +9262,81 @@ def find_hiring_manager_endpoint():
             else:
                 logger.info(f"[FindHiringManager] Gmail not connected, skipping draft creation")
 
+        # Send mode (Elite): send the generated emails instead of drafting them.
+        # This routes the SAME recruiter MIME the draft path builds (via the
+        # shared _build_hm_outreach_message) through messages().send() instead
+        # of drafts().create(), so a sent HM email is byte-identical to the HM
+        # draft. It deliberately does NOT use People's send_emails_parallel,
+        # which would impose the peer-networking template. Per-recruiter sent
+        # metadata is returned so save-recruiters writes the deterministic sent
+        # record (pipelineStage, emailSentAt, gmailThreadId).
+        sent_emails = []
+        if do_send and affordable_emails:
+            from app.services.gmail_client import _load_user_gmail_creds, get_gmail_service_for_user
+            from app.services.gmail_client import download_resume_from_url
+            import base64
+            import re as _re3
+            _EMAIL_RE3 = _re3.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
+
+            gmail_creds = _load_user_gmail_creds(user_id)
+            resume_url = user_data.get('resumeURL') or user_data.get('resumeUrl')
+
+            if gmail_creds:
+                # Download resume once for all sends.
+                resume_content = None
+                resume_filename = None
+                if resume_url:
+                    try:
+                        resume_content, resume_filename = download_resume_from_url(resume_url)
+                        stored_filename = user_data.get('resumeFileName')
+                        if stored_filename:
+                            resume_filename = stored_filename
+                    except Exception as e:
+                        logger.error(f"[FindHiringManager] Failed to download resume for send: {e}")
+
+                gmail_service = get_gmail_service_for_user(user_data.get('email'), user_id=user_id)
+
+                if gmail_service:
+                    for email_data in affordable_emails:
+                        try:
+                            to_email = email_data.get("to_email")
+                            if not to_email or not _EMAIL_RE3.match(to_email):
+                                logger.info(f"[FindHiringManager] Skipping invalid send email: {str(to_email)[:50]}")
+                                continue
+                            to_name = email_data.get("to_name", "")
+                            subject = email_data.get("subject", "")
+                            body_html = email_data.get("body", "")
+                            body_plain = email_data.get("plain_body", "")
+
+                            # Same recruiter MIME as the draft path, sent instead.
+                            message = _build_hm_outreach_message(
+                                to_email, to_name, subject, body_html, body_plain,
+                                resume_content=resume_content, resume_filename=resume_filename,
+                            )
+                            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+
+                            sent = gmail_service.users().messages().send(
+                                userId='me', body={'raw': raw_message}
+                            ).execute()
+                            sent_emails.append({
+                                "recruiter_email": to_email,
+                                "message_id": sent.get('id'),
+                                "thread_id": sent.get('threadId'),
+                            })
+                            logger.info(f"[FindHiringManager] Sent email to {to_email}")
+                        except Exception as e:
+                            logger.error(f"[FindHiringManager] Failed to send to {email_data.get('to_email')}: {e}")
+                else:
+                    logger.info(f"[FindHiringManager] Gmail service not available, skipping send")
+            else:
+                logger.info(f"[FindHiringManager] Gmail not connected, skipping send")
+
         response = {
             "hiringManagers": affordable_managers,
             "emails": affordable_emails,
             "draftsCreated": drafts_created,
+            "sentEmails": sent_emails,
+            "mode": outreach_mode,
             "jobTypeDetected": result["job_type_detected"],
             "companyCleaned": result["company_cleaned"],
             "searchTitles": result.get("search_titles", []),
@@ -9260,6 +9389,17 @@ def save_recruiters_to_tracker():
                     "message_id": d.get("message_id"),
                 }
 
+        # Build sent map: email -> { message_id, thread_id }. Present only for
+        # send mode. Drives the deterministic sent record written below.
+        sent_map = {}
+        for s in (data.get("sentEmails") or []):
+            email = (s.get("recruiter_email") or s.get("recruiterEmail") or "").strip().lower()
+            if email:
+                sent_map[email] = {
+                    "message_id": s.get("message_id"),
+                    "thread_id": s.get("thread_id"),
+                }
+
         # Convert API recruiter shape to Firestore document shape (match frontend firebaseApi)
         def to_firestore_recruiter(r):
             email = (r.get("Email") or r.get("email") or r.get("WorkEmail") or r.get("work_email") or "").strip()
@@ -9297,6 +9437,20 @@ def save_recruiters_to_tracker():
                     doc_data["gmailDraftUrl"] = draft_info["draft_url"]
                 if draft_info.get("message_id"):
                     doc_data["gmailMessageId"] = draft_info["message_id"]
+            sent_info = sent_map.get(email.lower()) if email else None
+            if sent_info:
+                # Deterministic sent record: the same fields People writes on a
+                # send (pipelineStage, emailSentAt, gmailThreadId), plus status
+                # set to Contacted so the existing Hiring Manager tracker, which
+                # reads status, reflects that the email went out.
+                now_iso = datetime.utcnow().isoformat() + "Z"
+                doc_data["pipelineStage"] = "waiting_on_reply"
+                doc_data["emailSentAt"] = now_iso
+                doc_data["status"] = "Contacted"
+                if sent_info.get("thread_id"):
+                    doc_data["gmailThreadId"] = sent_info["thread_id"]
+                if sent_info.get("message_id"):
+                    doc_data["gmailMessageId"] = sent_info["message_id"]
             return doc_data
 
         # Get existing recruiters for deduplication

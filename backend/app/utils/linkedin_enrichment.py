@@ -261,6 +261,49 @@ def get_enrichment_tiers(prefer_scrape: bool = False):
     return [_try_pdl, _try_apify]
 
 
+_EDUCATION_FIELDS = ("university", "major", "degree", "graduation", "gpa")
+
+
+def backfill_education(linkedin_parsed: dict, normalized_url: str) -> dict:
+    """Ensure structured LinkedIn enrichment carries education.
+
+    Firecrawl is first in the scrape chain but its minimal extraction schema
+    omits education (LLM_PROMPT_FIRECRAWL rule 10 forces education.* null), and
+    the tier loop accepts the first source that yields a name — so Firecrawl
+    wins and education is never populated (Bug 2). When the winning tier lacks a
+    university, pull education from an education-capable provider (PDL, then
+    Bright Data — both extract education deterministically) and merge the missing
+    fields in. No-op when education is already present, so it only fires in the
+    Firecrawl-wins-without-education case. Mutates and returns linkedin_parsed.
+    """
+    if not isinstance(linkedin_parsed, dict):
+        return linkedin_parsed
+    edu = linkedin_parsed.get("education") or {}
+    if edu.get("university"):
+        return linkedin_parsed
+
+    for fetch in (_try_pdl, _try_brightdata):
+        try:
+            raw, src = fetch(normalized_url)
+        except Exception as e:  # provider error — try the next one
+            logger.warning(f"[LinkedIn Enrich] Education backfill via {fetch.__name__} failed: {e}")
+            continue
+        if not raw:
+            continue
+        structured = llm_enrich_profile(raw, src)
+        candidate = (structured or {}).get("education") or {}
+        if candidate.get("university"):
+            merged = dict(edu)
+            for key in _EDUCATION_FIELDS:
+                if not merged.get(key) and candidate.get(key):
+                    merged[key] = candidate[key]
+            linkedin_parsed["education"] = merged
+            logger.info(f"[LinkedIn Enrich] Backfilled education from {src}")
+            break
+
+    return linkedin_parsed
+
+
 def enrich_linkedin_with_fallback(
     linkedin_url: str, prefer_scrape: bool = False
 ) -> tuple[dict | None, str]:

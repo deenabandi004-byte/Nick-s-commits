@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 import os
+import threading
 import time
 
 import requests
@@ -22,6 +23,27 @@ logger = logging.getLogger(__name__)
 
 NEVERBOUNCE_API_KEY = os.getenv("NEVERBOUNCE_API_KEY", "")
 NEVERBOUNCE_BASE_URL = "https://api.neverbounce.com/v4"
+
+# Circuit breaker: when the account is out of credits (or auth fails), EVERY
+# verify_email call returns the same account-wide failure. Re-calling the API
+# for each email in each search wastes time and pollutes logs. Trip a cooldown
+# on the first such failure so the whole upgrade pass is skipped until it
+# elapses — self-heals once credits are topped up.
+_circuit_lock = threading.Lock()
+_disabled_until = 0.0  # epoch seconds; treat NeverBounce as unconfigured until then
+DISABLE_COOLDOWN = 600.0  # 10 min — credit/quota issues don't resolve in seconds
+
+
+def _is_disabled() -> bool:
+    with _circuit_lock:
+        return time.time() < _disabled_until
+
+
+def _trip_disable(reason: str):
+    global _disabled_until
+    with _circuit_lock:
+        _disabled_until = time.time() + DISABLE_COOLDOWN
+    logger.warning("neverbounce disabled for %.0fs: %s", DISABLE_COOLDOWN, reason)
 
 # NeverBounce v4 result codes (per docs). We canonicalize to a small enum so
 # the caller (hunter.batch_verify_emails_for_contacts) doesn't need to know
@@ -37,7 +59,8 @@ _EMPTY_RESULT = {"result": RESULT_UNKNOWN, "flags": [], "suggested_correction": 
 
 
 def is_configured() -> bool:
-    return bool(NEVERBOUNCE_API_KEY)
+    # Report unconfigured during a cooldown so callers skip the upgrade pass.
+    return bool(NEVERBOUNCE_API_KEY) and not _is_disabled()
 
 
 @meter_call("neverbounce", "single_check")
@@ -53,6 +76,10 @@ def verify_email(email: str, *, timeout: float = 5.0) -> dict:
 
     if not NEVERBOUNCE_API_KEY:
         # Key not configured — no-op. Don't log on every call; would be spammy.
+        return dict(_EMPTY_RESULT)
+
+    if _is_disabled():
+        # Recent account-wide failure (e.g. out of credits) — skip the API call.
         return dict(_EMPTY_RESULT)
 
     try:
@@ -82,10 +109,17 @@ def verify_email(email: str, *, timeout: float = 5.0) -> dict:
         # NeverBounce returns status='success' on success; non-success means
         # auth / quota / param issue — treat as unknown.
         if data.get("status") != "success":
+            status = data.get("status")
+            message = data.get("message", "")
             logger.warning(
                 "neverbounce.verify_email status=%s for %s: %s",
-                data.get("status"), email, data.get("message", "")[:200],
+                status, email, message[:200],
             )
+            # Account-wide failures (out of credits, bad/expired key) will hit
+            # every email — trip the breaker so the rest of this search and the
+            # next several skip NeverBounce entirely instead of re-calling it.
+            if status in ("auth_failure", "general_failure") or "credit" in message.lower():
+                _trip_disable(f"status={status}: {message[:120]}")
             return dict(_EMPTY_RESULT)
 
         result = data.get("result") or RESULT_UNKNOWN
