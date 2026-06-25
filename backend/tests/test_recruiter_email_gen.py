@@ -504,81 +504,99 @@ class TestGenerateSingleEmail:
 # =============================================================================
 
 class TestGenerateRecruiterEmails:
+    """The recruiter draft engine now delegates to batch_generate_emails.
+    These tests mock that delegate so no live LLM calls happen."""
 
-    @patch('app.services.recruiter_email_generator.get_openai_client')
-    def test_skips_no_email_contacts(self, mock_fn):
+    @staticmethod
+    def _mock_batch(subject_prefix="Re", body_prefix="Body"):
+        """Return a callable that produces a dict keyed 0..N-1 matching the
+        recruiters list passed in. Each value mimics batch_generate_emails'
+        plain-body output."""
+        def _impl(*, contacts, **_kwargs):
+            return {
+                i: {
+                    "subject": f"{subject_prefix} {i}",
+                    "plain_body": f"{body_prefix} for {c.get('FirstName', '?')}",
+                    "body": f"{body_prefix} for {c.get('FirstName', '?')}",
+                    "personalization": {},
+                }
+                for i, c in enumerate(contacts)
+            }
+        return _impl
+
+    @patch("app.services.reply_generation.batch_generate_emails")
+    def test_skips_no_email_contacts(self, mock_batch):
         from app.services.recruiter_email_generator import generate_recruiter_emails
-        mc = MagicMock()
-        resp = MagicMock()
-        resp.choices = [MagicMock()]
-        resp.choices[0].message.content = "Hi Jane,\n\nEmail."
-        mc.with_options.return_value.chat.completions.create.return_value = resp
-        mock_fn.return_value = mc
-
-        recruiters = [
-            {"FirstName": "Jane", "Email": "jane@co.com"},
-            {"FirstName": "Bob", "Email": "Not available"},
-            {"FirstName": "Tom"},
-        ]
+        mock_batch.side_effect = self._mock_batch()
         emails = generate_recruiter_emails(
-            recruiters=recruiters, job_title="SWE", company="Google", job_description="Build",
-            user_resume={"name": "J"}, user_contact={"name": "J", "email": "", "phone": "", "linkedin": ""})
+            recruiters=[
+                {"FirstName": "Jane", "Email": "jane@co.com"},
+                {"FirstName": "Bob", "Email": "Not available"},
+                {"FirstName": "Tom"},
+            ],
+            job_title="SWE", company="Google", job_description="Build",
+            user_resume={"name": "J"},
+            user_contact={"name": "J", "email": "", "phone": "", "linkedin": ""},
+        )
         assert len(emails) == 1
+        # The engine should only have been called with the one eligible recruiter
+        assert mock_batch.call_count == 1
+        passed_contacts = mock_batch.call_args.kwargs["contacts"]
+        assert len(passed_contacts) == 1
+        assert passed_contacts[0]["FirstName"] == "Jane"
 
-    @patch('app.services.recruiter_email_generator.get_openai_client')
-    def test_approach_variation(self, mock_fn):
+    @patch("app.services.reply_generation.batch_generate_emails")
+    def test_one_output_per_eligible_recruiter(self, mock_batch):
         from app.services.recruiter_email_generator import generate_recruiter_emails
-        mc = MagicMock()
-        resp = MagicMock()
-        resp.choices = [MagicMock()]
-        resp.choices[0].message.content = "Hi X,\n\nBody."
-        mc.with_options.return_value.chat.completions.create.return_value = resp
-        mock_fn.return_value = mc
-
+        mock_batch.side_effect = self._mock_batch()
         recruiters = [{"FirstName": f"P{i}", "Email": f"p{i}@co.com"} for i in range(5)]
         emails = generate_recruiter_emails(
             recruiters=recruiters, job_title="SWE", company="G", job_description="B",
-            user_resume={"name": "J"}, user_contact={"name": "J", "email": "", "phone": "", "linkedin": ""})
-        approaches = {e["approach_used"] for e in emails}
-        assert len(approaches) == 5
+            user_resume={"name": "J"},
+            user_contact={"name": "J", "email": "", "phone": "", "linkedin": ""},
+        )
+        assert len(emails) == 5
+        # Each output is mapped to the right recruiter
+        for i, em in enumerate(emails):
+            assert em["recruiter"]["FirstName"] == f"P{i}"
+            assert em["to_email"] == f"p{i}@co.com"
+            assert em["subject"] and em["plain_body"]
 
-    @patch('app.services.recruiter_email_generator.get_openai_client')
-    def test_passes_new_params(self, mock_fn):
+    @patch("app.services.reply_generation.batch_generate_emails")
+    def test_passes_new_params(self, mock_batch):
         from app.services.recruiter_email_generator import generate_recruiter_emails
-        mc = MagicMock()
-        resp = MagicMock()
-        resp.choices = [MagicMock()]
-        resp.choices[0].message.content = "Hi J,\n\nEmail."
-        mc.with_options.return_value.chat.completions.create.return_value = resp
-        mock_fn.return_value = mc
-
+        mock_batch.side_effect = self._mock_batch()
         generate_recruiter_emails(
             recruiters=[{"FirstName": "J", "Email": "j@co.com"}],
-            job_title="SWE", company="G", job_description="Build",
-            user_resume={"name": "X"}, user_contact={"name": "X", "email": "", "phone": "", "linkedin": ""},
-            resume_text="Experienced engineer with 10 years of backend development experience in Python, Java, and Go. Built distributed systems serving millions of users.",
-            template_instructions="Be casual", role_type="hiring_manager")
+            job_title="SWE", company="G", job_description="Build distributed systems serving millions of users.",
+            user_resume={"name": "X"},
+            user_contact={"name": "X", "email": "", "phone": "", "linkedin": ""},
+            resume_text="Experienced engineer with 10 years of backend development.",
+            template_instructions="Be casual",
+            role_type="hiring_manager",
+        )
+        kwargs = mock_batch.call_args.kwargs
+        assert kwargs["resume_text"] == "Experienced engineer with 10 years of backend development."
+        # template_instructions now flows through get_template_instructions, which
+        # wraps the caller's "Be casual" into a longer template scaffold. We just
+        # confirm the user's instruction is preserved somewhere in the result.
+        assert "Be casual" in kwargs["template_instructions"]
+        assert kwargs["email_template_purpose"] == "referral"
+        assert kwargs["fit_context"]["job_title"] == "SWE"
+        assert kwargs["fit_context"]["company"] == "G"
+        assert "distributed systems serving millions" in kwargs["fit_context"]["pitch"]
 
-        prompt = mc.with_options.return_value.chat.completions.create.call_args[1]["messages"][1]["content"]
-        assert "distributed systems serving millions" in prompt
-        assert "Be casual" in prompt
-        assert "hiring manager" in prompt
-
-    @patch('app.services.recruiter_email_generator.get_openai_client')
-    def test_approach_resets_after_all_used(self, mock_fn):
-        """When more than 5 recruiters, approaches cycle."""
+    @patch("app.services.reply_generation.batch_generate_emails")
+    def test_handles_large_recruiter_batch(self, mock_batch):
+        """Sanity: 7-recruiter batch returns 7 outputs (no implicit cap)."""
         from app.services.recruiter_email_generator import generate_recruiter_emails
-        mc = MagicMock()
-        resp = MagicMock()
-        resp.choices = [MagicMock()]
-        resp.choices[0].message.content = "Hi X,\n\nBody."
-        mc.with_options.return_value.chat.completions.create.return_value = resp
-        mock_fn.return_value = mc
-
+        mock_batch.side_effect = self._mock_batch()
         recruiters = [{"FirstName": f"P{i}", "Email": f"p{i}@co.com"} for i in range(7)]
         emails = generate_recruiter_emails(
             recruiters=recruiters, job_title="SWE", company="G", job_description="B",
-            user_resume={"name": "J"}, user_contact={"name": "J", "email": "", "phone": "", "linkedin": ""})
+            user_resume={"name": "J"},
+            user_contact={"name": "J", "email": "", "phone": "", "linkedin": ""},
+        )
         assert len(emails) == 7
 
 

@@ -1,4 +1,5 @@
-import { ArrowLeft, Upload, Trash2, LogOut, CreditCard, FileText, User, GraduationCap, Briefcase, Rocket, Settings, AlertTriangle, Lock, Eye, RefreshCw, X, CheckCircle, Mail, Target, Star } from "lucide-react";
+import { ArrowLeft, Upload, Trash2, LogOut, CreditCard, FileText, User, GraduationCap, Briefcase, Rocket, Settings, AlertTriangle, Lock, Eye, RefreshCw, X, CheckCircle, Mail, Target, Star, Gift, Copy, Send } from "lucide-react";
+import { ApplicationProfileModal } from "@/components/jobs/ApplicationProfileModal";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,8 @@ const sections = [
   { id: 'professional', label: 'Professional Profile', icon: Briefcase },
   { id: 'career', label: 'Career Interests', icon: Rocket },
   { id: 'goals', label: 'Career Goals', icon: Target },
+  { id: 'referrals', label: 'Refer & Earn', icon: Gift },
+  { id: 'app_profile', label: 'Application Profile', icon: Send },
   { id: 'gmail', label: 'Gmail Integration', icon: Mail },
   { id: 'account', label: 'Account Management', icon: Settings },
   { id: 'danger', label: 'Danger Zone', icon: AlertTriangle },
@@ -270,11 +273,47 @@ export default function AccountSettings() {
   const [resumeData, setResumeData] = useState<any>(null);
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
 
+  // Application Profile (ATS screening answers reused across auto-applies)
+  const [showApplicationProfile, setShowApplicationProfile] = useState(false);
+
   // Gmail integration state
   const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
   const [gmailEmail, setGmailEmail] = useState<string | null>(null);
   const [gmailLoading, setGmailLoading] = useState(true);
   const [gmailActionLoading, setGmailActionLoading] = useState(false);
+
+  // Referral state
+  const [referral, setReferral] = useState<{
+    referralLink: string; signupCount: number; signupTarget: number;
+    eligible: boolean; rewardClaimed: boolean;
+  } | null>(null);
+  const [referralError, setReferralError] = useState(false);
+  const [claiming, setClaiming] = useState(false);
+
+  useEffect(() => {
+    apiService.getReferralStatus().then(setReferral).catch(() => {
+      setReferral(null);
+      setReferralError(true);
+    });
+  }, []);
+
+  const handleClaim = async () => {
+    setClaiming(true);
+    try {
+      const res = await apiService.claimReferralReward();
+      if (res.ok && res.mode === 'checkout' && res.url) {
+        window.location.href = res.url;
+      } else if (res.ok) {
+        toast({ title: 'Reward applied!', description: 'Your next month is on us.' });
+        const fresh = await apiService.getReferralStatus();
+        setReferral(fresh);
+      } else {
+        toast({ title: 'Could not claim', description: res.reason || 'Try again later.', variant: 'destructive' });
+      }
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   // User initials for avatar
   const userInitials = `${personalInfo.firstName.charAt(0) || ''}${personalInfo.lastName.charAt(0) || ''}`.toUpperCase() || 'U';
@@ -897,12 +936,48 @@ export default function AccountSettings() {
                     fontSize: '16px',
                     color: '#6B7280',
                     textAlign: 'center',
-                    marginBottom: '28px',
+                    marginBottom: '16px',
                     lineHeight: 1.5,
                   }}
                 >
                   Manage your account and preferences
                 </p>
+
+                {/* Cross-link to /profile — these two surfaces are siblings
+                    (profile = personalization, settings = billing / integrations /
+                    admin). Make the relationship visible so users don't get lost. */}
+                <div style={{ textAlign: 'center', marginBottom: '28px' }}>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/profile')}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '8px 16px',
+                      borderRadius: 999,
+                      background: 'transparent',
+                      border: '1px solid #CBD5E1',
+                      color: '#4A60A8',
+                      fontFamily: "'DM Sans', system-ui, sans-serif",
+                      fontSize: 13,
+                      fontWeight: 500,
+                      cursor: 'pointer',
+                      transition: 'background .15s, border-color .15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(74,96,168,0.06)';
+                      e.currentTarget.style.borderColor = '#4A60A8';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = '#4A60A8';
+                      e.currentTarget.style.borderColor = '#CBD5E1';
+                    }}
+                  >
+                    Looking to update your profile? Open your profile →
+                  </button>
+                </div>
 
                 {/* Profile Completeness */}
                 {(() => {
@@ -2239,6 +2314,120 @@ export default function AccountSettings() {
                     </div>
                   </SettingsSection>
 
+                  {/* Refer & Earn Section */}
+                  <SettingsSection
+                    id="referrals"
+                    icon={Gift}
+                    title="Refer & Earn"
+                    description="Invite 5 friends who sign up and get a free month of Elite."
+                  >
+                    {referral ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Your referral link</label>
+                          <div className="flex gap-2">
+                            <input type="text" value={referral.referralLink} readOnly
+                              className="flex-1 px-3 py-2 border border-gray-300 rounded bg-gray-50 text-sm" />
+                            <button
+                              onClick={() => { navigator.clipboard.writeText(referral.referralLink);
+                                toast({ title: 'Copied!', description: 'Referral link copied.' }); }}
+                              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-sm text-gray-600 mb-1">
+                            <span>Signups</span>
+                            <span>{referral.signupCount} / {referral.signupTarget}</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2">
+                            <div className="bg-blue-600 h-2 rounded-full"
+                              style={{ width: `${Math.min(100, (referral.signupCount / referral.signupTarget) * 100)}%` }} />
+                          </div>
+                        </div>
+                        {referral.rewardClaimed ? (
+                          <p className="text-sm text-green-700">🎉 Reward claimed — enjoy your free month of Elite!</p>
+                        ) : referral.eligible ? (
+                          <button onClick={handleClaim} disabled={claiming}
+                            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
+                            {claiming ? 'Starting…' : 'Claim your free month of Elite'}
+                          </button>
+                        ) : (
+                          <p className="text-sm text-gray-500">
+                            {referral.signupTarget - referral.signupCount} more signup
+                            {referral.signupTarget - referral.signupCount === 1 ? '' : 's'} to unlock a free month of Elite.
+                          </p>
+                        )}
+                      </div>
+                    ) : referralError ? (
+                      <p className="text-sm text-red-500">Couldn't load your referral info. Refresh to try again.</p>
+                    ) : (
+                      <p className="text-sm text-gray-500">Loading your referral link…</p>
+                    )}
+                  </SettingsSection>
+
+                  {/* Application Profile Section — used by job-board auto-apply */}
+                  <SettingsSection
+                    id="app_profile"
+                    icon={Send}
+                    title="Application Profile"
+                    description="Saved answers we use whenever you click Auto-apply on a job. Work authorization is required; demographic questions default to 'Decline to answer.'"
+                  >
+                    <div
+                      className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4"
+                      style={{
+                        padding: '20px',
+                        borderRadius: '12px',
+                        background: '#FAFBFF',
+                        border: '1px solid rgba(59, 130, 246, 0.06)',
+                      }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div
+                          style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: '12px',
+                            background: 'rgba(59, 130, 246, 0.08)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Send className="w-6 h-6" style={{ color: '#3B82F6' }} />
+                        </div>
+                        <div>
+                          <h4
+                            style={{
+                              fontSize: '15px',
+                              fontWeight: 600,
+                              color: '#0F172A',
+                              marginBottom: '2px',
+                            }}
+                          >
+                            Edit your auto-apply answers
+                          </h4>
+                          <p
+                            style={{
+                              fontSize: '13px',
+                              color: '#64748B',
+                              margin: 0,
+                            }}
+                          >
+                            Work authorization, EEO, veteran &amp; disability status, scheduling preferences.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => setShowApplicationProfile(true)}
+                        variant="outline"
+                      >
+                        Edit profile
+                      </Button>
+                    </div>
+                  </SettingsSection>
+
                   {/* Gmail Integration Section */}
                   <SettingsSection
                     id="gmail"
@@ -2729,6 +2918,11 @@ export default function AccountSettings() {
           </div>
         </div>
       )}
+
+      <ApplicationProfileModal
+        open={showApplicationProfile}
+        onOpenChange={setShowApplicationProfile}
+      />
     </SidebarProvider>
   );
 }

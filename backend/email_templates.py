@@ -178,6 +178,78 @@ def get_template_instructions(
     return "\n\n".join(parts) if parts else ""
 
 
+# ── Roles-mode founder outreach (Slice 4) ────────────────────────────────
+#
+# When a Loop is in "roles" mode and finds a small-company posting, we draft
+# a founder/HM email about the SPECIFIC posting — not generic networking.
+# Voice rules and ask shape stay the same as people-mode networking; the
+# structural change is Beat 2 (reference the posting itself).
+#
+# Banned phrases are asserted in tests against generated drafts. The set
+# matches the people-mode banned list so we don't slip back into cliched
+# cold-email patterns when the prompt branches.
+
+ROLES_BANNED_PHRASES = (
+    "I came across",
+    "impressive profile",
+    "I would love to",
+    "aligns with my interests",
+    "any advice would be appreciated",
+    "your insights would mean a lot",
+    "passionate about",
+    "reach out and connect",
+)
+
+
+def roles_mode_template_instructions(role_title: str = "", company: str = "") -> str:
+    """Build the roles-mode draft instructions block. Injected via
+    `template_instructions` into batch_generate_emails so the model produces
+    a 5-beat founder-outreach email that references the specific posting.
+
+    Why this lives here (and not in reply_generation): it's a STYLE preset
+    — same shape as EMAIL_PURPOSE_PRESETS — so it composes with the user's
+    existing style choices via get_template_instructions's concatenation.
+    """
+    role_clean = (role_title or "").strip() or "the role you posted"
+    company_clean = (company or "").strip() or "your company"
+
+    banned_block = "\n".join(f"- \"{p}\"" for p in ROLES_BANNED_PHRASES)
+    return f"""ROLES-MODE FOUNDER OUTREACH — replace any default networking framing.
+
+Goal: a short, posting-specific email to the founder or hiring contact at
+{company_clean} about their posted {role_clean}. The student wants the
+founder to see this email as a thoughtful application companion, not a
+generic networking ask.
+
+Structure (5 beats, 80–120 words total):
+
+  Beat 1 (1 sentence) — Intro: "I'm {{name}}, {{year}} at {{school}} studying {{major}}."
+  Beat 2 (1–2 sentences) — Posting reference: "Saw the {role_clean} role you
+    posted at {company_clean}. {{one specific detail from the posting or
+    the company's recent activity that connects to the sender}}."
+  Beat 3 (1 sentence) — Hook: pick the highest-priority shared signal
+    available (alumni overlap > recent founder writing > funding/launch
+    news > shared prior company > generic interest fallback).
+  Beat 4 (1 sentence) — The ask: "Open to a 15-min chat before I apply?"
+    OR "Is there anyone on the team I should send my application to?"
+  Beat 5 — Sign-off, sender's name only.
+
+Subject line: reference the role and the sender's school year. Format:
+  "{{School}} '{{2-digit grad year}} — re: your {role_clean} posting"
+
+Style:
+- Single ask. Single hook. Confident, specific, not permission-seeking.
+- Never editorialize on the founder's career ("must have been challenging").
+- Never invent the founder's schools, companies, or background — facts only.
+- The first sentence must be a standalone self-introduction (do not merge
+  with Beat 2).
+- Do NOT write generic firm-reputation commentary about {company_clean}.
+
+Banned phrases — none of these may appear in the body or subject line:
+{banned_block}
+"""
+
+
 def get_available_presets():
     """
     Return style and purpose presets for the API (e.g. for frontend dropdowns).

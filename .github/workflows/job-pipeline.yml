@@ -5,6 +5,7 @@ on:
     - cron: '0 */2 * * *'     # full pipeline every 2 hours
     - cron: '15 * * * *'      # Firecrawl enrichment once an hour (fits GitHub free tier; ~1800 min/month)
     - cron: '45 * * * *'      # PDL title enrichment, offset 30min from Firecrawl (~1-2 min/run with MAX_PER_RUN=100)
+    - cron: '30 */6 * * *'    # Perplexity deadline extraction every 6h (~50 jobs/run, ~$1/day at $0.005/call)
     - cron: '0 3 * * *'       # cleanup once daily at 03:00 UTC
   workflow_dispatch:
     inputs:
@@ -19,6 +20,7 @@ on:
           - backfill-enrich
           - title-enrich-only
           - backfill-title-enrich
+          - extract-deadlines
           - fantastic-only
           - skip-fantastic
           - fix-salaries
@@ -63,6 +65,8 @@ jobs:
             MODE="enrich-only"
           elif [ "${{ github.event.schedule }}" = "45 * * * *" ]; then
             MODE="title-enrich-only"
+          elif [ "${{ github.event.schedule }}" = "30 */6 * * *" ]; then
+            MODE="extract-deadlines"
           else
             MODE="full"
           fi
@@ -75,6 +79,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           PEOPLE_DATA_LABS_API_KEY: ${{ secrets.PEOPLE_DATA_LABS_API_KEY }}
+          PERPLEXITY_API_KEY: ${{ secrets.PERPLEXITY_API_KEY }}
         run: |
           case "${{ steps.mode.outputs.mode }}" in
             full)                    python -m backend.pipeline.main ;;
@@ -83,6 +88,7 @@ jobs:
             backfill-enrich)         python -m backend.pipeline.main --backfill-enrich ;;
             title-enrich-only)       python -m backend.pipeline.main --title-enrich-only ;;
             backfill-title-enrich)   python -m backend.pipeline.main --backfill-title-enrich ;;
+            extract-deadlines)       python -m backend.pipeline.main --extract-deadlines ;;
             fantastic-only)          python -m backend.pipeline.main --fantastic-only ;;
             skip-fantastic)          python -m backend.pipeline.main --skip-fantastic ;;
             fix-salaries)            python -m backend.pipeline.main --fix-salaries ;;

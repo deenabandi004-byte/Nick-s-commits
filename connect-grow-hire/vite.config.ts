@@ -41,23 +41,36 @@ export default defineConfig(({ mode }) => {
           manualChunks: (id) => {
             // Group all node_modules into vendor chunk
             if (id.includes('node_modules')) {
+              // Route-level animation/chart chunks. These are React-dependent
+              // but only reached from a handful of routes (framer-motion: find/
+              // promo/landing-animated surfaces; recharts: chart.tsx), so we
+              // keep them OUT of vendor-react to slim the critical path. They
+              // still import React from vendor-react, so ES module ordering
+              // guarantees vendor-react evaluates first (no init-order risk).
+              // NOTE: recharts is currently tree-shaken out (chart.tsx unused),
+              // so vendor-charts produces no chunk today — the rule exists so a
+              // future chart usage is route-split instead of bloating vendor-react.
+              if (id.includes('framer-motion')) {
+                return 'vendor-framer';
+              }
+              if (id.includes('recharts')) {
+                return 'vendor-charts';
+              }
               // CRITICAL: React and React-DOM must be in the same chunk as ALL libraries that use React
               // This prevents "Cannot access 'z' before initialization" and "useLayoutEffect" errors
               // Put React and ALL React-dependent libraries together
               // BE AGGRESSIVE: If there's any doubt, put it in vendor-react
-              if (id.includes('react') || 
+              if (id.includes('react') ||
                   id.includes('react-dom') ||
                   id.includes('@radix-ui') ||
                   id.includes('react-router') ||
-                  id.includes('react-hook-form') || 
+                  id.includes('react-hook-form') ||
                   id.includes('@tanstack/react-query') ||
                   id.includes('react-day-picker') ||
                   id.includes('embla-carousel-react') ||
                   id.includes('react-resizable-panels') ||
                   id.includes('react-fast-marquee') ||
                   id.includes('react-is') ||
-                  id.includes('framer-motion') || // Uses React
-                  id.includes('recharts') || // Uses React
                   id.includes('@hookform/resolvers') || // Uses React
                   id.includes('cmdk') || // Uses React
                   id.includes('sonner') || // Uses React
@@ -65,8 +78,7 @@ export default defineConfig(({ mode }) => {
                   id.includes('input-otp') || // Uses React
                   id.includes('next-themes') || // Uses React
                   id.includes('lucide-react') || // Uses React
-                  id.includes('zod') || // Might have React peer deps, safer to include
-                  id.includes('ogl')) { // Unknown - safer to include with React
+                  id.includes('zod')) { // Might have React peer deps, safer to include
                 return 'vendor-react';
               }
               // Separate Firebase into its own chunk (large library, confirmed no React)

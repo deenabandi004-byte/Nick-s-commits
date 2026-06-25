@@ -36,9 +36,10 @@ import type { AgentConfig } from "@/services/agent";
 import { firebaseApi } from "@/services/firebaseApi";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 
-// Mirror of backend CREDIT_COSTS.contact in app/services/loop_budget.py.
+// Mirror of backend CREDIT_COSTS.loop_contact_draft in app/services/loop_budget.py.
+// Inflated 2026-06-10 — see lib/constants.ts CREDIT_COSTS.
 // Keep in sync with AgentSetupInline.tsx and LoopActivityFeed.tsx.
-const CREDIT_COST_PER_CONTACT = 9;
+const CREDIT_COST_PER_CONTACT = 18;
 
 // Keep in sync with AgentSetupInline.tsx — small list, low drift risk.
 const INDUSTRY_OPTIONS = [
@@ -130,7 +131,7 @@ export function AgentSettingsModal({
     !local.enableHiringManagers &&
     !local.enableCompanyDiscovery;
 
-  // Guard: a weekly contact target costs ~9 credits per contact. If the
+  // Guard: a weekly contact target costs ~18 credits per contact. If the
   // budget can't cover the target, the agent stops mid-week. Block Save.
   const estimatedWeeklyCredits =
     local.weeklyContactTarget * CREDIT_COST_PER_CONTACT;

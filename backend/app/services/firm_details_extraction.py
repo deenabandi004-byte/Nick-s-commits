@@ -26,7 +26,7 @@ def _call_ai(system_prompt: str, user_prompt: str, max_tokens: int = 1000, label
     if anthropic_client:
         try:
             response = anthropic_client.messages.create(
-                model="claude-sonnet-4-20250514",
+                model="claude-sonnet-4-6",
                 max_tokens=max_tokens,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],

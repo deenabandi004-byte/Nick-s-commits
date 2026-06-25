@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 interface PromptSearchInputProps {
   onParse: (prompt: string) => Promise<void>;
@@ -40,7 +40,6 @@ export const PromptSearchInput: React.FC<PromptSearchInputProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="prompt-input" className="text-sm font-medium flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-primary" />
               Describe who you want to reach
             </label>
             <Textarea

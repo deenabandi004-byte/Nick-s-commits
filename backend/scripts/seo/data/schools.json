@@ -1,0 +1,28 @@
+{
+  "_note": "School registry for the programmatic SEO pipeline. name is the display label, pdl is the education.school.name match string (full institutional name, which PDL indexes), tier is the demand proxy (3 high, 2 med, 1 low). Sourced from the frontend seo-universities.ts plus the CLAUDE.md target-market list.",
+  "schools": [
+    { "slug": "usc", "name": "USC", "pdl": "university of southern california", "tier": 3 },
+    { "slug": "upenn", "name": "UPenn", "pdl": "university of pennsylvania", "tier": 3 },
+    { "slug": "nyu", "name": "NYU", "pdl": "new york university", "tier": 3 },
+    { "slug": "michigan", "name": "Michigan", "pdl": "university of michigan", "tier": 3 },
+    { "slug": "ucla", "name": "UCLA", "pdl": "university of california, los angeles", "tier": 3 },
+    { "slug": "berkeley", "name": "Berkeley", "pdl": "university of california, berkeley", "tier": 3 },
+    { "slug": "cornell", "name": "Cornell", "pdl": "cornell university", "tier": 3 },
+    { "slug": "georgetown", "name": "Georgetown", "pdl": "georgetown university", "tier": 3 },
+    { "slug": "harvard", "name": "Harvard", "pdl": "harvard university", "tier": 3 },
+    { "slug": "columbia", "name": "Columbia", "pdl": "columbia university", "tier": 3 },
+    { "slug": "uchicago", "name": "UChicago", "pdl": "university of chicago", "tier": 3 },
+    { "slug": "northwestern", "name": "Northwestern", "pdl": "northwestern university", "tier": 3 },
+    { "slug": "duke", "name": "Duke", "pdl": "duke university", "tier": 3 },
+    { "slug": "uva", "name": "UVA", "pdl": "university of virginia", "tier": 2 },
+    { "slug": "ut-austin", "name": "UT Austin", "pdl": "university of texas at austin", "tier": 2 },
+    { "slug": "notre-dame", "name": "Notre Dame", "pdl": "university of notre dame", "tier": 2 },
+    { "slug": "emory", "name": "Emory", "pdl": "emory university", "tier": 2 },
+    { "slug": "vanderbilt", "name": "Vanderbilt", "pdl": "vanderbilt university", "tier": 2 },
+    { "slug": "boston-college", "name": "Boston College", "pdl": "boston college", "tier": 2 },
+    { "slug": "villanova", "name": "Villanova", "pdl": "villanova university", "tier": 2 },
+    { "slug": "unc", "name": "UNC", "pdl": "university of north carolina at chapel hill", "tier": 2 },
+    { "slug": "indiana", "name": "Indiana", "pdl": "indiana university bloomington", "tier": 2 },
+    { "slug": "fordham", "name": "Fordham", "pdl": "fordham university", "tier": 2 }
+  ]
+}

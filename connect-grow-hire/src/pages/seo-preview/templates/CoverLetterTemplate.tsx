@@ -3,7 +3,7 @@
  * Mounted at /seo-preview/cover-letter/:slug via the dynamic route.
  */
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
   Upload, Target, PenLine, Download, Copy, RefreshCw, BadgeCheck,
 } from 'lucide-react';
@@ -84,6 +84,7 @@ const ghostBtn: React.CSSProperties = {
 
 const CoverLetterTemplate = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const row = slug ? getCoverLetterRow(slug) : undefined;
   if (!row) return <NotFound slug={slug} />;
   const firm = getFirm(row.firmSlug);
@@ -111,7 +112,8 @@ const CoverLetterTemplate = () => {
     <div className="min-h-screen w-full" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", background: '#FFFFFF' }}>
       <Helmet>
         <title>{firm.name} {role.shortName} Cover Letter (Free, Tailored, Downloadable) | Offerloop</title>
-        <meta name="robots" content="noindex" />
+        <meta name="robots" content={row.published && location.pathname.startsWith('/cover-letter/') ? 'index,follow' : 'noindex'} />
+        <link rel="canonical" href={`https://www.offerloop.ai/${row.published && location.pathname.startsWith('/cover-letter/') ? 'cover-letter' : 'seo-preview/cover-letter'}/${row.slug}`} />
         <meta name="description" content={row.metaDescription} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

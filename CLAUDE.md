@@ -133,8 +133,8 @@ Browser ──► React SPA (Vite build in connect-grow-hire/dist/)
               │                ──► Gmail API (drafts, thread sync, webhooks)
               │                ──► Stripe (subscriptions)
               │                ──► Perplexity (live search: jobs, companies, news, market context)
-              │                ──► Firecrawl (web extraction: job postings, company profiles, LinkedIn)
-              │                ──► Bright Data (LinkedIn profile enrichment)
+              │                ──► Firecrawl (web extraction: job postings, company profiles — non-LinkedIn)
+              │                ──► Apify (LinkedIn profiles, posts, jobs, company pages — single LinkedIn vendor)
               │                ──► SerpAPI / Jina Reader (legacy fallbacks, off by default)
               │                ──► Prerender.io (bot/crawler SSR)
               ▼
@@ -151,7 +151,7 @@ Chrome Extension ──► same Flask API at https://final-offerloop.onrender.co
 ## Core Features
 
 ### 1. Contact Search (FIND)
-**How it works**: User enters search criteria (company, title, location, university) → backend queries People Data Labs API (`pdl_client.py`, 3200+ lines) with ~50 metro area mappings → results filtered by tier limits (3/8/30 contacts) → optional Hunter.io email verification → results returned with LinkedIn, email, title, company, education.
+**How it works**: User enters search criteria (company, title, location, university) → backend queries People Data Labs API (`pdl_client.py`, 3200+ lines) with ~50 metro area mappings → results filtered by tier limits (3/8/15 contacts) → optional Hunter.io email verification → results returned with LinkedIn, email, title, company, education.
 
 **Key files**: `backend/app/services/pdl_client.py`, `backend/app/routes/runs.py`, `backend/app/routes/runs_hunter.py`, `connect-grow-hire/src/pages/FindPage.tsx`
 
@@ -195,6 +195,8 @@ Chrome Extension ──► same Flask API at https://final-offerloop.onrender.co
 
 **Key files**: `chrome-extension/content.js` (~3800 lines), `chrome-extension/popup.js` (~5200 lines), `chrome-extension/background.js`
 
+**Job tab "Generate Cover Letter" survived the 2026-05-26 website cleanup intentionally** — the website's Cover Letter Workshop was killed but the extension keeps `/api/job-board/generate-cover-letter` + `/api/job-board/cover-letter-pdf` as a job-board-only utility. Don't delete those routes or the popup.html button without checking with Sid.
+
 ---
 
 ## Auth System
@@ -235,8 +237,8 @@ Three tiers defined in `backend/app/config.py` (frontend mirror in `connect-grow
 | | Free | Pro ($9.99/mo) | Elite ($34.99/mo) |
 |---|---|---|---|
 | Credits/month | 500 | 3000 | 12000 |
-| Contacts/search | 3 | 8 | 30 |
-| Batch size | 1 | 5 | 15 |
+| Contacts/search | 3 | 8 | 15 |
+| Batch size | 3 | 8 | 15 |
 | Firm search | No | Yes | Yes |
 | Coffee chat preps | 3 lifetime | 10/mo | Unlimited |
 | Alumni searches | 10 | Unlimited | Unlimited |
@@ -281,6 +283,10 @@ Credits reset at calendar month boundary (not billing cycle). Atomic Firestore d
 - `coffee-chat-preps/` -- generated coffee chat prep documents
 - `scoutChats/`, `messages/` -- Scout assistant chat persistence (TTL on `expires_at`)
 - `notifications/`, `activity/`, `searchHistory/`, `firmSearches/`, `exports/`, `goals/`
+- `referrals/` -- per-referred-user dedupe docs for the referral program (one doc per person who signed up via this user's code)
+
+Top-level collection (not under `users/`):
+- `referralCodes/{code}` -- referral code → owner uid lookup (backend admin SDK only; clients denied by rules)
 
 Note: `interview-preps/`, `resume_library/`, `resume_scores/`, `cover_letter_library/`, `application_lab/` (or similar) Firestore subcollections may still hold legacy data for users who used those features before the 2026-05-26 cleanup. No live code reads/writes them now — safe to leave the data in production.
 
@@ -456,11 +462,13 @@ Path alias: `@` maps to `./src`.
 - `PEOPLE_DATA_LABS_API_KEY` -- Contact search (2.2B contacts)
 - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` -- Payments
 - `STRIPE_PRO_PRICE_ID`, `STRIPE_ELITE_PRICE_ID` -- Stripe price overrides (defaults hardcoded)
+- `STRIPE_REFERRAL_REWARD_COUPON_ID` -- 100%-off-once coupon applied when an already-paying user claims the referral reward (free users get a 30-day Elite trial checkout instead)
 - `PERPLEXITY_API_KEY` -- Live search (jobs, companies, news, market context) — primary search provider
-- `FIRECRAWL_API_KEY` -- Structured web extraction (job postings, company profiles, LinkedIn scrapes) — primary scraping provider
-- `BRIGHTDATA_API_KEY` -- LinkedIn profile enrichment (Bright Data dataset API)
+- `FIRECRAWL_API_KEY` -- Structured web extraction (job postings, company profiles) — primary scraping provider for **non-LinkedIn** URLs. As of 2026-06-18 every linkedin.com URL is auto-routed to Apify by `firecrawl_client._is_linkedin_url`.
+- `APIFY_API_KEY` -- Single LinkedIn vendor (profiles, posts, jobs, company pages). Actor IDs are overridable per surface via `APIFY_USER_PROFILE_ACTOR_ID`, `APIFY_LINKEDIN_JOB_ACTOR_ID`, `APIFY_LINKEDIN_COMPANY_ACTOR_ID`.
+- `BRIGHTDATA_API_KEY` -- DEPRECATED 2026-06-18. No longer load-bearing; Apify replaced Bright Data on every LinkedIn path. Safe to leave set during the next revision in case a fast revert is needed; will be removed in the follow-up cleanup.
 - `SERPAPI_KEY` -- LEGACY. Used only when `ENABLE_SERPAPI_FALLBACK=1`. Kept as emergency fallback in `coffee_chat.py`, `firm_details_extraction.py`, `agent_actions.py`, and `job_board.py` (the latter migration in progress — direct `fetch_jobs_from_serpapi` callers still bypass the gate). Note: scout_service.py was deleted 2026-05-26 as part of Application Lab cleanup.
-- `JINA_API_KEY` -- LEGACY. Used only when `ENABLE_JINA_FALLBACK=1`. Kept as emergency fallback in `linkedin_enrichment.py`.
+- `JINA_API_KEY` -- DEPRECATED 2026-06-18 alongside Bright Data. No longer reachable from the enrichment chain even with `ENABLE_JINA_FALLBACK=1` (Apify replaced both); flag will be removed in the follow-up cleanup.
 - `ENABLE_SERPAPI_FALLBACK` -- Set to `1` to re-enable the SerpAPI fallback path during a Perplexity incident. Off by default.
 - `ENABLE_JINA_FALLBACK` -- Set to `1` to re-enable the Jina Reader fallback path during a Firecrawl incident. Off by default.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` -- Gmail OAuth
@@ -600,8 +608,9 @@ Based on git status and recent commits:
 | Stripe | Subscriptions (Pro $9.99/mo, Elite $34.99/mo) | `backend/app/services/stripe_client.py`, `backend/app/routes/billing.py` |
 | Gmail API | OAuth, drafts, thread sync, push via Pub/Sub | `backend/app/services/gmail_client.py`, `backend/app/routes/gmail_oauth.py` |
 | Perplexity | Primary live search: jobs, companies, news, market context, hiring-manager verification | `backend/app/services/perplexity_client.py` |
-| Firecrawl | Primary web extraction: job postings, company profiles, LinkedIn pages | `backend/app/services/firecrawl_client.py` |
-| Bright Data | LinkedIn profile enrichment via dataset API | `backend/app/services/bright_data_client.py` |
+| Firecrawl | Primary web extraction: job postings, company profiles (non-LinkedIn) | `backend/app/services/firecrawl_client.py` |
+| Apify (HarvestAPI + curious_coder) | Single LinkedIn vendor: profiles, posts, jobs, company pages | `backend/app/services/apify_client.py` |
+| Bright Data | DEPRECATED 2026-06-18. Replaced by Apify on every LinkedIn path. | `backend/app/services/bright_data_client.py` |
 | Prerender.io | SSR for bot crawlers (40+ user agents) | `backend/wsgi.py` middleware |
 | PostHog | Frontend analytics | `connect-grow-hire/src/lib/posthog.ts` |
 | Sentry | Backend error tracking (dev only) | `backend/app/utils/sentry_config.py` |

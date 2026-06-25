@@ -1,7 +1,7 @@
 /**
  * PostHog Event Names
  * 
- * Global event schema - only these 6 event names are allowed.
+ * Global event schema - only these 7 event names are allowed.
  * Use the analytics helper functions in src/lib/analytics.ts for tracking.
  */
 
@@ -41,6 +41,12 @@ export const POSTHOG_EVENTS = {
    * Properties: feature, action, error_type, error_code?
    */
   ERROR_OCCURRED: 'error_occurred',
+
+  /**
+   * Fired once when a brand-new account is created (never on returning logins)
+   * Properties: signup_method (no email or PII)
+   */
+  SIGN_UP: 'sign_up',
 } as const;
 
 /**

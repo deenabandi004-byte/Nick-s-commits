@@ -429,17 +429,24 @@ class TestRecruiterEmailFallback:
 # =============================================================================
 
 class TestRecruiterEmailPipeline:
-    """Test the full generate_recruiter_emails pipeline."""
+    """Pipeline now delegates to batch_generate_emails — mock that delegate
+    so no live LLM calls happen during tests."""
 
-    @patch("app.services.recruiter_email_generator.get_openai_client")
-    def test_skips_no_email_contacts(self, mock_get_client):
-        mock_client = MagicMock()
-        mock_get_client.return_value = mock_client
-        mock_client.with_options.return_value = mock_client
-        mock_client.chat.completions.create.return_value = MagicMock(
-            choices=[MagicMock(message=MagicMock(content="Hi Test,\n\nExcited about the role.\n\nWould love to chat."))]
-        )
+    @staticmethod
+    def _batch_mock(*, contacts, **_kwargs):
+        return {
+            i: {
+                "subject": f"Subject {i}",
+                "plain_body": f"Hi {c.get('FirstName', '?')},\n\nGreat opportunity.\n\nLet's connect.",
+                "body": f"Hi {c.get('FirstName', '?')},\n\nGreat opportunity.\n\nLet's connect.",
+                "personalization": {},
+            }
+            for i, c in enumerate(contacts)
+        }
 
+    @patch("app.services.reply_generation.batch_generate_emails")
+    def test_skips_no_email_contacts(self, mock_batch):
+        mock_batch.side_effect = self._batch_mock
         from app.services.recruiter_email_generator import generate_recruiter_emails
         results = generate_recruiter_emails(
             recruiters=[
@@ -453,20 +460,13 @@ class TestRecruiterEmailPipeline:
             user_resume={},
             user_contact={"name": "Test"},
         )
-
         assert len(results) == 1
         assert results[0]["to_email"] == "good@co.com"
 
-    @patch("app.services.recruiter_email_generator.get_openai_client")
-    def test_each_email_has_different_approach(self, mock_get_client):
-        """Multiple emails should use different approach styles."""
-        mock_client = MagicMock()
-        mock_get_client.return_value = mock_client
-        mock_client.with_options.return_value = mock_client
-        mock_client.chat.completions.create.return_value = MagicMock(
-            choices=[MagicMock(message=MagicMock(content="Hi Test,\n\nGreat opportunity.\n\nLet's connect."))]
-        )
-
+    @patch("app.services.reply_generation.batch_generate_emails")
+    def test_one_email_per_eligible_recruiter(self, mock_batch):
+        """The engine returns one email per eligible recruiter, mapped 1:1."""
+        mock_batch.side_effect = self._batch_mock
         from app.services.recruiter_email_generator import generate_recruiter_emails
         recruiters = [{"FirstName": f"R{i}", "Email": f"r{i}@co.com"} for i in range(4)]
         results = generate_recruiter_emails(
@@ -477,9 +477,8 @@ class TestRecruiterEmailPipeline:
             user_resume={},
             user_contact={"name": "Test"},
         )
-
-        approaches = [r["approach_used"] for r in results]
-        assert len(set(approaches)) >= 3, f"Expected varied approaches, got {approaches}"
+        assert len(results) == 4
+        assert {r["to_email"] for r in results} == {f"r{i}@co.com" for i in range(4)}
 
 
 # =============================================================================

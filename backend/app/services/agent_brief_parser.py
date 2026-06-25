@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import TypedDict
+from typing import Literal, TypedDict
 
 from app.services.openai_client import get_openai_client
 
@@ -33,6 +33,19 @@ logger = logging.getLogger(__name__)
 
 PARSER_MODEL = "gpt-4o-mini"
 MAX_BRIEF_CHARS = 2000
+
+# Loop modes:
+#   "people" — autonomous networking (find professionals, draft outreach)
+#   "roles"  — autonomous job-search (find postings, optionally outreach
+#              founders at small companies)
+#   "both"   — pursue BOTH pipelines in a single Loop. Returned when the
+#              brief explicitly asks for both (e.g. "internships AND coffee
+#              chats", "find me jobs to apply to plus analysts I can ask
+#              for referrals"). Different from "people" + "roles" combined
+#              into one Loop manually because the planner can balance the
+#              two pipelines against one credit budget.
+# Ambiguous briefs return None; the wizard's mode picker decides.
+LoopMode = Literal["people", "roles", "both"]
 
 
 class ParsedBrief(TypedDict):
@@ -43,6 +56,7 @@ class ParsedBrief(TypedDict):
     emailPurpose: str | None
     constraints: list[str]
     targetCount: int | None
+    mode: LoopMode | None
 
 
 EMPTY_BRIEF: ParsedBrief = {
@@ -53,24 +67,43 @@ EMPTY_BRIEF: ParsedBrief = {
     "emailPurpose": None,
     "constraints": [],
     "targetCount": None,
+    "mode": None,
 }
 
 
-SYSTEM_PROMPT = """You extract structured search parameters from a job seeker's natural-language brief.
+SYSTEM_PROMPT = """You extract structured search parameters from a college student's natural-language brief about networking or job-hunting.
 
-The brief describes who they want to reach out to and why. Your job is to pull out:
+The student is using an autonomous agent that can either (a) find professionals to email for coffee chats / referrals / advice, or (b) find open job postings to apply to. Your job is to pull out:
 - companies: specific company names mentioned (expand abbreviations: "JPM" -> "JPMorgan", "GS" -> "Goldman Sachs")
 - industries: broader industry categories if no specific company is given (e.g. "Investment Banking", "Consulting", "Technology")
-- roles: job titles or role types they want to reach (e.g. "Analyst", "Product Manager", "AI Researcher")
+- roles: job titles or role types they want (e.g. "Analyst", "Product Manager", "SWE Intern")
 - locations: cities, regions, or "remote" if mentioned
 - emailPurpose: a short phrase describing what the outreach is about (e.g. "summer internship", "full-time recruiting", "advice on breaking into PE")
 - constraints: any explicit filters (e.g. "alumni only", "must be hiring now", "no recruiters")
 - targetCount: if the user said a specific number of people they want, return it; otherwise null
+- mode: classify the intent of the brief. Return:
+    * "roles" if the student wants to find open POSTINGS to apply to. Signals: "find me internships", "looking for [role] roles", "apply to", "summer 2027 SWE internships", "open positions", "job postings", "hiring now".
+    * "people" if the student wants to find PROFESSIONALS to email for networking. Signals: "reach out about", "coffee chat with", "ask for advice", "10 analysts at [bank]", "connect with", "referral from".
+    * "both" if the brief explicitly asks for BOTH job postings AND networking contacts in the same Loop. The brief must make it clear the student wants the agent to do both jobs — not just two separate things mentioned in passing. Signals: "X and people to network with", "internships AND coffee chats", "jobs to apply to plus analysts I can ask", "find roles for me but also connect me with [profession]", "looking for [job] + warm intros". When the brief uses an explicit conjunction (and, plus, +, AND, also) joining a networking ask to a job-search ask, return "both".
+    * null if the brief is ambiguous or could plausibly be either.
+
+Examples of "both":
+  - "I want summer SWE internships at fintech startups in NYC plus people to coffee chat with"
+    -> mode="both" (explicit "plus" joining job search to networking)
+  - "Find me open analyst roles AND connect me with current analysts at the same banks"
+    -> mode="both" (explicit "AND" joining find-jobs to networking)
+  - "Looking for marketing internships and also want intros to PMs at those companies"
+    -> mode="both" (explicit "also want intros" joining job to networking)
+
+Examples that are NOT "both" (return single mode):
+  - "I want SWE internships at fintech startups" -> mode="roles" (no networking ask)
+  - "10 analysts at Goldman for coffee chats" -> mode="people" (no postings ask)
+  - "Find me a job" -> mode="roles" (no networking ask, even though brief is short)
 
 Rules:
 - Only include companies/roles/industries actually mentioned. Do not invent.
 - Use proper, canonical names ("Morgan Stanley" not "MS", "McKinsey" not "MCK").
-- If the brief is empty or gibberish, return empty arrays and null fields.
+- If the brief is empty or gibberish, return empty arrays and null fields including mode=null.
 - Return STRICT JSON matching the schema. No prose."""
 
 
@@ -152,6 +185,9 @@ def _normalize(raw: dict) -> ParsedBrief:
     else:
         email_purpose = email_purpose.strip()[:200]
 
+    raw_mode = raw.get("mode")
+    mode: LoopMode | None = raw_mode if raw_mode in ("people", "roles", "both") else None
+
     return {
         "companies": as_str_list(raw.get("companies"))[:20],
         "industries": as_str_list(raw.get("industries"))[:10],
@@ -160,4 +196,5 @@ def _normalize(raw: dict) -> ParsedBrief:
         "emailPurpose": email_purpose,
         "constraints": as_str_list(raw.get("constraints"))[:10],
         "targetCount": target_count,
+        "mode": mode,
     }

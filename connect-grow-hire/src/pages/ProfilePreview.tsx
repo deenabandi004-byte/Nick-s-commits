@@ -9,10 +9,12 @@
  * Spec: docs/PROFILE_ONBOARDING_SPEC.md
  */
 
-import React, { useState, useEffect, useContext, createContext, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useContext, createContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref as storageRef, uploadBytes, getDownloadURL, deleteObject, getStorage } from 'firebase/storage';
 import { auth, db } from '@/lib/firebase';
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { onAuthStateChanged } from 'firebase/auth';
 import { BACKEND_URL } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
@@ -30,7 +32,6 @@ import {
   ChevronRight,
   Plus,
   X,
-  Sparkles,
   Paperclip,
   Pencil,
   ArrowRight,
@@ -122,7 +123,8 @@ interface ProfileData {
     directionNarrative: string;
     extractedRoles: string[];
     suggestedRoles: string[];
-    narrative: string; // anything-we-missed
+    narrative: string; // anything-we-missed (personalContext)
+    hardNos: string; // filter list — roles/companies/locations the user wants suppressed
   };
 
   personalContextFiles: Array<{
@@ -216,6 +218,7 @@ const EMPTY: ProfileData = {
     extractedRoles: [],
     suggestedRoles: [],
     narrative: '',
+    hardNos: '',
   },
 
   personalContextFiles: [],
@@ -509,6 +512,7 @@ function mapToProfile(uid: string, d: Record<string, any>, authPhotoUrl: string 
       extractedRoles: d.extractedRoles || d.targetRoles || [],
       suggestedRoles: d.suggestedRoles || [],
       narrative: d.personalContext || d.careerGoals || '',
+      hardNos: d.hardNos || '',
     },
 
     personalContextFiles: Array.isArray(d.personalContextFiles)
@@ -619,7 +623,6 @@ const Chip: React.FC<ChipProps> = ({ children, variant = 'user', removable, onCl
         ...styles[variant],
       }}
     >
-      {variant === 'suggested' && <Sparkles style={{ width: 9, height: 9 }} />}
       {children}
       {removable && <X style={{ width: 10, height: 10, opacity: 0.28 }} />}
     </button>
@@ -707,6 +710,7 @@ function Avatar() {
 
 function Header() {
   const { profile } = useProfile();
+  const navigate = useNavigate();
   const universityForHeader = profile.universityShort || profile.university;
   const metaParts: string[] = [];
   if (universityForHeader) metaParts.push(universityForHeader);
@@ -725,6 +729,41 @@ function Header() {
             {metaParts.length > 0 ? metaParts.join(' · ') : (profile.email || 'Add your school and major to personalize matches')}
           </div>
         </div>
+        {/* Cross-link to account settings. Sibling surfaces — profile drives
+            personalization, settings holds billing / integrations / admin. */}
+        <button
+          type="button"
+          onClick={() => navigate('/account-settings')}
+          style={{
+            flexShrink: 0,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            padding: '7px 12px',
+            borderRadius: 999,
+            background: 'transparent',
+            border: `1px solid ${C.hairline}`,
+            color: C.ink2,
+            fontFamily: 'inherit',
+            fontSize: 12.5,
+            fontWeight: 500,
+            cursor: 'pointer',
+            transition: 'background .15s, border-color .15s, color .15s',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#FAFBFE';
+            e.currentTarget.style.color = C.blue;
+            e.currentTarget.style.borderColor = C.blueDashed;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = C.ink2;
+            e.currentTarget.style.borderColor = C.hairline;
+          }}
+        >
+          Account settings →
+        </button>
       </div>
     </div>
   );
@@ -992,9 +1031,6 @@ function LinkedInConnect() {
   const { toast } = useToast();
   const [url, setUrl] = useState('');
   const [busy, setBusy] = useState(false);
-  const [howToOpen, setHowToOpen] = useState(false);
-  const pdfInputRef = React.useRef<HTMLInputElement>(null);
-  const [pdfBusy, setPdfBusy] = useState(false);
 
   const submitUrl = async () => {
     const trimmed = url.trim();
@@ -1034,7 +1070,7 @@ function LinkedInConnect() {
       } else {
         toast({
           title: 'LinkedIn URL saved',
-          description: errorMsg || 'LinkedIn blocks scraping — try uploading your LinkedIn PDF below for full data.',
+          description: errorMsg || 'We saved the URL but couldn\'t pull data this time. Try again in a moment.',
           variant: 'destructive',
         });
       }
@@ -1046,270 +1082,82 @@ function LinkedInConnect() {
     }
   };
 
-  const submitPdf = async (file: File) => {
-    if (!profile.uid) return;
-    if (file.size > 10 * 1024 * 1024) {
-      toast({ title: 'File too large', description: 'Max 10MB.', variant: 'destructive' });
-      return;
-    }
-    if (!/\.pdf$/i.test(file.name)) {
-      toast({ title: 'PDF only', description: 'Save your LinkedIn profile as a PDF first.', variant: 'destructive' });
-      return;
-    }
-    setPdfBusy(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
-      const res = await fetch(`${BACKEND_URL}/api/parse-linkedin-pdf`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.success) {
-        throw new Error(data?.error || 'Could not parse PDF');
-      }
-      toast({ title: 'LinkedIn imported from PDF', description: `Extracted profile for ${data?.profile?.name || 'you'}.` });
-      await reload();
-    } catch (e: any) {
-      toast({ title: 'Could not import PDF', description: e?.message || 'Try again.', variant: 'destructive' });
-    } finally {
-      setPdfBusy(false);
-    }
-  };
-
-  const onPdfDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const f = e.dataTransfer.files?.[0];
-    if (f) submitPdf(f);
+  // Serif used for the intro line, matching the home-page "what we know about
+  // you" voice. URL-only flow (no PDF) — Firecrawl handles the data pull from
+  // the live LinkedIn page, removing the multi-step PDF download workflow.
+  const SERIF: React.CSSProperties = {
+    fontFamily: "'Libre Baskerville', Georgia, serif",
+    color: 'var(--heading, #1E2D4D)',
   };
 
   return (
     <div>
-      <div style={{ fontSize: 12.5, color: C.ink3, marginBottom: 12, lineHeight: 1.55 }}>
-        Add your LinkedIn to enrich your profile. <span style={{ color: C.ink2 }}>Two ways</span> —
-        paste your URL (we'll try to pull data automatically) or upload your LinkedIn PDF for the
-        most reliable, complete import.
-      </div>
-
-      {/* ── Option A: URL paste ─────────────────────────────────────────────── */}
-      <div style={{ marginBottom: 18 }}>
-        <Mono style={{ display: 'block', marginBottom: 6 }}>Option A · Paste URL</Mono>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
-          <input
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !busy) submitUrl(); }}
-            placeholder="linkedin.com/in/your-handle"
-            disabled={busy}
-            style={{
-              flex: 1,
-              background: '#FAFBFE',
-              border: `1px solid ${C.hairline}`,
-              borderRadius: 8,
-              padding: '9px 12px',
-              fontSize: 13,
-              fontFamily: C.mono,
-              color: C.ink,
-              outline: 'none',
-            }}
-          />
-          <button
-            type="button"
-            onClick={submitUrl}
-            disabled={busy || !url.trim()}
-            style={{
-              background: busy ? C.ink3 : C.blue,
-              color: '#FFFFFF',
-              border: 'none',
-              borderRadius: 8,
-              padding: '0 18px',
-              fontSize: 13,
-              fontWeight: 500,
-              fontFamily: 'inherit',
-              cursor: busy ? 'wait' : 'pointer',
-              whiteSpace: 'nowrap',
-              opacity: !url.trim() ? 0.6 : 1,
-            }}
-          >
-            {busy ? 'Connecting…' : 'Connect'}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Divider ────────────────────────────────────────────────────────── */}
-      <div
+      <p
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 12,
-          marginBottom: 14,
+          ...SERIF,
+          fontSize: 15,
+          lineHeight: 1.65,
+          marginBottom: 16,
+          marginTop: 0,
         }}
       >
-        <div style={{ flex: 1, height: 1, background: C.hairline }} />
-        <Mono>or — for the most reliable import</Mono>
-        <div style={{ flex: 1, height: 1, background: C.hairline }} />
-      </div>
+        Drop in your LinkedIn URL — we'll pull your headline, experience, and
+        skills automatically.
+      </p>
 
-      {/* ── Option B: PDF upload ───────────────────────────────────────────── */}
-      <div>
-        <Mono style={{ display: 'block', marginBottom: 6 }}>Option B · Upload LinkedIn PDF</Mono>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
         <input
-          ref={pdfInputRef}
-          type="file"
-          accept=".pdf"
-          style={{ display: 'none' }}
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) submitPdf(f);
-            if (pdfInputRef.current) pdfInputRef.current.value = '';
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !busy) submitUrl(); }}
+          placeholder="linkedin.com/in/your-handle"
+          disabled={busy}
+          style={{
+            flex: 1,
+            background: '#FAFBFE',
+            border: `1px solid ${C.hairline}`,
+            borderRadius: 8,
+            padding: '11px 14px',
+            fontSize: 13,
+            fontFamily: C.mono,
+            color: C.ink,
+            outline: 'none',
           }}
         />
-        <div
-          onClick={pdfBusy ? undefined : () => pdfInputRef.current?.click()}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={pdfBusy ? undefined : onPdfDrop}
-          style={{
-            border: `1px dashed ${C.blueDashed}`,
-            borderRadius: 10,
-            padding: '20px 18px',
-            background: C.blueTint,
-            textAlign: 'center',
-            color: C.ink2,
-            fontSize: 13,
-            cursor: pdfBusy ? 'wait' : 'pointer',
-            opacity: pdfBusy ? 0.7 : 1,
-          }}
-        >
-          <div style={{ fontWeight: 500, color: C.blue, marginBottom: 4 }}>
-            {pdfBusy ? 'Importing your LinkedIn PDF…' : 'Drop your LinkedIn PDF here'}
-          </div>
-          <div style={{ fontSize: 12, color: C.ink3 }}>
-            or click to browse · captures everything visible on your profile
-          </div>
-        </div>
-
-        {/* How-to expandable */}
         <button
           type="button"
-          onClick={() => setHowToOpen((v) => !v)}
+          onClick={submitUrl}
+          disabled={busy || !url.trim()}
           style={{
-            marginTop: 10,
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 5,
-            background: 'transparent',
+            background: busy ? C.ink3 : C.blue,
+            color: '#FFFFFF',
             border: 'none',
-            padding: 0,
-            cursor: 'pointer',
-            color: C.blue,
-            fontSize: 12.5,
+            borderRadius: 8,
+            padding: '0 22px',
+            fontSize: 13.5,
+            fontWeight: 600,
             fontFamily: 'inherit',
-            fontWeight: 500,
+            cursor: busy ? 'wait' : 'pointer',
+            whiteSpace: 'nowrap',
+            opacity: !url.trim() ? 0.6 : 1,
           }}
         >
-          {howToOpen ? (
-            <ChevronDown style={{ width: 12, height: 12 }} />
-          ) : (
-            <ChevronRight style={{ width: 12, height: 12 }} />
-          )}
-          How do I get my LinkedIn PDF?
+          {busy ? 'Connecting…' : 'Connect'}
         </button>
-
-        {howToOpen && (
-          <div
-            style={{
-              marginTop: 10,
-              padding: '14px 16px',
-              background: '#FAFBFE',
-              border: `1px solid ${C.hairline}`,
-              borderRadius: 10,
-            }}
-          >
-            <ol style={{ margin: 0, paddingLeft: 0, listStyle: 'none', counterReset: 'step' }}>
-              {[
-                {
-                  text: 'Go to your LinkedIn profile',
-                  detail: (
-                    <>
-                      Open{' '}
-                      <a
-                        href="https://www.linkedin.com/in/me/"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{ color: C.blue, textDecoration: 'underline' }}
-                      >
-                        linkedin.com/in/me
-                      </a>{' '}
-                      — that link sends you straight to your own profile.
-                    </>
-                  ),
-                },
-                {
-                  text: 'Click the More button',
-                  detail: <>Right under your headline, next to "Open to" and "Add profile section."</>,
-                },
-                {
-                  text: 'Select "Save to PDF"',
-                  detail: <>LinkedIn generates a PDF of your full profile and downloads it automatically (~2 seconds).</>,
-                },
-                {
-                  text: 'Drop the PDF in the box above',
-                  detail: <>We parse your full work history, education, skills, certs, and recommendations.</>,
-                },
-              ].map((step, i) => (
-                <li
-                  key={i}
-                  style={{
-                    display: 'flex',
-                    gap: 12,
-                    alignItems: 'flex-start',
-                    marginBottom: i < 3 ? 12 : 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      flexShrink: 0,
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      background: C.blue,
-                      color: '#FFFFFF',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 11,
-                      fontWeight: 600,
-                      fontFamily: 'inherit',
-                      marginTop: 1,
-                    }}
-                  >
-                    {i + 1}
-                  </span>
-                  <div style={{ flex: 1, fontSize: 13, color: C.ink, lineHeight: 1.5 }}>
-                    <div style={{ fontWeight: 500 }}>{step.text}</div>
-                    <div style={{ color: C.ink2, fontSize: 12.5, marginTop: 2 }}>{step.detail}</div>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            <div
-              style={{
-                marginTop: 12,
-                paddingTop: 10,
-                borderTop: `1px solid ${C.hairline}`,
-                fontSize: 11.5,
-                color: C.ink3,
-                lineHeight: 1.55,
-              }}
-            >
-              The PDF stays private to you. We don't post or message anyone — we just read what's
-              already on your public profile to personalize your matches and emails.
-            </div>
-          </div>
-        )}
       </div>
+
+      <p
+        style={{
+          marginTop: 10,
+          marginBottom: 0,
+          fontSize: 11.5,
+          color: C.ink3,
+          lineHeight: 1.5,
+        }}
+      >
+        Stays private to you. We only read your public profile to personalize
+        matches and emails — nothing is posted or messaged.
+      </p>
     </div>
   );
 }
@@ -1847,6 +1695,34 @@ const WhenPicker: React.FC<WhenPickerProps> = ({ cycle, cycleYear, onChange }) =
 
 const INDUSTRIES_LIST: string[] = INDUSTRIES_TAXONOMY.map((i: any) => i.name);
 const ROLES_LIST: string[] = ROLES_TAXONOMY.map((r: any) => r.name);
+
+// Mirror of AccountSettings.tsx careerTrackOptions. Single source of truth
+// for the enum the GoalsPromptBanner watches; setting it from the Goals
+// section hides the banner immediately.
+const CAREER_TRACK_OPTIONS = [
+  'Investment Banking',
+  'Management Consulting',
+  'Private Equity',
+  'Venture Capital',
+  'Tech / Software Engineering',
+  'Product Management',
+  'Data Science / Analytics',
+  'Marketing',
+  'Finance / Corporate Finance',
+  'Accounting',
+  'Operations',
+  'Other',
+];
+
+// Rotates through the Career Track input placeholder while idle.
+const CAREER_TRACK_PLACEHOLDERS = [
+  'What field are you targeting?',
+  'e.g. Investment Banking',
+  'e.g. Management Consulting',
+  'e.g. Tech / Software Engineering',
+  'e.g. Product Management',
+  'e.g. Private Equity',
+];
 const COMPANIES_LIST: string[] = COMPANIES_TAXONOMY.map((c: any) => c.name);
 const COMMON_LOCATIONS = [
   'New York, NY',
@@ -1867,14 +1743,86 @@ const COMMON_LOCATIONS = [
 function Direction() {
   const { profile, persist, reload } = useProfile();
   const { toast } = useToast();
+  const { user, updateUser } = useFirebaseAuth();
   const c = profile.career;
 
   const [narrative, setNarrative] = useState(c.directionNarrative);
   const [receiptOpen, setReceiptOpen] = useState(true);
   const [extracting, setExtracting] = useState(false);
 
+  // Career Tracks: multi-select. The first entry is mirrored to the legacy
+  // single-string `careerTrack` field so AccountSettings stays in sync and the
+  // GoalsPromptBanner auto-hides as soon as one track is picked.
+  const [careerTracks, setCareerTracks] = useState<string[]>(
+    user?.careerTrack ? [user.careerTrack] : []
+  );
+  useEffect(() => {
+    // Initialize from auth context on first load. Preserve any local multi-
+    // select once the user has started picking (don't clobber on later user
+    // doc refreshes that only carry the single careerTrack field).
+    setCareerTracks((prev) => {
+      if (prev.length > 0) return prev;
+      return user?.careerTrack ? [user.careerTrack] : [];
+    });
+  }, [user?.careerTrack]);
+
+  const persistCareerTracks = async (next: string[]) => {
+    setCareerTracks(next);
+    try {
+      await persist({ careerTracks: next, careerTrack: next[0] || '' });
+      if (updateUser) {
+        await updateUser({ careerTrack: next[0] || '' });
+      }
+    } catch (e) {
+      console.warn('careerTracks persist failed', e);
+    }
+  };
+
+  // UI state for the Career Track type-ahead input
+  const [careerTrackInput, setCareerTrackInput] = useState('');
+  const [careerTrackOpen, setCareerTrackOpen] = useState(false);
+
+  // Rotate the placeholder text while the input is empty + unfocused.
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+  useEffect(() => {
+    if (careerTrackInput || careerTrackOpen) return;
+    const id = setInterval(() => {
+      setPlaceholderIdx((i) => (i + 1) % CAREER_TRACK_PLACEHOLDERS.length);
+    }, 2500);
+    return () => clearInterval(id);
+  }, [careerTrackInput, careerTrackOpen]);
+
+  const careerTrackSuggestions = (() => {
+    const q = careerTrackInput.trim().toLowerCase();
+    const selectedSet = new Set(careerTracks.map((t) => t.toLowerCase()));
+    const available = CAREER_TRACK_OPTIONS.filter((opt) => !selectedSet.has(opt.toLowerCase()));
+    if (!q) return available;
+    return available.filter((opt) => opt.toLowerCase().includes(q));
+  })();
+
+  const addCareerTrack = (value: string) => {
+    const v = value.trim();
+    if (!v) return;
+    if (!careerTracks.some((t) => t.toLowerCase() === v.toLowerCase())) {
+      persistCareerTracks([...careerTracks, v]);
+    }
+    setCareerTrackInput('');
+    setCareerTrackOpen(false);
+  };
+
   // Sync local textarea state when profile reloads
   useEffect(() => { setNarrative(c.directionNarrative); }, [c.directionNarrative]);
+
+  // Smooth-scroll into view when entered via /profile#goals (e.g. from the
+  // "Add goals" banner on Find).
+  const goalsRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#goals') {
+      requestAnimationFrame(() => {
+        goalsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
+  }, []);
 
   // Cycle parsing — Firestore stores `recruitingCycle` (key) and `cycleYear` separately.
   // The mapped `c.cycle` is a display string ("Summer 2027"); for the picker we want the key.
@@ -2018,15 +1966,161 @@ function Direction() {
   );
 
   return (
+    <div id="goals" ref={goalsRef} style={{ scrollMarginTop: 80 }}>
     <Card>
       <div style={{ marginBottom: 14 }}>
         <Serif size={20} style={{ display: 'block' }}>
-          Direction
+          Goals
         </Serif>
         <TitleRule />
         <div style={{ fontSize: 13, color: C.ink2, marginTop: 12, lineHeight: 1.55 }}>
-          What kind of work are you after? Plain English — strengths, what you like, what you don't.
+          Help us personalize your outreach and contact recommendations.
         </div>
+      </div>
+
+      {/* Career Track — single text input with autocomplete dropdown.
+          Selected tracks render as removable chips below the input. Banner
+          watches the legacy single `careerTrack`, kept in sync as
+          `careerTracks[0]` via persistCareerTracks. */}
+      <div style={{ marginBottom: 18 }}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: C.ink, marginBottom: 6 }}>
+          Career Track
+        </div>
+
+        <div style={{ position: 'relative' }}>
+          <input
+            type="text"
+            value={careerTrackInput}
+            onChange={(e) => {
+              setCareerTrackInput(e.target.value);
+              setCareerTrackOpen(true);
+            }}
+            onFocus={() => setCareerTrackOpen(true)}
+            onBlur={() => {
+              // delay so a click on a suggestion fires before the dropdown closes
+              setTimeout(() => setCareerTrackOpen(false), 150);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const match = careerTrackSuggestions[0];
+                addCareerTrack(match ?? careerTrackInput);
+              } else if (e.key === 'Escape') {
+                setCareerTrackOpen(false);
+              }
+            }}
+            placeholder={CAREER_TRACK_PLACEHOLDERS[placeholderIdx]}
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              background: '#FAFBFE',
+              border: `1px solid ${C.hairline}`,
+              borderRadius: 8,
+              fontSize: 14,
+              color: C.ink,
+              fontFamily: 'inherit',
+              outline: 'none',
+            }}
+          />
+
+          {careerTrackOpen && careerTrackSuggestions.length > 0 && (
+            <div
+              style={{
+                position: 'absolute',
+                top: 'calc(100% + 4px)',
+                left: 0,
+                right: 0,
+                background: '#FFFFFF',
+                border: `1px solid ${C.hairline}`,
+                borderRadius: 8,
+                boxShadow: '0 4px 14px rgba(15, 23, 42, 0.10)',
+                zIndex: 10,
+                maxHeight: 220,
+                overflowY: 'auto',
+              }}
+            >
+              {careerTrackSuggestions.map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onMouseDown={(e) => {
+                    // mouseDown fires before input blur, so we can add before
+                    // the dropdown closes.
+                    e.preventDefault();
+                    addCareerTrack(opt);
+                  }}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    padding: '10px 14px',
+                    background: 'transparent',
+                    border: 'none',
+                    textAlign: 'left',
+                    fontSize: 14,
+                    color: C.ink,
+                    cursor: 'pointer',
+                    fontFamily: 'inherit',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = C.blueTint; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {careerTracks.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+            {careerTracks.map((track) => (
+              <span
+                key={track}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '4px 6px 4px 12px',
+                  background: C.blueTint,
+                  border: `1px solid ${C.blueBorder}`,
+                  color: C.blue,
+                  borderRadius: 999,
+                  fontSize: 13,
+                  fontWeight: 500,
+                }}
+              >
+                {track}
+                <button
+                  type="button"
+                  onClick={() => persistCareerTracks(careerTracks.filter((t) => t !== track))}
+                  aria-label={`Remove ${track}`}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 18,
+                    height: 18,
+                    padding: 0,
+                    border: 'none',
+                    background: 'transparent',
+                    color: C.blue,
+                    cursor: 'pointer',
+                    opacity: 0.7,
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; }}
+                >
+                  <X style={{ width: 12, height: 12 }} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Free-text narrative below: "what kind of work are you after?" */}
+      <div style={{ fontSize: 13, color: C.ink2, marginBottom: 8, lineHeight: 1.55 }}>
+        What kind of work are you after? Plain English: strengths, what you like, what you don't.
       </div>
 
       <div style={{ position: 'relative' }}>
@@ -2241,6 +2335,7 @@ function Direction() {
         </>
       )}
     </Card>
+    </div>
   );
 }
 
@@ -2251,6 +2346,13 @@ function AnythingMissed() {
   const { toast } = useToast();
   const [text, setText] = useState(profile.career.narrative);
   useEffect(() => { setText(profile.career.narrative); }, [profile.career.narrative]);
+
+  // Typewriter prompts to prime the user's thinking when the textarea is empty.
+  // Stagger: AnythingMissed types from the start with no delay; the attach
+  // subtext starts on a different item with a small initial delay so the two
+  // surfaces aren't typing in lockstep.
+  const rotatingPlaceholder = useTypewriter(ANYTHING_MISSED_PLACEHOLDERS, { startOffset: 0, startDelayMs: 0 });
+  const attachSubtext = useRotation(ATTACH_SUBTEXT_ROTATION, { startOffset: 1, startDelayMs: 900 });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -2335,7 +2437,7 @@ function AnythingMissed() {
         onBlur={persistText}
         rows={3}
         maxLength={600}
-        placeholder="Bend, OR · fly fishing · Liverpool FC · ran a high-school tutoring side hustle · …"
+        placeholder={rotatingPlaceholder}
         style={{
           width: '100%',
           background: '#FAFBFE',
@@ -2417,38 +2519,236 @@ function AnythingMissed() {
         style={{
           display: 'flex',
           justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 12,
+          marginTop: 10,
+          fontSize: 12,
+          color: C.ink3,
+        }}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 5, flex: 1, minWidth: 0 }}>
+          <button
+            type="button"
+            onClick={uploading ? undefined : handleAttachClick}
+            disabled={uploading}
+            style={{
+              alignSelf: 'flex-start',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '5px 10px',
+              background: 'transparent',
+              border: `1px dashed ${C.hairline}`,
+              borderRadius: 6,
+              color: C.ink2,
+              fontSize: 12,
+              fontFamily: 'inherit',
+              cursor: uploading ? 'wait' : 'pointer',
+              opacity: uploading ? 0.6 : 1,
+            }}
+          >
+            <Paperclip style={{ width: 11, height: 11 }} />
+            {uploading ? 'Uploading…' : 'Attach file'}
+          </button>
+          <span
+            style={{
+              fontSize: 11.5,
+              color: C.ink3,
+              fontStyle: 'italic',
+              lineHeight: 1.4,
+              transition: 'opacity .3s',
+            }}
+          >
+            {attachSubtext}
+          </span>
+        </div>
+        <span style={{ flexShrink: 0 }}>{text.length}/600</span>
+      </div>
+    </Card>
+  );
+}
+
+// HardNos — the suppression-list blurb. Free-form text the user fills with
+// roles, companies, locations, or anything they want the system to filter
+// AWAY from their feed. Feeds the same downstream rankers as the positive
+// fields, but inverted. Mirrors the AnythingMissed pattern (textarea +
+// blur-persist) without the file attachment complexity.
+function HardNos() {
+  const { profile, persist } = useProfile();
+  const [text, setText] = useState(profile.career.hardNos);
+  useEffect(() => { setText(profile.career.hardNos); }, [profile.career.hardNos]);
+
+  // Different start offset + extra delay so HardNos types at a different
+  // moment than the AnythingMissed placeholder above it.
+  const rotatingPlaceholder = useTypewriter(HARD_NOS_PLACEHOLDERS, { startOffset: 2, startDelayMs: 1800 });
+
+  const persistText = async () => {
+    if (text !== profile.career.hardNos) {
+      try { await persist({ hardNos: text }); } catch (e) { console.warn(e); }
+    }
+  };
+
+  return (
+    <Card>
+      <Serif size={20} style={{ display: 'block' }}>
+        Tell us what to filter out
+      </Serif>
+      <TitleRule />
+      <div style={{ fontSize: 12.5, color: C.ink3, marginTop: 10, marginBottom: 12, lineHeight: 1.55 }}>
+        Roles, companies, locations, or anything else you've ruled out. We'll
+        suppress these from job recommendations, contact suggestions, and Scout's advice.
+      </div>
+      <textarea
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={persistText}
+        rows={3}
+        maxLength={600}
+        placeholder={rotatingPlaceholder}
+        style={{
+          width: '100%',
+          background: '#FAFBFE',
+          border: `1px solid ${C.hairline}`,
+          borderRadius: 8,
+          padding: '12px 14px',
+          fontSize: 13,
+          fontFamily: 'inherit',
+          color: C.ink,
+          resize: 'vertical',
+          outline: 'none',
+          lineHeight: 1.6,
+        }}
+      />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'flex-end',
           alignItems: 'center',
           marginTop: 10,
           fontSize: 12,
           color: C.ink3,
         }}
       >
-        <button
-          type="button"
-          onClick={uploading ? undefined : handleAttachClick}
-          disabled={uploading}
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '5px 10px',
-            background: 'transparent',
-            border: `1px dashed ${C.hairline}`,
-            borderRadius: 6,
-            color: C.ink2,
-            fontSize: 12,
-            fontFamily: 'inherit',
-            cursor: uploading ? 'wait' : 'pointer',
-            opacity: uploading ? 0.6 : 1,
-          }}
-        >
-          <Paperclip style={{ width: 11, height: 11 }} />
-          {uploading ? 'Uploading…' : 'Attach file'}
-        </button>
         <span>{text.length}/600</span>
       </div>
     </Card>
   );
+}
+
+// Rotating placeholder sets — give the user concrete examples to ride on
+// when their textarea is empty. Each list rotates every ~4 seconds, so a user
+// who pauses to think gets a fresh nudge. Pure brain-priming, no AI required.
+const ANYTHING_MISSED_PLACEHOLDERS: string[] = [
+  "I led a supply-chain group project last fall · I tutor freshmen in econ · Mock trial team",
+  "Speak Mandarin · Competitive sailor · Listen to Acquired and Odd Lots religiously",
+  "From Atlanta · GA Tech transfer · Co-founded a finance club my sophomore year",
+  "Worked retail in HS · Read SEC filings for fun · Big fan of behavioral econ",
+  "Wrote a class paper on dark pools · Run a sneaker reselling side gig · Watched the Wirecard doc 3x",
+];
+
+const HARD_NOS_PLACEHOLDERS: string[] = [
+  "No crypto roles · Avoid LA · Not interested in sales positions",
+  "Skip series A startups · No remote-only roles · Avoid commute > 30 min",
+  "No defense industry · Skip oil/gas · Not interested in pure research roles",
+  "Pass on retail banking · Avoid roles that need a PhD · Skip non-tier-1 consulting",
+];
+
+const ATTACH_SUBTEXT_ROTATION: string[] = [
+  "Drop a class essay — Scout learns how you write",
+  "A personal statement is the best material for prep sheets",
+  "Cover letters help us match your voice in outreach emails",
+  "Any writing sample — papers, project docs, anything that captures how you think",
+  "Resume PDF, a paper you wrote, even a deck — all fair game",
+];
+
+/**
+ * Typewriter rotation — types each item out character-by-character, holds,
+ * erases, advances to the next. Per-instance `startOffset` lets multiple
+ * surfaces start at different points in the cycle so they don't all type in
+ * lockstep on first mount.
+ *
+ *  typeMs:  ms per character while typing forward
+ *  holdMs:  ms to keep the fully-typed item visible
+ *  eraseMs: ms per character while backspacing
+ *  startOffset: index in `items` to start at (0..items.length-1)
+ *  startDelayMs: delay before any typing begins (lets other surfaces lead)
+ */
+function useTypewriter(
+  items: string[],
+  opts?: { typeMs?: number; holdMs?: number; eraseMs?: number; startOffset?: number; startDelayMs?: number },
+): string {
+  const typeMs = opts?.typeMs ?? 38;
+  const holdMs = opts?.holdMs ?? 2400;
+  const eraseMs = opts?.eraseMs ?? 18;
+  const startDelayMs = opts?.startDelayMs ?? 0;
+  const initialIdx = ((opts?.startOffset ?? 0) % Math.max(1, items.length) + items.length) % Math.max(1, items.length);
+
+  const [idx, setIdx] = useState(initialIdx);
+  const [phase, setPhase] = useState<'idle' | 'typing' | 'holding' | 'erasing'>(startDelayMs > 0 ? 'idle' : 'typing');
+  const [displayed, setDisplayed] = useState('');
+
+  // Initial delay before the very first character types out.
+  useEffect(() => {
+    if (phase !== 'idle') return;
+    const t = setTimeout(() => setPhase('typing'), startDelayMs);
+    return () => clearTimeout(t);
+  }, [phase, startDelayMs]);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    const target = items[idx % items.length] || '';
+
+    if (phase === 'typing') {
+      if (displayed.length < target.length) {
+        const t = setTimeout(() => setDisplayed(target.slice(0, displayed.length + 1)), typeMs);
+        return () => clearTimeout(t);
+      }
+      const t = setTimeout(() => setPhase('erasing'), holdMs);
+      return () => clearTimeout(t);
+    }
+
+    if (phase === 'erasing') {
+      if (displayed.length > 0) {
+        const t = setTimeout(() => setDisplayed(target.slice(0, displayed.length - 1)), eraseMs);
+        return () => clearTimeout(t);
+      }
+      setIdx((i) => (i + 1) % items.length);
+      setPhase('typing');
+    }
+  }, [displayed, phase, idx, items, typeMs, holdMs, eraseMs]);
+
+  return displayed;
+}
+
+// Sibling of useTypewriter that just swaps full strings on an interval — no
+// character-by-character typing. Use for places where the text should rotate
+// quietly without animation.
+function useRotation(
+  items: string[],
+  opts?: { intervalMs?: number; startOffset?: number; startDelayMs?: number },
+): string {
+  const intervalMs = opts?.intervalMs ?? 4500;
+  const startDelayMs = opts?.startDelayMs ?? 0;
+  const initialIdx =
+    ((opts?.startOffset ?? 0) % Math.max(1, items.length) + items.length) %
+    Math.max(1, items.length);
+  const [idx, setIdx] = useState(initialIdx);
+
+  useEffect(() => {
+    if (items.length <= 1) return;
+    let intervalId: number | undefined;
+    const delayId = window.setTimeout(() => {
+      intervalId = window.setInterval(() => {
+        setIdx((i) => (i + 1) % items.length);
+      }, intervalMs);
+    }, startDelayMs);
+    return () => {
+      clearTimeout(delayId);
+      if (intervalId !== undefined) clearInterval(intervalId);
+    };
+  }, [items.length, intervalMs, startDelayMs]);
+
+  return items[idx] || '';
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -2647,6 +2947,7 @@ const ProfilePreview: React.FC = () => {
           <MainContentWrapper>
             <AppHeader title="Profile" />
             <div
+              className="relative"
               style={{
                 flex: 1,
                 overflow: 'auto',
@@ -2654,7 +2955,30 @@ const ProfilePreview: React.FC = () => {
                 padding: '40px 48px 80px',
               }}
             >
-              <div style={{ maxWidth: 760, margin: '0 auto' }}>
+              {/* Watercolor mountain backdrop — mirrors the home page so the
+                  profile feels like an extension of the same environment, not
+                  a separate destination. Same /mountains-lake.png asset, same
+                  fixed-bottom positioning + 70vh height. */}
+              <img
+                src="/mountains-lake.png"
+                alt=""
+                aria-hidden
+                draggable={false}
+                style={{
+                  position: 'fixed',
+                  bottom: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '70vh',
+                  objectFit: 'cover',
+                  objectPosition: 'bottom center',
+                  opacity: 0.9,
+                  zIndex: 0,
+                  pointerEvents: 'none',
+                  userSelect: 'none',
+                }}
+              />
+              <div className="relative" style={{ maxWidth: 760, margin: '0 auto', zIndex: 1 }}>
                 {loading ? (
                   <div style={{ fontSize: 13, color: C.ink3, padding: '32px 0' }}>Loading your profile…</div>
                 ) : (
@@ -2709,6 +3033,8 @@ const ProfilePreview: React.FC = () => {
                       <Direction />
 
                       <AnythingMissed />
+
+                      <HardNos />
                     </div>
                   </>
                 )}

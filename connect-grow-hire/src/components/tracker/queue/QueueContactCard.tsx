@@ -17,6 +17,7 @@ import {
   ContactAvatar,
   ContactIdentity,
 } from "@/components/tracker/shared/ContactCardBase";
+import { htmlToPlainText } from "@/lib/formatters";
 
 interface QueueContactCardProps {
   contact: QueueContact;
@@ -169,7 +170,7 @@ export function QueueContactCard({
           </button>
           {expanded && contact.emailBody && (
             <div className="mt-2 bg-gray-50 border border-gray-100 rounded-[4px] px-3 py-2 text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
-              {contact.emailBody}
+              {htmlToPlainText(contact.emailBody)}
             </div>
           )}
         </div>

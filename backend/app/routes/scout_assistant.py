@@ -36,6 +36,42 @@ scout_admin_bp = Blueprint("scout_admin", __name__)
 _user_context_cache = TTLCache(maxsize=500, ttl=60)
 
 
+def _sse_stream_from_queue(q, heartbeat_interval_s: float = 15.0,
+                            real_timeout_s: float = 120.0):
+    """Yield SSE frames from a thread-safe queue with keepalive heartbeats.
+
+    Browsers and proxies drop SSE connections after ~60s of idle. We poll the
+    queue every heartbeat_interval_s; on timeout we emit `event: heartbeat`
+    instead of bailing out. We only declare a true `Stream timeout` after
+    real_timeout_s of total silence (the LLM is actually stuck, not just slow).
+
+    Stops when the producer puts `None` on the queue, when the client
+    disconnects (GeneratorExit), or on real timeout.
+    """
+    elapsed_silence_s = 0.0
+    try:
+        while True:
+            try:
+                item = q.get(timeout=heartbeat_interval_s)
+            except queue.Empty:
+                elapsed_silence_s += heartbeat_interval_s
+                if elapsed_silence_s >= real_timeout_s:
+                    yield f"event: error\ndata: {json.dumps({'message': 'Stream timeout'})}\n\n"
+                    return
+                yield f"event: heartbeat\ndata: {json.dumps({})}\n\n"
+                continue
+
+            elapsed_silence_s = 0.0
+            if item is None:
+                return
+
+            event = item.get("event", "token")
+            data = item.get("data", {})
+            yield f"event: {event}\ndata: {json.dumps(data)}\n\n"
+    except GeneratorExit:
+        return
+
+
 def _resume_to_text(user_data: dict) -> str:
     """Best resume representation for Scout.
 
@@ -411,6 +447,262 @@ def scout_assistant_chat():
         }), 200  # Return 200 so frontend doesn't show error state
 
 
+# ── D3: Briefing intent stream (Phase 3B) ─────────────────────────────────────
+#
+# Dedicated endpoint for the strategist briefing. Sits alongside /chat/stream
+# rather than branching inside the chat handler so the bypass-Haiku decision
+# is structural, not conditional - the briefing path simply never goes near
+# the intent classifier. Reuses _sse_stream_from_queue from the chat path so
+# the browser-side stream handling is identical (heartbeats included).
+
+# Briefing-specific model + temperature. Same model the chat service uses; a
+# slightly higher temperature than the chat default because briefings benefit
+# from a touch of variety across openers.
+_BRIEFING_MODEL = "gpt-4.1-mini"
+_BRIEFING_TEMPERATURE = 0.5
+# Max output tokens for the briefing prose. Each step renders as a header +
+# 2-4 rationale bullets + CTA hint, so 5 steps fit comfortably in ~1500 toks.
+_BRIEFING_MAX_OUTPUT_TOKENS = 1800
+# Hard wall on how long we keep the queue alive for the streaming generator.
+# Longer than the typical 4-8s briefing latency but short enough to bound
+# stragglers; the route's heartbeat helper will still emit keepalives until
+# this triggers.
+_BRIEFING_GENERATE_TIMEOUT_S = 90
+
+
+def _serialize_active_strategy(strategy):
+    """Convert an active-strategy dict to JSON-safe primitives.
+
+    strategy.get_active_strategy returns a dict containing datetime fields
+    (created_at, updated_at, plus per-step completed_at after the D2
+    migration). The SSE 'done' payload is JSON-encoded so the datetimes must
+    become ISO strings before they leave the route.
+
+    Returns None when there is no active strategy so the frontend can use a
+    cheap truthy check (`active_strategy ? ... : null`).
+    """
+    if not strategy or not isinstance(strategy, dict):
+        return None
+
+    def _iso(v):
+        return v.isoformat() if hasattr(v, "isoformat") else v
+
+    safe_steps = []
+    for step in (strategy.get("steps") or []):
+        if not isinstance(step, dict):
+            continue
+        safe_steps.append({
+            "title": step.get("title", ""),
+            "detail": step.get("detail", ""),
+            "rationale": step.get("rationale", ""),
+            "feature": step.get("feature", ""),
+            "route": step.get("route"),
+            "prefill_payload": step.get("prefill_payload") or {},
+            "done": bool(step.get("done")),
+            "completed_at": _iso(step.get("completed_at")),
+            "created_artifact_id": step.get("created_artifact_id") or None,
+        })
+
+    return {
+        "id": strategy.get("id"),
+        "goal": strategy.get("goal", ""),
+        "steps": safe_steps,
+        "created_at": _iso(strategy.get("created_at")),
+        "updated_at": _iso(strategy.get("updated_at")),
+    }
+
+
+@scout_assistant_bp.route("/briefing/stream", methods=["POST", "OPTIONS"])
+@require_firebase_auth
+def scout_assistant_briefing_stream():
+    """Stream the strategist briefing.
+
+    The briefing path is structurally separate from /chat/stream: there is no
+    Haiku intent classification, no helper-tool calls mid-turn, and no save_
+    strategy auto-call (yet - that lands when the frontend reads the response
+    and the strategy schema migration ships in a follow-up). The model gets
+    the strategist prompt + a single user turn ("Produce my briefing now.")
+    and we stream the prose back as `token` events with a final `done`.
+
+    Payload (all optional except auth provides uid):
+      {
+        "user_info":  {"name", "subscriptionTier", "credits", "max_credits"},
+        "current_page": str,
+        "dontAutoSave": bool,   # reserved for later; not consumed yet
+      }
+
+    SSE events emitted:
+      event: token       {"text": "chunk"}            (many)
+      event: heartbeat   {}                            (every 15s of silence)
+      event: done        {"message": full text, "coverage": {...}}
+      event: error       {"message": str}
+    """
+    if request.method == "OPTIONS":
+        return jsonify({}), 200
+
+    # Lazy imports: keep the module import cycle clean and let the route file
+    # boot even when the LLM/Apify deps are unavailable in some environments.
+    from app.services.openai_client import create_async_openai_client
+    from app.services.scout.profile_coverage import compute_coverage
+    from app.services.scout.strategist import build_strategist_prompt
+    from app.services.scout import strategy as strategy_mod
+
+    payload = request.get_json(force=True, silent=True) or {}
+    user_info = payload.get("user_info") or {}
+    if not isinstance(user_info, dict):
+        user_info = {}
+    tier = str(
+        user_info.get("subscriptionTier") or user_info.get("tier") or "free"
+    ).lower()
+
+    uid = None
+    if hasattr(request, "firebase_user"):
+        uid = (request.firebase_user or {}).get("uid")
+
+    # Load user context the same way /chat/stream does, then derive coverage
+    # and active strategy. activity_since + recent posts intentionally land in
+    # follow-up commits - they require additional reads and an Apify call we
+    # do not want to gate the first briefing on while we are still validating
+    # the strategist prompt against real users.
+    user_context = _fetch_user_context(uid) if uid else {}
+    coverage = None
+    active_strategy = None
+    if uid:
+        try:
+            raw_doc = get_db().collection("users").document(uid).get(timeout=8.0)
+            raw_user = raw_doc.to_dict() if raw_doc.exists else {}
+            coverage = compute_coverage(raw_user)
+        except Exception as e:
+            print(f"[ScoutBriefing] coverage read failed: {e}")
+        try:
+            active_strategy = strategy_mod.get_active_strategy(uid)
+        except Exception as e:
+            print(f"[ScoutBriefing] strategy read failed: {e}")
+
+    system_prompt = build_strategist_prompt(
+        user_context=user_context,
+        active_strategy=active_strategy,
+        activity_since=None,
+        coverage=coverage,
+        user_recent_posts=None,
+        tier=tier,
+    )
+
+    q: queue.Queue = queue.Queue(maxsize=200)
+
+    def _run_streaming():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            async def _run():
+                client = create_async_openai_client()
+                if client is None:
+                    q.put({
+                        "event": "error",
+                        "data": {"message": "OpenAI client not configured."},
+                    })
+                    return
+
+                accumulated_parts: list[str] = []
+                try:
+                    stream = await client.chat.completions.create(
+                        model=_BRIEFING_MODEL,
+                        temperature=_BRIEFING_TEMPERATURE,
+                        max_tokens=_BRIEFING_MAX_OUTPUT_TOKENS,
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {
+                                "role": "user",
+                                "content": (
+                                    "Produce my briefing now. Follow the "
+                                    "output shape rules in the system prompt: "
+                                    "5-7 numbered steps, each with 3-5 "
+                                    "rationale bullets that cite specific "
+                                    "facts about me. Lead with Loop "
+                                    "recommendations - that's how I get value "
+                                    "from Offerloop. Name Loops by name and "
+                                    "tell me what each Loop will do for me."
+                                ),
+                            },
+                        ],
+                        stream=True,
+                    )
+                    async for chunk in stream:
+                        delta = chunk.choices[0].delta if chunk.choices else None
+                        if not delta:
+                            continue
+                        token = getattr(delta, "content", None)
+                        if token:
+                            accumulated_parts.append(token)
+                            q.put({"event": "token", "data": {"text": token}})
+
+                    # Final structured payload. coverage is included so the
+                    # gauge UI can render without a second round-trip; the
+                    # active_strategy is serialized to JSON-safe primitives
+                    # (datetimes -> ISO strings) so the strategy card can
+                    # render checkboxes + completed_at timestamps inline.
+                    q.put({
+                        "event": "done",
+                        "data": {
+                            "message": "".join(accumulated_parts),
+                            "coverage": coverage or {},
+                            "active_strategy": _serialize_active_strategy(active_strategy),
+                        },
+                    })
+                    # Phase 5 observability: success event. Lazy import keeps
+                    # the route boot-resilient when events_service is down.
+                    if uid:
+                        try:
+                            from app.services.events_service import log_event
+                            log_event(
+                                uid,
+                                "scout.briefing.generated",
+                                {
+                                    "coverage_pct": (coverage or {}).get("coverage_pct", 0),
+                                    "tier": tier,
+                                    "tokens_out": len("".join(accumulated_parts)),
+                                    "had_active_strategy": bool(active_strategy),
+                                },
+                            )
+                        except Exception:
+                            pass
+                except Exception as e:
+                    print(f"[ScoutBriefing] OpenAI stream error: {e}")
+                    q.put({
+                        "event": "error",
+                        "data": {"message": "Briefing failed - try again."},
+                    })
+
+            loop.run_until_complete(
+                asyncio.wait_for(_run(), timeout=_BRIEFING_GENERATE_TIMEOUT_S)
+            )
+        except asyncio.TimeoutError:
+            q.put({
+                "event": "error",
+                "data": {"message": "Briefing took too long. Try again."},
+            })
+        except Exception as e:
+            print(f"[ScoutBriefing] runner error: {e}")
+            q.put({
+                "event": "error",
+                "data": {"message": "Something went wrong."},
+            })
+        finally:
+            q.put(None)
+            loop.close()
+
+    threading.Thread(target=_run_streaming, daemon=True).start()
+
+    return Response(
+        _sse_stream_from_queue(q),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
 @scout_assistant_bp.route("/chat/stream", methods=["POST", "OPTIONS"])
 @require_firebase_auth
 def scout_assistant_chat_stream():
@@ -530,28 +822,8 @@ def scout_assistant_chat_stream():
     thread = threading.Thread(target=_run_streaming, daemon=True)
     thread.start()
 
-    def _sse_generator():
-        """Yield SSE events from the thread-safe queue."""
-        try:
-            while True:
-                try:
-                    item = q.get(timeout=60)  # 60s max wait per event
-                except queue.Empty:
-                    yield f"event: error\ndata: {json.dumps({'message': 'Stream timeout'})}\n\n"
-                    return
-
-                if item is None:
-                    return  # End of stream
-
-                event = item.get("event", "token")
-                data = item.get("data", {})
-                yield f"event: {event}\ndata: {json.dumps(data)}\n\n"
-        except GeneratorExit:
-            # Client disconnected - thread will clean up naturally
-            pass
-
     return Response(
-        _sse_generator(),
+        _sse_stream_from_queue(q),
         mimetype="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

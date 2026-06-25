@@ -17,6 +17,7 @@ import {
   ArrowRight, Mail, Calendar, Users, Building2, Coffee,
   Briefcase, Repeat, Play, X, Clock,
   ChevronRight, ChevronLeft, UserPlus, CircleCheck, Loader2, HelpCircle,
+  Info,
 } from "lucide-react";
 
 import { AppSidebar } from "@/components/AppSidebar";
@@ -26,9 +27,11 @@ import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { CompanyLogo } from "@/components/CompanyLogo";
 
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useCreditsView } from "@/hooks/useCreditsView";
 import { useScout } from "@/contexts/ScoutContext";
 import { useNotifications } from "@/hooks/useNotifications";
 import {
@@ -36,6 +39,7 @@ import {
 } from "@/hooks/useAgent";
 import { apiService, type Nudge } from "@/services/api";
 import { firebaseApi } from "@/services/firebaseApi";
+import { ReferralTile } from "@/components/referral/ReferralTile";
 
 /* ============================================================
    Helpers
@@ -150,6 +154,9 @@ type Profile = {
   careerTrack?: string; preferredJobRole?: string; extractedRoles?: string[];
   targetFirms?: string[]; dreamCompanies?: string[]; preferredLocations?: string[];
   targetIndustries?: string[]; university?: string;
+  // Free-form blurb fields surfaced on /profile. Used by the home widget's
+  // CTA rotation to nudge users toward filling out the moat-building text.
+  directionNarrative?: string; personalContext?: string; hardNos?: string;
 };
 
 /** Turn the user's onboarding profile into four sets of recommended cards. */
@@ -233,7 +240,7 @@ const CATS = {
     label: "Hiring", Icon: UserPlus, action: "Find hiring managers",
   },
   loop: {
-    color: "#D97706", tint: "#D9770614",
+    color: "var(--signal-pos, #16A34A)", tint: "#16A34A14",
     label: "Loop", Icon: Repeat, action: "Set up loop",
   },
 } as const;
@@ -263,7 +270,10 @@ function ZoneHeader({
   return (
     <div className="mb-3 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <h2 className="font-sans text-[13.5px] font-semibold tracking-[-0.01em] text-[#334155]">
+        <h2
+          className="font-sans text-[13.5px] font-semibold tracking-[-0.01em] text-[#334155]"
+          style={{ textShadow: "0 1px 2px rgba(255,255,255,0.9), 0 0 12px rgba(255,255,255,0.5)" }}
+        >
           {title}
         </h2>
         {count !== undefined && count > 0 && (
@@ -355,6 +365,7 @@ function Rail({ children }: { children: React.ReactNode }) {
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { user, isLoading: authLoading } = useFirebaseAuth();
+  const creditsView = useCreditsView();
   const { openPanelWithMessage } = useScout();
   const { notifications } = useNotifications();
 
@@ -365,6 +376,12 @@ export default function DashboardPage() {
   /* ---- loops (the agent, reframed) ---- */
   const agentConfig = useAgentConfig();
   const { status: loopStatus, pendingCount: loopPending } = useAgentSidebarStatus();
+  // While the status is still loading (undefined) we render a height-locked
+  // skeleton rather than defaulting to the tall setup card, which would shift
+  // when it resolves to the active-loop card. isLoopSetup keeps treating
+  // undefined as "setup" so the cycles query stays disabled until we know the
+  // real status.
+  const isLoopLoading = loopStatus === undefined;
   const isLoopSetup = loopStatus === "setup" || loopStatus === undefined;
   const cyclesQuery = useAgentCycles(1, !isLoopSetup);
   const { runNow, isRunNowPending, isRunning, cycleProgress } = useCycleRunner();
@@ -439,11 +456,19 @@ export default function DashboardPage() {
   const replyRate = outbox?.replyRate != null
     ? Math.round(outbox.replyRate * (outbox.replyRate <= 1 ? 100 : 1))
     : 0;
+  // Credits come from the auth user (present at first paint), so that cell
+  // never shows a skeleton. The other three are statsQuery-driven, so they
+  // show a value-sized skeleton while it loads instead of flashing 0.
+  const statsPending = statsQuery.isLoading;
+  // The three activity metrics are THIS WEEK (outbox stats reset weekly), so
+  // they're labeled as such — otherwise "0 Replies" reads as contradicting the
+  // greeting's "N replies waiting" (which is the all-time unread backlog).
+  // Credits is a live balance, not weekly, so it stays unqualified.
   const bandMetrics = [
-    { label: "Intros sent", value: String(sent) },
-    { label: "Replies", value: String(replied) },
-    { label: "Reply rate", value: `${replyRate}%` },
-    { label: "Credits left", value: String(user?.credits ?? 0) },
+    { label: "Sent this week", value: String(sent), pending: statsPending },
+    { label: "Replies this week", value: String(replied), pending: statsPending },
+    { label: "Reply rate · wk", value: `${replyRate}%`, pending: statsPending },
+    { label: creditsView.isTrialing ? "Trial credits left" : "Credits left", value: String(creditsView.balance), pending: false },
   ];
 
   /* ---- welcome line - replies waiting + loop actions to review ---- */
@@ -452,8 +477,8 @@ export default function DashboardPage() {
     const m = loopPending;
     const replyW = n === 1 ? "reply" : "replies";
     const actionW = m === 1 ? "action" : "actions";
-    if (n > 0 && m > 0) return `You have ${n} ${replyW} waiting and ${m} loop ${actionW} to review.`;
-    if (n > 0) return `You have ${n} ${replyW} waiting.`;
+    if (n > 0 && m > 0) return `You have ${n} unread ${replyW} and ${m} loop ${actionW} to review.`;
+    if (n > 0) return `You have ${n} unread ${replyW} to review.`;
     if (m > 0) return `You have ${m} loop ${actionW} to review.`;
     return "All caught up - start a new loop when you're ready.";
   }, [unreadReplies.length, loopPending]);
@@ -470,7 +495,7 @@ export default function DashboardPage() {
       icon: <Mail className="h-4 w-4" />,
       tone: "var(--accent)",
       text: `${r.contactName} replied to you`,
-      sub: r.company || r.snippet?.slice(0, 60) || "Reply waiting in your tracker",
+      sub: r.company || r.snippet?.slice(0, 60) || "Reply waiting in your inbox",
       cta: "Reply",
       onClick: () => navigate("/tracker", { state: { selectContactId: r.contactId } }),
     });
@@ -614,7 +639,7 @@ export default function DashboardPage() {
 
   /* ---- tools (demoted chip row) ---- */
   const tools = [
-    { icon: <Mail className="h-3.5 w-3.5" />, label: "Tracker", to: "/tracker" },
+    { icon: <Mail className="h-3.5 w-3.5" />, label: "Inbox", to: "/tracker" },
     { icon: <Coffee className="h-3.5 w-3.5" />, label: "Meeting Prep", to: "/coffee-chat-prep" },
     { icon: <Briefcase className="h-3.5 w-3.5" />, label: "Job Board", to: "/job-board" },
   ];
@@ -638,8 +663,60 @@ export default function DashboardPage() {
         <MainContentWrapper>
           <AppHeader title="Home" />
 
-          <div className="flex-1 overflow-y-auto" style={{ background: "#FBFCFE" }}>
-            <div className="mx-auto w-full max-w-[1120px] space-y-8 px-5 py-6 sm:px-8 sm:py-8">
+          <div className="flex-1 overflow-y-auto relative" style={{ background: "#FBFCFE" }}>
+            {/* Background watercolor mountains, sourced from the Figma file's
+                synced HTML asset (imgMountainsLake1, node 2081:15934). Fixed
+                to the viewport bottom so the ground/horizon stays visible
+                regardless of scroll position. Height covers ~70% of the
+                viewport, so the peaks rise behind the hero card from the
+                sides while the lake reflection grounds the bottom edge.
+                Z-index sits behind the content wrapper; the sidebar's solid
+                navy covers the left portion. */}
+            <img
+              src="/mountains-lake.png"
+              alt=""
+              aria-hidden
+              draggable={false}
+              style={{
+                position: "fixed",
+                bottom: 0,
+                left: 0,
+                width: "100%",
+                height: "70vh",
+                objectFit: "cover",
+                objectPosition: "bottom center",
+                opacity: 0.9,
+                zIndex: 0,
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+            />
+
+            <div
+              className="relative mx-auto w-full max-w-[1040px] space-y-8 px-5 py-6 sm:px-10 sm:py-8"
+              style={{ zIndex: 1 }}
+            >
+              {/* Yeti peeking over the top-right of the hero card. Positioned
+                  absolute so most of the body sits behind the hero's rounded
+                  top edge while the paws and head crest above it. Anchored to
+                  the content wrapper (not fixed) so it scrolls away with the
+                  hero rather than persisting through the page. */}
+              <img
+                src="/yeti-mascot.png"
+                alt=""
+                aria-hidden
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  right: 100,
+                  width: 160,
+                  height: "auto",
+                  zIndex: 5,
+                  pointerEvents: "none",
+                  userSelect: "none",
+                }}
+                draggable={false}
+              />
 
               {/* ── 1. Blue hero band - greeting + metrics + Scout ── */}
               <section
@@ -700,7 +777,11 @@ export default function DashboardPage() {
                         key={m.label}
                         className="rounded-st-xl border border-white/15 bg-white/10 px-3.5 py-2"
                       >
-                        <p className="font-serif text-[22px] leading-none text-white">{m.value}</p>
+                        {m.pending ? (
+                          <Skeleton className="h-[22px] w-9 rounded bg-white/25" />
+                        ) : (
+                          <p className="font-serif text-[22px] leading-none text-white">{m.value}</p>
+                        )}
                         <p className="mt-1 text-[11.5px] font-medium text-white/70">{m.label}</p>
                       </div>
                     ))}
@@ -729,16 +810,226 @@ export default function DashboardPage() {
                 </div>
               </section>
 
+              {/* ── 1b. Personalization prose widget — editorial voice, not chips.
+                  Reads like a sentence the system has written about the user
+                  (serif + periwinkle highlighter marks). The marker stroke is
+                  faithful to the landing-page testimonial treatment so the
+                  visual language ties the marketing page to the in-app surface.
+                  The CTA at the bottom is the only navigation point; routes to
+                  /account-settings for now (Phase 1). Phase 2 swaps that to a
+                  new free-flow /profile page. */}
+              {(() => {
+                // Reserve the widget height and show a skeleton while the
+                // profile loads, so the prose (1 to 3 lines) never reflows the
+                // page and we never flash the "set up your profile" fallback at
+                // users who already have one. minHeight matches the loaded
+                // section so the swap causes no shift.
+                if (profileQuery.isLoading) {
+                  return (
+                    <section
+                      className="rounded-st-xl border border-line bg-white"
+                      style={{ padding: "20px 24px", minHeight: 132 }}
+                    >
+                      <div className="space-y-3">
+                        <Skeleton className="h-[20px] w-[94%] rounded" />
+                        <Skeleton className="h-[20px] w-[60%] rounded" />
+                      </div>
+                      <Skeleton className="mt-[18px] h-[20px] w-48 rounded" />
+                    </section>
+                  );
+                }
+                const p = profileQuery.data as Profile | undefined;
+                const uni = p?.university;
+                const role = p?.preferredJobRole || p?.extractedRoles?.[0] || p?.careerTrack;
+                const firms = ((p?.targetFirms?.length ? p.targetFirms : p?.dreamCompanies) || [])
+                  .filter(Boolean)
+                  .slice(0, 3) as string[];
+                const loc = (p?.preferredLocations || []).filter(Boolean)[0];
+                const hasAnything = !!(uni || role || firms.length > 0 || loc);
+
+                // Periwinkle highlighter — full text height, fainter and
+                // softer than a true marker stroke so the prose reads first
+                // and the highlight feels natural rather than abrupt.
+                // Matches the landing-page testimonial treatment density.
+                const hi: React.CSSProperties = {
+                  background: "rgba(123,143,201,0.18)",
+                  padding: "1px 5px",
+                  borderRadius: 2,
+                  fontWeight: 500,
+                  boxDecorationBreak: "clone",
+                  WebkitBoxDecorationBreak: "clone",
+                };
+
+                const buildSentence = () => {
+                  const parts: React.ReactNode[] = [];
+                  parts.push("You're");
+                  if (uni) parts.push(<> at <span style={hi} key="u">{uni}</span></>);
+                  if (role) parts.push(<> looking for <span style={hi} key="r">{role}</span> roles</>);
+                  if (firms.length > 0) {
+                    parts.push(" at ");
+                    firms.forEach((f, i) => {
+                      parts.push(<span style={hi} key={`f${i}`}>{f}</span>);
+                      if (i < firms.length - 1) parts.push(i === firms.length - 2 ? " and " : ", ");
+                    });
+                  }
+                  if (loc) parts.push(<> in <span style={hi} key="l">{loc}</span></>);
+                  parts.push(".");
+                  return parts;
+                };
+
+                // Rotating CTA + value preview. Each visit, the prompt targets
+                // the user's biggest profile gap so the action feels specific.
+                // Order: structured fields first (role, firms, location), then
+                // narrative blurbs (hard no's, side stuff, direction), then a
+                // generic refresher CTA for fully-filled profiles. The blurb
+                // tiers are what build the personalization moat — surfacing
+                // them in rotation pulls users back to fill them out over time.
+                const directionNarrative = (p?.directionNarrative || "").trim();
+                const personalContext = (p?.personalContext || "").trim();
+                const hardNos = (p?.hardNos || "").trim();
+
+                const ctaConfig = !hasAnything
+                  ? {
+                      text: "Set up your profile →",
+                      preview: "Personalizes job matches, emails, and Scout's advice across the app",
+                    }
+                  : !role
+                  ? {
+                      text: "Tell us what you're hunting for →",
+                      preview: "We use this to rank every job we show you",
+                    }
+                  : firms.length === 0
+                  ? {
+                      text: "Add the companies on your list →",
+                      preview: "Boosts target-firm matches on the job board and the Find page",
+                    }
+                  : !loc
+                  ? {
+                      text: "Where are you trying to land? →",
+                      preview: "Filters jobs and contacts to the right metro",
+                    }
+                  : !hardNos
+                  ? { variant: "button" as const }
+                  : !personalContext
+                  ? {
+                      text: "Tell us something the resume doesn't say →",
+                      preview: "Helps Scout draft sharper emails and find better coffee-chat hooks",
+                    }
+                  : !directionNarrative
+                  ? {
+                      text: "What's the direction you're heading? →",
+                      preview: "A few sentences here tunes every recommendation we make",
+                    }
+                  : {
+                      text: "Sharpen your matches →",
+                      preview: "A 30-second update re-ranks your jobs and refines Scout's tone",
+                    };
+
+                return (
+                  <section
+                    className="animate-fadeInUp rounded-st-xl border border-line bg-white"
+                    style={{ padding: "20px 24px", minHeight: 132 }}
+                  >
+                    <p
+                      style={{
+                        fontFamily: "'Libre Baskerville', Georgia, serif",
+                        fontSize: 17,
+                        lineHeight: 1.75,
+                        color: "var(--heading, #1E2D4D)",
+                        margin: 0,
+                      }}
+                    >
+                      {hasAnything
+                        ? buildSentence()
+                        : "Tell us a bit about yourself — it's how we know what to recommend."}
+                    </p>
+                    <div style={{ marginTop: 14 }}>
+                      {ctaConfig.variant === "button" ? (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => navigate("/profile")}
+                            className="inline-flex items-center rounded-md px-3 py-1.5 text-[12.5px] font-semibold text-white transition-opacity hover:opacity-90"
+                            style={{
+                              background: "#1e3a8a",
+                              border: "none",
+                              cursor: "pointer",
+                              fontFamily: "'Inter', sans-serif",
+                            }}
+                          >
+                            Update profile
+                          </button>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <button
+                                type="button"
+                                aria-label="Why complete your profile"
+                                className="inline-flex h-6 w-6 items-center justify-center rounded-full text-[#94A3B8] transition-colors hover:text-[#475569] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
+                                style={{
+                                  background: "transparent",
+                                  border: "none",
+                                  cursor: "pointer",
+                                }}
+                              >
+                                <Info className="h-4 w-4" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              side="bottom"
+                              align="start"
+                              className="w-72 text-[12.5px] leading-relaxed"
+                            >
+                              The more you include in your profile, the more personalized the messages we can draft, and the more tailored our job and people recommendations get.
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => navigate("/profile")}
+                            style={{
+                              fontFamily: "var(--font-body)",
+                              fontSize: 13.5,
+                              fontWeight: 600,
+                              color: "var(--accent, #4A60A8)",
+                              background: "transparent",
+                              border: "none",
+                              padding: 0,
+                              cursor: "pointer",
+                              display: "block",
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.textDecoration = "underline"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.textDecoration = "none"; }}
+                          >
+                            {ctaConfig.text}
+                          </button>
+                          <p
+                            style={{
+                              marginTop: 4,
+                              marginBottom: 0,
+                              fontFamily: "var(--font-body)",
+                              fontSize: 11.5,
+                              lineHeight: 1.5,
+                              color: "var(--ink-3, #94A3B8)",
+                            }}
+                          >
+                            {ctaConfig.preview}
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  </section>
+                );
+              })()}
+
               {/* ── 2. Needs you now ──────────────────────────────── */}
               <section className="animate-fadeInUp">
                 <ZoneHeader title="Needs you now" count={needs.length} />
                 {dataLoading ? (
-                  <div className="space-y-2">
-                    <Skeleton className="h-[58px] w-full rounded-st-xl" />
-                    <Skeleton className="h-[58px] w-full rounded-st-xl" />
-                  </div>
+                  <Skeleton className="h-[58px] w-full rounded-st-xl" />
                 ) : needs.length === 0 ? (
-                  <div className={`${CARD} flex items-center gap-2.5 px-4 py-3`}>
+                  <div className={`${CARD} flex min-h-[58px] items-center gap-2.5 px-4 py-3`}>
                     <CircleCheck className="h-[18px] w-[18px] text-[var(--accent)]" />
                     <p className="text-[13.5px] text-[#475569]">
                       You're all caught up - nothing needs you right now.
@@ -817,14 +1108,16 @@ export default function DashboardPage() {
                   }
                 />
 
-                {isLoopSetup ? (
+                {isLoopLoading ? (
+                  <Skeleton className="h-[140px] w-full rounded-st-2xl" />
+                ) : isLoopSetup ? (
                   <div
-                    className="rounded-st-2xl border border-[#FCE4BE] p-5 sm:p-6"
-                    style={{ background: "linear-gradient(135deg,#FEF6E7 0%,#FFFFFF 65%)" }}
+                    className="rounded-st-2xl border border-[#BBF7D0] p-5 sm:p-6"
+                    style={{ background: "linear-gradient(135deg,#F0FDF4 0%,#FFFFFF 65%)" }}
                   >
                     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex gap-4">
-                        <span className="hidden h-11 w-11 flex-shrink-0 items-center justify-center rounded-[9px] bg-[#F59E0B] text-white sm:flex">
+                        <span className="hidden h-11 w-11 flex-shrink-0 items-center justify-center rounded-[9px] bg-[#16A34A] text-white sm:flex">
                           <Repeat className="h-[22px] w-[22px]" />
                         </span>
                         <div>
@@ -839,7 +1132,7 @@ export default function DashboardPage() {
                       </div>
                       <Button
                         onClick={() => navigate("/agent/setup")}
-                        className={`${PILL} flex-shrink-0 gap-1.5 self-start bg-[#F59E0B] text-white hover:bg-[#D97706] sm:self-center`}
+                        className={`${PILL} flex-shrink-0 gap-1.5 self-start bg-[#16A34A] text-white hover:bg-[#15803D] sm:self-center`}
                       >
                         Set up a loop <ArrowRight className={PILL_ICON} />
                       </Button>
@@ -916,8 +1209,10 @@ export default function DashboardPage() {
               </section>
 
               {/* ── 5. Follow-ups (demoted) ───────────────────────── */}
-              {(recCards.length > 0 || dataLoading) && (
-                <section className="animate-fadeInUp">
+              {/* Always mounted so it reserves space. When there are no
+                  follow-ups it shows an empty state instead of unmounting,
+                  which would collapse the Tools row upward. */}
+              <section className="animate-fadeInUp">
                   <ZoneHeader
                     title="Follow-ups"
                     action={
@@ -931,8 +1226,15 @@ export default function DashboardPage() {
                   />
                   {dataLoading ? (
                     <div className="grid gap-3 sm:grid-cols-2">
-                      <Skeleton className="h-[110px] rounded-st-xl" />
-                      <Skeleton className="h-[110px] rounded-st-xl" />
+                      <Skeleton className="h-[150px] rounded-st-xl" />
+                      <Skeleton className="h-[150px] rounded-st-xl" />
+                    </div>
+                  ) : recCards.length === 0 ? (
+                    <div className={`${CARD} flex min-h-[72px] items-center gap-2.5 px-4 py-3`}>
+                      <CircleCheck className="h-[18px] w-[18px] text-[var(--accent)]" />
+                      <p className="text-[13.5px] text-[#475569]">
+                        No follow-ups right now. Scout will surface them as conversations go quiet.
+                      </p>
                     </div>
                   ) : (
                     <div className="grid gap-3 sm:grid-cols-2">
@@ -965,8 +1267,10 @@ export default function DashboardPage() {
                       ))}
                     </div>
                   )}
-                </section>
-              )}
+              </section>
+
+              {/* ── 5b. Referral nudge (compact, secondary) ───────── */}
+              <ReferralTile />
 
               {/* ── 6. Tools (demoted chip row) ───────────────────── */}
               <section className="animate-fadeInUp">
@@ -977,6 +1281,11 @@ export default function DashboardPage() {
                       key={t.label}
                       onClick={() => navigate(t.to)}
                       className={`inline-flex items-center gap-1.5 ${PILL} ${PILL_OUTLINE} font-medium transition-colors`}
+                      style={{
+                        background: "rgba(255,255,255,0.75)",
+                        backdropFilter: "blur(8px)",
+                        WebkitBackdropFilter: "blur(8px)",
+                      }}
                     >
                       <span className="text-ink-3">{t.icon}</span>
                       {t.label}

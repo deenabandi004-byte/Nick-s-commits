@@ -2,7 +2,17 @@
 console.log('[Offerloop Popup] Loaded');
 
 // API Configuration
-const API_BASE_URL = 'https://final-offerloop.onrender.com';
+const API_BASE_URL = 'https://www.offerloop.ai';
+
+// ⚠️ DEV ONLY — skips the sign-in gate so you can work on the UI/UX
+// without logging in. Set to false before shipping. API calls that need a
+// real Firebase token will still fail; this only unlocks the screens.
+const DEV_BYPASS_AUTH = false;
+
+// ⚠️ DEV ONLY — paste a fresh Firebase ID token here to authenticate without OAuth.
+// Grab it from www.offerloop.ai (Network tab → any /api request → Authorization: Bearer <token>).
+// Expires ~1 hour; replace it when API calls start returning 401. Set to '' to disable.
+const DEV_TOKEN = '';
 
 // Shared job URL patterns — used by detectMode() and isJobUrl()
 const JOB_URL_PATTERNS = [
@@ -308,7 +318,7 @@ async function handleFindRecruiters() {
 
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     showJobErrorWithSignin('Please sign in to use this feature.');
     return;
   }
@@ -416,7 +426,7 @@ async function handleGenerateCoverLetter() {
 
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     showJobErrorWithSignin('Please sign in to use this feature.');
     return;
   }
@@ -623,7 +633,7 @@ async function downloadCoverLetterAsPDF(coverLetterData, company, jobTitle) {
   
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     console.error('[Offerloop Popup] No auth token found');
     showJobError('Please log in to download cover letter');
     return;
@@ -756,6 +766,7 @@ let currentState = {
   linkedInUrl: null,
   isProfilePage: false,
   credits: null,
+  coffeeChatCost: null,
   user: null,
 };
 
@@ -786,22 +797,28 @@ function initElements() {
 // COFFEE CHAT PREP WORKFLOW (aligned with website)
 // ============================================
 
-const COFFEE_CHAT_CREDITS = 15; // Must match backend config
+// Fallback used only until /check-credits returns the live cost from the server.
+const COFFEE_CHAT_CREDITS_FALLBACK = 15;
 let coffeeChatPollInterval = null;
+
+function getCoffeeChatCost() {
+  return currentState.coffeeChatCost || COFFEE_CHAT_CREDITS_FALLBACK;
+}
 
 function updateCoffeeChatButtonState() {
   const btn = document.getElementById('coffeeChatBtn');
   const hint = document.getElementById('coffeeChatHint');
   const credits = currentState.credits;
-  const hasEnough = credits !== null && credits !== undefined && credits >= COFFEE_CHAT_CREDITS;
+  const cost = getCoffeeChatCost();
+  const hasEnough = credits !== null && credits !== undefined && credits >= cost;
   if (btn) {
     btn.disabled = !hasEnough;
-    btn.title = hasEnough ? '' : `Need ${COFFEE_CHAT_CREDITS} credits. Check Account Settings for resume.`;
+    btn.title = hasEnough ? '' : `Need ${cost} credits. Check Account Settings for resume.`;
   }
   if (hint) {
     hint.textContent = hasEnough
-      ? `Uses ${COFFEE_CHAT_CREDITS} credits • PDF saved to Library`
-      : `Need ${COFFEE_CHAT_CREDITS} credits • Upload resume in Account Settings`;
+      ? `Uses ${cost} credits • PDF saved to Library`
+      : `Need ${cost} credits • Upload resume in Account Settings`;
     hint.className = hasEnough ? 'coffee-chat-hint' : 'coffee-chat-hint coffee-chat-hint-disabled';
   }
 }
@@ -822,16 +839,17 @@ async function handleCoffeeChatPrep() {
   
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     showCoffeeChatError('Please sign in to use this feature');
     return;
   }
   
   // Pre-flight: check credits (match website)
   const credits = currentState.credits;
-  if (credits === null || credits === undefined || credits < COFFEE_CHAT_CREDITS) {
+  const cost = getCoffeeChatCost();
+  if (credits === null || credits === undefined || credits < cost) {
     showCoffeeChatError(
-      `You need ${COFFEE_CHAT_CREDITS} credits to generate a coffee chat prep. ` +
+      `You need ${cost} credits to generate a coffee chat prep. ` +
       (credits != null ? `You have ${credits} credits.` : 'Check your balance in Account Settings.')
     );
     return;
@@ -1199,15 +1217,15 @@ function showResults(contact) {
   hideLoading();
   elements.errorSection?.classList.add('hidden');
   elements.resultsSection?.classList.remove('hidden');
-  
+
   // Parse name
   const fullName = contact.full_name || `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'Unknown';
   elements.resultName.textContent = fullName;
-  
+
   // Email
   const email = contact.email || 'Not found';
   elements.resultEmail.textContent = email;
-  
+
   // Status badge
   if (contact.email) {
     elements.resultStatus.textContent = 'Found';
@@ -1216,9 +1234,13 @@ function showResults(contact) {
     elements.resultStatus.textContent = 'No Email';
     elements.resultStatus.classList.add('no-email');
   }
-  
+
   // Show success links section
   elements.successLinksSection?.classList.remove('hidden');
+
+  // Capture source for the "Find similar" disclosure and reset its state on
+  // every new result so an old company's rows never bleed across contacts.
+  primeSimilarSection(contact);
 }
 
 // Update credits display
@@ -1512,6 +1534,14 @@ async function checkAndShowContent() {
           _creditsCacheTime = now;
           chrome.storage.local.set({ credits: creditsResponse.credits });
         }
+        if (creditsResponse.creditCosts) {
+          const cost = creditsResponse.creditCosts.coffee_chat_prep;
+          if (typeof cost === 'number' && cost > 0) {
+            currentState.coffeeChatCost = cost;
+            chrome.storage.local.set({ coffeeChatCost: cost });
+            updateCoffeeChatButtonState();
+          }
+        }
       } catch (error) {
         console.error('[Offerloop Popup] Error fetching credits:', error);
       }
@@ -1522,10 +1552,11 @@ async function checkAndShowContent() {
 // Load auth state from Chrome storage
 async function loadAuthState() {
   return new Promise((resolve) => {
-    chrome.storage.local.get(['authToken', 'isLoggedIn', 'credits', 'userEmail', 'userName', 'userPhoto'], (result) => {
+    chrome.storage.local.get(['authToken', 'isLoggedIn', 'credits', 'userEmail', 'userName', 'userPhoto', 'coffeeChatCost'], (result) => {
       currentState.authToken = result.authToken || null;
       currentState.isLoggedIn = result.isLoggedIn || false;
       currentState.credits = result.credits || null;
+      currentState.coffeeChatCost = result.coffeeChatCost || null;
       currentState.userEmail = result.userEmail || null;
       currentState.userName = result.userName || null;
       currentState.userPhoto = result.userPhoto || null;
@@ -1575,10 +1606,39 @@ async function init() {
     updateCoffeeChatButtonState();
   }
   
+  // ⚠️ DEV bypass — skip the sign-in gate entirely and go straight to content
+  if (DEV_BYPASS_AUTH) {
+    console.log('[Offerloop Popup] DEV_BYPASS_AUTH on — skipping sign-in');
+    currentState.isLoggedIn = true;
+    currentState.authToken = currentState.authToken || 'dev-bypass-token';
+    currentState.user = currentState.user || { email: 'dev@offerloop.ai', name: 'Dev User' };
+    if (currentState.credits === null) updateCredits(9999);
+    await checkAndShowContent();
+    return;
+  }
+
+  // ⚠️ DEV token bypass — when a real Firebase ID token is manually injected via
+  // the popup's DevTools console (chrome.storage.local.set({ devBypassToken: '<token>' })),
+  // use it directly for all authenticated API calls and SKIP the OAuth refresh,
+  // which fails locally because the manifest oauth2 client id is invalid for this
+  // unpacked extension. Token expires ~1h — re-paste a fresh one when calls 401.
+  const devAuth = await chrome.storage.local.get(['devBypassToken']);
+  const devToken = devAuth.devBypassToken || DEV_TOKEN;
+  if (devToken) {
+    console.log('[Offerloop Popup] Using dev token — skipping OAuth refresh');
+    currentState.authToken = devToken;
+    currentState.isLoggedIn = true;
+    // Mirror it into authToken so the Job-tab handlers (which read authToken
+    // straight from storage) authenticate with the same token.
+    await chrome.storage.local.set({ authToken: devToken, isLoggedIn: true });
+    await checkAndShowContent();
+    return;
+  }
+
   // Check if already logged in
   if (currentState.isLoggedIn && currentState.authToken) {
     console.log('[Offerloop Popup] Already signed in:', currentState.userEmail);
-    
+
     // Proactively refresh token to avoid expired token errors
     const freshToken = await refreshAuthToken();
     if (!freshToken) {
@@ -1593,13 +1653,307 @@ async function init() {
       showSection('login');
       return;
     }
-    
+
     await checkAndShowContent();
   } else {
     console.log('[Offerloop Popup] Not logged in');
     showSection('login');
   }
 }
+
+// ============================================================
+// Find Similar Contacts — disclosure inside the email-found card
+// ============================================================
+//
+// State machine: closed → opened → loading → (results | empty | error).
+// Fetch fires once on first open; subsequent toggles just show/hide the
+// already-rendered rows. A new found contact (showResults() → primeSimilarSection)
+// resets state so stale rows don't bleed across LinkedIn profiles.
+
+const similarState = {
+  source: null,        // { firstName, lastName, company, title, location, linkedinUrl }
+  fetched: false,      // have we already called /find-similar for this source?
+  rows: [],            // raw contact dicts from the backend
+};
+
+function _getSimilarEl(id) {
+  return document.getElementById(id);
+}
+
+function primeSimilarSection(contact) {
+  const section = _getSimilarEl('similarToggleBtn');
+  if (!section) return;
+
+  const company = (contact.company || '').trim();
+  const linkedInUrl = currentState.linkedInUrl || contact.linkedinUrl || '';
+
+  similarState.source = {
+    firstName: contact.firstName || (contact.full_name || '').split(' ')[0] || '',
+    lastName: contact.lastName || (contact.full_name || '').split(' ').slice(1).join(' ') || '',
+    company: company,
+    title: contact.jobTitle || contact.title || '',
+    location: contact.location || '',
+    linkedinUrl: linkedInUrl,
+  };
+  similarState.fetched = false;
+  similarState.rows = [];
+
+  // Reset DOM
+  const toggle = _getSimilarEl('similarToggleBtn');
+  const body = _getSimilarEl('similarBody');
+  const results = _getSimilarEl('similarResults');
+  const loading = _getSimilarEl('similarLoading');
+  const empty = _getSimilarEl('similarEmpty');
+  const error = _getSimilarEl('similarError');
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  body?.classList.add('hidden');
+  results?.classList.add('hidden');
+  loading?.classList.add('hidden');
+  empty?.classList.add('hidden');
+  error?.classList.add('hidden');
+  if (results) results.innerHTML = '';
+
+  // Update labels + footer deep-link with the source company
+  const companyLabel = company || 'this company';
+  const toggleCompanyEl = _getSimilarEl('similarToggleCompany');
+  if (toggleCompanyEl) toggleCompanyEl.textContent = companyLabel;
+  const emptyCompanyEl = empty?.querySelector('span');
+  if (emptyCompanyEl) emptyCompanyEl.textContent = companyLabel;
+  const footerLink = _getSimilarEl('similarFooterLink');
+  if (footerLink) {
+    const companyParam = encodeURIComponent(company);
+    const roleParam = encodeURIComponent(similarState.source.title || '');
+    footerLink.href = company
+      ? `https://www.offerloop.ai/find?tab=people&company=${companyParam}${roleParam ? `&role=${roleParam}` : ''}`
+      : 'https://www.offerloop.ai/find?tab=people';
+    const footerCompanyEl = footerLink.querySelector('.similar-footer-link__company');
+    if (footerCompanyEl) footerCompanyEl.textContent = companyLabel;
+  }
+
+  // Hide toggle entirely if there's no company to search against — the
+  // backend would reject the request anyway.
+  toggle.style.display = company ? '' : 'none';
+}
+
+async function toggleSimilarSection() {
+  const toggle = _getSimilarEl('similarToggleBtn');
+  const body = _getSimilarEl('similarBody');
+  if (!toggle || !body) return;
+
+  const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+  if (isOpen) {
+    toggle.setAttribute('aria-expanded', 'false');
+    body.classList.add('hidden');
+    return;
+  }
+
+  toggle.setAttribute('aria-expanded', 'true');
+  body.classList.remove('hidden');
+
+  if (!similarState.fetched) {
+    await fetchSimilarContacts();
+  }
+}
+
+async function fetchSimilarContacts() {
+  const loading = _getSimilarEl('similarLoading');
+  const results = _getSimilarEl('similarResults');
+  const empty = _getSimilarEl('similarEmpty');
+  const error = _getSimilarEl('similarError');
+
+  if (!similarState.source || !similarState.source.company) {
+    error.textContent = 'Need a company to find similar contacts.';
+    error.classList.remove('hidden');
+    return;
+  }
+
+  loading?.classList.remove('hidden');
+  results?.classList.add('hidden');
+  empty?.classList.add('hidden');
+  error?.classList.add('hidden');
+
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'findSimilarContacts',
+      authToken: currentState.authToken,
+      source: similarState.source,
+    });
+
+    similarState.fetched = true;
+    loading?.classList.add('hidden');
+
+    if (!response || response.error) {
+      error.textContent = (response && response.error) || 'Couldn’t fetch similar contacts. Try again.';
+      error.classList.remove('hidden');
+      return;
+    }
+
+    if (typeof response.credits_remaining === 'number') {
+      updateCredits(response.credits_remaining);
+      currentState.credits = response.credits_remaining;
+      chrome.storage.local.set({ credits: response.credits_remaining });
+    }
+
+    similarState.rows = response.contacts || [];
+    if (similarState.rows.length === 0) {
+      empty?.classList.remove('hidden');
+      return;
+    }
+
+    renderSimilarRows(similarState.rows);
+    results?.classList.remove('hidden');
+  } catch (e) {
+    console.error('[Offerloop Popup] find-similar error:', e);
+    similarState.fetched = true;
+    loading?.classList.add('hidden');
+    error.textContent = e.message || 'Couldn’t fetch similar contacts. Try again.';
+    error.classList.remove('hidden');
+  }
+}
+
+function renderSimilarRows(rows) {
+  const results = _getSimilarEl('similarResults');
+  if (!results) return;
+  results.innerHTML = '';
+  rows.forEach((row) => results.appendChild(buildSimilarRowEl(row)));
+}
+
+function _categoryCaption(category, sourceCompany, sourceTitle) {
+  // Human caption from the backend's bucket category.
+  const co = sourceCompany || 'this company';
+  const t = sourceTitle || 'this role';
+  switch (category) {
+    case 'same_role_same_co':   return `Same role at ${co}`;
+    case 'any_role_same_co':    return `Also at ${co}`;
+    case 'same_role_other_co':  return `${t} at other firms`;
+    default:                    return '';
+  }
+}
+
+function buildSimilarRowEl(row) {
+  const el = document.createElement('div');
+  el.className = 'similar-row';
+  el.setAttribute('role', 'listitem');
+
+  const initials = `${(row.firstName || ' ')[0]}${(row.lastName || ' ')[0]}`.toUpperCase().trim() || '?';
+  const fullName = `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown';
+
+  // Meta line: for same-company buckets (A/B) we show school since the
+  // company is implicit; for cross-company (C) we show the contact's
+  // actual company so the user knows where they work.
+  const metaParts = [];
+  if (row.title) metaParts.push(row.title);
+  if (row.category === 'same_role_other_co') {
+    if (row.company) metaParts.push(row.company);
+  } else {
+    if (row.school) metaParts.push(row.school);
+  }
+  const meta = metaParts.join(' · ');
+
+  const avatar = document.createElement('span');
+  avatar.className = 'similar-row__avatar';
+  avatar.textContent = initials;
+
+  const who = document.createElement('div');
+  who.className = 'similar-row__who';
+  const nameEl = document.createElement('span');
+  nameEl.className = 'similar-row__name';
+  nameEl.textContent = fullName.toLowerCase();  // CSS capitalize handles display
+  const metaEl = document.createElement('span');
+  metaEl.className = 'similar-row__meta';
+  metaEl.textContent = meta || (row.company || '');
+  who.append(nameEl, metaEl);
+
+  // Bucket caption explains *why* this row was suggested.
+  const captionText = _categoryCaption(
+    row.category,
+    similarState.source && similarState.source.company,
+    similarState.source && similarState.source.title,
+  );
+  if (captionText) {
+    const captionEl = document.createElement('span');
+    captionEl.className = 'similar-row__category';
+    captionEl.textContent = captionText;
+    who.append(captionEl);
+  }
+
+  el.append(avatar, who);
+
+  // Action: existing email → pill link; otherwise lazy "Find email" button
+  if (row.email) {
+    el.appendChild(buildEmailPill(row.email));
+  } else {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'similar-row__action';
+    btn.textContent = 'Find email';
+    btn.addEventListener('click', () => findEmailForRow(row, btn, el));
+    el.appendChild(btn);
+  }
+
+  return el;
+}
+
+function buildEmailPill(email) {
+  const pill = document.createElement('a');
+  pill.className = 'similar-row__email-pill';
+  pill.href = 'https://mail.google.com/mail/u/0/#drafts';
+  pill.target = '_blank';
+  pill.title = email;
+  pill.textContent = email;
+  return pill;
+}
+
+async function findEmailForRow(row, btn, rowEl) {
+  if (!row.linkedinUrl) {
+    rowEl.classList.add('similar-row--no-email');
+    btn.textContent = 'No URL';
+    btn.disabled = true;
+    return;
+  }
+  btn.disabled = true;
+  const original = btn.textContent;
+  btn.textContent = 'Finding…';
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'importLinkedIn',
+      linkedInUrl: row.linkedinUrl,
+      authToken: currentState.authToken,
+    });
+
+    if (!response || response.error) {
+      throw new Error((response && response.error) || 'Find-email failed');
+    }
+
+    // Credit refresh from the import-linkedin response
+    if (response.credits_remaining !== undefined) {
+      updateCredits(response.credits_remaining);
+      currentState.credits = response.credits_remaining;
+      chrome.storage.local.set({ credits: response.credits_remaining });
+    }
+
+    const found = response.contact || response;
+    const email = (found.email || '').trim();
+    if (email) {
+      btn.replaceWith(buildEmailPill(email));
+    } else {
+      rowEl.classList.add('similar-row--no-email');
+      btn.textContent = 'No email';
+      btn.disabled = true;
+    }
+  } catch (e) {
+    console.error('[Offerloop Popup] per-row find-email error:', e);
+    btn.disabled = false;
+    btn.textContent = original;
+    rowEl.classList.add('similar-row--no-email');
+  }
+}
+
+// Wire up the toggle once on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+  const toggle = _getSimilarEl('similarToggleBtn');
+  toggle?.addEventListener('click', toggleSimilarSection);
+});
 
 // Start initialization when DOM is ready
 document.addEventListener('DOMContentLoaded', init);

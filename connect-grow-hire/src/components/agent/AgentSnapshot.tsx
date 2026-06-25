@@ -764,7 +764,7 @@ function OverviewContent({
         <SummaryTile
           label="Replies"
           value={repliesWaiting}
-          sub="Conversations now active in your tracker."
+          sub="Conversations now active in your inbox."
           scanning={repliesWaiting > 0}
           delta={repliesWaiting > 0 ? "watching" : undefined}
         />
@@ -1502,7 +1502,7 @@ function RepliesPanel({
   if (withReplies.length === 0) {
     return (
       <EmptyText>
-        No replies yet. When contacts respond, they'll surface here — open in tracker for the full thread.
+        No replies yet. When contacts respond, they'll surface here — open in inbox for the full thread.
       </EmptyText>
     );
   }

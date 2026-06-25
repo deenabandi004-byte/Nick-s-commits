@@ -423,7 +423,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
             {/* Expandable guidelines */}
             {showGuidelines && (
               <div className="mt-4 text-left bg-[#FAFBFF] rounded-[3px] p-4 text-xs text-gray-600 space-y-1.5">
-                <p><span className="font-medium text-gray-700">15 credits per contact</span> — includes email lookup & AI draft</p>
+                <p><span className="font-medium text-gray-700">10 credits per contact</span> — includes email lookup & AI draft</p>
                 <p><span className="font-medium text-gray-700">Duplicates auto-skipped</span> — matching email or LinkedIn URL</p>
                 <p><span className="font-medium text-gray-700">Minimum requirements</span> — name, email, or LinkedIn URL</p>
                 <p><span className="font-medium text-gray-700">Supported formats</span> — CSV, XLSX, XLS files</p>
@@ -899,7 +899,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              View in Tracker
+              View in Inbox
             </button>
           </div>
         </div>

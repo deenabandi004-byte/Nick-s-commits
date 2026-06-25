@@ -178,6 +178,9 @@ def _try_pdl(url: str) -> tuple[dict | None, str]:
     return None, ""
 
 
+# DEPRECATED — replaced by _try_apify on 2026-06-18. Kept for one revision
+# so a quick git revert can flip back if Apify has an outage. Will be
+# deleted in the next cleanup pass once Apify proves stable in prod.
 def _try_brightdata(url: str) -> tuple[dict | None, str]:
     try:
         try:
@@ -212,6 +215,30 @@ def _try_firecrawl(url):
     return None, "firecrawl_fail"
 
 
+def _try_apify(url: str) -> tuple[dict | None, str]:
+    """Try Apify HarvestAPI for user LinkedIn enrichment (D9 onboarding path).
+
+    Returns (raw_data, "apify") on success; (None, "") on any failure so the
+    caller's tier loop falls through to PDL.
+    """
+    try:
+        try:
+            from app.services.apify_client import enrich_user_linkedin_profile_via_apify
+        except ImportError:
+            from backend.app.services.apify_client import enrich_user_linkedin_profile_via_apify
+        envelope = enrich_user_linkedin_profile_via_apify(url)
+        if envelope.get("ok") and envelope.get("data"):
+            logger.info(f"[Enrichment] Apify returned data for: {url}")
+            return envelope["data"], "apify"
+        logger.info(
+            f"[Enrichment] Apify did not return usable data "
+            f"(error={envelope.get('error')}); falling through"
+        )
+    except Exception as e:
+        logger.warning(f"[Enrichment] Apify tier raised: {e}")
+    return None, ""
+
+
 # ── Enrichment chain ────────────────────────────────────────────────────────
 
 def get_enrichment_tiers(prefer_scrape: bool = False):
@@ -219,15 +246,19 @@ def get_enrichment_tiers(prefer_scrape: bool = False):
     Return the ordered list of tier functions for LinkedIn enrichment.
     Each tier function takes a normalized URL and returns (raw_data, source).
     Exposed so callers can loop through and validate the LLM-structured output
-    of each tier, falling through if a tier returns content the LLM can't parse
-    (e.g. a LinkedIn login wall served to Jina).
+    of each tier, falling through if a tier returns content the LLM can't parse.
+
+    Both paths now route through Apify after PDL. Bright Data and Jina are
+    deprecated (see comments on _try_brightdata / _try_jina); Firecrawl is
+    policy-blocked from LinkedIn. Apify is the single scraping vendor for
+    LinkedIn going forward.
+
+    - prefer_scrape=True  (user-LinkedIn onboarding): Apify → PDL
+    - prefer_scrape=False (contact-search enrichment):  PDL  → Apify
     """
     if prefer_scrape:
-        chain = [_try_firecrawl, _try_brightdata, _try_pdl]
-        if os.getenv("ENABLE_JINA_FALLBACK"):
-            chain.insert(1, _try_jina)
-        return chain
-    return [_try_pdl, _try_brightdata]
+        return [_try_apify, _try_pdl]
+    return [_try_pdl, _try_apify]
 
 
 _EDUCATION_FIELDS = ("university", "major", "degree", "graduation", "gpa")
@@ -635,7 +666,11 @@ def llm_enrich_profile(raw_data: dict, source: str) -> dict:
             logger.error("[LLM Enrich] OpenAI client not available")
             return json.loads(json.dumps(EMPTY_RESUME_PARSED))
 
-        # Select prompt based on source
+        # Select prompt based on source. Apify HarvestAPI returns a structured
+        # LinkedIn JSON shape close enough to Bright Data's that the BRIGHTDATA
+        # prompt extracts a name + education + experience cleanly. If the
+        # Apify actor is ever swapped to one with a wildly different shape, add
+        # a dedicated LLM_PROMPT_APIFY here.
         if source == "pdl":
             system_prompt = LLM_PROMPT_PDL
         elif source == "jina":
@@ -643,6 +678,12 @@ def llm_enrich_profile(raw_data: dict, source: str) -> dict:
         elif source == "firecrawl":
             system_prompt = LLM_PROMPT_FIRECRAWL
         else:
+            # Covers "brightdata" (deprecated 2026-06-18) and "apify" (now
+            # the primary scrape source for both user-onboarding and
+            # contact-search paths). HarvestAPI's LinkedIn JSON shape is
+            # close enough to Bright Data's that the BRIGHTDATA prompt
+            # extracts cleanly; if the actor swaps to a wildly different
+            # shape, add a dedicated LLM_PROMPT_APIFY here.
             system_prompt = LLM_PROMPT_BRIGHTDATA
 
         # Build the source-data payload string

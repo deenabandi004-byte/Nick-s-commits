@@ -1,0 +1,8165 @@
+{
+  "berkeley-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 6,
+      "manager": 13,
+      "senior": 16
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        9
+      ],
+      [
+        "Marketing",
+        6
+      ],
+      [
+        "Operations",
+        4
+      ],
+      [
+        "Product",
+        4
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Partnerships",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Meta",
+        2
+      ],
+      [
+        "Xandr",
+        1
+      ],
+      [
+        "Amazon.com",
+        1
+      ],
+      [
+        "Iheartradio",
+        1
+      ],
+      [
+        "Vbm Technology Managment Partners",
+        1
+      ],
+      [
+        "Goodreads",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Partner Manager",
+        1
+      ],
+      [
+        "Applied Scientist",
+        1
+      ],
+      [
+        "Director & Global Head Of Growth & Product Marketing, Amazon Music",
+        1
+      ],
+      [
+        "It Support Engineer II",
+        1
+      ],
+      [
+        "Head Of Human Resources For Amazon Business And International Seller Services",
+        1
+      ],
+      [
+        "Senior Engineer",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-anthropic": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 4,
+      "manager": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        15
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Legal",
+        2
+      ],
+      [
+        "Finance",
+        1
+      ],
+      [
+        "Manufacturing",
+        1
+      ],
+      [
+        "Human Resources",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Google",
+        2
+      ],
+      [
+        "Samsara",
+        2
+      ],
+      [
+        "Blackstone",
+        1
+      ],
+      [
+        "Massachusetts Institute Of Technology",
+        1
+      ],
+      [
+        "Gunderson Dettmer",
+        1
+      ],
+      [
+        "Benchling",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        12
+      ],
+      [
+        "Capital Markets & Corporate Development",
+        1
+      ],
+      [
+        "Technical Staff",
+        1
+      ],
+      [
+        "Commercial Legal",
+        1
+      ],
+      [
+        "Finance & Strategy",
+        1
+      ],
+      [
+        "Applied Ai",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 10,
+      "owner": 1,
+      "partner": 1,
+      "senior": 8
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        12
+      ],
+      [
+        "Fulfillment",
+        5
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Creative",
+        2
+      ],
+      [
+        "Product",
+        2
+      ],
+      [
+        "Legal",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "University Of California, Berkeley",
+        3
+      ],
+      [
+        "Netapp",
+        1
+      ],
+      [
+        "Meta",
+        1
+      ],
+      [
+        "Electronic Arts (ea)",
+        1
+      ],
+      [
+        "Atscale",
+        1
+      ],
+      [
+        "Ericsson",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        3
+      ],
+      [
+        "Engineering Manager",
+        1
+      ],
+      [
+        "Head Of Human-centered Ai, Apple Services Engineering",
+        1
+      ],
+      [
+        "Senior Mechanical Design Engineer",
+        1
+      ],
+      [
+        "Head Of Content Strategy & Intelligence - Apple Arcade",
+        1
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 3,
+      "manager": 10,
+      "partner": 3,
+      "senior": 8
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "University Of California, Berkeley",
+        2
+      ],
+      [
+        "Clincapture",
+        1
+      ],
+      [
+        "Echouser",
+        1
+      ],
+      [
+        "Naturebox",
+        1
+      ],
+      [
+        "Riviera Partners",
+        1
+      ],
+      [
+        "Citi",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Manager",
+        5
+      ],
+      [
+        "Associate Partner",
+        5
+      ],
+      [
+        "Consultant",
+        4
+      ],
+      [
+        "Partner",
+        2
+      ],
+      [
+        "Executive Assistant",
+        2
+      ],
+      [
+        "Senior Manager, Software Applications, Automation, Ai & Agents",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 7,
+      "manager": 7,
+      "partner": 8,
+      "senior": 4
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ],
+      [
+        "Engineering",
+        1
+      ],
+      [
+        "Human Resources",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Financial Finesse",
+        1
+      ],
+      [
+        "Accenture",
+        1
+      ],
+      [
+        "Mckinsey & Company",
+        1
+      ],
+      [
+        "Instawork",
+        1
+      ],
+      [
+        "Martin Trust Center For Mit Entrepreneurship",
+        1
+      ],
+      [
+        "Ticketmaster",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Consultant",
+        6
+      ],
+      [
+        "Project Leader",
+        4
+      ],
+      [
+        "Partner",
+        3
+      ],
+      [
+        "Managing Director & Partner",
+        3
+      ],
+      [
+        "Managing Director And Partner",
+        2
+      ],
+      [
+        "Principal",
+        2
+      ]
+    ]
+  },
+  "berkeley-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 2,
+      "director": 9,
+      "partner": 1,
+      "vp": 12
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        25
+      ],
+      [
+        "Engineering",
+        2
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Citi",
+        2
+      ],
+      [
+        "Blackrock",
+        2
+      ],
+      [
+        "J.p. Morgan",
+        1
+      ],
+      [
+        "Uc Berkeley Sutardja Center For Entrepreneurship And Technology (scet)",
+        1
+      ],
+      [
+        "Bloomberg",
+        1
+      ],
+      [
+        "Putnam Investments",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        7
+      ],
+      [
+        "Managing Director",
+        4
+      ],
+      [
+        "Associate",
+        3
+      ],
+      [
+        "Partner; Co-chairman Global Tmt Banking; Co-head Global Tmt Coverage; Head Of Vc Coverage",
+        1
+      ],
+      [
+        "Certified Sap Business Objects Architect / Qlikview Engineer",
+        1
+      ],
+      [
+        "Vice President Investment Banking",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 7,
+      "manager": 9,
+      "senior": 5,
+      "vp": 2
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        12
+      ],
+      [
+        "Product",
+        4
+      ],
+      [
+        "Fulfillment",
+        3
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Operations",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Workrise Pbc",
+        1
+      ],
+      [
+        "United States Digital Service",
+        1
+      ],
+      [
+        "Sap",
+        1
+      ],
+      [
+        "Hiplogic",
+        1
+      ],
+      [
+        "Haus",
+        1
+      ],
+      [
+        "Mz",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        3
+      ],
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Lead, Strategic Operations Programs, Developer Experience, Trust & Safety, Google Play",
+        1
+      ],
+      [
+        "Head Of Private Equity Partnerships, North America",
+        1
+      ],
+      [
+        "Global Head, Technical Account Management, Google Play",
+        1
+      ],
+      [
+        "Director, Mid-market Commerce",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 14,
+      "manager": 2,
+      "senior": 3,
+      "vp": 7
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        23
+      ],
+      [
+        "Research",
+        2
+      ],
+      [
+        "Marketing",
+        1
+      ],
+      [
+        "Fulfillment",
+        1
+      ],
+      [
+        "Engineering",
+        1
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "First Republic",
+        4
+      ],
+      [
+        "Clover",
+        1
+      ],
+      [
+        "The Infatuation",
+        1
+      ],
+      [
+        "Tesla",
+        1
+      ],
+      [
+        "Morgan Stanley",
+        1
+      ],
+      [
+        "Hp",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        3
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Head Of Product Marketing, Chase Payment Solutions",
+        1
+      ],
+      [
+        "Vice President",
+        1
+      ],
+      [
+        "Vice President - Investments Private Client Advisor",
+        1
+      ],
+      [
+        "Agility Lead (scrum Master)",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "manager": 11,
+      "partner": 5,
+      "senior": 4
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Education",
+        1
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Harvard University",
+        2
+      ],
+      [
+        "Buildon",
+        1
+      ],
+      [
+        "Onhouse",
+        1
+      ],
+      [
+        "Genentech",
+        1
+      ],
+      [
+        "Iovc",
+        1
+      ],
+      [
+        "Lumina - Makers Of Analytica",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Engagement Manager",
+        10
+      ],
+      [
+        "Partner",
+        4
+      ],
+      [
+        "Associate",
+        4
+      ],
+      [
+        "Associate Partner",
+        3
+      ],
+      [
+        "Senior Partner",
+        1
+      ],
+      [
+        "Senior Editor, Mckinsey Institute Of Economic Mobility",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 4,
+      "manager": 11,
+      "senior": 7,
+      "vp": 2
+    },
+    "top_functions": [
+      [
+        "Product",
+        9
+      ],
+      [
+        "Engineering",
+        6
+      ],
+      [
+        "Marketing",
+        5
+      ],
+      [
+        "Fulfillment",
+        3
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Finance",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Facebook",
+        3
+      ],
+      [
+        "Indeed",
+        1
+      ],
+      [
+        "Square",
+        1
+      ],
+      [
+        "Upslide",
+        1
+      ],
+      [
+        "Microsoft",
+        1
+      ],
+      [
+        "Masterclass",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Product Designer",
+        2
+      ],
+      [
+        "Data Science Manager",
+        2
+      ],
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Senior Product Design Manager / Senior Staff Product Designer, Wearables",
+        1
+      ],
+      [
+        "Head Of Operations And Strategy, Scaled Partnerships",
+        1
+      ],
+      [
+        "Product Marketing Lead | Social Ai For Facebook",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 12,
+      "manager": 7,
+      "senior": 9,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        10
+      ],
+      [
+        "Fulfillment",
+        5
+      ],
+      [
+        "Marketing",
+        4
+      ],
+      [
+        "Product",
+        4
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Sales Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Meta",
+        2
+      ],
+      [
+        "Surveymonkey",
+        1
+      ],
+      [
+        "Grinnell College",
+        1
+      ],
+      [
+        "University Of California, Berkeley",
+        1
+      ],
+      [
+        "Firstsource",
+        1
+      ],
+      [
+        "Berkeley Lab",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Business Development Manager",
+        1
+      ],
+      [
+        "Director Of Product Marketing - Copilot For Microsoft 365",
+        1
+      ],
+      [
+        "Senior Product Manager",
+        1
+      ],
+      [
+        "Product Manager",
+        1
+      ],
+      [
+        "Director, Ai & Transformation",
+        1
+      ],
+      [
+        "Director, Program Management, Industry Solutions Engineering",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 6,
+      "senior": 6,
+      "vp": 5
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Citi",
+        2
+      ],
+      [
+        "Ubs",
+        2
+      ],
+      [
+        "Wells Fargo Advisors",
+        2
+      ],
+      [
+        "Goodwin",
+        1
+      ],
+      [
+        "First Republic",
+        1
+      ],
+      [
+        "Conifer Securities, Llc",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        3
+      ],
+      [
+        "Vice President",
+        2
+      ],
+      [
+        "Senior Vice President, Wealth Advisor",
+        2
+      ],
+      [
+        "Vice President, Blockchain & Tokenization",
+        1
+      ],
+      [
+        "Financial Advisor - Financial Planning Specialist",
+        1
+      ],
+      [
+        "Financial Advisor, Portfolio Manager",
+        1
+      ]
+    ]
+  },
+  "berkeley-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        14
+      ],
+      [
+        "Human Resources",
+        3
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Research",
+        2
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Sales Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Snowflake",
+        2
+      ],
+      [
+        "Google Deepmind",
+        2
+      ],
+      [
+        "Stripe",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Facebook",
+        2
+      ],
+      [
+        "University Of California, Berkeley",
+        2
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        9
+      ],
+      [
+        "Research Scientist",
+        2
+      ],
+      [
+        "Member Of The Technical Staff",
+        2
+      ],
+      [
+        "Hr Bp",
+        1
+      ],
+      [
+        "Executive Operations",
+        1
+      ],
+      [
+        "Distinguished Engineer",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "manager": 11,
+      "senior": 16
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        6
+      ],
+      [
+        "Product",
+        5
+      ],
+      [
+        "Operations",
+        5
+      ],
+      [
+        "Fulfillment",
+        4
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Marketing",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon Web Services (aws)",
+        3
+      ],
+      [
+        "Foursquare",
+        1
+      ],
+      [
+        "Best Buy",
+        1
+      ],
+      [
+        "Ab Systems",
+        1
+      ],
+      [
+        "Lyft",
+        1
+      ],
+      [
+        "Audible",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Senior Pm",
+        2
+      ],
+      [
+        "Head Of Partnerships, Creative Genai",
+        1
+      ],
+      [
+        "Technical Program Manager",
+        1
+      ],
+      [
+        "Senior Manager, Technical Program Management",
+        1
+      ],
+      [
+        "Senior Product Manager",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 13,
+      "senior": 10
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        10
+      ],
+      [
+        "Operations",
+        6
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Creative",
+        2
+      ],
+      [
+        "Fulfillment",
+        2
+      ],
+      [
+        "Manufacturing",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Nvidia",
+        1
+      ],
+      [
+        "Jawbone",
+        1
+      ],
+      [
+        "American Express",
+        1
+      ],
+      [
+        "Dropbox",
+        1
+      ],
+      [
+        "Complex Ntwrk",
+        1
+      ],
+      [
+        "Douglas Elliman Real Estate",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineering Manager",
+        1
+      ],
+      [
+        "Software Engineering Manager",
+        1
+      ],
+      [
+        "Head Of Marketing - Apple Card, Apple Cash, Savings",
+        1
+      ],
+      [
+        "Senior Security Manager",
+        1
+      ],
+      [
+        "Senior Manager, Environment, Policy & Social Initiatives",
+        1
+      ],
+      [
+        "Editorial Content Executive, Apple Music",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 4,
+      "manager": 10,
+      "owner": 1,
+      "partner": 9,
+      "senior": 7,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        26
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Columbia Business School",
+        2
+      ],
+      [
+        "Cope Health Solutions",
+        1
+      ],
+      [
+        "Pwc",
+        1
+      ],
+      [
+        "Soligent",
+        1
+      ],
+      [
+        "Teach For America",
+        1
+      ],
+      [
+        "Yale University",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        7
+      ],
+      [
+        "Senior Manager",
+        6
+      ],
+      [
+        "Associate Partner",
+        3
+      ],
+      [
+        "Manager",
+        2
+      ],
+      [
+        "Consultant",
+        2
+      ],
+      [
+        "Ai Insights And Solutions, Partner",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 12,
+      "manager": 9,
+      "partner": 11,
+      "senior": 4
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        23
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Deloitte",
+        2
+      ],
+      [
+        "37 Angels",
+        1
+      ],
+      [
+        "Ted Conferences",
+        1
+      ],
+      [
+        "Unicef",
+        1
+      ],
+      [
+        "Bank Of America",
+        1
+      ],
+      [
+        "Coursolve",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Managing Director And Partner",
+        6
+      ],
+      [
+        "Partner",
+        4
+      ],
+      [
+        "Project Leader",
+        4
+      ],
+      [
+        "Principal",
+        1
+      ],
+      [
+        "Managing Director And Partner (mdp)",
+        1
+      ],
+      [
+        "Senior Partner & Managing Director",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-evercore": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 14,
+      "senior": 6,
+      "vp": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        23
+      ],
+      [
+        "Research",
+        3
+      ],
+      [
+        "Analyst",
+        1
+      ],
+      [
+        "Operations",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Goldman Sachs",
+        3
+      ],
+      [
+        "Credit Suisse",
+        2
+      ],
+      [
+        "University Of Pennsylvania",
+        2
+      ],
+      [
+        "Council Of Urban Professionals",
+        1
+      ],
+      [
+        "We Define It",
+        1
+      ],
+      [
+        "Freshfields",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Managing Director",
+        5
+      ],
+      [
+        "Managing Director",
+        4
+      ],
+      [
+        "Vice President",
+        3
+      ],
+      [
+        "Investment Banking Associate",
+        2
+      ],
+      [
+        "Technology Program Manager - Vice President",
+        1
+      ],
+      [
+        "Senior Graphics Operator",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 9,
+      "vp": 16
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        25
+      ],
+      [
+        "Research",
+        1
+      ],
+      [
+        "Human Resources",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Columbia University In The City Of New York",
+        2
+      ],
+      [
+        "Mizuho",
+        1
+      ],
+      [
+        "Cr\u00e9dit Agricole Cib",
+        1
+      ],
+      [
+        "Deutsche Bank",
+        1
+      ],
+      [
+        "Fmv Opinions, Inc.",
+        1
+      ],
+      [
+        "Bloomberg",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        9
+      ],
+      [
+        "Managing Director",
+        6
+      ],
+      [
+        "Vice President Asset Management - Portfolio Management Technology",
+        1
+      ],
+      [
+        "Vice President, Business Partner",
+        1
+      ],
+      [
+        "Vice President - Prime Portfolio Strats",
+        1
+      ],
+      [
+        "Vice President - Private Wealth Advisor",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 6,
+      "manager": 6,
+      "senior": 7
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        14
+      ],
+      [
+        "Product",
+        8
+      ],
+      [
+        "Partnerships",
+        3
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Analyst",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Bloomberg",
+        3
+      ],
+      [
+        "Summit",
+        1
+      ],
+      [
+        "Amazon Web Services (aws)",
+        1
+      ],
+      [
+        "Pano Logic",
+        1
+      ],
+      [
+        "Reonomy",
+        1
+      ],
+      [
+        "Liveramp",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        4
+      ],
+      [
+        "Software Engineer",
+        3
+      ],
+      [
+        "Customer Engineer",
+        1
+      ],
+      [
+        "Senior Software Engineer On Google Learning & Education",
+        1
+      ],
+      [
+        "Strategy And Operations Lead",
+        1
+      ],
+      [
+        "Subsea Cable Build -nasa Lead",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 9,
+      "manager": 1,
+      "senior": 3,
+      "vp": 12
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        21
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Engineering",
+        2
+      ],
+      [
+        "Sales Engineering",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Capital One",
+        2
+      ],
+      [
+        "Independent",
+        1
+      ],
+      [
+        "Hsbc",
+        1
+      ],
+      [
+        "Optimum",
+        1
+      ],
+      [
+        "Bank Of The West",
+        1
+      ],
+      [
+        "The City University Of New York",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        3
+      ],
+      [
+        "Executive Director",
+        2
+      ],
+      [
+        "Executive Director, Private Bank Risk",
+        1
+      ],
+      [
+        "Head Of Chase Branded Card, Travel & Media Solutions Experiential",
+        1
+      ],
+      [
+        "Vice President, Wholesale Data & Process Strategy Group",
+        1
+      ],
+      [
+        "Cross-asset & Digital Assets Lending",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 6,
+      "partner": 10,
+      "senior": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        25
+      ],
+      [
+        "Legal",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Marketing",
+        1
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Ibm",
+        2
+      ],
+      [
+        "E+co",
+        1
+      ],
+      [
+        "Moment",
+        1
+      ],
+      [
+        "The Wall Street Journal",
+        1
+      ],
+      [
+        "Strategis",
+        1
+      ],
+      [
+        "Ubs",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        6
+      ],
+      [
+        "Senior Partner",
+        4
+      ],
+      [
+        "Associate Partner",
+        3
+      ],
+      [
+        "Engagement Manager",
+        3
+      ],
+      [
+        "Associate",
+        3
+      ],
+      [
+        "Partner, Leader Of Climate Capital Practice",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 8,
+      "partner": 1,
+      "senior": 5
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        12
+      ],
+      [
+        "Product",
+        6
+      ],
+      [
+        "Operations",
+        5
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Finance",
+        2
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Google",
+        3
+      ],
+      [
+        "Apple",
+        2
+      ],
+      [
+        "City Of Menlo Park",
+        1
+      ],
+      [
+        "Instacart",
+        1
+      ],
+      [
+        "Uber",
+        1
+      ],
+      [
+        "Wink",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        4
+      ],
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Product Manager",
+        2
+      ],
+      [
+        "Director, Product Risk",
+        1
+      ],
+      [
+        "Principal Product Manager",
+        1
+      ],
+      [
+        "Americas Mep Manager",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 8,
+      "manager": 12,
+      "partner": 1,
+      "senior": 10,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        16
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Health",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Partnerships",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Linkedin",
+        2
+      ],
+      [
+        "Amazon Web Services (aws)",
+        1
+      ],
+      [
+        "Crusoe",
+        1
+      ],
+      [
+        "Blck Vc",
+        1
+      ],
+      [
+        "Lendlease",
+        1
+      ],
+      [
+        "Bakerripley",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        3
+      ],
+      [
+        "Corporate Vice President, Ai Infrastructure",
+        1
+      ],
+      [
+        "Director, Business Planning | Xbox",
+        1
+      ],
+      [
+        "Partner / General Manager, Sustainability, Cloud Operations + Innovation",
+        1
+      ],
+      [
+        "Senior Communications Manager, Global Storytelling",
+        1
+      ],
+      [
+        "Senior Director Of Cloud & Ai - Microsoft For Startups",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 3,
+      "director": 13,
+      "manager": 1,
+      "senior": 4,
+      "vp": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        26
+      ],
+      [
+        "Research",
+        2
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Fulfillment",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Yale University",
+        1
+      ],
+      [
+        "North Elm Capital",
+        1
+      ],
+      [
+        "Jpmorganchase",
+        1
+      ],
+      [
+        "Western Union",
+        1
+      ],
+      [
+        "E*trade From Morgan Stanley",
+        1
+      ],
+      [
+        "Finos",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        5
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Financial Advisor",
+        2
+      ],
+      [
+        "Vice President",
+        2
+      ],
+      [
+        "Vice President, Senior Writer, Alternative Investments",
+        1
+      ],
+      [
+        "Portfolio Management Director, Vice President, Financial Advisor",
+        1
+      ]
+    ]
+  },
+  "columbia-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "manager": 4,
+      "senior": 2,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        14
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Finance",
+        1
+      ],
+      [
+        "Creative",
+        1
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Block",
+        3
+      ],
+      [
+        "Apple",
+        2
+      ],
+      [
+        "Scale Ai",
+        2
+      ],
+      [
+        "Roblox",
+        1
+      ],
+      [
+        "Stripe",
+        1
+      ],
+      [
+        "Robinhood",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        8
+      ],
+      [
+        "Member Of Intelligence & Investigations Staff",
+        1
+      ],
+      [
+        "Head Of Solutions Engineering, Strategics",
+        1
+      ],
+      [
+        "Senior Producer",
+        1
+      ],
+      [
+        "Head Of Gtm Strategy & Growth",
+        1
+      ],
+      [
+        "Data Science Lead, Financial Engineering",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 13,
+      "senior": 14
+    },
+    "top_functions": [
+      [
+        "Product",
+        6
+      ],
+      [
+        "Engineering",
+        5
+      ],
+      [
+        "Finance",
+        3
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Marketing",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon Web Services (aws)",
+        3
+      ],
+      [
+        "Teksystems",
+        1
+      ],
+      [
+        "Rebar Advisors",
+        1
+      ],
+      [
+        "Wageworks",
+        1
+      ],
+      [
+        "Oracle",
+        1
+      ],
+      [
+        "Capital One",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Senior Business Intelligence Engineer",
+        1
+      ],
+      [
+        "Principal Finance Manager",
+        1
+      ],
+      [
+        "User Experience Researcher",
+        1
+      ],
+      [
+        "Senior Corporate Counsel",
+        1
+      ],
+      [
+        "Global Human Resources Leader, Customer Experience & Business Trends (cxbt)",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 12,
+      "senior": 11
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        15
+      ],
+      [
+        "Creative",
+        3
+      ],
+      [
+        "Product",
+        3
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Fulfillment",
+        2
+      ],
+      [
+        "Marketing",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Intel",
+        2
+      ],
+      [
+        "Infosys",
+        1
+      ],
+      [
+        "Caribou Financial, Inc.",
+        1
+      ],
+      [
+        "Sandia National Laboratories",
+        1
+      ],
+      [
+        "Amgen",
+        1
+      ],
+      [
+        "The Strive Group",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        3
+      ],
+      [
+        "Software Engineering Manager",
+        2
+      ],
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Engineering Leader",
+        1
+      ],
+      [
+        "Marketing Enablement / Operations Project Lead, Apple Cash & Card",
+        1
+      ],
+      [
+        "Asic Design Verification Engineer",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 7,
+      "partner": 9,
+      "senior": 5,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Human Resources",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "American Express",
+        2
+      ],
+      [
+        "Get Local Ag",
+        1
+      ],
+      [
+        "Walden Local Meat Co.",
+        1
+      ],
+      [
+        "Adventure Stage Chicago At The Northwestern University Settlement",
+        1
+      ],
+      [
+        "Kearney",
+        1
+      ],
+      [
+        "Ge",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        7
+      ],
+      [
+        "Consultant",
+        5
+      ],
+      [
+        "Associate Partner",
+        3
+      ],
+      [
+        "Senior Manager",
+        2
+      ],
+      [
+        "Dei Talent Acquisition Senior Specialist",
+        1
+      ],
+      [
+        "Director, Program Management (office Of Cio / Cto)",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 8,
+      "manager": 8,
+      "partner": 7,
+      "senior": 5
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ],
+      [
+        "Human Resources",
+        4
+      ],
+      [
+        "Operations",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Accenture",
+        3
+      ],
+      [
+        "Health Design Lab",
+        1
+      ],
+      [
+        "Networth Realty Usa",
+        1
+      ],
+      [
+        "Memorial Sloan Kettering Cancer Center",
+        1
+      ],
+      [
+        "Srg",
+        1
+      ],
+      [
+        "The World Bank Group",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Consultant",
+        5
+      ],
+      [
+        "Partner",
+        3
+      ],
+      [
+        "Managing Director And Partner",
+        2
+      ],
+      [
+        "Principal",
+        2
+      ],
+      [
+        "Senior User Experience Researcher (in-house, Not A Consultant)",
+        1
+      ],
+      [
+        "Executive Assistant",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-evercore": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 11,
+      "entry": 1,
+      "senior": 3,
+      "vp": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        25
+      ],
+      [
+        "Research",
+        4
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Guggenheim Partners",
+        3
+      ],
+      [
+        "Ubs",
+        2
+      ],
+      [
+        "Deloitte",
+        2
+      ],
+      [
+        "Merrill Lynch",
+        2
+      ],
+      [
+        "Fuqua School Of Business",
+        1
+      ],
+      [
+        "Powerhouse",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Investment Banking Associate",
+        6
+      ],
+      [
+        "Managing Director",
+        4
+      ],
+      [
+        "Senior Managing Director",
+        3
+      ],
+      [
+        "Investment Banking Vice President",
+        2
+      ],
+      [
+        "Investment Banking Analyst",
+        2
+      ],
+      [
+        "Vice President, Human Capital Chief Operating Officer",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 6,
+      "senior": 2,
+      "vp": 16
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ],
+      [
+        "Research",
+        3
+      ],
+      [
+        "Sales Engineering",
+        1
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Human Resources",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Citi",
+        2
+      ],
+      [
+        "Google",
+        1
+      ],
+      [
+        "Jbwere",
+        1
+      ],
+      [
+        "Hsbc",
+        1
+      ],
+      [
+        "Epiq",
+        1
+      ],
+      [
+        "Collection 2000",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        8
+      ],
+      [
+        "Managing Director",
+        1
+      ],
+      [
+        "Senior Analyst",
+        1
+      ],
+      [
+        "Analyst",
+        1
+      ],
+      [
+        "Vice President, Global Banking & Markets - Trading Derivatives Group",
+        1
+      ],
+      [
+        "Head Of Fund Solutions Group & Managed Strategies",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 9,
+      "senior": 12,
+      "vp": 2
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        15
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Product",
+        2
+      ],
+      [
+        "Analyst",
+        2
+      ],
+      [
+        "Fulfillment",
+        2
+      ],
+      [
+        "Marketing",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Fitbit (now Part Of Google)",
+        2
+      ],
+      [
+        "Meta",
+        2
+      ],
+      [
+        "Jpmorganchase",
+        2
+      ],
+      [
+        "Cbre",
+        1
+      ],
+      [
+        "Divide\u2122",
+        1
+      ],
+      [
+        "Parallel Data Lab Cmu",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        4
+      ],
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Business Engagement Strategy Lead, Real Estate & Workplace Services",
+        1
+      ],
+      [
+        "Product Marketing Manager, Chromeos",
+        1
+      ],
+      [
+        "Head Of Google Store & Fi Operations",
+        1
+      ],
+      [
+        "Staff Software Engineer",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 12,
+      "manager": 3,
+      "senior": 3,
+      "vp": 9
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        23
+      ],
+      [
+        "Engineering",
+        4
+      ],
+      [
+        "Research",
+        1
+      ],
+      [
+        "Sales Engineering",
+        1
+      ],
+      [
+        "Operations",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Td Wealth Management",
+        1
+      ],
+      [
+        "Meta",
+        1
+      ],
+      [
+        "Amazon",
+        1
+      ],
+      [
+        "Goldman Sachs",
+        1
+      ],
+      [
+        "Target Sears Lowe's Tire Discounters Town Money Saver Capri Cleaners",
+        1
+      ],
+      [
+        "Citi",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        4
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Senior Lead Site Reliability Engineer",
+        1
+      ],
+      [
+        "Head Of Artificial Intelligence And Machine Learning",
+        1
+      ],
+      [
+        "Senior Associate Product Analyst",
+        1
+      ],
+      [
+        "Vice President, Innovation Economy Group, Life Sciences",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 8,
+      "partner": 8,
+      "senior": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ],
+      [
+        "Health",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Education",
+        1
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Mckinsey New Ventures (part Of Mckinsey & Company)",
+        1
+      ],
+      [
+        "Innospark Ventures",
+        1
+      ],
+      [
+        "New York University",
+        1
+      ],
+      [
+        "Education Corporation Of America",
+        1
+      ],
+      [
+        "Rochester Institute Of Technology",
+        1
+      ],
+      [
+        "Unite Us",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Engagement Manager",
+        6
+      ],
+      [
+        "Partner",
+        5
+      ],
+      [
+        "Senior Partner",
+        2
+      ],
+      [
+        "Associate",
+        2
+      ],
+      [
+        "Associate Partner",
+        2
+      ],
+      [
+        "Director Of Product Management",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "manager": 9,
+      "senior": 5,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        15
+      ],
+      [
+        "Fulfillment",
+        4
+      ],
+      [
+        "Product",
+        3
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Finance",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Fandor",
+        1
+      ],
+      [
+        "Sharethis",
+        1
+      ],
+      [
+        "The Muse",
+        1
+      ],
+      [
+        "Multiple Investments",
+        1
+      ],
+      [
+        "Walmart",
+        1
+      ],
+      [
+        "Finmagix",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineering Manager",
+        3
+      ],
+      [
+        "Engineering Manager",
+        2
+      ],
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Head Of Product Marketing - Facebook Ads Monetization",
+        1
+      ],
+      [
+        "Senior Engineering Manager",
+        1
+      ],
+      [
+        "Product Manager Lead - Ai",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 10,
+      "manager": 6,
+      "senior": 10,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        10
+      ],
+      [
+        "Marketing",
+        4
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Product",
+        3
+      ],
+      [
+        "Support",
+        2
+      ],
+      [
+        "Sales",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon",
+        3
+      ],
+      [
+        "Intel",
+        3
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Hirevue",
+        1
+      ],
+      [
+        "Microsoft Ai & Research",
+        1
+      ],
+      [
+        "Citrix",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Account Executive, Retail And Consumer Goods",
+        2
+      ],
+      [
+        "Director, Customer Success Account Management",
+        1
+      ],
+      [
+        "Cvp & Managing Director Of Microsoft Research - Americas",
+        1
+      ],
+      [
+        "Senior Director Of Cloud Solution Architecture, Security",
+        1
+      ],
+      [
+        "Director Of Product Marketing",
+        1
+      ],
+      [
+        "Senior Director, Azure Product Marketing",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 2,
+      "director": 12,
+      "senior": 1,
+      "vp": 8
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        29
+      ],
+      [
+        "Operations",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "E*trade From Morgan Stanley",
+        3
+      ],
+      [
+        "Merrill Lynch",
+        2
+      ],
+      [
+        "Citi",
+        2
+      ],
+      [
+        "Ubs",
+        2
+      ],
+      [
+        "First",
+        1
+      ],
+      [
+        "Ge Capital",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        4
+      ],
+      [
+        "Financial Advisor",
+        3
+      ],
+      [
+        "Vice President",
+        2
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Certified Financial Planner Professional, Financial Advisor",
+        1
+      ],
+      [
+        "Director, Corporate Access Conference Allocation",
+        1
+      ]
+    ]
+  },
+  "cornell-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 6
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        13
+      ],
+      [
+        "Human Resources",
+        3
+      ],
+      [
+        "Analyst",
+        2
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Sales Engineering",
+        1
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Meta",
+        3
+      ],
+      [
+        "Airbnb",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Mural",
+        1
+      ],
+      [
+        "Snowflake",
+        1
+      ],
+      [
+        "Wisgenie",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        10
+      ],
+      [
+        "Member Of Data Science Staff",
+        2
+      ],
+      [
+        "Head Of Revenue Operations",
+        1
+      ],
+      [
+        "Global Head Of Solution Architecture",
+        1
+      ],
+      [
+        "Member Of Recruiting Staff",
+        1
+      ],
+      [
+        "Head Of Gtm Strategy & Growth",
+        1
+      ]
+    ]
+  },
+  "duke-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "manager": 5,
+      "partner": 10,
+      "senior": 4,
+      "vp": 2
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Operations",
+        3
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Liberty Mutual Insurance",
+        1
+      ],
+      [
+        "Danone",
+        1
+      ],
+      [
+        "Boston Symphony Orchestra",
+        1
+      ],
+      [
+        "Univision",
+        1
+      ],
+      [
+        "Helix",
+        1
+      ],
+      [
+        "Crown Castle",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        7
+      ],
+      [
+        "Consultant",
+        6
+      ],
+      [
+        "Associate Partner",
+        5
+      ],
+      [
+        "Manager",
+        2
+      ],
+      [
+        "Senior Partner",
+        2
+      ],
+      [
+        "Senior Manager",
+        2
+      ]
+    ]
+  },
+  "duke-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 12,
+      "partner": 6,
+      "senior": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Creative",
+        1
+      ],
+      [
+        "Human Resources",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Google",
+        1
+      ],
+      [
+        "Jacksonville Jaguars",
+        1
+      ],
+      [
+        "Mass General Brigham",
+        1
+      ],
+      [
+        "The Cambridge Group",
+        1
+      ],
+      [
+        "Oceana",
+        1
+      ],
+      [
+        "Advanced Research Projects Agency-energy (arpa-e)",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Engagement Manager",
+        6
+      ],
+      [
+        "Associate Partner",
+        4
+      ],
+      [
+        "Partner",
+        3
+      ],
+      [
+        "Senior Partner",
+        3
+      ],
+      [
+        "Associate",
+        3
+      ],
+      [
+        "Strategic Projects Manager",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 10,
+      "senior": 11
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        7
+      ],
+      [
+        "Product",
+        6
+      ],
+      [
+        "Fulfillment",
+        5
+      ],
+      [
+        "Partnerships",
+        3
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Human Resources",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Microsoft",
+        2
+      ],
+      [
+        "Nike",
+        1
+      ],
+      [
+        "Apache Lucene",
+        1
+      ],
+      [
+        "The University Of Texas At Austin",
+        1
+      ],
+      [
+        "Optimus Ride",
+        1
+      ],
+      [
+        "Iom - Un Migration",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Development Engineer II",
+        2
+      ],
+      [
+        "Product Design",
+        1
+      ],
+      [
+        "Principal Software Engineer",
+        1
+      ],
+      [
+        "Engineering Leader",
+        1
+      ],
+      [
+        "Senior Software Development Engineer",
+        1
+      ],
+      [
+        "Senior User Experience Designer, Prime Video",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-anthropic": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 3,
+      "manager": 1,
+      "partner": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        13
+      ],
+      [
+        "Product",
+        4
+      ],
+      [
+        "Partnerships",
+        3
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Legal",
+        1
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Meta",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Dropbox",
+        2
+      ],
+      [
+        "Massachusetts Institute Of Technology",
+        1
+      ],
+      [
+        "Stripe",
+        1
+      ],
+      [
+        "Otti",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        11
+      ],
+      [
+        "Technical Staff",
+        1
+      ],
+      [
+        "Product Manager",
+        1
+      ],
+      [
+        "Member Of Technical Staff, Manager",
+        1
+      ],
+      [
+        "Public Policy For Product",
+        1
+      ],
+      [
+        "Head Of Product Public Policy",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 13,
+      "senior": 8
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        16
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Legal",
+        1
+      ],
+      [
+        "Creative",
+        1
+      ],
+      [
+        "Fulfillment",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon",
+        3
+      ],
+      [
+        "Meta",
+        2
+      ],
+      [
+        "Kustomer",
+        1
+      ],
+      [
+        "Netflix",
+        1
+      ],
+      [
+        "Owens Corning",
+        1
+      ],
+      [
+        "Microsoft",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineering Manager",
+        2
+      ],
+      [
+        "Senior Technical Writer",
+        1
+      ],
+      [
+        "Senior Software Engineer",
+        1
+      ],
+      [
+        "Senior People Business Partner, Lead",
+        1
+      ],
+      [
+        "Engineering Manager / Principal Emerging Display Technologist",
+        1
+      ],
+      [
+        "Staff Software Engineer / Engineering Manager",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 6,
+      "partner": 15,
+      "senior": 6,
+      "vp": 2
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        28
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Analyst",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Get Local Ag",
+        1
+      ],
+      [
+        "Bank Of America",
+        1
+      ],
+      [
+        "Hellofresh",
+        1
+      ],
+      [
+        "New York Angels",
+        1
+      ],
+      [
+        "Frog",
+        1
+      ],
+      [
+        "Charles Schwab",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        13
+      ],
+      [
+        "Senior Manager",
+        4
+      ],
+      [
+        "Consultant",
+        2
+      ],
+      [
+        "Manager",
+        2
+      ],
+      [
+        "Associate Partner",
+        2
+      ],
+      [
+        "Senior Partner",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 8,
+      "manager": 11,
+      "partner": 11,
+      "senior": 3
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        18
+      ],
+      [
+        "Fulfillment",
+        1
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Bcg X",
+        3
+      ],
+      [
+        "Marketcast",
+        1
+      ],
+      [
+        "Defiance Capital Llc",
+        1
+      ],
+      [
+        "Democracy Prep Public Schools",
+        1
+      ],
+      [
+        "Booz Allen Hamilton",
+        1
+      ],
+      [
+        "Massachusetts Institute Of Technology",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Project Leader",
+        10
+      ],
+      [
+        "Partner",
+        4
+      ],
+      [
+        "Managing Director & Partner",
+        4
+      ],
+      [
+        "Managing Director And Partner",
+        2
+      ],
+      [
+        "It Project Manager",
+        1
+      ],
+      [
+        "Principal",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 2,
+      "director": 7,
+      "manager": 2,
+      "vp": 13
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        22
+      ],
+      [
+        "Research",
+        2
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Harvard University",
+        2
+      ],
+      [
+        "Jpmorganchase",
+        2
+      ],
+      [
+        "Tpg",
+        1
+      ],
+      [
+        "Lancaster",
+        1
+      ],
+      [
+        "University Of California",
+        1
+      ],
+      [
+        "Td Ameritrade",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        5
+      ],
+      [
+        "Managing Director",
+        3
+      ],
+      [
+        "Chief Executive Officer",
+        2
+      ],
+      [
+        "Vice President, Chief Of Staff",
+        1
+      ],
+      [
+        "Alternative Investments & Manager Selection",
+        1
+      ],
+      [
+        "Vice President, Product Manager",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 7,
+      "manager": 7,
+      "senior": 7,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        14
+      ],
+      [
+        "Product",
+        7
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Education",
+        1
+      ],
+      [
+        "Operations",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon",
+        2
+      ],
+      [
+        "Portfolia",
+        1
+      ],
+      [
+        "Urx (acq. By Pinterest)",
+        1
+      ],
+      [
+        "Demandforce",
+        1
+      ],
+      [
+        "Boosted, Inc.",
+        1
+      ],
+      [
+        "Instagram",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        3
+      ],
+      [
+        "Director Of Product Management",
+        2
+      ],
+      [
+        "Vice President Of Engineering - Search Verticals",
+        1
+      ],
+      [
+        "Head Of Developer Product Marketing, Google Play",
+        1
+      ],
+      [
+        "Lead Pm, Advertiser Experience",
+        1
+      ],
+      [
+        "Product Marketing Manager, Ai, Developers, Gemini In Android Studio",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 13,
+      "manager": 3,
+      "senior": 4,
+      "vp": 11
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        25
+      ],
+      [
+        "Health",
+        1
+      ],
+      [
+        "Engineering",
+        1
+      ],
+      [
+        "Legal",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Analyst",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Pwc",
+        2
+      ],
+      [
+        "Finops Foundation",
+        1
+      ],
+      [
+        "Apree Health",
+        1
+      ],
+      [
+        "Syneos Health",
+        1
+      ],
+      [
+        "Amazon",
+        1
+      ],
+      [
+        "The Ohio Society Of Cpas",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        6
+      ],
+      [
+        "Executive Director - Cib - Payments And Treasury",
+        1
+      ],
+      [
+        "Chief Executive Officer, Morgan Health",
+        1
+      ],
+      [
+        "Executive Director Of Data & Analytics",
+        1
+      ],
+      [
+        "Executive Director, Security Architecture",
+        1
+      ],
+      [
+        "Senior Infrastructure Engineer",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "manager": 6,
+      "partner": 14,
+      "senior": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Education",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Teach For America",
+        2
+      ],
+      [
+        "Omidyar Network",
+        1
+      ],
+      [
+        "Kyushu University",
+        1
+      ],
+      [
+        "The White House",
+        1
+      ],
+      [
+        "E+co",
+        1
+      ],
+      [
+        "Torch Leadership Academy",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        8
+      ],
+      [
+        "Senior Partner",
+        5
+      ],
+      [
+        "Engagement Manager",
+        5
+      ],
+      [
+        "Management Consultant",
+        1
+      ],
+      [
+        "Partner, Leader Of Climate Capital Practice",
+        1
+      ],
+      [
+        "Solution Associate Partner / Senior Asset Leader",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 11,
+      "manager": 7,
+      "senior": 2,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Product",
+        14
+      ],
+      [
+        "Engineering",
+        7
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Facebook",
+        2
+      ],
+      [
+        "Docker, Inc",
+        1
+      ],
+      [
+        "Mckinsey & Company",
+        1
+      ],
+      [
+        "Instagram",
+        1
+      ],
+      [
+        "Join Digital",
+        1
+      ],
+      [
+        "Groupon",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Director Of Product Management",
+        5
+      ],
+      [
+        "Product Design Manager",
+        2
+      ],
+      [
+        "Staff Software Engineer",
+        2
+      ],
+      [
+        "Senior Product Designer",
+        1
+      ],
+      [
+        "Head Of Partnerships & Business Development",
+        1
+      ],
+      [
+        "Director, Creator Product Marketing",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 12,
+      "manager": 3,
+      "senior": 8,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        10
+      ],
+      [
+        "Operations",
+        4
+      ],
+      [
+        "Marketing",
+        4
+      ],
+      [
+        "Fulfillment",
+        3
+      ],
+      [
+        "Product",
+        2
+      ],
+      [
+        "Finance",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon Web Services (aws)",
+        2
+      ],
+      [
+        "Habib University",
+        1
+      ],
+      [
+        "101st Airborne Division Association",
+        1
+      ],
+      [
+        "Product Management Exercises | Productmanagement",
+        1
+      ],
+      [
+        "Harvard University",
+        1
+      ],
+      [
+        "Motion Picture Association",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Regional Director",
+        1
+      ],
+      [
+        "Senior Advanced Cloud Engineer",
+        1
+      ],
+      [
+        "Senior Product Manager: Copilot, Researcher And Agent Mode",
+        1
+      ],
+      [
+        "Principal Product Manager - Windows 365 Platform Pm Architect For Emerging Technologies (gpu)",
+        1
+      ],
+      [
+        "General Manager - Congressional Affairs",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 11,
+      "manager": 1,
+      "partner": 1,
+      "senior": 1,
+      "vp": 4
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        26
+      ],
+      [
+        "Finance",
+        1
+      ],
+      [
+        "Research",
+        1
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Jpmorganchase",
+        2
+      ],
+      [
+        "Ubs",
+        2
+      ],
+      [
+        "Scratch Educators",
+        1
+      ],
+      [
+        "Macquarie Group",
+        1
+      ],
+      [
+        "Alana Partners",
+        1
+      ],
+      [
+        "Citi",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        4
+      ],
+      [
+        "Vice President",
+        3
+      ],
+      [
+        "Financial Advisor",
+        2
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Associate Vice President, Financial Advisor",
+        1
+      ],
+      [
+        "Private Wealth Registered Associate",
+        1
+      ]
+    ]
+  },
+  "harvard-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 4,
+      "manager": 5,
+      "vp": 2
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        12
+      ],
+      [
+        "Partnerships",
+        3
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Sales",
+        1
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Stripe",
+        3
+      ],
+      [
+        "Google",
+        3
+      ],
+      [
+        "Meta",
+        2
+      ],
+      [
+        "Amazon",
+        1
+      ],
+      [
+        "Landing Party",
+        1
+      ],
+      [
+        "United States Army Reserve",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        8
+      ],
+      [
+        "Vice President, Head Of Global Business Development",
+        1
+      ],
+      [
+        "Engineering Manager",
+        1
+      ],
+      [
+        "Gtm Leadership - Digital Natives",
+        1
+      ],
+      [
+        "Vice President, Openai For Science",
+        1
+      ],
+      [
+        "Integrity",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "manager": 7,
+      "senior": 18,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Product",
+        9
+      ],
+      [
+        "Engineering",
+        5
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Fulfillment",
+        3
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Sales",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "General Motors",
+        1
+      ],
+      [
+        "Netflix",
+        1
+      ],
+      [
+        "Adobe",
+        1
+      ],
+      [
+        "Vital Farms",
+        1
+      ],
+      [
+        "Deloitte",
+        1
+      ],
+      [
+        "Amazon Web Services (aws)",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Technical Product Manager",
+        2
+      ],
+      [
+        "Senior Solutions Manager Brand Innovation Lab - Automotive, Amazon Ads",
+        1
+      ],
+      [
+        "Head Of Americas, Partner Marketing | Prime Video And Mgm",
+        1
+      ],
+      [
+        "Senior Ad Tech Account Executive, Amazon Ads",
+        1
+      ],
+      [
+        "Senior Product Manager, Amazon Fresh",
+        1
+      ],
+      [
+        "Head Of Finance (fp & A, Gtm & Capital Planning)",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 6,
+      "senior": 6
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        15
+      ],
+      [
+        "Fulfillment",
+        5
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Creative",
+        1
+      ],
+      [
+        "Research",
+        1
+      ],
+      [
+        "Manufacturing",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "American Express",
+        2
+      ],
+      [
+        "Series A Startup",
+        1
+      ],
+      [
+        "Flamingo",
+        1
+      ],
+      [
+        "Electronic Arts (ea)",
+        1
+      ],
+      [
+        "Epic",
+        1
+      ],
+      [
+        "The Guitar Center Company",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Product Engineering + Design Data & Apps",
+        1
+      ],
+      [
+        "Human Factors Researcher",
+        1
+      ],
+      [
+        "Head Of Content Strategy & Intelligence - Apple Arcade",
+        1
+      ],
+      [
+        "Project Manager - Inclusion & Diversity, Operations",
+        1
+      ],
+      [
+        "Head Of Marketing - Apple Card, Apple Cash, Savings",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 6,
+      "manager": 10,
+      "partner": 10,
+      "senior": 4
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        22
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "B Capital",
+        1
+      ],
+      [
+        "Crux",
+        1
+      ],
+      [
+        "Strategy&",
+        1
+      ],
+      [
+        "Mindshare",
+        1
+      ],
+      [
+        "Chew",
+        1
+      ],
+      [
+        "Capital One",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Project Leader",
+        5
+      ],
+      [
+        "Partner",
+        4
+      ],
+      [
+        "Consultant",
+        4
+      ],
+      [
+        "Managing Director & Partner",
+        2
+      ],
+      [
+        "Principal",
+        2
+      ],
+      [
+        "Managing Director And Partner",
+        2
+      ]
+    ]
+  },
+  "michigan-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 12,
+      "senior": 1,
+      "vp": 15
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Ubs",
+        3
+      ],
+      [
+        "Barclays Investment Bank",
+        2
+      ],
+      [
+        "American Express",
+        1
+      ],
+      [
+        "Newell Brands",
+        1
+      ],
+      [
+        "Citi",
+        1
+      ],
+      [
+        "Arxis Capital Group Llc",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Managing Director",
+        7
+      ],
+      [
+        "Vice President",
+        3
+      ],
+      [
+        "Vice President, Head Of Sponsorships & Partnerships, Executive Office",
+        1
+      ],
+      [
+        "Executive Assistant",
+        1
+      ],
+      [
+        "Vice President Private Wealth Advisor, Investment Management Division",
+        1
+      ],
+      [
+        "Vice President At Goldman Sachs Ayco Executive Wealth",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "manager": 10,
+      "senior": 13
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        13
+      ],
+      [
+        "Product",
+        9
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Professional Service",
+        1
+      ],
+      [
+        "Creative",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Youtube",
+        2
+      ],
+      [
+        "Mango Languages",
+        2
+      ],
+      [
+        "Amazon",
+        2
+      ],
+      [
+        "Center For Supportive Schools",
+        1
+      ],
+      [
+        "Servicemax, A Ptc Technology",
+        1
+      ],
+      [
+        "Newscred (now Optimizely Cmp)",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Senior Product Lead",
+        1
+      ],
+      [
+        "Global Head Of Modeling And Technical Innovation",
+        1
+      ],
+      [
+        "Product Manager",
+        1
+      ],
+      [
+        "Frontend Software Engineer",
+        1
+      ],
+      [
+        "Staff Software Engineer, Tech Lead",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 10,
+      "manager": 5,
+      "senior": 2,
+      "vp": 9
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ],
+      [
+        "Engineering",
+        3
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Finance",
+        1
+      ],
+      [
+        "Operations",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "J.p. Morgan",
+        2
+      ],
+      [
+        "Morgan Stanley",
+        1
+      ],
+      [
+        "Mission National Bank",
+        1
+      ],
+      [
+        "Enlighten Jobs",
+        1
+      ],
+      [
+        "Credit Benchmark",
+        1
+      ],
+      [
+        "Rate",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Executive Director",
+        2
+      ],
+      [
+        "Vice President - Investments Private Client Advisor",
+        1
+      ],
+      [
+        "Vice President - Senior Business Relationship Manager",
+        1
+      ],
+      [
+        "Executive Director, Global Corporate Banking, Technology",
+        1
+      ],
+      [
+        "Senior Associate, Human Resources Change Management",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "entry": 1,
+      "manager": 8,
+      "partner": 6,
+      "senior": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        22
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Advisory Board",
+        1
+      ],
+      [
+        "Starbucks",
+        1
+      ],
+      [
+        "Quantium",
+        1
+      ],
+      [
+        "Hec Paris",
+        1
+      ],
+      [
+        "Advanced Research Projects Agency-energy (arpa-e)",
+        1
+      ],
+      [
+        "Adp",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Partner",
+        4
+      ],
+      [
+        "Engagement Manager",
+        3
+      ],
+      [
+        "Specialist",
+        2
+      ],
+      [
+        "Partner",
+        2
+      ],
+      [
+        "Associate",
+        2
+      ],
+      [
+        "Associate Partner / Senior Expert",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 8,
+      "senior": 7
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        10
+      ],
+      [
+        "Product",
+        7
+      ],
+      [
+        "Marketing",
+        4
+      ],
+      [
+        "Analyst",
+        2
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Research",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Facebook",
+        2
+      ],
+      [
+        "Grail",
+        1
+      ],
+      [
+        "Michigan Medicine",
+        1
+      ],
+      [
+        "Tellus Solutions, Inc",
+        1
+      ],
+      [
+        "Adobe",
+        1
+      ],
+      [
+        "Workday",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Research Scientist",
+        2
+      ],
+      [
+        "Data Engineer",
+        2
+      ],
+      [
+        "Software Engineering, Machine Learning",
+        1
+      ],
+      [
+        "Senior Product Researcher, Instagram",
+        1
+      ],
+      [
+        "Software Engineer V",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 4,
+      "manager": 9,
+      "senior": 13,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        14
+      ],
+      [
+        "Operations",
+        4
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Fulfillment",
+        2
+      ],
+      [
+        "Support",
+        2
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon",
+        2
+      ],
+      [
+        "Siko",
+        1
+      ],
+      [
+        "Amazon Web Services (aws)",
+        1
+      ],
+      [
+        "Cisco",
+        1
+      ],
+      [
+        "Rhapsody International",
+        1
+      ],
+      [
+        "Statistics Without Borders",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        3
+      ],
+      [
+        "Senior Customer Success Account Manager",
+        2
+      ],
+      [
+        "Principal Product Manager - Azure Ai Services - Vision",
+        1
+      ],
+      [
+        "Senior Firmware Engineer",
+        1
+      ],
+      [
+        "Senior Product Marketing Manager - Cloud & Ai Endpoints (windows Commercial)",
+        1
+      ],
+      [
+        "Senior Program Manager",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "senior": 2,
+      "vp": 8
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Engineering",
+        1
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Merrill Lynch",
+        4
+      ],
+      [
+        "Fiserv",
+        1
+      ],
+      [
+        "Mizuho",
+        1
+      ],
+      [
+        "Hemlock Semiconductor",
+        1
+      ],
+      [
+        "Ski Barn Inc",
+        1
+      ],
+      [
+        "Climatebase",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        3
+      ],
+      [
+        "Financial Advisor",
+        2
+      ],
+      [
+        "First Vice President",
+        2
+      ],
+      [
+        "First Vice President, Financial Advisor",
+        2
+      ],
+      [
+        "Vice President, Sales & Trading",
+        1
+      ],
+      [
+        "Vice President - Credit Review Group",
+        1
+      ]
+    ]
+  },
+  "michigan-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 2,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        14
+      ],
+      [
+        "Product",
+        3
+      ],
+      [
+        "Finance",
+        2
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Creative",
+        1
+      ],
+      [
+        "Legal",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Dropbox",
+        3
+      ],
+      [
+        "Cruise",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Rippling",
+        2
+      ],
+      [
+        "Amazon",
+        2
+      ],
+      [
+        "South Park Commons",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        11
+      ],
+      [
+        "Member Of Recruiting Staff",
+        2
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Integrity",
+        1
+      ],
+      [
+        "Member Of Design Staff",
+        1
+      ],
+      [
+        "Ai Deployment Manager",
+        1
+      ]
+    ]
+  },
+  "northwestern-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 11,
+      "senior": 10
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        12
+      ],
+      [
+        "Marketing",
+        4
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Creative",
+        2
+      ],
+      [
+        "Legal",
+        1
+      ],
+      [
+        "Analyst",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Google",
+        4
+      ],
+      [
+        "Akqa",
+        1
+      ],
+      [
+        "Elkins Kalt Weintraub Reuben Gartside Llp",
+        1
+      ],
+      [
+        "Espark Learning",
+        1
+      ],
+      [
+        "University Of California, Los Angeles",
+        1
+      ],
+      [
+        "Uber",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Principal Engineer",
+        1
+      ],
+      [
+        "Senior Frontend Developer",
+        1
+      ],
+      [
+        "Senior Legal Counsel - Real Estate",
+        1
+      ],
+      [
+        "Senior Product Marketing Manager",
+        1
+      ],
+      [
+        "Senior Global Sourcing Manager",
+        1
+      ]
+    ]
+  },
+  "northwestern-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 4,
+      "manager": 8,
+      "partner": 10,
+      "senior": 11,
+      "vp": 2
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        23
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Partnerships",
+        1
+      ],
+      [
+        "Analyst",
+        1
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Covenant House Georgia",
+        1
+      ],
+      [
+        "Prophet",
+        1
+      ],
+      [
+        "Adventure Stage Chicago At The Northwestern University Settlement",
+        1
+      ],
+      [
+        "Ibm",
+        1
+      ],
+      [
+        "Kpmg Us",
+        1
+      ],
+      [
+        "Mckinsey & Company",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        7
+      ],
+      [
+        "Senior Manager",
+        3
+      ],
+      [
+        "Manager",
+        3
+      ],
+      [
+        "Associate Partner",
+        2
+      ],
+      [
+        "Senior Partner",
+        2
+      ],
+      [
+        "Senior Manager | Product, Ai & Innovation",
+        1
+      ]
+    ]
+  },
+  "northwestern-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 7,
+      "manager": 9,
+      "partner": 8,
+      "senior": 3
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        23
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Health",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Rivian",
+        1
+      ],
+      [
+        "Social Edge Consulting, Llc",
+        1
+      ],
+      [
+        "Girl Scouts Of San Jacinto Council",
+        1
+      ],
+      [
+        "Pepsico",
+        1
+      ],
+      [
+        "Lifespring Hospitals Private Ltd.",
+        1
+      ],
+      [
+        "Ticketmaster",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Consultant",
+        5
+      ],
+      [
+        "Partner",
+        4
+      ],
+      [
+        "Principal",
+        3
+      ],
+      [
+        "Project Leader",
+        3
+      ],
+      [
+        "Managing Director & Partner",
+        2
+      ],
+      [
+        "Managing Director And Partner",
+        2
+      ]
+    ]
+  },
+  "northwestern-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 9,
+      "manager": 3,
+      "senior": 3,
+      "vp": 7
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        25
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Fulfillment",
+        1
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Research",
+        1
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Vaynermedia",
+        1
+      ],
+      [
+        "Deloitte",
+        1
+      ],
+      [
+        "Aumni",
+        1
+      ],
+      [
+        "Pnc",
+        1
+      ],
+      [
+        "First Republic",
+        1
+      ],
+      [
+        "Keybank",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        3
+      ],
+      [
+        "Executive Design Director",
+        1
+      ],
+      [
+        "Quant Analytics Manager",
+        1
+      ],
+      [
+        "Director Of Software Engineering",
+        1
+      ],
+      [
+        "Market Executive - Commercial Banking, Western Pennsylvania",
+        1
+      ],
+      [
+        "Vice President, Product Commercialization (market And Product Expansion Strategy)",
+        1
+      ]
+    ]
+  },
+  "northwestern-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 6,
+      "partner": 13,
+      "senior": 5
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Operations",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Strategy&",
+        1
+      ],
+      [
+        "Cigna Healthcare",
+        1
+      ],
+      [
+        "Hogan Lovells",
+        1
+      ],
+      [
+        "Procter & Gamble",
+        1
+      ],
+      [
+        "Illinois Holocaust Museum & Education Center",
+        1
+      ],
+      [
+        "Autonomous",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        8
+      ],
+      [
+        "Engagement Manager",
+        5
+      ],
+      [
+        "Senior Partner",
+        4
+      ],
+      [
+        "Associate",
+        2
+      ],
+      [
+        "Associate General Counsel",
+        1
+      ],
+      [
+        "Data Science Manager",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "manager": 10,
+      "senior": 16
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        13
+      ],
+      [
+        "Product",
+        5
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Support",
+        1
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "The Coca-cola Company",
+        1
+      ],
+      [
+        "Lyft",
+        1
+      ],
+      [
+        "Zulily",
+        1
+      ],
+      [
+        "Eero",
+        1
+      ],
+      [
+        "Placeiq (now Precisely)",
+        1
+      ],
+      [
+        "Ibm",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Product Manager",
+        3
+      ],
+      [
+        "Senior Account Manager",
+        1
+      ],
+      [
+        "Software Engineer",
+        1
+      ],
+      [
+        "Senior Sales Strategy Manager - Eero Devices",
+        1
+      ],
+      [
+        "Senior Software Development Engineer",
+        1
+      ],
+      [
+        "Software Development Manager",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 12,
+      "senior": 3
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        9
+      ],
+      [
+        "Creative",
+        4
+      ],
+      [
+        "Marketing",
+        4
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Analyst",
+        2
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Meta",
+        3
+      ],
+      [
+        "Netflix",
+        2
+      ],
+      [
+        "Intel",
+        2
+      ],
+      [
+        "Mediaplex",
+        1
+      ],
+      [
+        "Centurylink",
+        1
+      ],
+      [
+        "Salesforce",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Producer Manager, Media Products Design",
+        1
+      ],
+      [
+        "Applecare Aha Team Manager",
+        1
+      ],
+      [
+        "Software Qe Manager, Core Os",
+        1
+      ],
+      [
+        "Writer / Engineer, Developer Publications",
+        1
+      ],
+      [
+        "Devops Technical Lead",
+        1
+      ],
+      [
+        "Synergy Marketing Lead, Apple Tv",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 3,
+      "director": 7,
+      "senior": 2,
+      "vp": 18
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Finance",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "J.p. Morgan",
+        2
+      ],
+      [
+        "Stream",
+        1
+      ],
+      [
+        "Brighthouse Financial",
+        1
+      ],
+      [
+        "Alliancebernstein",
+        1
+      ],
+      [
+        "Deutsche Bank",
+        1
+      ],
+      [
+        "Bae Systems",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        7
+      ],
+      [
+        "Managing Director",
+        3
+      ],
+      [
+        "Sre",
+        1
+      ],
+      [
+        "Vice President Software Engineer",
+        1
+      ],
+      [
+        "Vice President Of Data Analytics And Reporting In In Legal Engineering",
+        1
+      ],
+      [
+        "Head Of 'one Gs' Client Data Platform, Vice President | Data Engineering Division",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 6,
+      "manager": 8,
+      "senior": 6
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        7
+      ],
+      [
+        "Product",
+        4
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Sales",
+        3
+      ],
+      [
+        "Analyst",
+        2
+      ],
+      [
+        "Creative",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Bloomberg",
+        2
+      ],
+      [
+        "Microsoft",
+        2
+      ],
+      [
+        "Intersection Co.",
+        1
+      ],
+      [
+        "Medallia",
+        1
+      ],
+      [
+        "Uber",
+        1
+      ],
+      [
+        "Brainsafe",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        3
+      ],
+      [
+        "Senior Interaction Designer",
+        2
+      ],
+      [
+        "Managing Director Americas, Google Marketing Platform",
+        1
+      ],
+      [
+        "Enterprise Business Intelligence Sales Specialist",
+        1
+      ],
+      [
+        "Senior Business Program Manager",
+        1
+      ],
+      [
+        "Senior Security Engineer",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 9,
+      "manager": 5,
+      "senior": 3,
+      "vp": 6
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        22
+      ],
+      [
+        "Engineering",
+        2
+      ],
+      [
+        "Research",
+        2
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Fulfillment",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Morgan Stanley",
+        3
+      ],
+      [
+        "J.p. Morgan",
+        2
+      ],
+      [
+        "Wells Fargo",
+        2
+      ],
+      [
+        "Cleary Gottlieb Steen & Hamilton Llp",
+        1
+      ],
+      [
+        "Washington Mutual Bank",
+        1
+      ],
+      [
+        "Verizon",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Managing Director, Associate General Counsel",
+        1
+      ],
+      [
+        "Head Of Latam Payments Technology",
+        1
+      ],
+      [
+        "Learning Lead",
+        1
+      ],
+      [
+        "Head Of Site Reliability Engineering For Runtime Compute Product Line, Senior Lead Sre (vp)",
+        1
+      ],
+      [
+        "Chief Marketing Officer, Wealth Management",
+        1
+      ],
+      [
+        "Executive Director, Smb Payments",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 10,
+      "manager": 8,
+      "senior": 2,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Product",
+        9
+      ],
+      [
+        "Engineering",
+        8
+      ],
+      [
+        "Marketing",
+        5
+      ],
+      [
+        "Creative",
+        2
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Legal",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Instagram",
+        2
+      ],
+      [
+        "Friends Of The Palo Alto Junior Museum & Zoo",
+        1
+      ],
+      [
+        "Walmart Global Tech",
+        1
+      ],
+      [
+        "Factor San Francisco",
+        1
+      ],
+      [
+        "Sabbatical",
+        1
+      ],
+      [
+        "Taboola",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        3
+      ],
+      [
+        "Engineering Manager",
+        2
+      ],
+      [
+        "Head Of Marketing, Wearables",
+        2
+      ],
+      [
+        "Global Human Resources Director, Global Operations",
+        1
+      ],
+      [
+        "Global Design Lead Brand, Whatsapp",
+        1
+      ],
+      [
+        "User Experience Research Director, Generative Ai",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 7,
+      "manager": 8,
+      "partner": 1,
+      "senior": 7
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        10
+      ],
+      [
+        "Product",
+        3
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Creative",
+        2
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Finance",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon Web Services (aws)",
+        3
+      ],
+      [
+        "Microsoft Ai & Research",
+        1
+      ],
+      [
+        "Chief",
+        1
+      ],
+      [
+        "Macmillan Learning",
+        1
+      ],
+      [
+        "Werner Enterprises",
+        1
+      ],
+      [
+        "Nokia",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Senior Technical Program Manager",
+        1
+      ],
+      [
+        "Cvp & Managing Director Of Microsoft Research - Americas",
+        1
+      ],
+      [
+        "Global Cloud Leader",
+        1
+      ],
+      [
+        "Senior Designer",
+        1
+      ],
+      [
+        "Senior Customer Success Account Manager",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 13,
+      "manager": 2,
+      "vp": 10
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        29
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Ubs",
+        2
+      ],
+      [
+        "Bank Of America Merrill Lynch",
+        1
+      ],
+      [
+        "Citi",
+        1
+      ],
+      [
+        "Rsm Us Llp",
+        1
+      ],
+      [
+        "Ibl.ai",
+        1
+      ],
+      [
+        "Williams Lea",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        7
+      ],
+      [
+        "Vice President",
+        5
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Regional Manager Corporate Services",
+        1
+      ],
+      [
+        "Executive Director - Investment Banking Management",
+        1
+      ],
+      [
+        "Executive Director Investment Officer Morgan Stanley Family Office",
+        1
+      ]
+    ]
+  },
+  "nyu-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 3,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        11
+      ],
+      [
+        "Creative",
+        6
+      ],
+      [
+        "Partnerships",
+        3
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Legal",
+        1
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Google",
+        4
+      ],
+      [
+        "Meta",
+        3
+      ],
+      [
+        "Pinterest",
+        2
+      ],
+      [
+        "Slack",
+        2
+      ],
+      [
+        "Datarobot",
+        1
+      ],
+      [
+        "Air Force Research Laboratory",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        7
+      ],
+      [
+        "Member Of Design Staff",
+        5
+      ],
+      [
+        "Model Design",
+        1
+      ],
+      [
+        "Strategic Partnerships",
+        1
+      ],
+      [
+        "Partnership Manager",
+        1
+      ],
+      [
+        "Gtm Leadership - Digital Natives",
+        1
+      ]
+    ]
+  },
+  "uchicago-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 12,
+      "manager": 10,
+      "partner": 10,
+      "senior": 5
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        22
+      ],
+      [
+        "Human Resources",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "University Of Chicago",
+        2
+      ],
+      [
+        "Us Army",
+        1
+      ],
+      [
+        "Pearl Meyer",
+        1
+      ],
+      [
+        "Goldman Sachs",
+        1
+      ],
+      [
+        "Cadillac",
+        1
+      ],
+      [
+        "Bank Of The West",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Project Leader",
+        5
+      ],
+      [
+        "Managing Director And Partner",
+        3
+      ],
+      [
+        "Partner",
+        3
+      ],
+      [
+        "Consultant",
+        3
+      ],
+      [
+        "Managing Director & Partner",
+        2
+      ],
+      [
+        "Senior Vsc Consultant",
+        1
+      ]
+    ]
+  },
+  "uchicago-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 7,
+      "senior": 1,
+      "vp": 15
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        26
+      ],
+      [
+        "Research",
+        1
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "J.p. Morgan",
+        2
+      ],
+      [
+        "Harvard University",
+        1
+      ],
+      [
+        "Papyrus Capital",
+        1
+      ],
+      [
+        "Jefferies",
+        1
+      ],
+      [
+        "Morgan Stanley",
+        1
+      ],
+      [
+        "Ey",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        7
+      ],
+      [
+        "Associate",
+        3
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Investment Banking Analyst",
+        1
+      ],
+      [
+        "Vice President, Equity Derivatives Trading",
+        1
+      ],
+      [
+        "Vice President - Private Equity Group",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 10,
+      "senior": 14,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Product",
+        9
+      ],
+      [
+        "Engineering",
+        5
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Legal",
+        3
+      ],
+      [
+        "Finance",
+        3
+      ],
+      [
+        "Support",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon Web Services (aws)",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Teikametrics",
+        1
+      ],
+      [
+        "Uber Freight",
+        1
+      ],
+      [
+        "Samsung Research America (sra)",
+        1
+      ],
+      [
+        "American Express",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Development Engineer",
+        2
+      ],
+      [
+        "Software Development Manager",
+        1
+      ],
+      [
+        "Senior Sales Account Manager, Large Customers",
+        1
+      ],
+      [
+        "Senior Product Manager, Donations & Zero Waste",
+        1
+      ],
+      [
+        "Senior Solutions Manager, Brand Innovation Lab | Amazon Advertising",
+        1
+      ],
+      [
+        "General Manager, Director, Alexa Ai Developer Technologies And Agents",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3,
+      "manager": 6,
+      "partner": 12,
+      "senior": 4,
+      "vp": 3
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        26
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Partnerships",
+        1
+      ],
+      [
+        "Sales Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Sprint",
+        1
+      ],
+      [
+        "General Motors",
+        1
+      ],
+      [
+        "Vmware",
+        1
+      ],
+      [
+        "Insite",
+        1
+      ],
+      [
+        "The Children's School",
+        1
+      ],
+      [
+        "Curaspan Health Group",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        12
+      ],
+      [
+        "Associate Partner",
+        3
+      ],
+      [
+        "Senior Manager",
+        2
+      ],
+      [
+        "Summer Associate",
+        2
+      ],
+      [
+        "Partner, Global Data Science & Ml Engineering Group Lead",
+        1
+      ],
+      [
+        "Vice President - Global Partnerships",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-bcg": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 10,
+      "manager": 7,
+      "partner": 12,
+      "senior": 1
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        24
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Deloitte",
+        2
+      ],
+      [
+        "37 Angels",
+        1
+      ],
+      [
+        "Abbott",
+        1
+      ],
+      [
+        "Se Advisory Services \u2013 France",
+        1
+      ],
+      [
+        "Rivian",
+        1
+      ],
+      [
+        "Dialog Group Of Companies",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Managing Director And Partner",
+        6
+      ],
+      [
+        "Partner",
+        5
+      ],
+      [
+        "Project Leader",
+        4
+      ],
+      [
+        "Principal",
+        3
+      ],
+      [
+        "Manager - Retail Decarbonization",
+        1
+      ],
+      [
+        "Managing Director & Partner",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-goldman-sachs": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 13,
+      "manager": 1,
+      "senior": 1,
+      "vp": 15
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        29
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Credit Suisse",
+        2
+      ],
+      [
+        "Google",
+        1
+      ],
+      [
+        "Shift",
+        1
+      ],
+      [
+        "Evercore",
+        1
+      ],
+      [
+        "Jefferies",
+        1
+      ],
+      [
+        "Lancaster",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Vice President",
+        10
+      ],
+      [
+        "Managing Director",
+        6
+      ],
+      [
+        "Vice President / Executive Director",
+        1
+      ],
+      [
+        "Alternative Investments & Manager Selection",
+        1
+      ],
+      [
+        "Strategist",
+        1
+      ],
+      [
+        "Global Co-head Of Investment Banking",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 8,
+      "manager": 9,
+      "senior": 4
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        11
+      ],
+      [
+        "Product",
+        10
+      ],
+      [
+        "Partnerships",
+        2
+      ],
+      [
+        "Analyst",
+        2
+      ],
+      [
+        "Human Resources",
+        2
+      ],
+      [
+        "Marketing",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Cadence",
+        1
+      ],
+      [
+        "Sap",
+        1
+      ],
+      [
+        "Robinhood",
+        1
+      ],
+      [
+        "The Game Awards",
+        1
+      ],
+      [
+        "Relativewave",
+        1
+      ],
+      [
+        "Boston Consulting Group (bcg)",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineering Manager",
+        2
+      ],
+      [
+        "Product Manager",
+        2
+      ],
+      [
+        "Staff Software Engineer",
+        1
+      ],
+      [
+        "Head Of Private Equity Partnerships, North America",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Head Of Global Marketing, Google Play",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-jpmorgan": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 10,
+      "manager": 2,
+      "senior": 5,
+      "vp": 7
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        21
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Engineering",
+        2
+      ],
+      [
+        "Research",
+        2
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Legal",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Prx",
+        1
+      ],
+      [
+        "Bny",
+        1
+      ],
+      [
+        "Dttc",
+        1
+      ],
+      [
+        "Realtyshares",
+        1
+      ],
+      [
+        "Windfall",
+        1
+      ],
+      [
+        "Cross-cultural Solutions",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        2
+      ],
+      [
+        "Content Strategist",
+        1
+      ],
+      [
+        "Vice President, Ai Solutions And Business Enablement",
+        1
+      ],
+      [
+        "Business And Controls Governance Manager",
+        1
+      ],
+      [
+        "Vice President, Commercial Mortgage Lending",
+        1
+      ],
+      [
+        "Gtm Product Manager - Merchant Services",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-mckinsey": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 10,
+      "partner": 11,
+      "senior": 5
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Health",
+        1
+      ],
+      [
+        "Sales Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Buildon",
+        1
+      ],
+      [
+        "Cigna Healthcare",
+        1
+      ],
+      [
+        "Deutsche Bank",
+        1
+      ],
+      [
+        "Rwjf",
+        1
+      ],
+      [
+        "Boston Children's Museum",
+        1
+      ],
+      [
+        "Lazada",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Partner",
+        7
+      ],
+      [
+        "Engagement Manager",
+        6
+      ],
+      [
+        "Senior Partner",
+        4
+      ],
+      [
+        "Associate Partner",
+        4
+      ],
+      [
+        "Professional Development Manager",
+        2
+      ],
+      [
+        "Partner, Deputy General Counsel, Head Of Americas Legal",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 10,
+      "manager": 4,
+      "partner": 2,
+      "senior": 7,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        11
+      ],
+      [
+        "Marketing",
+        9
+      ],
+      [
+        "Product",
+        5
+      ],
+      [
+        "Research",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon",
+        2
+      ],
+      [
+        "Zamboor Consulting",
+        1
+      ],
+      [
+        "Awesomeness",
+        1
+      ],
+      [
+        "Matterport",
+        1
+      ],
+      [
+        "Deloitte",
+        1
+      ],
+      [
+        "Whatsapp",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        3
+      ],
+      [
+        "Product Manager",
+        2
+      ],
+      [
+        "Software Engineer",
+        2
+      ],
+      [
+        "Product Manager In Ai Research | Fair At Meta",
+        1
+      ],
+      [
+        "Brand Marketing Lead",
+        1
+      ],
+      [
+        "Director, Product Marketing, Augmented Reality",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 11,
+      "manager": 4,
+      "senior": 9,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        13
+      ],
+      [
+        "Partnerships",
+        4
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Sales Engineering",
+        1
+      ],
+      [
+        "Product",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon Web Services (aws)",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Oracle",
+        1
+      ],
+      [
+        "Sonata Software",
+        1
+      ],
+      [
+        "Mizuho",
+        1
+      ],
+      [
+        "Intel",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Managing Director, Cloud & Ai Platforms | Financial Services",
+        1
+      ],
+      [
+        "Director, Cloud & Ai Platforms Global Partner Business",
+        1
+      ],
+      [
+        "Senior Cloud Solution Architect",
+        1
+      ],
+      [
+        "Senior Director, Azure Product Marketing",
+        1
+      ],
+      [
+        "Global Director, Venture Capital Partnerships",
+        1
+      ],
+      [
+        "Learning Leader For Clos",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 3,
+      "director": 16,
+      "senior": 4,
+      "vp": 7
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        26
+      ],
+      [
+        "Engineering",
+        1
+      ],
+      [
+        "Marketing",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Merrill Lynch",
+        3
+      ],
+      [
+        "Ubs",
+        2
+      ],
+      [
+        "Wells Fargo",
+        2
+      ],
+      [
+        "Credit Suisse",
+        2
+      ],
+      [
+        "Goldman Sachs",
+        2
+      ],
+      [
+        "Tree Line Capital Partners",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Managing Director",
+        4
+      ],
+      [
+        "Executive Director",
+        4
+      ],
+      [
+        "Vice President",
+        2
+      ],
+      [
+        "Senior Vice President",
+        2
+      ],
+      [
+        "Financial Advisor",
+        2
+      ],
+      [
+        "Executive Director, Investment Banking",
+        1
+      ]
+    ]
+  },
+  "upenn-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 7,
+      "manager": 2,
+      "senior": 1,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        8
+      ],
+      [
+        "Marketing",
+        4
+      ],
+      [
+        "Partnerships",
+        3
+      ],
+      [
+        "Fulfillment",
+        2
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Finance",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Meta",
+        2
+      ],
+      [
+        "Instagram",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Fast Break Labs",
+        1
+      ],
+      [
+        "Siteline",
+        1
+      ],
+      [
+        "Snap Inc.",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        8
+      ],
+      [
+        "Head Of Youth Well-being",
+        1
+      ],
+      [
+        "Member Of Product Staff",
+        1
+      ],
+      [
+        "Director, Gtm Finance",
+        1
+      ],
+      [
+        "Managing Director",
+        1
+      ],
+      [
+        "Senior Director Of Mergers & Acquisitions Tax",
+        1
+      ]
+    ]
+  },
+  "usc-alumni-at-amazon": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 2,
+      "manager": 10,
+      "senior": 12,
+      "vp": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        10
+      ],
+      [
+        "Product",
+        5
+      ],
+      [
+        "Operations",
+        4
+      ],
+      [
+        "Fulfillment",
+        2
+      ],
+      [
+        "Finance",
+        2
+      ],
+      [
+        "Sales",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon Web Services (aws)",
+        3
+      ],
+      [
+        "Target",
+        2
+      ],
+      [
+        "Wd",
+        1
+      ],
+      [
+        "Reflektion",
+        1
+      ],
+      [
+        "Vital Farms",
+        1
+      ],
+      [
+        "First American",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineering Manager",
+        2
+      ],
+      [
+        "Principal Tpm, Strategy & Manager",
+        1
+      ],
+      [
+        "Software Engineer",
+        1
+      ],
+      [
+        "Senior Product Manager, Amazon Fresh",
+        1
+      ],
+      [
+        "User Experience Designer, Devices Design Group",
+        1
+      ],
+      [
+        "Sde - Prime Reading",
+        1
+      ]
+    ]
+  },
+  "usc-alumni-at-apple": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 4,
+      "manager": 11,
+      "senior": 8
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        13
+      ],
+      [
+        "Marketing",
+        6
+      ],
+      [
+        "Creative",
+        4
+      ],
+      [
+        "Partnerships",
+        1
+      ],
+      [
+        "Fulfillment",
+        1
+      ],
+      [
+        "Finance",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Qualcomm",
+        2
+      ],
+      [
+        "Amcham Hk",
+        1
+      ],
+      [
+        "2k Games",
+        1
+      ],
+      [
+        "Yahoo",
+        1
+      ],
+      [
+        "Major League Soccer",
+        1
+      ],
+      [
+        "Seriforge",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Head Of Internal Communications And Employee Engagement, Greater China",
+        1
+      ],
+      [
+        "Business Development, Games - App Store",
+        1
+      ],
+      [
+        "Senior Engineering Manager",
+        1
+      ],
+      [
+        "Manager, Games And Entertainment, Worldwide Developer Relations",
+        1
+      ],
+      [
+        "Software Architect - Siri",
+        1
+      ],
+      [
+        "Director Of Engineering",
+        1
+      ]
+    ]
+  },
+  "usc-alumni-at-bain": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 1,
+      "manager": 14,
+      "partner": 4,
+      "senior": 9
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        27
+      ],
+      [
+        "Operations",
+        3
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "J.p. Morgan",
+        2
+      ],
+      [
+        "Emerald Research Group",
+        1
+      ],
+      [
+        "Defector Media",
+        1
+      ],
+      [
+        "Ibm",
+        1
+      ],
+      [
+        "Wework",
+        1
+      ],
+      [
+        "Nature's Fynd",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Manager",
+        8
+      ],
+      [
+        "Consultant",
+        6
+      ],
+      [
+        "Manager",
+        3
+      ],
+      [
+        "Executive Assistant",
+        3
+      ],
+      [
+        "Partner",
+        2
+      ],
+      [
+        "Expert Partner",
+        2
+      ]
+    ]
+  },
+  "usc-alumni-at-google": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 4,
+      "manager": 9,
+      "senior": 8
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        20
+      ],
+      [
+        "Product",
+        3
+      ],
+      [
+        "Partnerships",
+        1
+      ],
+      [
+        "Operations",
+        1
+      ],
+      [
+        "Support",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Linkedin",
+        2
+      ],
+      [
+        "Sap",
+        1
+      ],
+      [
+        "Fitbit (now Part Of Google)",
+        1
+      ],
+      [
+        "Citi",
+        1
+      ],
+      [
+        "Openx",
+        1
+      ],
+      [
+        "Attunity",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        8
+      ],
+      [
+        "Senior Software Engineer",
+        3
+      ],
+      [
+        "Head Of Private Equity Partnerships, North America",
+        1
+      ],
+      [
+        "Staff Software Engineer",
+        1
+      ],
+      [
+        "Head Of Treasury Tech",
+        1
+      ],
+      [
+        "Director, Data Cloud & Ai Partnerships",
+        1
+      ]
+    ]
+  },
+  "usc-alumni-at-meta": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 5,
+      "manager": 9,
+      "senior": 1
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        13
+      ],
+      [
+        "Product",
+        4
+      ],
+      [
+        "Human Resources",
+        3
+      ],
+      [
+        "Operations",
+        3
+      ],
+      [
+        "Marketing",
+        2
+      ],
+      [
+        "Sales Engineering",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Google",
+        3
+      ],
+      [
+        "Adobe",
+        2
+      ],
+      [
+        "Microsoft",
+        1
+      ],
+      [
+        "Kwanzoo - Signal-based Pipeline Growth | Signals Hub | White Label Ai Gtm Tech For Agencies & Apps",
+        1
+      ],
+      [
+        "Pop.in",
+        1
+      ],
+      [
+        "Catalog",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Software Engineer",
+        7
+      ],
+      [
+        "Product Marketing Lead | Social Ai For Facebook",
+        1
+      ],
+      [
+        "Campaign Automation & Martech Lead",
+        1
+      ],
+      [
+        "Product Manager",
+        1
+      ],
+      [
+        "Director, Global Marketing Channels",
+        1
+      ],
+      [
+        "Staff Software Engineer",
+        1
+      ]
+    ]
+  },
+  "usc-alumni-at-microsoft": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 5,
+      "manager": 11,
+      "partner": 1,
+      "senior": 11
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        15
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Operations",
+        2
+      ],
+      [
+        "Finance",
+        2
+      ],
+      [
+        "Sales",
+        2
+      ],
+      [
+        "Creative",
+        2
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Amazon",
+        3
+      ],
+      [
+        "Intel",
+        2
+      ],
+      [
+        "Op Labs Pbc",
+        1
+      ],
+      [
+        "Google",
+        1
+      ],
+      [
+        "Office Of Teaching Innovation And Digital Education",
+        1
+      ],
+      [
+        "Citrix",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Senior Software Engineer",
+        2
+      ],
+      [
+        "Executive Search, Coreai",
+        1
+      ],
+      [
+        "Cvp, Monetization, Commerce, & The Ai Economy",
+        1
+      ],
+      [
+        "Senior Project Manager",
+        1
+      ],
+      [
+        "Senior Director Of Cloud Solution Architecture, Security",
+        1
+      ],
+      [
+        "Principal Cloud Advocate (python)",
+        1
+      ]
+    ]
+  },
+  "usc-alumni-at-morgan-stanley": {
+    "sample_size": 30,
+    "seniority": {
+      "cxo": 1,
+      "director": 9,
+      "manager": 1,
+      "senior": 7,
+      "vp": 5
+    },
+    "top_functions": [
+      [
+        "Professional Service",
+        25
+      ],
+      [
+        "Human Resources",
+        1
+      ],
+      [
+        "Finance",
+        1
+      ],
+      [
+        "Research",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Ubs",
+        3
+      ],
+      [
+        "Merrill Lynch",
+        2
+      ],
+      [
+        "Radiology Partners",
+        1
+      ],
+      [
+        "E*trade From Morgan Stanley",
+        1
+      ],
+      [
+        "Axa Advisors, Llc",
+        1
+      ],
+      [
+        "University Of Southern California",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Executive Director",
+        4
+      ],
+      [
+        "Financial Advisor",
+        2
+      ],
+      [
+        "Managing Director",
+        2
+      ],
+      [
+        "Senior Vice President - Morgan Stanley Private Wealth Management",
+        1
+      ],
+      [
+        "Human Resources Business Partner",
+        1
+      ],
+      [
+        "Registered Associate",
+        1
+      ]
+    ]
+  },
+  "usc-alumni-at-openai": {
+    "sample_size": 30,
+    "seniority": {
+      "director": 3
+    },
+    "top_functions": [
+      [
+        "Engineering",
+        9
+      ],
+      [
+        "Product",
+        4
+      ],
+      [
+        "Human Resources",
+        3
+      ],
+      [
+        "Marketing",
+        3
+      ],
+      [
+        "Research",
+        2
+      ],
+      [
+        "Partnerships",
+        1
+      ]
+    ],
+    "top_prior_employers": [
+      [
+        "Snap Inc.",
+        2
+      ],
+      [
+        "Google",
+        2
+      ],
+      [
+        "Cruise",
+        2
+      ],
+      [
+        "Snowflake",
+        1
+      ],
+      [
+        "Kajabi",
+        1
+      ],
+      [
+        "Gong",
+        1
+      ]
+    ],
+    "top_titles": [
+      [
+        "Member Of Technical Staff",
+        7
+      ],
+      [
+        "Product Marketing",
+        2
+      ],
+      [
+        "Hr Bp",
+        1
+      ],
+      [
+        "Product",
+        1
+      ],
+      [
+        "Deployment Engineering",
+        1
+      ],
+      [
+        "Gtm Leadership - Digital Natives",
+        1
+      ]
+    ]
+  }
+}

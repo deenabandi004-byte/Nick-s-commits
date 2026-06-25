@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Loader2, Sparkles, Search } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { apiService, type PromptSearchResponse } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
 
@@ -121,7 +121,6 @@ export const PromptSearchFlow: React.FC<PromptSearchFlowProps> = ({
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-xl flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
             Prompt Search
           </CardTitle>
           <p className="text-sm text-muted-foreground">

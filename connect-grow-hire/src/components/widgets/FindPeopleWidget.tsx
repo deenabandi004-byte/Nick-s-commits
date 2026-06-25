@@ -63,7 +63,7 @@ export interface FindPeopleWidgetProps {
 }
 
 const RUNNING_STEPS = [
-  { label: 'Searching the company', detail: 'PDL /person/search across 2.2B profiles' },
+  { label: 'Searching the company', detail: 'Searching across 2.2 billion profiles' },
   { label: 'Filtering by role', detail: 'Matching current title to your input' },
   { label: 'Ranking the top 5', detail: 'Most relevant profiles with a verified LinkedIn' },
 ];

@@ -11,7 +11,8 @@
  * CardAccentBorder / StatusLine).
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, ExternalLink, Loader2, MailCheck, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { AlertTriangle, ExternalLink, Inbox, Loader2, Mail, MailCheck, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SteppedLoadingBar } from "@/components/ui/LoadingBar";
@@ -27,6 +28,12 @@ import {
   type FindRecruiterResponse,
   type Recruiter,
 } from "@/services/api";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import {
+  firebaseApi,
+  type Contact as FirebaseContact,
+  type Recruiter as FirebaseRecruiter,
+} from "@/services/firebaseApi";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,6 +52,12 @@ interface FindHumansModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   job: FindHumansJob | null;
+  // Which search to run. "recruiter" is the original Find the Humans flow.
+  // "hiring-manager" hits /find-hiring-manager; "employee" hits /find-employee.
+  kind?: "recruiter" | "employee" | "hiring-manager";
+  // Number of people to find (employee + hiring-manager flows). Ignored by the
+  // recruiter flow, which is fixed at 3.
+  count?: number;
 }
 
 type ModalState = "idle" | "loading" | "success" | "error";
@@ -144,7 +157,31 @@ function CandidateReceiptCard({ recruiter }: { recruiter: Recruiter }) {
 // Main modal
 // ---------------------------------------------------------------------------
 
-export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProps) {
+export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", count }: FindHumansModalProps) {
+  const heading =
+    kind === "employee"
+      ? "Find People"
+      : kind === "hiring-manager"
+        ? "Find Hiring Managers"
+        : "Find the Humans";
+  const personNoun = (n: number) =>
+    n === 1
+      ? kind === "employee"
+        ? "person"
+        : "human"
+      : kind === "employee"
+        ? "people"
+        : "humans";
+  const navigate = useNavigate();
+  const { user } = useFirebaseAuth();
+  // People (employee flow) land in My Network → People; hiring managers /
+  // recruiters land in the Hiring Managers tab. Both tabs blue-highlight rows
+  // saved within the last 60s, so saving below makes the just-found contacts
+  // glow when "View in Spreadsheet" navigates there.
+  const isPeople = kind === "employee";
+  const networkTab = isPeople ? "people" : "managers";
+  const outboxSegment = isPeople ? "people" : "hiringManagers";
+
   const [state, setState] = useState<ModalState>("idle");
   const [response, setResponse] = useState<FindRecruiterResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -153,6 +190,8 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
   // Token to ignore stale responses if the modal is closed/reopened mid-flight.
   const requestTokenRef = useRef(0);
   const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Guards a one-time save per successful search.
+  const persistedTokenRef = useRef(0);
 
   const clearStepTimer = useCallback(() => {
     if (stepTimerRef.current) {
@@ -172,6 +211,130 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
     }, 2500);
   }, [clearStepTimer]);
 
+  // Map of lowercased recruiter email -> draft info (for draft/email lookups).
+  const buildDraftMap = (result: FindRecruiterResponse) => {
+    const m = new Map<string, { draft_id?: string; draft_url?: string; message_id?: string }>();
+    for (const d of result.draftsCreated ?? []) {
+      const key = (d.recruiter_email || "").trim().toLowerCase();
+      if (key) m.set(key, { draft_id: d.draft_id, draft_url: d.draft_url, message_id: d.message_id });
+    }
+    return m;
+  };
+
+  const buildEmailMap = (result: FindRecruiterResponse) => {
+    const m = new Map<string, { subject?: string; body?: string }>();
+    for (const e of result.emails ?? []) {
+      const key = (e.to_email || e.recruiter?.Email || "").trim().toLowerCase();
+      if (key) m.set(key, { subject: e.subject, body: e.plain_body || e.body });
+    }
+    return m;
+  };
+
+  // The first found person's email is what the Inbox button focuses; prefer a
+  // person who actually got a draft so the tracker opens a real conversation.
+  const focusEmailFor = (result: FindRecruiterResponse | null): string | undefined => {
+    if (!result) return undefined;
+    const draftMap = buildDraftMap(result);
+    const list = result.recruiters ?? [];
+    const drafted = list.find((r) => r.Email && draftMap.has(r.Email.trim().toLowerCase()));
+    return (drafted?.Email || list.find((r) => r.Email)?.Email || "").trim() || undefined;
+  };
+
+  // Persist found contacts so they show up (and blue-highlight) in My Network.
+  // People → contacts subcollection (backend /contacts/bulk dedupes); hiring
+  // managers / recruiters → recruiters subcollection (dedupe client-side here).
+  const persistResults = useCallback(
+    async (result: FindRecruiterResponse) => {
+      const uid = user?.uid;
+      const found = result.recruiters ?? [];
+      if (!uid || found.length === 0) return;
+
+      const draftMap = buildDraftMap(result);
+      const emailMap = buildEmailMap(result);
+      const today = new Date().toLocaleDateString("en-US");
+
+      try {
+        if (isPeople) {
+          const mapped: Omit<FirebaseContact, "id">[] = found.map((r) => {
+            const email = (r.Email || r.WorkEmail || "").trim();
+            const key = email.toLowerCase();
+            const draft = key ? draftMap.get(key) : undefined;
+            const em = key ? emailMap.get(key) : undefined;
+            const location = [r.City, r.State].filter(Boolean).join(", ");
+            // Sent over fetch+JSON to /contacts/bulk, so undefined fields drop out.
+            return {
+              firstName: r.FirstName || "",
+              lastName: r.LastName || "",
+              linkedinUrl: r.LinkedIn || "",
+              email,
+              company: r.Company || job?.company || "",
+              jobTitle: r.Title || "",
+              college: "",
+              location,
+              firstContactDate: today,
+              lastContactDate: today,
+              status: "Not Contacted",
+              emailSubject: em?.subject,
+              emailBody: em?.body,
+              gmailDraftId: draft?.draft_id,
+              gmailDraftUrl: draft?.draft_url,
+              gmailMessageId: draft?.message_id,
+            };
+          });
+          await firebaseApi.bulkCreateContacts(uid, mapped);
+        } else {
+          const mapped: Omit<FirebaseRecruiter, "id">[] = found.map((r) => {
+            const email = (r.Email || r.WorkEmail || "").trim();
+            const key = email.toLowerCase();
+            const draft = key ? draftMap.get(key) : undefined;
+            // batch.set rejects undefined, so only attach optional fields when set.
+            const rec: Omit<FirebaseRecruiter, "id"> = {
+              firstName: r.FirstName || "",
+              lastName: r.LastName || "",
+              linkedinUrl: r.LinkedIn || "",
+              email,
+              company: r.Company || job?.company || "",
+              jobTitle: r.Title || "",
+              location: [r.City, r.State].filter(Boolean).join(", "),
+              dateAdded: new Date().toISOString(),
+              status: "Not Contacted",
+            };
+            if (r.Phone) rec.phone = r.Phone;
+            if (r.WorkEmail) rec.workEmail = r.WorkEmail;
+            if (r.PersonalEmail) rec.personalEmail = r.PersonalEmail;
+            if (job?.title) rec.associatedJobTitle = job.title;
+            if (job?.url) rec.associatedJobUrl = job.url;
+            if (draft?.draft_id) rec.gmailDraftId = draft.draft_id;
+            if (draft?.draft_url) rec.gmailDraftUrl = draft.draft_url;
+            if (draft?.message_id) rec.gmailMessageId = draft.message_id;
+            return rec;
+          });
+
+          const existing = await firebaseApi.getRecruiters(uid);
+          const existingEmails = new Set(
+            existing.map((r) => (r.email || "").trim().toLowerCase()).filter(Boolean),
+          );
+          const existingLinkedIns = new Set(
+            existing.map((r) => (r.linkedinUrl || "").trim()).filter(Boolean),
+          );
+          const toSave = mapped.filter((r) => {
+            const e = (r.email || "").trim().toLowerCase();
+            const li = (r.linkedinUrl || "").trim();
+            if (e && existingEmails.has(e)) return false;
+            if (li && existingLinkedIns.has(li)) return false;
+            return true;
+          });
+          if (toSave.length > 0) await firebaseApi.bulkCreateRecruiters(uid, toSave);
+        }
+      } catch (e) {
+        // Non-fatal: the results are still shown; they just may not appear in
+        // My Network. Surface in dev for debugging.
+        if (import.meta.env.DEV) console.error("[FindHumansModal] persist failed:", e);
+      }
+    },
+    [user?.uid, isPeople, job?.company, job?.title, job?.url],
+  );
+
   const runSearch = useCallback(async () => {
     if (!job?.company) {
       setError("This job is missing a company name. Try a different listing.");
@@ -186,18 +349,47 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
     startStepAnimation();
 
     try {
-      const result = await apiService.findRecruiters({
-        company: job.company,
-        jobTitle: job.title || undefined,
-        jobDescription: job.description || undefined,
-        location: job.location || undefined,
-        jobUrl: job.url || undefined,
-        generateEmails: true,
-        createDrafts: true,
-        no_parse: true,
-        source: "find_humans",
-        maxResults: 3,
-      });
+      let result: FindRecruiterResponse;
+      if (kind === "employee") {
+        result = await apiService.findEmployees({
+          company: job.company,
+          jobTitle: job.title || undefined,
+          jobDescription: job.description || undefined,
+          location: job.location || undefined,
+          jobUrl: job.url || undefined,
+          jobId: job.id || undefined,
+          maxResults: count ?? 3,
+          generateEmails: true,
+          createDrafts: true,
+        });
+      } else if (kind === "hiring-manager") {
+        const hm = await apiService.findHiringManagers({
+          company: job.company,
+          jobTitle: job.title || undefined,
+          jobDescription: job.description || undefined,
+          location: job.location || undefined,
+          jobUrl: job.url || undefined,
+          maxResults: count ?? 3,
+          generateEmails: true,
+          createDrafts: true,
+        });
+        // Normalize the hiring-manager response (people in `hiringManagers`)
+        // into the shared shape the rest of this modal renders (`recruiters`).
+        result = { ...hm, recruiters: hm.hiringManagers } as unknown as FindRecruiterResponse;
+      } else {
+        result = await apiService.findRecruiters({
+          company: job.company,
+          jobTitle: job.title || undefined,
+          jobDescription: job.description || undefined,
+          location: job.location || undefined,
+          jobUrl: job.url || undefined,
+          generateEmails: true,
+          createDrafts: true,
+          no_parse: true,
+          source: "find_humans",
+          maxResults: 3,
+        });
+      }
 
       // Stale response — caller already moved on.
       if (token !== requestTokenRef.current) return;
@@ -212,7 +404,9 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
 
       if (!result.recruiters || result.recruiters.length === 0) {
         setError(
-          "We couldn't verify a hiring team for this specific role. The job posting may not expose enough data.",
+          kind === "employee"
+            ? "We couldn't find teammates to reach for this role yet. The posting may not expose enough data."
+            : "We couldn't verify a hiring team for this specific role. The job posting may not expose enough data.",
         );
         setState("error");
         return;
@@ -220,6 +414,13 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
 
       setResponse(result);
       setState("success");
+
+      // Save the found people once so they appear (and blue-highlight) in My
+      // Network. Fire-and-forget — never blocks the result UI.
+      if (persistedTokenRef.current !== token) {
+        persistedTokenRef.current = token;
+        void persistResults(result);
+      }
     } catch (e) {
       if (token !== requestTokenRef.current) return;
       clearStepTimer();
@@ -228,7 +429,7 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
       setError(message);
       setState("error");
     }
-  }, [clearStepTimer, job, startStepAnimation]);
+  }, [clearStepTimer, job, startStepAnimation, kind, count, persistResults]);
 
   // Kick off the search the first time the modal opens for a given job.
   useEffect(() => {
@@ -262,6 +463,18 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
   const draftCount = response?.draftsCreated?.length ?? 0;
   const recruiters = response?.recruiters ?? [];
 
+  // Inbox → open the first found person's conversation in the tracker.
+  const handleInbox = () => {
+    navigate("/outbox", { state: { focusEmail: focusEmailFor(response), segment: outboxSegment } });
+    onOpenChange(false);
+  };
+  // View in Spreadsheet → My Network, on the matching tab, where the freshly
+  // saved rows blue-highlight via the 60s recency window.
+  const handleViewSpreadsheet = () => {
+    navigate(`/my-network/${networkTab}`);
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
@@ -269,7 +482,7 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <DialogTitle className="text-base font-semibold text-gray-900">
-                Find the Humans
+                {heading}
               </DialogTitle>
               {job?.title && job?.company && (
                 <p className="mt-0.5 text-xs text-gray-500 truncate">
@@ -279,7 +492,7 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
               {state === "success" && response && (
                 <p className="mt-1 text-xs text-gray-500">
                   Charged: {response.creditsCharged} credits for {recruiters.length}{" "}
-                  {recruiters.length === 1 ? "human" : "humans"}
+                  {personNoun(recruiters.length)}
                 </p>
               )}
             </div>
@@ -308,14 +521,49 @@ export function FindHumansModal({ open, onOpenChange, job }: FindHumansModalProp
           )}
 
           {state === "success" && recruiters.length > 0 && (
-            <div className="space-y-2">
-              {recruiters.map((r, i) => (
-                <CandidateReceiptCard
-                  key={`${r.Email || r.LinkedIn || "r"}-${i}`}
-                  recruiter={r}
-                />
-              ))}
-            </div>
+            <>
+              <div className="space-y-2">
+                {recruiters.map((r, i) => (
+                  <CandidateReceiptCard
+                    key={`${r.Email || r.LinkedIn || "r"}-${i}`}
+                    recruiter={r}
+                  />
+                ))}
+              </div>
+
+              {/* Post-search actions — mirror the Find People results bar. */}
+              <div className="mt-4 flex items-center gap-2">
+                {draftCount > 0 && (
+                  <Button
+                    asChild
+                    size="sm"
+                    className="flex-1 bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+                  >
+                    <a
+                      href="https://mail.google.com/mail/u/0/#drafts"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Mail className="h-3.5 w-3.5 mr-1.5" />
+                      Gmail drafts
+                    </a>
+                  </Button>
+                )}
+                <Button size="sm" variant="outline" className="flex-1" onClick={handleInbox}>
+                  <Inbox className="h-3.5 w-3.5 mr-1.5" />
+                  Inbox
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleViewSpreadsheet}
+                >
+                  <Users className="h-3.5 w-3.5 mr-1.5" />
+                  View in Spreadsheet
+                </Button>
+              </div>
+            </>
           )}
 
           {state === "error" && (

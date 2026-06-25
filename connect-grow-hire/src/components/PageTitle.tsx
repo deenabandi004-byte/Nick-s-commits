@@ -23,7 +23,7 @@ export const PageTitle = ({ children, accent, subtitle, lead, align = "left", no
     <h1 className={`font-serif ${size === "md" ? "text-[36px]" : "text-[44px]"} leading-[1.05] text-ink tracking-[-0.015em]`}>
       {lead ?? children}{' '}
       {accent && (
-        <em className="font-serif relative inline-block" style={{ fontStyle: 'italic', fontWeight: 400 }}>
+        <em className="font-serif relative inline-block" style={{ fontStyle: 'italic', fontWeight: 400, color: '#003262' }}>
           {accent}
           {!noScribble && <ScribbleUnderline />}
         </em>

@@ -2,7 +2,7 @@
 console.log('[Offerloop Background] Service worker started');
 
 // Configuration
-const API_BASE_URL = 'https://final-offerloop.onrender.com';
+const API_BASE_URL = 'https://www.offerloop.ai';
 
 // Fetch wrapper with AbortController timeout (default 30s)
 async function fetchWithTimeout(url, options = {}, timeoutMs = 30000) {
@@ -111,6 +111,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     case 'importLinkedIn':
       handleImportLinkedIn(request, sendResponse);
       return true;
+
+    case 'findSimilarContacts':
+      handleFindSimilarContacts(request, sendResponse);
+      return true;
       
     case 'getCredits':
       handleGetCredits(request, sendResponse);
@@ -205,6 +209,9 @@ async function importLinkedInContact(linkedInUrl, authToken, isRetry = false) {
   console.log('[Offerloop Background] Importing LinkedIn contact:', linkedInUrl);
   
   try {
+    // 90s timeout — the import-linkedin pipeline runs PDL + Hunter + resume
+    // extraction + Perplexity + Apify + batch_generate_emails + quality gate +
+    // Gmail draft, which can take 30-60s. 30s default cuts it off.
     const response = await fetchWithTimeout(`${API_BASE_URL}/api/contacts/import-linkedin`, {
       method: 'POST',
       headers: {
@@ -214,7 +221,7 @@ async function importLinkedInContact(linkedInUrl, authToken, isRetry = false) {
       body: JSON.stringify({
         linkedin_url: linkedInUrl,
       }),
-    });
+    }, 90000);
     
     // Auto-refresh on 401 and retry once
     if (response.status === 401 && !isRetry) {
@@ -247,6 +254,62 @@ async function importLinkedInContact(linkedInUrl, authToken, isRetry = false) {
   }
 }
 
+// Handle find similar contacts from popup
+async function handleFindSimilarContacts(request, sendResponse) {
+  const { authToken, source } = request;
+  try {
+    if (!authToken) {
+      sendResponse({ error: 'Not authenticated' });
+      return;
+    }
+    if (!source || !source.company) {
+      sendResponse({ error: 'Missing source company' });
+      return;
+    }
+    const result = await findSimilarContacts(source, authToken);
+    sendResponse(result);
+  } catch (error) {
+    console.error('[Offerloop Background] Error in handleFindSimilarContacts:', error);
+    sendResponse({ error: error.message || 'Failed to find similar contacts' });
+  }
+}
+
+// Call /api/contacts/find-similar (with automatic token refresh on 401)
+async function findSimilarContacts(source, authToken, isRetry = false) {
+  console.log('[Offerloop Background] Finding similar contacts for:', source);
+  try {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/api/contacts/find-similar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ source }),
+    }, 45000);
+
+    if (response.status === 401 && !isRetry) {
+      console.log('[Offerloop Background] find-similar 401, refreshing token...');
+      const newToken = await refreshAuthToken();
+      if (newToken) return findSimilarContacts(source, newToken, true);
+    }
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || data.error || `API error: ${response.status}`);
+    }
+    return {
+      success: true,
+      contacts: data.contacts || [],
+      cap: data.cap,
+      credits_used: data.credits_used,
+      credits_remaining: data.credits_remaining,
+    };
+  } catch (error) {
+    console.error('[Offerloop Background] find-similar API error:', error);
+    throw error;
+  }
+}
+
 // Handle get credits
 async function handleGetCredits(request, sendResponse) {
   const { authToken } = request;
@@ -275,6 +338,7 @@ async function handleGetCredits(request, sendResponse) {
       credits: data.credits,
       maxCredits: data.max_credits,
       tier: data.tier,
+      creditCosts: data.credit_costs || null,
     });
   } catch (error) {
     console.error('[Offerloop Background] Error getting credits:', error);

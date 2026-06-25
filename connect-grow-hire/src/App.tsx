@@ -5,37 +5,62 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import posthog from "./lib/posthog";
 import { FirebaseAuthProvider, useFirebaseAuth } from "./contexts/FirebaseAuthContext";
+import PendingShareModal from "@/components/shares/PendingShareModal";
 import { ScoutProvider, useScout } from "./contexts/ScoutContext";
 import { TourProvider } from "./contexts/TourContext";
 import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { DynamicGradientBackground } from "./components/background/DynamicGradientBackground";
-import { LoadingSkeleton } from "./components/LoadingSkeleton";
 import { ScoutSidePanel } from "./components/ScoutSidePanel";
+import FloatingAskScoutButton from "./components/AskScoutButton";
+import { ReplyNotifier } from "./components/ReplyNotifier";
 import { LoadingContainer } from "./components/ui/LoadingBar";
 import { IS_DEV_PREVIEW } from "./lib/devPreview";
 import { useAgentGlobalNotifier } from "./hooks/useAgent";
 
-// Keep critical pages non-lazy for faster initial load
-import Index from "./pages/Index";
+// Keep critical auth pages non-lazy for faster initial load
 import SignIn from "./pages/SignIn";
 import AuthCallback from "./pages/AuthCallback";
 import UscBeta from "@/pages/UscBeta";
 
+// Landing page is lazy: authed users get redirected to /dashboard and never
+// render it, so its heavy image/component tree must stay out of the critical
+// entry chunk.
+const Index = React.lazy(() => import("./pages/Index"));
+// The gradient background is landing-only and decorative (pure CSS/React, no
+// WebGL). Lazy so it never ships on the critical path. Mounts with a null
+// fallback only when an unauthenticated visitor actually sees the landing page.
+const DynamicGradientBackground = React.lazy(() =>
+  import("./components/background/DynamicGradientBackground").then((m) => ({
+    default: m.DynamicGradientBackground,
+  })),
+);
+
 // Lazy load heavy pages for code splitting
 const AboutUs = React.lazy(() => import("./pages/AboutUs"));
-const ForStudents = React.lazy(() => import("./pages/ForStudents"));
-const NetworkTracker = React.lazy(() => import("./pages/NetworkTracker"));
+const ConnectorSetup = React.lazy(() => import("./pages/ConnectorSetup"));
+const ForStudentsPage = React.lazy(() => import("./pages/ForStudentsPage"));
+const PromoPage = React.lazy(() => import("./pages/PromoPage"));
 const CoffeeChatLibrary = React.lazy(() => import("./pages/CoffeeChatLibrary"));
 const ContactUs = React.lazy(() => import("./pages/ContactUs"));
 const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const ExtensionPrivacyPolicy = React.lazy(() => import("./pages/ExtensionPrivacyPolicy"));
 const TermsOfService = React.lazy(() => import("./pages/TermsOfService"));
 const AccountSettings = React.lazy(() => import("./pages/AccountSettings"));
+const ReferPage = React.lazy(() => import("./pages/ReferPage"));
 const Pricing = React.lazy(() => import("./pages/Pricing"));
 const DocumentationPage = React.lazy(() => import("./pages/DocumentationPage"));
 const JobBoardPage = React.lazy(() => import("./pages/JobBoardPage"));
+// Job board redesign is now the production component for /job-board.
+// /dev/job-board-redesign is kept as a same-component fallback URL for one
+// day of confirmation. The old JobBoardPage import above stays unrouted
+// pending deletion after that confirmation window.
+const JobBoardRedesign = React.lazy(() => import("./pages/JobBoardPage.redesign"));
+// /outbox renders the redesign. /tracker is preserved as a redirect for
+// internal call sites until a sweep updates them. The old NetworkTracker
+// page file is unrouted pending deletion.
+const NetworkTrackerRedesign = React.lazy(() => import("./pages/NetworkTrackerRedesign"));
 const MyNetworkPage = React.lazy(() => import("./pages/MyNetworkPage"));
 const NotFound = React.lazy(() => import("./pages/NotFound"));
 const PaymentSuccess = React.lazy(() => import("./pages/PaymentSuccess"));
@@ -44,7 +69,10 @@ const CoffeeChatPrepPage = React.lazy(() => import("./pages/CoffeeChatPrepPage")
 const FindPage = React.lazy(() => import("./pages/FindPage"));
 const EmailTemplatesPage = React.lazy(() => import("./pages/EmailTemplatesPage"));
 const RecruitingTimelinePage = React.lazy(() => import("./pages/RecruitingTimelinePage"));
-const DashboardPage = React.lazy(() => import("./pages/DashboardPage"));
+// Factory extracted so we can prefetch the chunk the moment auth resolves
+// (see DashboardPrefetch), making the post-redirect Suspense fallback instant.
+const importDashboardPage = () => import("./pages/DashboardPage");
+const DashboardPage = React.lazy(importDashboardPage);
 const AgentPage = React.lazy(() => import("./pages/AgentPage"));
 const AgentSetup = React.lazy(() => import("./pages/AgentSetup"));
 const LoopsPage = React.lazy(() => import("./pages/LoopsPage"));
@@ -94,6 +122,7 @@ const FindJobsPreview = React.lazy(() => import("./pages/seo-preview/FindJobsPre
 const FindPeopleFree = React.lazy(() => import("./pages/FindPeopleFree"));
 const FindPeopleWidgetSandbox = React.lazy(() => import("./pages/FindPeopleWidgetSandbox"));
 const FindPeopleUscGooglePreview = React.lazy(() => import("./pages/seo-preview/FindPeopleUscGooglePreview"));
+const FindPeopleTemplate = React.lazy(() => import("./pages/seo-preview/templates/FindPeopleTemplate"));
 const MeetingPrepFree = React.lazy(() => import("./pages/MeetingPrepFree"));
 const MeetingPrepWidgetSandbox = React.lazy(() => import("./pages/MeetingPrepWidgetSandbox"));
 const MeetingPrepFreePreview = React.lazy(() => import("./pages/seo-preview/MeetingPrepFreePreview"));
@@ -113,6 +142,7 @@ const ResumeReviewTemplate = React.lazy(() => import("./pages/seo-preview/templa
 const CoverLetterTemplate = React.lazy(() => import("./pages/seo-preview/templates/CoverLetterTemplate"));
 const InterviewPrepTemplate = React.lazy(() => import("./pages/seo-preview/templates/InterviewPrepTemplate"));
 const ATSGuideTemplate = React.lazy(() => import("./pages/seo-preview/templates/ATSGuideTemplate"));
+const FreeToolsHub = React.lazy(() => import("./pages/FreeToolsHub"));
 
 // Optimized QueryClient with caching
 const queryClient = new QueryClient({
@@ -126,12 +156,18 @@ const queryClient = new QueryClient({
   },
 });
 
-// Loading fallback component
-const PageLoader = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <LoadingSkeleton />
+// Unified full-screen loader — used for BOTH auth resolution (route guards)
+// and lazy-route Suspense fallbacks. Sharing one component keeps the two
+// phases visually continuous instead of swapping between a spinner and a
+// skeleton, which read as a "double load".
+const FullScreenLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
+    <LoadingContainer label="Loading Offerloop..." sublabel="Please wait" />
   </div>
 );
+
+// Suspense fallback (name kept for existing call sites).
+const PageLoader = FullScreenLoader;
 
 // Phase 3 stationery aesthetic — always-on (shipped).
 // Formerly gated by VITE_FLAG_NEW_AESTHETIC env var during dev preview.
@@ -170,14 +206,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   if (isLoading) {
     devLog("🔒 [PROTECTED ROUTE] Still loading auth state, showing loading bar");
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-        <LoadingContainer
-          label="Loading Offerloop..."
-          sublabel="Please wait"
-        />
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
   // If signed out flag is present, redirect to landing page instead of signin
@@ -224,14 +253,11 @@ const PublicRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     needsOnboarding: user?.needsOnboarding || false
   });
   
-  // Show loading spinner instead of null to avoid blank page
+  // Use the same full-screen loader as the protected routes and Suspense
+  // fallbacks so auth resolution never visually swaps loaders.
   if (isLoading) {
-    devLog("🛣️ [PUBLIC ROUTE] Still loading auth state, showing spinner");
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
+    devLog("🛣️ [PUBLIC ROUTE] Still loading auth state, showing loader");
+    return <FullScreenLoader />;
   }
 
   // If explicitly signed out, always show the landing page regardless of user state
@@ -261,7 +287,7 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Public Landing */}
-      <Route path="/" element={<PublicRoute><Index /></PublicRoute>} />
+      <Route path="/" element={<PublicRoute><Suspense fallback={<PageLoader />}><Index /></Suspense></PublicRoute>} />
       <Route path="/usc-beta" element={<UscBeta />} />
 
       {/* Auth */}
@@ -282,6 +308,20 @@ const AppRoutes: React.FC = () => {
       />
       <Route path="/onboarding/*" element={<Navigate to="/onboarding" replace />} />
 
+      {/* Profile (Phase 2) — the dedicated free-flow profile page. Same
+          component as the dev preview, just protected and routed at /profile.
+          The home page "what we know about you" widget links here. */}
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoader />}>
+              <ProfilePreview />
+            </Suspense>
+          </ProtectedRoute>
+        }
+      />
+
       {/* Dev preview routes — no auth, no protection. For visual iteration only.
           See docs/PROFILE_ONBOARDING_SPEC.md. */}
       <Route
@@ -300,6 +340,16 @@ const AppRoutes: React.FC = () => {
           </Suspense>
         }
       />
+      <Route
+        path="/dev/job-board-redesign"
+        element={
+          <ProtectedRoute>
+            <Suspense fallback={<PageLoader />}>
+              <JobBoardRedesign />
+            </Suspense>
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected App Pages - Wrapped in Suspense for lazy loading */}
       <Route path="/dashboard" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DashboardPage /></Suspense></ProtectedRoute>} />
@@ -307,14 +357,15 @@ const AppRoutes: React.FC = () => {
       <Route path="/my-network" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><MyNetworkPage /></Suspense></ProtectedRoute>} />
       <Route path="/my-network/:tab" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><MyNetworkPage /></Suspense></ProtectedRoute>} />
       <Route path="/contact-search" element={<Navigate to="/find" replace />} />
-      <Route path="/tracker" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><NetworkTracker /></Suspense></ProtectedRoute>} />
-      <Route path="/outbox" element={<Navigate to="/tracker" replace />} />
+      <Route path="/outbox" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><NetworkTrackerRedesign /></Suspense></ProtectedRoute>} />
+      <Route path="/tracker" element={<Navigate to="/outbox" replace />} />
       {/* Legacy /home redirect to contact search */}
       <Route path="/home" element={<Navigate to="/dashboard" replace />} />
       <Route path="/contact-directory" element={<Navigate to="/my-network/people" replace />} />
       <Route path="/coffee-chat-library" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CoffeeChatLibrary /></Suspense></ProtectedRoute>} />
       <Route path="/account-settings" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AccountSettings /></Suspense></ProtectedRoute>} />
-      <Route path="/pricing" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><Pricing /></Suspense></ProtectedRoute>} />
+      <Route path="/refer" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><ReferPage /></Suspense></ProtectedRoute>} />
+      <Route path="/pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
       <Route path="/documentation" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DocumentationPage /></Suspense></ProtectedRoute>} />
       <Route path="/payment-success" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><PaymentSuccess /></Suspense></ProtectedRoute>} />
       
@@ -323,7 +374,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/contact-search/templates" element={<Navigate to="/find/templates" replace />} />
       <Route path="/find/templates" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><EmailTemplatesPage /></Suspense></ProtectedRoute>} />
       <Route path="/firm-search" element={<Navigate to="/find?tab=companies" replace />} />
-      <Route path="/job-board" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><JobBoardPage /></Suspense></ProtectedRoute>} />
+      <Route path="/job-board" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><JobBoardRedesign /></Suspense></ProtectedRoute>} />
       <Route path="/recruiter-spreadsheet" element={<Navigate to="/find?tab=hiring-managers" replace />} />
       <Route path="/hiring-manager-tracker" element={<Navigate to="/find?tab=hiring-managers" replace />} />
       <Route path="/company-tracker" element={<Navigate to="/find?tab=companies" replace />} />
@@ -361,7 +412,9 @@ const AppRoutes: React.FC = () => {
 
       {/* Public informational pages */}
       <Route path="/about" element={<Suspense fallback={<PageLoader />}><AboutUs /></Suspense>} />
-      <Route path="/for-students" element={<Suspense fallback={<PageLoader />}><ForStudents /></Suspense>} />
+      <Route path="/connector" element={<Suspense fallback={<PageLoader />}><ConnectorSetup /></Suspense>} />
+      <Route path="/for-students" element={<Suspense fallback={<PageLoader />}><ForStudentsPage /></Suspense>} />
+      <Route path="/promo" element={<Suspense fallback={<PageLoader />}><PromoPage /></Suspense>} />
       <Route path="/contact" element={<Navigate to="/contact-us" replace />} />
       <Route path="/contact-us" element={<Suspense fallback={<PageLoader />}><ContactUs /></Suspense>} />
 
@@ -409,10 +462,18 @@ const AppRoutes: React.FC = () => {
       <Route path="/seo-preview/cover-letter/:slug" element={<Suspense fallback={<PageLoader />}><CoverLetterTemplate /></Suspense>} />
       <Route path="/seo-preview/interview-prep/:slug" element={<Suspense fallback={<PageLoader />}><InterviewPrepTemplate /></Suspense>} />
       <Route path="/seo-preview/ats/:slug" element={<Suspense fallback={<PageLoader />}><ATSGuideTemplate /></Suspense>} />
+      {/* Clean, indexable production prefixes for live (published) SEO rows. The /seo-preview/* twins above stay noindex and canonicalize here. */}
+      <Route path="/free-tools" element={<Suspense fallback={<PageLoader />}><FreeToolsHub /></Suspense>} />
+      <Route path="/resume-review/:slug" element={<Suspense fallback={<PageLoader />}><ResumeReviewTemplate /></Suspense>} />
+      <Route path="/cover-letter/:slug" element={<Suspense fallback={<PageLoader />}><CoverLetterTemplate /></Suspense>} />
+      <Route path="/interview-prep/:slug" element={<Suspense fallback={<PageLoader />}><InterviewPrepTemplate /></Suspense>} />
+      <Route path="/ats/:slug" element={<Suspense fallback={<PageLoader />}><ATSGuideTemplate /></Suspense>} />
       <Route path="/seo-preview/find-hiring-manager" element={<Suspense fallback={<PageLoader />}><FindHiringManagerPreview /></Suspense>} />
       <Route path="/seo-preview/find-companies" element={<Suspense fallback={<PageLoader />}><FindCompaniesPreview /></Suspense>} />
       <Route path="/seo-preview/find-jobs" element={<Suspense fallback={<PageLoader />}><FindJobsPreview /></Suspense>} />
       <Route path="/seo-preview/find-people-usc-google" element={<Suspense fallback={<PageLoader />}><FindPeopleUscGooglePreview /></Suspense>} />
+      <Route path="/seo-preview/find-people/:slug" element={<Suspense fallback={<PageLoader />}><FindPeopleTemplate /></Suspense>} />
+      <Route path="/people/:slug" element={<Suspense fallback={<PageLoader />}><FindPeopleTemplate /></Suspense>} />
 
       <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
     </Routes>
@@ -432,19 +493,55 @@ const ScoutRedirect: React.FC = () => {
   return <Navigate to="/dashboard" replace />;
 };
 
-/* ---------------- Conditional Background Wrapper ---------------- */
+/* ---------------- Conditional Background Wrapper ----------------
+   Decides whether to mount the landing background tree BEFORE rendering it.
+   Authed users are redirected off "/" by PublicRoute, and during auth
+   resolution we show a full-screen loader, so in neither case should the
+   decorative background mount. Gate it on a visitor who will actually
+   see the landing: on "/", not loading, and either signed out or no user. */
 const ConditionalBackground: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
+  const { user, isLoading } = useFirebaseAuth();
+
+  const params = new URLSearchParams(location.search);
+  const isSignedOut = params.get('signedOut') === 'true';
   const isLandingPage = location.pathname === '/';
-  
+  const showLandingBackground =
+    isLandingPage && !isLoading && (!user || isSignedOut);
+
   return (
     <div className="relative min-h-screen">
-      {isLandingPage && <DynamicGradientBackground />}
+      {showLandingBackground && (
+        <Suspense fallback={null}>
+          <DynamicGradientBackground />
+        </Suspense>
+      )}
       <div className="relative z-10">
         {children}
       </div>
     </div>
   );
+};
+
+/* ---------------- Promo overlay gate ----------------
+   The /promo route is a scripted screen-capture surface and /connector is a
+   public marketing page. Suppress floating Scout UI on those paths. */
+const NotOnPromo: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { pathname } = useLocation();
+  if (pathname === '/promo' || pathname === '/connector') return null;
+  return <>{children}</>;
+};
+
+/* ---------------- Pageview Tracker ----------------
+   capture_pageview is false in posthog.ts, so PostHog does not auto-fire.
+   This fires exactly one $pageview per location: once on initial mount and
+   once per route change. No double-fire. */
+const PageviewTracker: React.FC = () => {
+  const location = useLocation();
+  useEffect(() => {
+    posthog.capture('$pageview');
+  }, [location.pathname, location.search]);
+  return null;
 };
 
 /* ---------------- Keyboard Shortcut Handler ---------------- */
@@ -486,6 +583,21 @@ function AgentNotifierActive() {
   return null;
 }
 
+/* ---------------- Dashboard Prefetch ----------------
+   The moment auth resolves to an onboarded user, start downloading the
+   dashboard chunk. By the time PublicRoute redirects "/" → "/dashboard",
+   the lazy chunk is already in flight (or cached), so the post-redirect
+   Suspense fallback is near-instant instead of a second visible load. */
+const DashboardPrefetch: React.FC = () => {
+  const { user, isLoading } = useFirebaseAuth();
+  useEffect(() => {
+    if (!isLoading && user && !user.needsOnboarding) {
+      importDashboardPage();
+    }
+  }, [isLoading, user]);
+  return null;
+};
+
 /* ---------------- App Root ---------------- */
 const App: React.FC = () => {
   useEffect(() => {
@@ -498,6 +610,7 @@ const App: React.FC = () => {
       <TooltipProvider>
         <FirebaseAuthProvider>
           <ErrorBoundary>
+            <DashboardPrefetch />
             <BrowserRouter
               future={{
                 v7_startTransition: true,
@@ -510,9 +623,15 @@ const App: React.FC = () => {
                 <ScoutProvider>
                   <TourProvider>
                     <KeyboardShortcutHandler />
+                    <PageviewTracker />
                     <AgentNotifierMount />
+                    <ReplyNotifier />
+                    <PendingShareModal />
                     <AppRoutes />
-                    <ScoutSidePanel />
+                    <NotOnPromo>
+                      <ScoutSidePanel />
+                      <FloatingAskScoutButton />
+                    </NotOnPromo>
                   </TourProvider>
                 </ScoutProvider>
               </ConditionalBackground>

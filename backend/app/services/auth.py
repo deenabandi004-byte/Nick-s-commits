@@ -3,7 +3,7 @@ Authentication services - credit management only
 (require_firebase_auth is in extensions.py to avoid circular dependencies)
 """
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from firebase_admin import firestore
 from app.extensions import get_db
 from app.config import TIER_CONFIGS
@@ -37,6 +37,25 @@ def _check_reset_needed(user_data) -> tuple[bool, int, dict]:
     Does NOT write to Firestore — caller is responsible for applying updates.
     """
     now = datetime.now()
+
+    # Season Pass expiry — a one-time 4-month prepaid pass has no Stripe
+    # subscription, so nothing downgrades it automatically. Enforce it lazily
+    # here (same model as the monthly reset below): once past its expiry, drop
+    # the user to Free on their next request.
+    tier = user_data.get('subscriptionTier') or user_data.get('tier', 'free')
+    if tier == 'season_pass':
+        expires = _parse_datetime(user_data.get('seasonPassExpiresAt'))
+        if expires and now >= expires:
+            free_credits = TIER_CONFIGS['free']['credits']
+            return True, min(user_data.get('credits', 0), free_credits), {
+                'subscriptionTier': 'free',
+                'tier': 'free',
+                'credits': min(user_data.get('credits', 0), free_credits),
+                'maxCredits': free_credits,
+                'lastCreditReset': now.isoformat(),
+                'seasonPassExpiredAt': now.isoformat(),
+            }
+
     last_reset = _parse_datetime(user_data.get('lastCreditReset'))
 
     if not last_reset:
@@ -82,10 +101,10 @@ def check_and_reset_usage(user_ref, user_data):
     try:
         tier = user_data.get('subscriptionTier') or user_data.get('tier', 'free')
 
-        # Free tier limits are LIFETIME - never reset
-        if tier == 'free':
-            return
-
+        # Usage counters (coffee-chat preps, alumni searches) reset monthly for
+        # EVERY tier, including Free. Previously Free was lifetime-capped, which
+        # created a sour note: a trial user who spent Pro's 10 preps then dropped
+        # to Free could never run another without paying. Monthly Free removes that.
         last_usage_reset = _parse_datetime(user_data.get('lastUsageReset'))
         now = datetime.now()
 
@@ -111,6 +130,132 @@ def check_and_reset_usage(user_ref, user_data):
 
     except Exception as e:
         logger.error("Error checking usage reset: %s", e)
+
+
+# ── Phase 9: daily auto-send counter ────────────────────────────────────
+#
+# Loop auto-send (when autoSendMode == "send_for_me") is capped per day,
+# per user, in their LOCAL timezone — sending until midnight UTC for a
+# West Coast user would mean their "today" cap drains 5 hours earlier
+# than it should.
+#
+# Two fields on users/{uid}:
+#   sendsToday: int       — count of auto-sends this user-local day
+#   sendsTodayDate: str   — "YYYY-MM-DD" in user's tz; mismatch triggers
+#                           atomic rollover on next increment
+#
+# Source of truth for the cap is TIER_CONFIGS[tier]['max_auto_sends_per_day'],
+# but a Loop can override downward via hardDailySendCap (checked in the
+# send gate, not here — this helper just enforces the user-tier cap).
+
+def _user_local_date_str(now_utc: datetime, tz_name: str | None) -> str:
+    """Return 'YYYY-MM-DD' in the user's timezone. Falls back to PT if
+    the timezone string is missing or invalid. Mirrors the pattern in
+    loop_budget._user_local_hour."""
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(tz_name) if tz_name else ZoneInfo("America/Los_Angeles")
+        return now_utc.astimezone(tz).strftime("%Y-%m-%d")
+    except Exception:
+        try:
+            from zoneinfo import ZoneInfo
+            return now_utc.astimezone(ZoneInfo("America/Los_Angeles")).strftime("%Y-%m-%d")
+        except Exception:
+            return now_utc.strftime("%Y-%m-%d")
+
+
+def get_sends_today(user_id: str, now: datetime | None = None) -> int:
+    """Read the user's current auto-send count for today (user-local).
+
+    Non-transactional. Returns 0 if the stored sendsTodayDate doesn't match
+    today's user-local date (the actual rollover write happens lazily on the
+    next increment_sends_today_atomic call — this read just tells callers
+    what the gate would see).
+
+    Used by the send gate for pre-flight checks. The real reservation is
+    increment_sends_today_atomic, which is race-safe.
+    """
+    db = get_db()
+    user_doc = db.collection('users').document(user_id).get()
+    if not user_doc.exists:
+        return 0
+    user_data = user_doc.to_dict() or {}
+    now_utc = now or datetime.now(timezone.utc)
+    tz_name = user_data.get('timezone') or user_data.get('tz')
+    today = _user_local_date_str(now_utc, tz_name)
+    if user_data.get('sendsTodayDate') != today:
+        return 0
+    return int(user_data.get('sendsToday', 0) or 0)
+
+
+def increment_sends_today_atomic(
+    user_id: str,
+    tier: str,
+    hard_cap: int | None = None,
+    now: datetime | None = None,
+) -> tuple[bool, int, int]:
+    """Atomically reserve one slot in today's auto-send budget.
+
+    Args:
+        user_id: Firebase uid.
+        tier: 'free' | 'pro' | 'elite'.
+        hard_cap: Optional per-Loop ceiling (Loop.hardDailySendCap). When set,
+            the effective cap is min(tier_cap, hard_cap). When None, just tier.
+        now: For test injection.
+
+    Returns:
+        (success, new_count, effective_cap)
+        - success False means the cap was hit; no increment happened.
+        - new_count is the post-increment value on success, or the existing
+          count on failure.
+        - effective_cap is the cap that gated this call (useful for the
+          autoSendPausedReason copy).
+
+    Rollover: if the stored sendsTodayDate doesn't match today (user-local),
+    the increment overwrites sendsToday=1 and stamps sendsTodayDate=today in
+    the same atomic write.
+
+    Race-safe: uses a Firestore transaction so two simultaneous sends can't
+    both bypass the cap.
+    """
+    db = get_db()
+    user_ref = db.collection('users').document(user_id)
+    now_utc = now or datetime.now(timezone.utc)
+
+    tier_cap = int(TIER_CONFIGS.get(tier, TIER_CONFIGS['free']).get('max_auto_sends_per_day', 0))
+    effective_cap = tier_cap if hard_cap is None else min(tier_cap, int(hard_cap))
+
+    @firestore.transactional
+    def reserve_in_transaction(transaction):
+        user_doc = user_ref.get(transaction=transaction)
+        if not user_doc.exists:
+            return False, 0, effective_cap
+
+        user_data = user_doc.to_dict() or {}
+        tz_name = user_data.get('timezone') or user_data.get('tz')
+        today = _user_local_date_str(now_utc, tz_name)
+        stored_date = user_data.get('sendsTodayDate')
+        stored_count = int(user_data.get('sendsToday', 0) or 0)
+
+        current = stored_count if stored_date == today else 0
+
+        if current >= effective_cap:
+            return False, current, effective_cap
+
+        new_count = current + 1
+        transaction.update(user_ref, {
+            'sendsToday': new_count,
+            'sendsTodayDate': today,
+            'lastAutoSendAt': now_utc.isoformat(),
+        })
+        return True, new_count, effective_cap
+
+    try:
+        transaction = db.transaction()
+        return reserve_in_transaction(transaction)
+    except Exception as e:
+        logger.error("Error in atomic send-count reservation: %s", e)
+        return False, 0, effective_cap
 
 
 def can_access_feature(tier: str, feature: str, user_data: dict, tier_config: dict) -> tuple[bool, str]:
@@ -162,15 +307,84 @@ def can_access_feature(tier: str, feature: str, user_data: dict, tier_config: di
     return True, 'allowed'  # Default: allow if not specifically restricted
 
 
+def _maybe_fire_low_credits(user_id: str, user_ref) -> None:
+    """Re-read user doc post-deduct and fire the low-credits lifecycle email
+    when the *total* across all buckets dips below 10% of monthly max.
+    Best-effort — never raises into the caller."""
+    try:
+        snap = user_ref.get()
+        if not snap.exists:
+            return
+        udata = snap.to_dict() or {}
+        max_cr = max(1, int(udata.get('maxCredits') or 0))
+        # Use the LEDGER's total (monthly + bonus + promo), not just monthly,
+        # so users with healthy bonus balances don't get spammed.
+        from app.services.credit_ledger import state_from_user_dict
+        total = state_from_user_dict(udata).total()
+        if total > 0 and total / max_cr < 0.10:
+            from app.services.lifecycle_emails import notify_low_credits
+            notify_low_credits(user_id, total, max_cr)
+    except Exception as e:
+        logger.warning("Low-credits notify failed for %s: %s", user_id, e)
+
+
 def deduct_credits_atomic(user_id: str, amount: int, operation_name: str = "operation") -> tuple[bool, int]:
     """
     Atomically deduct credits from user account using Firestore transaction.
     Prevents race conditions when multiple requests try to deduct credits simultaneously.
 
+    Trial-aware: if the user has an active Pro trial, deduction runs against the
+    trial daily pool instead of the monthly pool. If the trial has expired but
+    hasn't been processed yet, we run the lazy expiry transition first, then
+    deduct from the (now Free) monthly pool.
+
+    Ledger-aware (Wave 2): non-trial deduction runs through the three-bucket
+    ledger (monthly → bonusCredits → promoCredits) so purchased top-up credits
+    survive monthly resets and never expire — matching the TOS promise.
+
     Returns:
         Tuple of (success: bool, remaining_credits: int)
         If success is False, remaining_credits is the current balance
     """
+    # Trial fast-path — checked before the transaction so we can route to the
+    # trial-specific deduct helper which manages its own transaction.
+    db = get_db()
+    user_ref = db.collection('users').document(user_id)
+    try:
+        snap = user_ref.get()
+        if snap.exists:
+            user_data = snap.to_dict() or {}
+            # Lazy import to avoid circular dependency at module load
+            from app.services.trial_service import get_trial_status, deduct_trial_credits, apply_trial_expiry
+            trial_status = get_trial_status(user_data)
+
+            if trial_status.get('is_active'):
+                success, remaining = deduct_trial_credits(user_id, amount)
+                if success or remaining > 0:
+                    _maybe_fire_low_credits(user_id, user_ref)
+                    return success, remaining
+                # Fall through to normal monthly pool if trial deduct returned (False, 0)
+                # — shouldn't happen for active trials but defensive.
+
+            if trial_status.get('is_expired_unprocessed'):
+                # Auto-downgrade to Free before charging credits
+                apply_trial_expiry(user_id)
+                # Continue to normal monthly flow below — user is now Free tier
+    except Exception as e:
+        logger.warning(f"Trial fast-path failed for {user_id}, falling back to monthly: {e}")
+
+    # Three-bucket ledger deduct (monthly → bonus → promo)
+    try:
+        from app.services.credit_ledger import apply_deduct_atomic
+        success, remaining = apply_deduct_atomic(user_id, amount, reason=operation_name)
+        if success:
+            _maybe_fire_low_credits(user_id, user_ref)
+        return success, remaining
+    except Exception as e:
+        logger.error("Ledger deduct failed for %s, falling back to legacy path: %s", user_id, e)
+
+    # Legacy fallback path follows — only reached if the ledger module throws
+    # something unexpected. Preserved verbatim from the pre-Wave-2 behavior.
     db = get_db()
     user_ref = db.collection('users').document(user_id)
 
@@ -215,6 +429,23 @@ def deduct_credits_atomic(user_id: str, amount: int, operation_name: str = "oper
     try:
         transaction = db.transaction()
         success, credits = deduct_in_transaction(transaction)
+
+        # Low-credits lifecycle email trigger — fire once when the balance
+        # crosses the 10% threshold. Idempotent per billing month via the
+        # campaign step key. Best-effort: don't fail the deduction if the
+        # notify call errors.
+        if success and credits > 0:
+            try:
+                snap = user_ref.get()
+                if snap.exists:
+                    udata = snap.to_dict() or {}
+                    max_cr = max(1, int(udata.get('maxCredits') or 0))
+                    if credits / max_cr < 0.10:
+                        from app.services.lifecycle_emails import notify_low_credits
+                        notify_low_credits(user_id, credits, max_cr)
+            except Exception as e:
+                logger.warning("Low-credits notify failed for %s: %s", user_id, e)
+
         return success, credits
     except Exception as e:
         logger.error("Error in atomic credit deduction: %s", e)

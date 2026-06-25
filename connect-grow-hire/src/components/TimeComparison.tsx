@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react';
 import './TimeComparison.css';
+import DoodleBurstLeft from '@/assets/for-students/doodle-burst-left.png';
+import DoodleBurstRight from '@/assets/for-students/doodle-burst-right.png';
 
 const scales = [
   { bad: { num: '20 min', desc: 'Finding one person\'s email' }, good: { num: '~3 sec', desc: 'Verified email, instantly' }, noStrike: false },
@@ -34,21 +36,21 @@ export default function TimeComparison() {
         if (inner) inner.classList.add('open');
         el.classList.add('open');
       }, delay);
-      // Good tile 200ms later
+      // Good tile slightly later
       Td(() => {
         const el = scaleRefs.current[goodIdx];
         if (!el) return;
         const inner = el.querySelector('.tc-scale-inner');
         if (inner) inner.classList.add('open');
         el.classList.add('open');
-      }, delay + 200);
+      }, delay + 110);
     };
 
     const runSequence = () => {
       if (firedRef.current) return;
       firedRef.current = true;
 
-      const rowDelay = 1200; // 1.2s between each row for dramatic pacing
+      const rowDelay = 620; // tightened further for a snappier reveal
       scales.forEach((_row, i) => {
         openPair(i, i * rowDelay);
       });
@@ -56,7 +58,7 @@ export default function TimeComparison() {
       // Show scoreboard after all rows
       Td(() => {
         scoreboardRef.current?.classList.add('show');
-      }, scales.length * rowDelay + 400);
+      }, scales.length * rowDelay + 220);
     };
 
     // Trigger when section scrolls into view
@@ -80,6 +82,22 @@ export default function TimeComparison() {
 
   return (
     <div className="tc-wrap" ref={wrapRef}>
+      {/* Hand-drawn blue squiggle accents from the Figma Misc set —
+          parked in the wide side margins around the centered comparison
+          table to add a little character. Hidden on narrower viewports
+          where there's no margin space. */}
+      <img
+        src={DoodleBurstLeft}
+        alt=""
+        aria-hidden
+        className="tc-doodle tc-doodle-left"
+      />
+      <img
+        src={DoodleBurstRight}
+        alt=""
+        aria-hidden
+        className="tc-doodle tc-doodle-right"
+      />
       <div className="tc-heading">
         Where your time<br />actually goes.
       </div>

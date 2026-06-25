@@ -7,11 +7,266 @@ from flask import Blueprint, request, jsonify
 
 from ..extensions import require_firebase_auth
 from app.services.auth import check_and_reset_credits
-from app.services.stripe_client import create_checkout_session, handle_stripe_webhook, create_portal_session, handle_checkout_completed, update_subscription_tier
-from app.config import TIER_CONFIGS
+from app.services.stripe_client import (
+    create_checkout_session,
+    handle_stripe_webhook,
+    create_portal_session,
+    handle_checkout_completed,
+    update_subscription_tier,
+    apply_post_checkout_upsell,
+    record_post_checkout_upsell_decline,
+)
+from app.services.refund_service import create_refund_request
+from app.services.topup_service import create_topup_session
+from app.services.season_pass_service import create_season_pass_session
+from app.services.credit_ledger import get_balance_breakdown
+from app.config import (
+    TIER_CONFIGS,
+    CREDIT_COSTS,
+    STRIPE_PRICE_CATALOG,
+    SLIDER_STOPS,
+    ANNUAL_PRICING,
+    SEASON_PASS,
+    TOPUP_PACKS,
+    STRIPE_COUPONS,
+    TRIAL_DAYS_STUDENT,
+    TRIAL_DAYS_NON_STUDENT,
+    TRIAL_CREDITS,
+    TRIAL_DAILY_EXPORT_CAP,
+    TRIAL_CC_EXTENSION_DAYS,
+    FREE_DRAFTS_PER_MONTH,
+)
 from ..extensions import get_db
 
 billing_bp = Blueprint('billing', __name__, url_prefix='/api')
+
+
+@billing_bp.route('/tier-config')
+def get_tier_config():
+    """Full pricing source of truth — tiers, credit costs, Stripe SKU matrix, slider stops, trial config.
+
+    Public (no auth). Frontend caches via React Query (1h staleTime).
+    All allocations and slider stops are runtime-tunable here; the frontend
+    falls back to constants.ts defaults if this endpoint is unreachable.
+    """
+    # Active promo codes — only surface ones where a real Stripe coupon ID is wired.
+    # The frontend gates the "20% off" badge on this list being non-empty.
+    active_promos = {k: v for k, v in STRIPE_COUPONS.items() if v}
+
+    return jsonify({
+        'tiers': TIER_CONFIGS,
+        'credit_costs': CREDIT_COSTS,
+        'stripe_catalog': STRIPE_PRICE_CATALOG,
+        'slider_stops': SLIDER_STOPS,
+        'annual_pricing': ANNUAL_PRICING,
+        'season_pass': SEASON_PASS,
+        'topup_packs': TOPUP_PACKS,
+        'active_promos': active_promos,
+        'trial': {
+            'days_student':       TRIAL_DAYS_STUDENT,
+            'days_non_student':   TRIAL_DAYS_NON_STUDENT,
+            'credits':            TRIAL_CREDITS,   # one-time grant (single-batch model)
+            'daily_export_cap':   TRIAL_DAILY_EXPORT_CAP,
+            'cc_extension_days':  TRIAL_CC_EXTENSION_DAYS,
+        },
+        'free_drafts_per_month': FREE_DRAFTS_PER_MONTH,
+    })
+
+
+@billing_bp.route('/active-promos')
+def get_active_promos():
+    """Return the list of live Stripe coupon IDs.
+
+    Frontend uses this to decide whether to render urgency badges and exit-intent
+    discount popups. Empty if no coupons are wired — no fake scarcity.
+    """
+    return jsonify({
+        'promos': {k: v for k, v in STRIPE_COUPONS.items() if v},
+    })
+
+
+@billing_bp.route('/billing/accept-post-checkout-upsell', methods=['POST'])
+@require_firebase_auth
+def accept_post_checkout_upsell():
+    """Pro → Elite upsell accept handler.
+
+    Switches the user's Stripe subscription to Elite (no proration), creates a
+    one-time $10 invoice item and charges the saved card, and bumps the user's
+    credit allocation to Elite's monthly pool. Idempotent — second call returns
+    409 instead of double-charging.
+
+    See stripe_client.apply_post_checkout_upsell for the full mechanic + why
+    we use invoice-item + subscription.modify instead of a coupon.
+    """
+    user_id = request.firebase_user.get('uid')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+
+    result = apply_post_checkout_upsell(user_id)
+    if not result.get('ok'):
+        err = result.get('error', 'unknown')
+        # Map specific errors to appropriate HTTP codes
+        if err == 'already_accepted':
+            return jsonify(result), 409
+        if err in ('user_not_found', 'no_active_subscription'):
+            return jsonify(result), 404
+        if err == 'subscription_has_existing_discount':
+            return jsonify(result), 409
+        return jsonify(result), 500
+
+    return jsonify(result), 200
+
+
+@billing_bp.route('/billing/create-topup-session', methods=['POST'])
+@require_firebase_auth
+def create_topup_session_route():
+    """Start a Stripe Checkout Session for a one-time top-up credit pack.
+
+    Body: { packId: 'starter' | 'best' | 'bulk' }
+    Returns: { ok, session_id, url } on success, { ok: False, error } otherwise.
+
+    On payment success, the webhook handler in stripe_client.py routes the
+    completed session to topup_service.apply_topup_purchase, which adds the
+    credits to the user's bonusCredits bucket (never expires).
+    """
+    user_id = request.firebase_user.get('uid')
+    user_email = request.firebase_user.get('email')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+
+    data = request.get_json() or {}
+    pack_id = data.get('packId') or data.get('pack_id')
+    if not pack_id:
+        return jsonify({'error': 'packId_required'}), 400
+
+    # Derive default success/cancel URLs from the request origin
+    base = request.url_root.rstrip('/')
+    if 'localhost' in base:
+        base = 'http://localhost:8080'
+    elif base.endswith('/api'):
+        base = base[:-4]
+    success_url = data.get('successUrl') or f"{base}/payment-success?topup={pack_id}&session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = data.get('cancelUrl') or f"{base}/pricing"
+
+    result = create_topup_session(user_id, user_email or '', pack_id, success_url, cancel_url)
+    if not result.get('ok'):
+        err = result.get('error', 'unknown')
+        if err == 'unknown_pack':
+            return jsonify(result), 404
+        if err == 'stripe_sku_not_wired':
+            return jsonify(result), 503
+        return jsonify(result), 500
+
+    return jsonify({'sessionId': result['session_id'], 'url': result['url']}), 200
+
+
+@billing_bp.route('/billing/create-season-pass-session', methods=['POST'])
+@require_firebase_auth
+def create_season_pass_session_route():
+    """Start a Stripe Checkout Session for a one-time Recruiting Season Pass.
+
+    Body: { audience?: 'student' | 'list' }
+    Returns: { sessionId, url } on success, { ok: False, error } otherwise.
+
+    On payment success, the webhook handler in stripe_client.py routes the
+    completed session to season_pass_service.apply_season_pass_purchase, which
+    grants the season_pass tier for SEASON_PASS['months'] months.
+    """
+    user_id = request.firebase_user.get('uid')
+    user_email = request.firebase_user.get('email')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+
+    data = request.get_json() or {}
+    audience = data.get('audience') or 'list'
+
+    base = request.url_root.rstrip('/')
+    if 'localhost' in base:
+        base = 'http://localhost:8080'
+    elif base.endswith('/api'):
+        base = base[:-4]
+    success_url = data.get('successUrl') or f"{base}/payment-success?season_pass=1&session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = data.get('cancelUrl') or f"{base}/pricing"
+
+    result = create_season_pass_session(user_id, user_email or '', audience, success_url, cancel_url)
+    if not result.get('ok'):
+        err = result.get('error', 'unknown')
+        if err == 'stripe_sku_not_wired':
+            return jsonify(result), 503
+        return jsonify(result), 500
+
+    return jsonify({'sessionId': result['session_id'], 'url': result['url']}), 200
+
+
+@billing_bp.route('/credits/breakdown', methods=['GET'])
+@require_firebase_auth
+def credits_breakdown_route():
+    """Read-only credit breakdown — monthly / bonus / promo / total.
+
+    The frontend UsageMeter uses this to show "You have X credits + Y bonus
+    that never expire" instead of a single opaque number.
+    """
+    user_id = request.firebase_user.get('uid')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+    return jsonify(get_balance_breakdown(user_id)), 200
+
+
+@billing_bp.route('/billing/request-refund', methods=['POST'])
+@require_firebase_auth
+def request_refund_route():
+    """Submit a refund request.
+
+    Policy:
+      - Pro / Elite (monthly + annual): 7-day window from first charge
+      - Season Pass: 14-day window WITH a <50% month-1 credits-used cap
+      - Top-up credit packs: non-refundable (credits never expire)
+      - Post-checkout upsell add-on: falls under standard 7-day window
+      - Anti-abuse: requests are still subject to discretionary review per ToS
+
+    Body: { invoiceId: string, reason?: string }
+    Returns: { ok, eligible, request_id, product_type, amount, message }
+    """
+    user_id = request.firebase_user.get('uid')
+    user_email = request.firebase_user.get('email')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+
+    data = request.get_json() or {}
+    invoice_id = data.get('invoiceId') or data.get('invoice_id')
+    reason = data.get('reason', '')
+
+    if not invoice_id:
+        return jsonify({'error': 'invoiceId_required'}), 400
+
+    result = create_refund_request(user_id, user_email, invoice_id, reason)
+    if not result.get('ok'):
+        err = result.get('error', 'unknown')
+        if err in ('user_not_found', 'invoice_not_found'):
+            return jsonify(result), 404
+        if err == 'invoice_not_yours':
+            return jsonify(result), 403
+        return jsonify(result), 500
+
+    return jsonify(result), 200
+
+
+@billing_bp.route('/billing/decline-post-checkout-upsell', methods=['POST'])
+@require_firebase_auth
+def decline_post_checkout_upsell():
+    """Pro → Elite upsell decline handler.
+
+    Just marks `upsellShownAt` + `upsellDeclinedAt` so the modal never shows
+    again. No second-chance email — chasing decline sleazes the brand.
+    """
+    user_id = request.firebase_user.get('uid')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+
+    result = record_post_checkout_upsell_decline(user_id)
+    if not result.get('ok'):
+        return jsonify(result), 500
+    return jsonify(result), 200
 
 
 @billing_bp.route('/tier-info')
@@ -105,7 +360,8 @@ def check_credits():
                     'max_credits': max_credits,
                     'searches_remaining': searches_remaining,
                     'tier': tier,
-                    'user_email': user_email
+                    'user_email': user_email,
+                    'credit_costs': {'coffee_chat_prep': COFFEE_CHAT_CREDITS},
                 })
             else:
                 # User doesn't exist yet - return default free tier credits
@@ -114,16 +370,18 @@ def check_credits():
                     'max_credits': 300,
                     'searches_remaining': 20,
                     'tier': 'free',
-                    'user_email': user_email
+                    'user_email': user_email,
+                    'credit_costs': {'coffee_chat_prep': COFFEE_CHAT_CREDITS},
                 })
-        
+
         # If no Firebase, return defaults
         return jsonify({
             'credits': 0,
             'max_credits': 300,
             'searches_remaining': 0,
             'tier': 'free',
-            'user_email': user_email
+            'user_email': user_email,
+            'credit_costs': {'coffee_chat_prep': COFFEE_CHAT_CREDITS},
         })
         
     except Exception as e:
@@ -464,7 +722,12 @@ def get_user_subscription():
         return jsonify({
             'tier': tier,
             'credits': user_data.get('credits', 0),
-            'maxCredits': user_data.get('maxCredits', tier_config['credits']),
+            # Always report the tier's CURRENT configured cap, not the stored
+            # maxCredits. Legacy accounts carry a stale maxCredits from before
+            # the credit restructuring (e.g. an elite account still showing the
+            # old 3000 cap), which froze the sidebar credit bar. Deriving from
+            # TIER_CONFIGS makes the cap self-correct on every read.
+            'maxCredits': tier_config['credits'],
             'alumniSearchesUsed': user_data.get('alumniSearchesUsed', 0),
             'alumniSearchesLimit': tier_config['alumni_searches'],
             'coffeeChatPrepsUsed': user_data.get('coffeeChatPrepsUsed', 0),

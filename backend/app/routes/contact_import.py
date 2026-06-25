@@ -26,6 +26,7 @@ from app.routes.linkedin_import import (
 )
 from app.services.reply_generation import batch_generate_emails
 from app.utils.warmth_scoring import score_contacts_for_email
+from app.utils.users import get_outreach_email
 from app.services.gmail_client import create_gmail_draft_for_user, download_resume_from_url
 
 contact_import_bp = Blueprint('contact_import', __name__, url_prefix='/api/contacts')
@@ -552,7 +553,9 @@ def import_contacts():
                 resume_text = (user_data_after.get('resumeText') or '').strip()
                 user_profile = {
                     'name': user_data_after.get('name', ''),
-                    'email': request.firebase_user.get('email', ''),
+                    # Prefer the user's .edu for the outreach identity (signature
+                    # + mailto); falls back to the primary account email.
+                    'email': get_outreach_email(user_data_after) or request.firebase_user.get('email', ''),
                     'university': user_data_after.get('university', ''),
                     'major': user_data_after.get('major', ''),
                     'year': user_data_after.get('year', ''),

@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 
 from app.extensions import get_db
 from app.services.openai_client import get_openai_client
+from app.utils.contact import strip_dashes
 
 logger = logging.getLogger(__name__)
 
@@ -181,6 +182,7 @@ INSTRUCTIONS:
 - If they have few contacts, start with broader outreach before narrowing
 - Reference their dream companies in specific weeks
 - Include when to shift from outreach to interview prep
+- Never use em dashes or en dashes; use a comma or a period instead
 
 Return ONLY valid JSON in this exact format:
 {{
@@ -222,6 +224,18 @@ Return ONLY valid JSON in this exact format:
             text = text.strip()
 
         roadmap = json.loads(text)
+        # House style: no em/en dashes in generated copy. Sanitize the
+        # user-facing text fields before caching and returning.
+        if isinstance(roadmap.get("summary"), str):
+            roadmap["summary"] = strip_dashes(roadmap["summary"])
+        for _wk in roadmap.get("weeks") or []:
+            for _k in ("theme", "targetDescription", "milestone"):
+                if isinstance(_wk.get(_k), str):
+                    _wk[_k] = strip_dashes(_wk[_k])
+        roadmap["keyDates"] = [
+            strip_dashes(d) if isinstance(d, str) else d
+            for d in (roadmap.get("keyDates") or [])
+        ]
         roadmap["generatedAt"] = now.isoformat().replace("+00:00", "Z")
         roadmap["industry"] = industry
         roadmap["calendar"] = calendar
@@ -254,7 +268,7 @@ def _build_fallback_roadmap(ctx: dict, industry: str, calendar: dict, now: datet
             "weekNumber": 2,
             "theme": "Expand Your Net",
             "emailTarget": 8,
-            "targetDescription": "VPs and senior associates — aim for seniority diversity",
+            "targetDescription": "VPs and senior associates, aim for seniority diversity",
             "milestone": "Follow up on week 1 emails + 8 new contacts",
             "companies": dream[1:3] if len(dream) > 1 else dream[:1],
         },
@@ -287,14 +301,14 @@ def _build_fallback_roadmap(ctx: dict, industry: str, calendar: dict, now: datet
             "theme": "Interview Prep Transition",
             "emailTarget": 4,
             "targetDescription": "Final outreach + shift to interview prep materials",
-            "milestone": "Network complete — begin focused interview preparation",
+            "milestone": "Network complete, begin focused interview preparation",
             "companies": [],
         },
     ]
 
     return {
         "summary": f"A 6-week plan to build your {industry.lower()} network. "
-                   f"You've already reached {contact_count} contacts — this plan adds ~38 more targeted connections.",
+                   f"You've already reached {contact_count} contacts, this plan adds ~38 more targeted connections.",
         "weeks": weeks,
         "keyDates": [],
         "totalEmailTarget": sum(w["emailTarget"] for w in weeks),

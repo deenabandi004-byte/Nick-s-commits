@@ -21,6 +21,7 @@ Cost guardrails:
 from __future__ import annotations
 
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 
@@ -42,14 +43,24 @@ ENRICHMENT_SKIPPED = "skipped"  # no apply_url to scrape
 # Rough Firecrawl per-scrape cost for budget tracking
 FIRECRAWL_COST_PER_SCRAPE = 0.003
 
+# How long to let a JS-rendered posting (e.g. Workday) render before reading it,
+# so the description prose is present. Applied only to jobs missing a stored
+# description. Tune via JOB_DESC_SCRAPE_WAIT_MS.
+DESC_SCRAPE_WAIT_MS = int(os.environ.get("JOB_DESC_SCRAPE_WAIT_MS", "8000"))
 
-def _extract_structured(url: str) -> dict | None:
-    """Call Firecrawl on a single URL. Returns dict or None on failure."""
+
+def _extract_structured(url: str, wait_for_ms: int = 0) -> dict | None:
+    """Call Firecrawl on a single URL. Returns dict or None on failure.
+
+    wait_for_ms renders JS pages (e.g. Workday) before reading them — needed to
+    recover the description prose. Passed only for jobs that lack a stored
+    description, so server-rendered postings stay fast.
+    """
     if not url:
         return None
     try:
         from backend.app.services.firecrawl_client import extract_job_posting
-        result = extract_job_posting(url)
+        result = extract_job_posting(url, wait_for_ms=wait_for_ms)
         if isinstance(result, dict) and result:
             return result
     except Exception as e:
@@ -219,14 +230,26 @@ def enrich_jobs(limit: int = 200, backfill: bool = False, since_days: int | None
                 pass
             return "skipped"
 
-        extracted = _extract_structured(url)
+        # Render-wait only for jobs that still need prose (e.g. Simplify, whose
+        # apply URLs are JS-rendered ATS pages). Postings that already arrived
+        # with a description scrape fast — no wait.
+        needs_prose = not (data.get("description_raw") or "").strip()
+        extracted = _extract_structured(url, wait_for_ms=DESC_SCRAPE_WAIT_MS if needs_prose else 0)
         if extracted:
             structured = _build_structured_field(extracted)
+            update = {
+                "structured": structured,
+                "enrichment_status": ENRICHMENT_COMPLETED,
+            }
+            # Recover the description prose for sources (e.g. Simplify) that
+            # ingest with an empty description_raw. Never clobber existing
+            # prose from Greenhouse/Lever/Ashby/FantasticJobs.
+            if not (data.get("description_raw") or "").strip():
+                desc = (extracted.get("description") or "").strip()
+                if desc:
+                    update["description_raw"] = desc
             try:
-                ref.update({
-                    "structured": structured,
-                    "enrichment_status": ENRICHMENT_COMPLETED,
-                })
+                ref.update(update)
                 return "enriched"
             except Exception as e:
                 logger.warning("Failed to write structured for %s: %s", url, e)

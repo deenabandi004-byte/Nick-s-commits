@@ -33,6 +33,17 @@ class EventType(str, Enum):
     ALUMNI_GRAPH_CONSENT_CHANGED = "alumni_graph_consent_changed"
     DERIVED_PROFILE_SYNTHESIZED = "derived_profile_synthesized"
 
+    # --- Scout strategist rebuild (Phase 5 observability) ---
+    # Briefing flow: backend emits generated + stream_timeout; frontend emits
+    # step_action + dismissed (those land in FRONTEND_ALLOWLIST below).
+    SCOUT_BRIEFING_GENERATED = "scout.briefing.generated"
+    SCOUT_BRIEFING_STEP_ACTION = "scout.briefing.step_action"
+    SCOUT_BRIEFING_DISMISSED = "scout.briefing.dismissed"
+    SCOUT_STREAM_TIMEOUT = "scout.stream.timeout"
+    SCOUT_STRATEGY_STEP_COMPLETED = "scout.strategy.step_completed"
+    APIFY_USER_LINKEDIN_SUCCESS = "apify.user_linkedin.success"
+    APIFY_USER_LINKEDIN_FAILURE = "apify.user_linkedin.failure"
+
 
 # Events the frontend is allowed to write via POST /api/events/batch
 FRONTEND_ALLOWLIST = frozenset({
@@ -49,6 +60,10 @@ FRONTEND_ALLOWLIST = frozenset({
     EventType.CTA_DISMISSED,
     EventType.VOICE_MODEL_UPDATED,
     EventType.PAGE_VIEW,
+    # Scout briefing interactions originate in the panel UI, so they're
+    # written through the frontend events batch endpoint.
+    EventType.SCOUT_BRIEFING_STEP_ACTION,
+    EventType.SCOUT_BRIEFING_DISMISSED,
 })
 
 # All valid event types

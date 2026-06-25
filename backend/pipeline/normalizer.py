@@ -3,9 +3,182 @@ Normalize raw JSearch results into a consistent Firestore document schema.
 Uses OpenAI gpt-4o-mini for salary extraction when structured data is missing.
 """
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Search tokenization
+# ---------------------------------------------------------------------------
+#
+# search_terms is a flat lowercased token array stored on every job doc so the
+# /api/jobs/search route can match against it with Firestore's array_contains
+# operator. v1 indexes title + company + location. v2 may add description.
+#
+# Kept dumb on purpose: no stemming, no synonyms, no IDF. Company aliasing
+# (Amazon Web Services -> Amazon) is the C2 normalizer's job; by the time we
+# tokenize here, `company` is already the canonical brand.
+
+_SEARCH_TOKEN_RE = re.compile(r"[a-z0-9]+")
+
+# Common words that match thousands of jobs and add noise. Keep this list
+# short on purpose; we'd rather over-match than under-match.
+_SEARCH_STOPWORDS = frozenset({
+    "a", "an", "the", "and", "or", "of", "for", "in", "at", "to", "with",
+    "on", "by", "is", "as",
+})
+
+
+def _stringify_for_tokens(value) -> str:
+    """Coerce an arbitrary field value into a string the tokenizer can read.
+
+    Strings pass through. Dicts flatten to a space-joined string of their
+    values; the JSON-LD `@type` discriminator is excluded so its literal type
+    tag (e.g. "PostalAddress") never enters search_terms. Lists and tuples
+    flatten to space-joined elements. Anything else is stringified.
+
+    Exists because ~28 percent of legacy Fantastic.jobs docs store `location`
+    as a JSON-LD PostalAddress dict instead of a string. Without this, the
+    tokenizer crashes on `.lower()` for those docs and the backfill skips
+    them. Live writes already produce string locations, so this also
+    future-proofs the tokenizer against any other source that lands a
+    structured value in a tokenized field.
+    """
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return " ".join(
+            str(v) for k, v in value.items() if v and k != "@type"
+        )
+    if isinstance(value, (list, tuple)):
+        return " ".join(str(v) for v in value if v)
+    return str(value)
+
+
+def _tokenize_for_search(*texts) -> list[str]:
+    """Lowercase, split on non-alphanumerics, drop stopwords and length-1
+    tokens. Order-preserving dedup so the array stays small and stable for
+    diff-noise when re-normalizing the same doc.
+    """
+    seen: set[str] = set()
+    out: list[str] = []
+    for text in texts:
+        s = _stringify_for_tokens(text)
+        if not s:
+            continue
+        for tok in _SEARCH_TOKEN_RE.findall(s.lower()):
+            if len(tok) < 2 or tok in _SEARCH_STOPWORDS:
+                continue
+            if tok in seen:
+                continue
+            seen.add(tok)
+            out.append(tok)
+    return out
+
+
+def build_search_terms(title: str | None, company: str | None, location: str | None) -> list[str]:
+    """Public entry point. Backfill scripts import this so production and
+    backfill produce byte-identical arrays.
+    """
+    return _tokenize_for_search(title or "", company or "", location or "")
+
+
+# ---------------------------------------------------------------------------
+# Company alias normalization
+# ---------------------------------------------------------------------------
+#
+# Scrapers store whatever string the ATS surfaces, so the same brand reaches
+# Firestore under many names: "Amazon" via Greenhouse, "Amazon Web Services"
+# via Fantastic.jobs, "Amazon.com Services LLC" via Workday paperwork.
+# `canonicalize_company` collapses those to one canonical brand string so a
+# search for "amazon" hits every Amazon job, and aggregations (per-company
+# rank, dedup, the cap_per_company step) stop double-counting.
+#
+# Rules:
+#   - Lookup is case-insensitive and whitespace-stripped.
+#   - The raw input is preserved on the doc as `company_raw` so analytics can
+#     still see which legal entity posted the job.
+#   - Unknown strings pass through unchanged. We deliberately do NOT do fuzzy
+#     matching: "Open AI" -> "OpenAI" reads helpful, but "Open Doors" ->
+#     "OpenAI" would be a disaster. Add aliases explicitly when you find them.
+#
+# The alias table is intentionally small. Grow it from observed search misses,
+# not speculation.
+
+_COMPANY_ALIASES: dict[str, str] = {
+    # Amazon family
+    "amazon web services": "Amazon",
+    "aws": "Amazon",
+    "amazon.com services llc": "Amazon",
+    "amazon.com services": "Amazon",
+    "amazon.com": "Amazon",
+    "amazon services llc": "Amazon",
+    "amazon dev center": "Amazon",
+    # Meta
+    "facebook": "Meta",
+    "facebook inc": "Meta",
+    "facebook, inc.": "Meta",
+    "meta platforms": "Meta",
+    "meta platforms inc": "Meta",
+    "instagram": "Meta",
+    "whatsapp": "Meta",
+    # Alphabet / Google
+    "alphabet": "Google",
+    "alphabet inc": "Google",
+    "google llc": "Google",
+    "google inc": "Google",
+    "youtube": "Google",
+    # Microsoft
+    "microsoft corp": "Microsoft",
+    "microsoft corporation": "Microsoft",
+    "linkedin": "Microsoft",
+    "github": "Microsoft",
+    # Apple
+    "apple inc": "Apple",
+    "apple inc.": "Apple",
+    # X / Twitter
+    "twitter": "X",
+    "x corp": "X",
+    "x corp.": "X",
+    # Other repeats observed in scraped data
+    "salesforce.com": "Salesforce",
+    "salesforce inc": "Salesforce",
+    "ibm corp": "IBM",
+    "international business machines": "IBM",
+    "jpmorgan": "JPMorgan Chase",
+    "jpmorgan chase": "JPMorgan Chase",
+    "jp morgan": "JPMorgan Chase",
+    "jp morgan chase": "JPMorgan Chase",
+    "goldman sachs group": "Goldman Sachs",
+    "morgan stanley & co": "Morgan Stanley",
+    "deloitte consulting": "Deloitte",
+    "deloitte llp": "Deloitte",
+    "ey": "EY",
+    "ernst & young": "EY",
+    "kpmg llp": "KPMG",
+    "pwc": "PwC",
+    "pricewaterhousecoopers": "PwC",
+    "mckinsey": "McKinsey & Company",
+    "mckinsey and company": "McKinsey & Company",
+    "bcg": "Boston Consulting Group",
+    "bain & co": "Bain & Company",
+    "bain and company": "Bain & Company",
+}
+
+
+def canonicalize_company(raw_company: str | None) -> str:
+    """Return the canonical brand string for a scraped company name. Unknown
+    strings pass through (stripped). Public so the backfill script and other
+    services can reuse the exact same mapping.
+    """
+    if not raw_company:
+        return ""
+    cleaned = raw_company.strip()
+    return _COMPANY_ALIASES.get(cleaned.lower(), cleaned)
 
 # ---------------------------------------------------------------------------
 # Job type normalization
@@ -90,6 +263,7 @@ def extract_salary_from_description(description: str) -> dict:
 
 _ANNUAL_MULTIPLIER = {
     "HOUR": 2080,
+    "DAY": 260,
     "WEEK": 52,
     "MONTH": 12,
     "YEAR": 1,
@@ -159,11 +333,52 @@ def _normalize_location(job: dict) -> tuple[str, bool]:
 # Main normalize
 # ---------------------------------------------------------------------------
 
+# Advanced fields populated by the Fantastic.jobs fetcher when include_ai and
+# include_li are on. Greenhouse/Lever/Ashby/Simplify don't supply these, so
+# they pass through as None / empty and the student ranker treats them as
+# "unknown" rather than penalizing.
+_FJ_PASSTHROUGH_FIELDS = (
+    "salary_currency",
+    "ai_experience_level",
+    "ai_employment_type",
+    "ai_employment_types",
+    "ai_work_arrangement",
+    "ai_work_arrangement_office_days",
+    "ai_visa_sponsorship",
+    "ai_has_salary",
+    "ai_keywords",
+    "ai_key_skills",
+    "ai_education_requirements",
+    "ai_hiring_manager_name",
+    "ai_hiring_manager_email",
+    "ai_core_responsibilities",
+    "ai_requirements_summary",
+    "ai_taxonomies_a",
+    "ai_taxonomy_primary",
+    "ai_job_language",
+    "linkedin_id",
+    "linkedin_org_slug",
+    "linkedin_org_industry",
+    "linkedin_org_employees",
+    "linkedin_org_size",
+    "linkedin_org_specialties",
+    "linkedin_org_followers",
+    "linkedin_org_headquarters",
+    "linkedin_org_recruitment_agency",
+    "ats_platform",
+    "ats_source_type",
+    "ats_source_domain",
+    "date_created",
+    "date_validthrough",
+)
+
+
 def _normalize_board_job(raw: dict) -> dict | None:
     """Normalize a pre-structured job from Greenhouse/Lever/Ashby/Fantastic.jobs."""
     job_id = raw.get("job_id")
     title = raw.get("title")
-    company = raw.get("company")
+    company_raw = raw.get("company")
+    company = canonicalize_company(company_raw)
 
     if not job_id or not title or not company:
         return None
@@ -179,7 +394,9 @@ def _normalize_board_job(raw: dict) -> dict | None:
     except (ValueError, AttributeError):
         posted_at = now
 
-    # Salary — use structured fields if provided, else try AI extraction
+    # Salary — use structured fields if provided, else try AI extraction. For
+    # Fantastic.jobs the fetcher already populates these from the ai_salary_*
+    # fields when include_ai=true, so the description scan is a no-op.
     sal_min = raw.get("salary_min")
     sal_max = raw.get("salary_max")
     sal_period = raw.get("salary_period")
@@ -195,13 +412,15 @@ def _normalize_board_job(raw: dict) -> dict | None:
 
     has_salary = sal_min is not None or sal_max is not None
 
-    return {
+    location = raw.get("location") or "United States"
+    doc = {
         "job_id": job_id,
         "source": raw.get("source", "unknown"),
         "title": title,
         "company": company,
+        "company_raw": company_raw or company,
         "employer_logo": raw.get("employer_logo"),
-        "location": raw.get("location") or "United States",
+        "location": location,
         "remote": bool(raw.get("remote")),
         "type": job_type,
         "type_raw": "",
@@ -214,17 +433,23 @@ def _normalize_board_job(raw: dict) -> dict | None:
         "salary_display": _format_salary_display(sal_min, sal_max, sal_period, sal_extracted) if has_salary else None,
         "salary_normalized_annual": _salary_normalized_annual(sal_min, sal_max, sal_period) if has_salary else None,
         "salary_extracted": sal_extracted,
+        "search_terms": build_search_terms(title, company, location),
         "posted_at": posted_at,
         "fetched_at": now,
         "expires_at": now + timedelta(days=14),
     }
+    for field in _FJ_PASSTHROUGH_FIELDS:
+        if field in raw:
+            doc[field] = raw[field]
+    return doc
 
 
 def _normalize_jsearch_job(raw: dict) -> dict | None:
     """Convert a single raw JSearch result to normalized Firestore doc."""
     job_id = raw.get("job_id")
     title = raw.get("job_title")
-    company = raw.get("employer_name")
+    company_raw = raw.get("employer_name")
+    company = canonicalize_company(company_raw)
 
     if not job_id or not title or not company:
         return None
@@ -259,6 +484,7 @@ def _normalize_jsearch_job(raw: dict) -> dict | None:
         "source": "jsearch",
         "title": title,
         "company": company,
+        "company_raw": company_raw or company,
         "employer_logo": raw.get("employer_logo"),
         "location": location,
         "remote": remote,
@@ -273,6 +499,7 @@ def _normalize_jsearch_job(raw: dict) -> dict | None:
         "salary_display": _format_salary_display(sal_min, sal_max, sal_period, sal_extracted) if salary else None,
         "salary_normalized_annual": _salary_normalized_annual(sal_min, sal_max, sal_period) if salary else None,
         "salary_extracted": sal_extracted,
+        "search_terms": build_search_terms(title, company, location),
         "posted_at": posted_at,
         "fetched_at": now,
         "expires_at": now + timedelta(days=14),
@@ -314,7 +541,16 @@ def _is_non_us_non_remote(job: dict) -> bool:
 
 
 def normalize_all(raw_jobs: list[dict]) -> list[dict]:
-    """Normalize a batch of raw jobs. Skips invalid entries and non-US non-remote jobs."""
+    """Normalize a batch of raw jobs.
+
+    Stages, in order:
+      1. Source-specific normalization (Greenhouse / Lever / Ashby / FJ / etc.)
+      2. Drop non-US non-remote
+      3. Quality gate (staffing agencies, senior titles, YOE-inconsistent
+         interns, scams, stale postings — see pipeline/quality_gate.py)
+    """
+    from backend.pipeline.quality_gate import apply as apply_quality_gate
+
     normalized = []
     skipped = 0
     filtered_location = 0
@@ -331,4 +567,5 @@ def normalize_all(raw_jobs: list[dict]) -> list[dict]:
         "Normalized %d jobs, skipped %d invalid, filtered %d non-US non-remote",
         len(normalized), skipped, filtered_location,
     )
-    return normalized
+    kept, _ = apply_quality_gate(normalized)
+    return kept

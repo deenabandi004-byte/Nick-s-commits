@@ -10,11 +10,13 @@ from app.extensions import require_firebase_auth
 from app.services.outbox_service import (
     archive_contact,
     clear_unread_reply,
+    get_contact_thread_messages,
     get_outbox_contacts,
     get_outbox_stats,
     get_recent_outbox_contacts,
     mark_contact_resolution,
     mark_contact_won,
+    send_reply_for_contact,
     snooze_contact,
     sync_contact_thread,
     unarchive_contact,
@@ -63,6 +65,44 @@ def update_stage(contact_id):
             return jsonify({"error": "Contact not found"}), 404
         return jsonify({"error": msg}), 400
     return jsonify({"thread": contact}), 200
+
+
+@outbox_bp.post("/threads/<contact_id>/send-reply")
+@require_firebase_auth
+def send_reply(contact_id):
+    uid = request.firebase_user["uid"]
+    payload = request.get_json(silent=True) or {}
+    body = (payload.get("body") or "").strip()
+    if not body:
+        return jsonify({"error": "Reply body is required"}), 400
+    try:
+        contact = send_reply_for_contact(uid, contact_id, body)
+    except ValueError as e:
+        msg = str(e)
+        if msg == "contact_not_found":
+            return jsonify({"error": "Contact not found"}), 404
+        if msg == "missing_recipient":
+            return jsonify({"error": "Contact has no email address"}), 400
+        if msg == "gmail_disconnected":
+            return jsonify({"error": "Connect Gmail to send replies"}), 400
+        return jsonify({"error": msg}), 400
+    except Exception as e:
+        logger.exception("[outbox] send-reply failed contact=%s", contact_id)
+        return jsonify({"error": str(e) or "Gmail send failed"}), 500
+    return jsonify({"thread": contact}), 200
+
+
+@outbox_bp.get("/threads/<contact_id>/messages")
+@require_firebase_auth
+def list_thread_messages(contact_id):
+    uid = request.firebase_user["uid"]
+    try:
+        result = get_contact_thread_messages(uid, contact_id)
+    except ValueError as e:
+        if str(e) == "contact_not_found":
+            return jsonify({"error": "Contact not found"}), 404
+        return jsonify({"error": str(e)}), 400
+    return jsonify(result), 200
 
 
 @outbox_bp.post("/threads/<contact_id>/sync")

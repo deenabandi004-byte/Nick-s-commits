@@ -300,6 +300,19 @@ export interface ErrorResponse {
 }
 
 // ================================
+// Contact Sharing Types
+// ================================
+export type ShareKind = "contacts" | "companies" | "hiringManagers";
+
+export interface PendingShare {
+  id: string;
+  fromName: string;
+  kind: ShareKind;
+  count: number;
+  createdAt?: string;
+}
+
+// ================================
 // List Builder (Bulk Tracker) Types
 // ================================
 // ================================
@@ -377,6 +390,10 @@ export interface OutboxThread {
   // True when a draft has been in draft_created state > 24h with no matched
   // Gmail thread (webhook silent-drop). UI should nudge the user to Refresh.
   needsManualSync?: boolean;
+  // Provenance — "agent" for Loop-discovered contacts, "" for manual. Drives
+  // the "Loop" badge in the tracker / My Network.
+  source?: string;
+  loopId?: string;
   // Legacy aliases — used by Outbox.tsx and Dashboard.tsx until migrated
   contactName?: string;
   jobTitle?: string;
@@ -427,6 +444,24 @@ export interface ReplyCoachDraft {
   contactId: string;
   createdAt: string;
   status: "ready" | "generating";
+  warmthTier?: string;
+  leadType?: string;
+}
+
+export interface ThreadMessage {
+  messageId: string | null;
+  sender: string | null;
+  isFromRecipient: boolean;
+  isFromUser: boolean;
+  sentAt: string | null;
+  subject: string;
+  body: string;
+}
+
+export interface ThreadMessagesResponse {
+  source: "gmail" | "local";
+  messages: ThreadMessage[];
+  reason?: "no_thread" | "gmail_disconnected" | "gmail_error";
 }
 
 export interface AutoPrepStatus {
@@ -736,6 +771,10 @@ export interface FeedJob {
   match_signals?: string[];
   ranked: boolean;
   structured?: JobStructured;
+  // Auto-apply (derived backend-side from FantasticJobs ats_* metadata).
+  // ats_platform is null when the job's source ATS is unknown/unsupported.
+  ats_platform: "greenhouse" | "lever" | "ashby" | null;
+  auto_apply_eligible: boolean;
 }
 
 export interface SavedJob {
@@ -747,6 +786,8 @@ export interface SavedJob {
   match_score?: number;
   status?: string;
   saved_at?: string;
+  applied_at?: string;
+  logo_url?: string;
 }
 
 export interface JobFeedSummary {
@@ -790,8 +831,44 @@ export interface JobFeedResponse {
   cached: boolean;
   stale?: boolean;
   ranking_in_progress?: boolean;
+  // Refresh-button rotation. feed_offset is the position into the cached
+  // ranked list we hydrated from this response. feed_wrapped is true when
+  // a refresh advanced past the end of the cached list and reset to 0;
+  // surface that to the user as a brief "back to top picks" toast.
+  feed_offset?: number;
+  feed_wrapped?: boolean;
   summary?: JobFeedSummaryMeta;
   gated?: JobFeedGatedInfo;
+}
+
+// Inputs for the catalog search endpoint. All fields optional; sending an
+// empty object returns the most recent jobs across the whole store. Mirrors
+// the GET /api/jobs/search route in backend/app/routes/jobs.py.
+export interface JobSearchParams {
+  q?: string;
+  company?: string;
+  location?: string;
+  type?: "FULLTIME" | "PARTTIME" | "INTERNSHIP";
+  seniority?: "intern" | "entry" | "mid" | "senior";
+  postedAfter?: "24h" | "7d" | "30d";
+  limit?: number;
+  cursor?: string;
+}
+
+export interface JobSearchResponse {
+  results: FeedJob[];
+  count: number;
+  scanned: number;
+  next_cursor: string | null;
+  query: {
+    q: string;
+    tokens: string[];
+    company: string | null;
+    location: string | null;
+    type: string | null;
+    seniority: string | null;
+    limit: number;
+  };
 }
 
 export interface JobFeedbackRequest {
@@ -1165,6 +1242,48 @@ class ApiService {
     return this.makeRequest<EmailTemplate>('/email-template', { method: 'GET', headers });
   }
 
+  async getReferralStatus(): Promise<{
+    referralCode: string;
+    referralLink: string;
+    signupCount: number;
+    signupTarget: number;
+    eligible: boolean;
+    rewardClaimed: boolean;
+    rewardClaimedAt: string | null;
+    bannerDismissed: boolean;
+    launchModalSeen: boolean;
+  }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest('/referrals/me', { method: 'GET', headers });
+  }
+
+  async ackReferral(surface: 'banner' | 'launch_modal'): Promise<{ ok: boolean; reason?: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest('/referrals/ack', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ surface }),
+    });
+  }
+
+  async attributeReferral(code: string): Promise<{ recorded: boolean; reason: string | null }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest('/referrals/attribute', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  async claimReferralReward(): Promise<{ ok: boolean; mode?: string; url?: string; reason?: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest('/referrals/claim', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({}),
+    });
+  }
+
   async saveEmailTemplate(template: EmailTemplate): Promise<{ success: boolean }> {
     const headers = await this.getAuthHeaders();
     return this.makeRequest<{ success: boolean }>('/email-template', {
@@ -1274,6 +1393,42 @@ class ApiService {
     return this.makeRequest<SearchResult>('/prompt-search', {
       method: 'POST',
       headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  /**
+   * Send a Gmail draft that was created server-side during a search.
+   * Used by the Find-page draft review row's "Send" button. Returns
+   * { success, messageId, threadId } on success; { success: false,
+   * error: "draft_not_found" } (HTTP 410) if the draft was already sent
+   * or no longer exists — the UI should still flip to "Sent" in that case.
+   */
+  async sendDraft(draftId: string): Promise<{ success: boolean; messageId?: string; threadId?: string; error?: string; message?: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest(`/emails/send-draft/${encodeURIComponent(draftId)}`, {
+      method: 'POST',
+      headers,
+    });
+  }
+
+  // Generate cold first-touch emails and create Gmail drafts for the given
+  // contacts. Server backfills resume_text, user_profile, email template, and
+  // signoff from Firestore — the caller can pass an empty/minimal contact
+  // (Name/Email/Company/Title only) and the generator falls back to
+  // title+company anchors (no PDL enrichment, no PDL credit spent). Creates a
+  // contact doc at pipelineStage="draft_created" as a side effect, deduped by
+  // lowercased email.
+  async generateAndDraftEmails(payload: {
+    contacts: Array<{ Name?: string; Email: string; Company?: string; Title?: string; [k: string]: any }>;
+  }): Promise<
+    | { success: boolean; draft_count: number; drafts: Array<{ to: string; draftId: string; messageId?: string; threadId?: string; gmailUrl?: string }>; connected_email?: string; skipped_count?: number }
+    | { error: string; message?: string }
+  > {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest('/emails/generate-and-draft', {
+      method: 'POST',
+      headers,
       body: JSON.stringify(payload),
     });
   }
@@ -1591,10 +1746,15 @@ async generateReplyDraft(contactId: string): Promise<GenerateReplyResult | Error
   });
 }
 
-/** Get auto-generated reply draft (Reply Coach) */
-async getReplyCoachDraft(contactId: string): Promise<ReplyCoachDraft | ErrorResponse> {
+/** Get auto-generated reply draft (Reply Coach).
+ *  Pass refresh=true to bypass the cached draft so the new thread-aware path
+ *  runs. The inbox Generate button always passes refresh=true — see
+ *  reply_coach.get_reply_draft.
+ */
+async getReplyCoachDraft(contactId: string, opts?: { refresh?: boolean }): Promise<ReplyCoachDraft | ErrorResponse> {
   const headers = await this.getAuthHeaders();
-  return this.makeRequest<ReplyCoachDraft | ErrorResponse>(`/contacts/${contactId}/reply-draft`, {
+  const qs = opts?.refresh ? '?refresh=1' : '';
+  return this.makeRequest<ReplyCoachDraft | ErrorResponse>(`/contacts/${contactId}/reply-draft${qs}`, {
     method: 'GET',
     headers,
   });
@@ -1695,6 +1855,18 @@ async getOutboxThreads(params?: {
   return this.makeRequest<{ threads: OutboxThread[] } | { error: string }>(url, { method: 'GET', headers });
 }
 
+/** Get full message chain for one outbox thread. Falls back to a single
+ *  locally-stored emailBody when Gmail is disconnected or the fetch fails —
+ *  the backend never 500s on a missing Gmail connection here.
+ */
+async getOutboxThreadMessages(contactId: string): Promise<ThreadMessagesResponse | { error: string }> {
+  const headers = await this.getAuthHeaders();
+  return this.makeRequest<ThreadMessagesResponse | { error: string }>(
+    `/outbox/threads/${contactId}/messages`,
+    { method: 'GET', headers }
+  );
+}
+
 /** Get outbox pipeline stats */
 async getOutboxStats(): Promise<OutboxStats | { error: string }> {
   const headers = await this.getAuthHeaders();
@@ -1707,6 +1879,20 @@ async patchOutboxStage(contactId: string, stage: PipelineStage): Promise<{ threa
   return this.makeRequest<{ thread: OutboxThread } | { error: string }>(
     `/outbox/threads/${contactId}/stage`,
     { method: 'PUT', headers, body: JSON.stringify({ stage }) }
+  );
+}
+
+/** Send a reply (or follow-up) via Gmail and update outbox state.
+ *  Backed by POST /api/outbox/threads/<id>/send-reply — runs Gmail
+ *  messages.send(), stamps emailSentAt / pipelineStage / lastMessageFrom on
+ *  the contact doc, and clears the cached replyDrafts entry. The inbox Send
+ *  button calls this with the editable draft body.
+ */
+async sendOutboxReply(contactId: string, body: string): Promise<{ thread: OutboxThread } | { error: string }> {
+  const headers = await this.getAuthHeaders();
+  return this.makeRequest<{ thread: OutboxThread } | { error: string }>(
+    `/outbox/threads/${contactId}/send-reply`,
+    { method: 'POST', headers, body: JSON.stringify({ body }) }
   );
 }
 
@@ -1882,9 +2068,36 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
     return this.makeRequest<JobFeedResponse>(url, { method: 'GET', headers });
   }
 
+  // Catalog query over the full jobs store. Distinct from getJobFeed (which
+  // is the personalized ranked surface) by design. Caller decides when to
+  // switch UI between the two; this method does no caching.
+  async searchJobs(params: JobSearchParams): Promise<JobSearchResponse> {
+    const headers = await this.getAuthHeaders();
+    const searchParams = new URLSearchParams();
+    if (params.q) searchParams.set("q", params.q);
+    if (params.company) searchParams.set("company", params.company);
+    if (params.location) searchParams.set("location", params.location);
+    if (params.type) searchParams.set("type", params.type);
+    if (params.seniority) searchParams.set("seniority", params.seniority);
+    if (params.postedAfter) searchParams.set("posted_after", params.postedAfter);
+    if (params.limit) searchParams.set("limit", String(params.limit));
+    if (params.cursor) searchParams.set("cursor", params.cursor);
+    const qs = searchParams.toString();
+    const url = qs ? `/jobs/search?${qs}` : '/jobs/search';
+    return this.makeRequest<JobSearchResponse>(url, { method: 'GET', headers });
+  }
+
   async getJobDetail(jobId: string): Promise<Record<string, any>> {
     const headers = await this.getAuthHeaders();
     return this.makeRequest<Record<string, any>>(`/jobs/${encodeURIComponent(jobId)}`, { method: 'GET', headers });
+  }
+
+  async getJobDescription(jobId: string): Promise<{ description: string | null }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<{ description: string | null }>(
+      `/jobs/${encodeURIComponent(jobId)}/description`,
+      { method: 'GET', headers },
+    );
   }
 
   async postJobFeedback(params: JobFeedbackRequest): Promise<{ success: boolean }> {
@@ -1919,6 +2132,34 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
   async unsaveJob(jobId: string): Promise<{ success: boolean; job_id: string }> {
     return this.makeRequest<{ success: boolean; job_id: string }>(
       `/job-board/saved-jobs/${encodeURIComponent(jobId)}`,
+      {
+        method: 'DELETE',
+        headers: await this.getAuthHeaders(),
+      }
+    );
+  }
+
+  async listAppliedJobs(): Promise<{ applied: SavedJob[]; count: number }> {
+    return this.makeRequest<{ applied: SavedJob[]; count: number }>('/job-board/applied-jobs', {
+      method: 'GET',
+      headers: await this.getAuthHeaders(),
+    });
+  }
+
+  async markJobApplied(job: SavedJob): Promise<{ success: boolean; job_id: string }> {
+    return this.makeRequest<{ success: boolean; job_id: string }>('/job-board/applied-jobs', {
+      method: 'POST',
+      headers: {
+        ...await this.getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(job),
+    });
+  }
+
+  async unmarkJobApplied(jobId: string): Promise<{ success: boolean; job_id: string }> {
+    return this.makeRequest<{ success: boolean; job_id: string }>(
+      `/job-board/applied-jobs/${encodeURIComponent(jobId)}`,
       {
         method: 'DELETE',
         headers: await this.getAuthHeaders(),
@@ -2109,6 +2350,34 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
     );
   }
 
+  // Find People: peers / teammates on the team behind a posting (find-employee).
+  // Returns the same shape as find-recruiter (people in `recruiters`).
+  async findEmployees(params: {
+    company?: string;
+    jobTitle?: string;
+    jobDescription?: string;
+    location?: string;
+    jobUrl?: string;
+    jobId?: string;
+    maxResults?: number;
+    generateEmails?: boolean;
+    createDrafts?: boolean;
+    mode?: OutreachMode;
+  }): Promise<FindRecruiterResponse> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<FindRecruiterResponse>(
+      '/job-board/find-employee',
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ...params,
+          jobUrl: normalizeUrl(params.jobUrl),
+        }),
+      }
+    );
+  }
+
   async generateCoverLetter(params: GenerateCoverLetterRequest): Promise<GenerateCoverLetterResponse> {
     const response = await this.makeRequest<GenerateCoverLetterResponse>(
       '/job-board/generate-cover-letter',
@@ -2133,7 +2402,7 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
   async reportFrontendError(error: { message: string; stack?: string; componentStack?: string; url?: string }): Promise<void> {
     try {
       const headers = await this.getAuthHeaders().catch(() => ({ 'Content-Type': 'application/json' }));
-      await fetch(`${API_BASE_URL}/api/admin/client-error`, {
+      await fetch(`${API_BASE_URL}/admin/client-error`, {
         method: 'POST',
         headers: headers as Record<string, string>,
         body: JSON.stringify({
@@ -2321,6 +2590,46 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
     const headers = await this.getAuthHeaders();
     return this.makeRequest<{ suggestions: SearchSuggestion[] }>('/search-suggestions', { method: 'GET', headers });
   }
+
+  // ================================
+  // Contact Sharing Endpoints
+  // ================================
+
+  async shareRecords(payload: { toEmail: string; kind: ShareKind; items: any[] }): Promise<{ shareId: string; toName: string } | { error: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<{ shareId: string; toName: string } | { error: string }>('/shares', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async getPendingShares(): Promise<{ shares: PendingShare[] } | { error: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest('/shares/pending', { method: 'GET', headers });
+  }
+
+  async acceptShare(id: string): Promise<{ imported: number; kind: ShareKind } | { error: string; current_tier?: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<{ imported: number; kind: ShareKind } | { error: string; current_tier?: string }>(`/shares/${id}/accept`, { method: 'POST', headers });
+  }
+
+  async declineShare(id: string): Promise<{ ok: true } | { error: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<{ ok: true } | { error: string }>(`/shares/${id}/decline`, { method: 'POST', headers });
+  }
+
+  // Clear the one-time `mcpUnseen` flag on every contact. The MCP server
+  // (Claude.ai integration) writes new contacts with mcpUnseen=true so My
+  // Network can render a faint orange highlight; this endpoint flips them
+  // all back to false after the first page render.
+  async clearMcpUnseen(): Promise<{ cleared: number } | { error: string }> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<{ cleared: number } | { error: string }>(
+      "/contacts/clear-mcp-unseen",
+      { method: "POST", headers },
+    );
+  }
 }
 
 export const apiService = new ApiService();
@@ -2401,3 +2710,355 @@ export const mergeLinkedInData = async () => {
   });
   return response.json();
 };
+
+// ============================================================================
+// Application Profile + Auto-Apply
+// ============================================================================
+// Application Profile holds answers to ATS screening questions that don't
+// change between applications (work auth, EEO demographics, veteran /
+// disability, scheduling). Demographics default to "decline" on the backend —
+// the UI should reflect that as "Decline to answer" when the user opens it.
+
+export type DemographicChoice = "decline" | string;
+
+export interface ApplicationProfile {
+  contactInfo: {
+    phone: string | null;
+    linkedinUrl: string | null;
+  };
+  workAuthorization: {
+    authorizedToWorkUS: boolean | null;
+    requiresSponsorship: boolean | null;
+    visaStatus: string | null;
+  };
+  demographics: {
+    gender: DemographicChoice | null;
+    race: DemographicChoice | null;
+    ethnicity: DemographicChoice | null;
+    lgbtq: DemographicChoice | null;
+  };
+  veteranStatus: DemographicChoice | null;
+  disabilityStatus: DemographicChoice | null;
+  preferences: {
+    earliestStartDate: string | null;
+    expectedSalaryUsd: number | null;
+    openToRelocation: boolean | null;
+    openToRemote: boolean | null;
+  };
+  acknowledgedAt: string | null;
+}
+
+export interface ApplicationProfileResponse {
+  profile: ApplicationProfile;
+  acknowledged: boolean;
+  work_auth_complete: boolean;
+}
+
+export interface AutoApplyPreviewFields {
+  first_name: string;
+  last_name: string;
+  full_name: string;
+  email: string;
+  phone: string;
+  location: string;
+  linkedin_url: string;
+  github_url: string;
+  portfolio_url: string;
+}
+
+export interface AutoApplyStructuredAnswers {
+  authorized_to_work_us: boolean | null;
+  requires_sponsorship: boolean | null;
+  visa_status: string | null;
+  gender: string;
+  race: string;
+  ethnicity: string;
+  lgbtq: string;
+  veteran_status: string;
+  disability_status: string;
+  earliest_start_date: string | null;
+  expected_salary_usd: number | null;
+  open_to_relocation: boolean | null;
+  open_to_remote: boolean | null;
+}
+
+export interface AutoApplyOpenEndedAnswer {
+  question: string;
+  answer: string;
+}
+
+export interface AutoApplyResumeDescriptor {
+  has_resume: boolean;
+  filename: string;
+}
+
+export interface AutoApplyPreview {
+  fields: AutoApplyPreviewFields;
+  structured_answers: AutoApplyStructuredAnswers;
+  open_ended_answers: Record<string, AutoApplyOpenEndedAnswer>;
+  resume: AutoApplyResumeDescriptor;
+  unmapped_fields: { label: string; required: boolean }[];
+}
+
+export interface AutoApplyPrepareResponse {
+  job_id: string;
+  ats_platform: "greenhouse" | "lever" | "ashby" | null;
+  preview: AutoApplyPreview;
+  preview_complete: boolean;
+  job: { title: string; company: string; apply_url: string };
+}
+
+export type AutoApplyPrepareError =
+  | { code: "PROFILE_REQUIRED"; error: string }
+  | { code: "WORK_AUTH_REQUIRED"; error: string }
+  | { code: "INELIGIBLE"; error: string };
+
+export type AutoApplyStatus =
+  | "queued"
+  | "running"
+  | "dry_run_complete"
+  | "submitted"
+  | "submit_failed"
+  | "failed"
+  | "needs_attention"
+  | "needs_verification";
+
+export interface AutoApplyUnmappedField {
+  field_id: string;
+  label: string;
+  reason?: string;
+  field_type?: AutoApplyFieldType;
+  options?: string[] | null;
+  required?: boolean;
+}
+
+export type AutoApplyFieldType =
+  | "text"
+  | "textarea"
+  | "select"
+  | "radio"
+  | "checkbox"
+  | "number"
+  | "date";
+
+export interface AutoApplyPendingQuestion {
+  field_id: string;
+  label: string;
+  field_type: AutoApplyFieldType;
+  options?: string[] | null;
+  required: boolean;
+}
+
+export interface AutoApplyAttempt {
+  url: string;
+  result: string;
+  final_url?: string;
+}
+
+// One record per field the filler resolved. The `Finish in browser` card
+// renders these as copy-friendly blocks so the user can paste them into
+// the real apply form when they finish the submit themselves.
+export interface AutoApplyPreparedAnswer {
+  field_id: string;
+  label: string;
+  answer: string;
+  field_type: AutoApplyFieldType | string;
+  source: "profile" | "library" | "llm" | "consent_fastpath" | string;
+}
+
+// Detected bot-defense widget on the apply form. The frontend doesn't act
+// on this directly but surfaces it in the "why this needs verification"
+// copy ("Greenhouse asked us to verify the application").
+export interface AutoApplyCaptcha {
+  vendor: "recaptcha" | "hcaptcha" | "turnstile" | string;
+  sitekey?: string | null;
+  marker?: string;
+}
+
+export interface AutoApplyStatusResponse {
+  auto_apply_id: string;
+  job_id: string;
+  ats_platform: "greenhouse" | "lever" | "ashby" | null;
+  // Denormalized at submit time for the Auto-Submission / Needs Attention
+  // tab cards. Empty string if the source job doc didn't carry the field.
+  job_title?: string;
+  company?: string;
+  apply_url?: string;
+  dry_run: boolean;
+  status: AutoApplyStatus;
+  stage?: string;
+  screenshot_b64?: string;
+  // Set when the post-submit PNG was too big for Firestore's 1MB cap and
+  // was uploaded to Cloud Storage instead. Render via <img src={url}>;
+  // mutually exclusive with screenshot_b64 in practice.
+  screenshot_url?: string;
+  filled_summary?: Record<string, string>;
+  unmapped?: AutoApplyUnmappedField[];
+  pending_questions?: AutoApplyPendingQuestion[];
+  failure_reason?: string;
+  attempted_urls?: string[];
+  attempt_log?: AutoApplyAttempt[];
+  credits_charged?: number;
+  credits_refunded?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  completed_at?: string;
+  inspect_completed_at?: string;
+  pending_resolved_at?: string;
+  // Populated when `status === "needs_verification"`. `prepared_answers`
+  // lists every field the filler resolved; `captcha` describes which
+  // bot-defense widget the ATS shipped (Greenhouse: reCAPTCHA, Lever:
+  // hCaptcha, Ashby: reCAPTCHA v3). `user_marked_submitted_at` flips
+  // when the user clicks "I submitted it" from the verification card.
+  prepared_answers?: AutoApplyPreparedAnswer[];
+  captcha?: AutoApplyCaptcha;
+  user_marked_submitted_at?: string;
+}
+
+export interface AutoApplySubmitResponse {
+  auto_apply_id: string;
+  job_id: string;
+  dry_run: boolean;
+  status: AutoApplyStatus;
+}
+
+async function authedJson<T>(
+  path: string,
+  init: RequestInit = {},
+): Promise<{ ok: boolean; status: number; data: T }> {
+  const token = auth.currentUser ? await auth.currentUser.getIdToken() : null;
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (init.headers) {
+    Object.assign(headers, init.headers as Record<string, string>);
+  }
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const resp = await fetch(`${API_BASE_URL}${path}`, { ...init, headers });
+  const data = (await resp.json().catch(() => ({}))) as T;
+  return { ok: resp.ok, status: resp.status, data };
+}
+
+export async function getApplicationProfile(): Promise<ApplicationProfileResponse> {
+  const { data } = await authedJson<ApplicationProfileResponse>(
+    '/users/application-profile',
+  );
+  return data;
+}
+
+export async function saveApplicationProfile(
+  profile: ApplicationProfile,
+): Promise<ApplicationProfileResponse> {
+  const { data } = await authedJson<ApplicationProfileResponse>(
+    '/users/application-profile',
+    { method: 'POST', body: JSON.stringify({ profile }) },
+  );
+  return data;
+}
+
+export async function prepareAutoApply(
+  jobId: string,
+): Promise<
+  | { ok: true; response: AutoApplyPrepareResponse }
+  | { ok: false; status: number; error: AutoApplyPrepareError }
+> {
+  const { ok, status, data } = await authedJson<
+    AutoApplyPrepareResponse & AutoApplyPrepareError
+  >('/job-board/auto-apply/prepare', {
+    method: 'POST',
+    body: JSON.stringify({ job_id: jobId }),
+  });
+  if (ok) return { ok: true, response: data as AutoApplyPrepareResponse };
+  return { ok: false, status, error: data as AutoApplyPrepareError };
+}
+
+export async function submitAutoApply(
+  jobId: string,
+  options: { dry_run: boolean; edited_answers: Record<string, string> },
+): Promise<{ ok: boolean; status: number; data: AutoApplySubmitResponse & { error?: string; code?: string } }> {
+  return authedJson<AutoApplySubmitResponse & { error?: string; code?: string }>(
+    `/job-board/auto-apply/${encodeURIComponent(jobId)}/submit`,
+    { method: 'POST', body: JSON.stringify(options) },
+  );
+}
+
+export async function pollAutoApplyStatus(
+  autoApplyId: string,
+): Promise<AutoApplyStatusResponse> {
+  const { data } = await authedJson<AutoApplyStatusResponse>(
+    `/job-board/auto-apply/${encodeURIComponent(autoApplyId)}/status`,
+  );
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Auto-apply v2: Needs Attention queue + answer library
+// ---------------------------------------------------------------------------
+
+export interface ResolveAutoApplyResponse {
+  auto_apply_id: string;
+  status: AutoApplyStatus;
+  pending_questions: AutoApplyPendingQuestion[];
+  saved_to_library: string[];
+}
+
+export async function resolveAutoApplyAnswers(
+  autoApplyId: string,
+  answers: Record<string, unknown>,
+): Promise<{ ok: boolean; status: number; data: ResolveAutoApplyResponse }> {
+  return authedJson<ResolveAutoApplyResponse>(
+    `/job-board/auto-apply/${encodeURIComponent(autoApplyId)}/resolve`,
+    { method: 'POST', body: JSON.stringify({ answers }) },
+  );
+}
+
+export interface AutoApplyListResponse {
+  items: AutoApplyStatusResponse[];
+  count: number;
+}
+
+export async function listNeedsAttention(): Promise<AutoApplyListResponse> {
+  const { data } = await authedJson<AutoApplyListResponse>(
+    '/job-board/auto-apply/needs-attention',
+  );
+  return data;
+}
+
+export async function listAutoApplyJobs(
+  statuses?: AutoApplyStatus[],
+  limit?: number,
+): Promise<AutoApplyListResponse> {
+  const params = new URLSearchParams();
+  if (statuses && statuses.length) params.set('status', statuses.join(','));
+  if (limit) params.set('limit', String(limit));
+  const qs = params.toString();
+  const { data } = await authedJson<AutoApplyListResponse>(
+    `/job-board/auto-apply/list${qs ? `?${qs}` : ''}`,
+  );
+  return data;
+}
+
+// ---------------------------------------------------------------------------
+// Auto-apply v3: Needs Verification queue + "finish in browser" resolution
+// ---------------------------------------------------------------------------
+
+// Jobs where the filler completed the form fill but the ATS ships CAPTCHA
+// that would reject a headless-browser submission. The user submits from
+// their own browser; the apply URL + their prepared answers are surfaced
+// in the verification card so they can paste + solve the challenge + submit.
+export async function listNeedsVerification(): Promise<AutoApplyListResponse> {
+  const { data } = await authedJson<AutoApplyListResponse>(
+    '/job-board/auto-apply/needs-verification',
+  );
+  return data;
+}
+
+// User finished the submit in their own browser and is confirming. Server
+// transitions the job to `submitted` and stamps `user_marked_submitted_at`.
+// Credits stay deducted — the user got value from the pre-fill.
+export async function markAutoApplySubmitted(
+  autoApplyId: string,
+): Promise<{ ok: boolean; status: number; data: { auto_apply_id: string; status: AutoApplyStatus; error?: string; code?: string } }> {
+  return authedJson<{ auto_apply_id: string; status: AutoApplyStatus; error?: string; code?: string }>(
+    `/job-board/auto-apply/${encodeURIComponent(autoApplyId)}/mark-submitted`,
+    { method: 'POST' },
+  );
+}

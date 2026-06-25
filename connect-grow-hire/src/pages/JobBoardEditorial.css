@@ -538,11 +538,14 @@
 }
 .jb-editorial .drawer .actions-bar button:hover { border-color: var(--ink-3); color: var(--ink); }
 .jb-editorial .drawer .actions-bar button.primary {
-  background: var(--accent);
+  background: var(--brand-blue, #3B82F6);
   color: #fff;
-  border-color: var(--accent);
+  border-color: var(--brand-blue, #3B82F6);
 }
-.jb-editorial .drawer .actions-bar button.primary:hover { background: #0F1D33; border-color: #0F1D33; }
+.jb-editorial .drawer .actions-bar button.primary:hover {
+  background: var(--brand-blue-hover, #2563EB);
+  border-color: var(--brand-blue-hover, #2563EB);
+}
 .jb-editorial .drawer .actions-bar .cr {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;

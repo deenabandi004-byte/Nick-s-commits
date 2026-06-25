@@ -8,10 +8,45 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Inter', -apple-system, sans-serif; background: #ffffff; color: #0F172A; font-size: 9pt; line-height: 1.5; }
 
-  @page { size: A4; margin: 0; }
-  .page { width: 210mm; min-height: 297mm; padding: 14mm 14mm 16mm 14mm; position: relative; page-break-after: always; overflow: hidden; }
-  .page:last-child { page-break-after: avoid; }
-  .page::before { content: ''; position: absolute; top: 0; right: 0; width: 72mm; height: 72mm; background: radial-gradient(circle at top right, #EEF1FF 0%, transparent 70%); pointer-events: none; }
+  /* @page handles the canvas margins + the running footer, so individual
+     .page divs no longer need fixed heights or absolute-positioned footers. */
+  @page {
+    size: A4;
+    margin: 14mm 14mm 18mm 14mm;
+    @bottom-left {
+      content: 'Offerloop · offerloop.ai · Confidential';
+      font-family: 'Inter', sans-serif;
+      font-size: 7pt;
+      color: #CBD5E1;
+    }
+    @bottom-left span { color: #3B5BFF; }
+    @bottom-right {
+      content: counter(page) ' / ' counter(pages);
+      font-family: 'Inter', sans-serif;
+      font-size: 7pt;
+      color: #CBD5E1;
+    }
+  }
+
+  /* position: fixed in WeasyPrint paints on every page — gives the same
+     top-right gradient the old .page::before produced, without coupling it
+     to a div with a forced 297mm height. */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 72mm;
+    height: 72mm;
+    background: radial-gradient(circle at top right, #EEF1FF 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Logical page markers. No forced heights — content drives pagination.
+     Second and third .page sections always start on a fresh PDF page. */
+  .page { position: relative; }
+  .page + .page { page-break-before: always; }
 
   .hero { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6mm; }
   .hero-badge { display: inline-flex; align-items: center; gap: 5px; background: #EEF1FF; color: #3B5BFF; font-size: 6.5pt; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 10px; border-radius: 20px; margin-bottom: 4mm; }
@@ -71,38 +106,40 @@
   .ice-topic { font-size: 8pt; font-weight: 600; color: #0F172A; flex-shrink: 0; width: 28mm; }
   .ice-reason { font-size: 8pt; color: #475569; line-height: 1.4; }
 
-  .questions-flow { column-count: 2; column-gap: 6mm; column-fill: balance; }
-  .q-category-block { break-inside: avoid; page-break-inside: avoid; -webkit-column-break-inside: avoid; display: inline-block; width: 100%; margin-bottom: 2mm; }
+  /* CSS columns confused WeasyPrint when remaining vertical space was
+     small — it would leave empty numbered fragments on the current page
+     and push real categories to the next. Plain grid avoids that. */
+  .questions-flow { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm 6mm; align-items: start; }
+  .q-category-block { break-inside: avoid; page-break-inside: avoid; margin-bottom: 2mm; }
   .q-category { font-size: 7pt; font-weight: 700; color: #3B5BFF; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 5mm; margin-bottom: 2mm; padding-bottom: 2px; border-bottom: 1px solid #EEF1FF; }
   .question-row { display: flex; gap: 8px; padding: 4px 0; border-bottom: 1px solid #F8FAFF; align-items: flex-start; }
   .q-num { font-size: 8pt; font-weight: 700; color: #3B5BFF; flex-shrink: 0; width: 14px; padding-top: 1px; }
   .q-text { font-size: 8.5pt; color: #0F172A; line-height: 1.45; }
 
-  .roadmap-row { display: grid; grid-template-columns: 18mm 28mm 1fr; gap: 0; border-bottom: 1px solid #F1F5F9; }
+  .roadmap-row { display: grid; grid-template-columns: 18mm 28mm 1fr; gap: 0; border-bottom: 1px solid #F1F5F9; page-break-inside: avoid; }
   .roadmap-row:last-child { border-bottom: none; }
   .roadmap-time { background: #F8FAFF; font-size: 7pt; font-weight: 700; color: #94A3B8; padding: 7px 8px; border-right: 1px solid #E2E8F0; display: flex; align-items: center; }
   .roadmap-phase { font-size: 8.5pt; font-weight: 600; color: #0F172A; padding: 7px 10px; border-right: 1px solid #E2E8F0; display: flex; align-items: center; }
   .roadmap-note { font-size: 8pt; color: #475569; padding: 7px 10px; line-height: 1.4; }
 
-  .da-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 2mm; }
+  .da-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 2mm; page-break-inside: avoid; }
+  .do-box, .av-box { page-break-inside: avoid; }
   .do-box   { background: #F0FDF4; padding: 8px 10px; border-radius: 8px; }
   .av-box   { background: #FFF7ED; padding: 8px 10px; border-radius: 8px; }
   .do-hd    { font-size: 7pt; font-weight: 700; color: #16A34A; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
   .av-hd    { font-size: 7pt; font-weight: 700; color: #D97706; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 5px; }
   .da-item  { font-size: 8pt; color: #334155; line-height: 1.45; padding: 2px 0 2px 10px; text-indent: -10px; }
 
-  .news-item { padding: 6px 0 6px 10px; border-left: 2px solid #3B5BFF; margin-bottom: 4mm; }
+  .news-item { padding: 6px 0 6px 10px; border-left: 2px solid #3B5BFF; margin-bottom: 4mm; page-break-inside: avoid; }
   .news-title  { font-size: 8.5pt; font-weight: 600; color: #0F172A; line-height: 1.35; }
   .news-src    { font-size: 7.5pt; color: #94A3B8; margin-top: 1px; }
   .news-snippet{ font-size: 7.5pt; color: #475569; margin-top: 3px; line-height: 1.4; }
 
-  .followup-box { background: #F8FAFF; border: 1px solid #C7CFFE; border-radius: 8px; padding: 10px 12px; font-size: 8pt; color: #334155; line-height: 1.55; }
+  .followup-box { background: #F8FAFF; border: 1px solid #C7CFFE; border-radius: 8px; padding: 10px 12px; font-size: 8pt; color: #334155; line-height: 1.55; page-break-inside: avoid; }
+  .followup-section { page-break-inside: avoid; }
   .followup-subject { font-weight: 600; color: #0F172A; margin-bottom: 5px; font-size: 8.5pt; }
 
-  .page-footer { position: absolute; bottom: 5mm; left: 14mm; right: 14mm; display: flex; justify-content: space-between; align-items: center; }
-  .footer-brand { font-size: 7pt; color: #CBD5E1; font-weight: 500; }
-  .footer-brand span { color: #3B5BFF; }
-  .footer-page { font-size: 7pt; color: #CBD5E1; }
+  /* .page-footer styles dropped — running footer is now @page @bottom-* */
 </style>
 </head>
 <body>
@@ -183,10 +220,6 @@
     </div>
   </div>
 
-  <div class="page-footer">
-    <div class="footer-brand"><span>Offerloop</span> · offerloop.ai · Confidential</div>
-    <div class="footer-page">1 / 3</div>
-  </div>
 </div>
 
 <!-- PAGE 2: Common Ground + Questions -->
@@ -214,10 +247,6 @@
     {% endfor %}
   </div>
 
-  <div class="page-footer">
-    <div class="footer-brand"><span>Offerloop</span> · offerloop.ai · Confidential</div>
-    <div class="footer-page">2 / 3</div>
-  </div>
 </div>
 
 <!-- PAGE 3: Strategy + Research -->
@@ -258,6 +287,7 @@
     </div>
   </div>
 
+  {% if research.company_news %}
   <div class="section-header" style="margin-top:5mm"><span class="label">Recent Research</span><span class="rule"></span></div>
   <div class="two-col">
     <div class="col">
@@ -277,18 +307,17 @@
         {% if n.snippet %}<div class="news-snippet">{{ n.snippet[:120] }}</div>{% endif %}
       </div>
       {% endfor %}
-      <div class="section-header" style="margin-top:4mm"><span class="label">Follow-Up Email</span><span class="rule"></span></div>
-      <div class="followup-box">
-        <div class="followup-subject">Subject: Great speaking with you — {{ user.name }} from {{ user.university }}</div>
-        Hi {{ contact.firstName }} — thank you for taking the time today. Your perspective on <em>[specific insight]</em> was genuinely helpful. As you suggested, I'll <em>[action]</em> and will follow up in <em>[timeframe]</em>.<br><br>
-        Thanks again,<br>{{ user.name }}
-      </div>
     </div>
   </div>
+  {% endif %}
 
-  <div class="page-footer">
-    <div class="footer-brand"><span>Offerloop</span> · offerloop.ai · Confidential</div>
-    <div class="footer-page">3 / 3</div>
+  <div class="followup-section">
+    <div class="section-header" style="margin-top:5mm"><span class="label">Follow-Up Email</span><span class="rule"></span></div>
+    <div class="followup-box">
+      <div class="followup-subject">Subject: Great speaking with you — {{ user.name }} from {{ user.university }}</div>
+      Hi {{ contact.firstName }} — thank you for taking the time today. Your perspective on <em>[specific insight]</em> was genuinely helpful. As you suggested, I'll <em>[action]</em> and will follow up in <em>[timeframe]</em>.<br><br>
+      Thanks again,<br>{{ user.name }}
+    </div>
   </div>
 </div>
 

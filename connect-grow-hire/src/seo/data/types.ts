@@ -92,6 +92,46 @@ export interface ResumeReviewRow {
   published: boolean;
 }
 
+/**
+ * Cluster-5 row (find people, school x firm). The page mirrors the live
+ * FindPeopleWidget with a school x firm angle on the free people-search tool.
+ * The example panel is clearly-labelled sample output, never a factual claim.
+ */
+export interface FindPeopleRow {
+  slug: string;            // `${schoolSlug}-${firmSlug}`, e.g. 'usc-google'
+  schoolSlug: string;      // references src/data/seo-universities.ts
+  firmSlug: string;        // references seo/data/firms.ts
+  /** role emphasis for the example output; the tool itself accepts any role */
+  roleLabel?: string;
+  primaryKeyword: string;
+  metaDescription: string;
+  quickAnswer: string;
+  /**
+   * Optional verified PDL alumni count for this school x firm cell. Leave
+   * undefined until backfilled from a real /person/search. Never ship a
+   * fabricated number; the stat strip stands on honest tool facts without it.
+   */
+  alumniCount?: number;
+  statStrip: [StatTile, StatTile, StatTile];
+  /** roles the alumni most commonly hold, most common first */
+  topRoles: string[];
+  /** sample result cards for the idle-state example panel (clearly labelled) */
+  examplePeople: { name: string; title: string; school: string }[];
+  /**
+   * Real per-cell aggregate from a PDL profile sample (data-density upgrade).
+   * titleBreakdown and seniority vary genuinely cell to cell and form the page
+   * body. Aggregate only, no individual names. Optional so hand-authored rows
+   * without it still render.
+   */
+  titleBreakdown?: { title: string; count: number }[];
+  topFunctions?: { title: string; count: number }[];
+  priorEmployers?: { name: string; count: number }[];
+  sampleSize?: number;
+  faq: FAQItem[];
+  updatedAt: string;
+  published: boolean;
+}
+
 export interface ExampleRec {
   section: string;       // e.g. 'EXPERIENCE'
   chip: string;          // e.g. 'Quantify impact'

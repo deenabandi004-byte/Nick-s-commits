@@ -14,6 +14,7 @@ from .app.routes.gmail_oauth import gmail_oauth_bp
 from .app.routes.emails import emails_bp
 from .app.routes.contacts import contacts_bp
 from .app.routes.runs import runs_bp
+from .app.routes.runs_similar import runs_similar_bp
 from .app.routes.enrichment import enrichment_bp
 from .app.routes.resume import resume_bp
 from .app.routes.coffee_chat_prep import coffee_chat_bp
@@ -28,6 +29,8 @@ from .app.routes.search_history import search_history_bp
 from .app.routes.parse_prompt import parse_prompt_bp
 from .app.routes.contact_import import contact_import_bp
 from .app.routes.job_board import job_board_bp
+from .app.routes.auto_apply import auto_apply_bp
+from .app.routes.alumni_discovery_routes import alumni_discovery_bp
 from .app.routes.scout_assistant import scout_assistant_bp, scout_admin_bp
 from .app.routes.linkedin_import import linkedin_import_bp
 from .app.routes.auth_extension import auth_extension_bp
@@ -41,8 +44,10 @@ from .app.routes.extension_logs import extension_logs_bp
 from .app.routes.search_suggestions import search_suggestions_bp
 from .app.routes.briefing import briefing_bp
 from .app.routes.agent import agent_bp
+from .app.routes.loop_notifications import loop_notifications_bp
 from .app.routes.loops import loops_bp
 from .app.routes.metrics import metrics_bp
+from .app.routes.referrals import referrals_bp
 from .app.routes.interview_prep_public import interview_prep_public_bp
 from .app.routes.cover_letter_public import cover_letter_public_bp
 from .app.routes.resume_workshop_public import resume_workshop_public_bp
@@ -51,6 +56,7 @@ from .app.routes.find_hiring_manager_public import find_hiring_manager_public_bp
 from .app.routes.find_companies_public import find_companies_public_bp
 from .app.routes.find_jobs_public import find_jobs_public_bp
 from .app.routes.find_people_public import find_people_public_bp
+from .app.routes.shares import shares_bp
 from .app.extensions import init_app_extensions
 
 def create_app() -> Flask:
@@ -64,6 +70,34 @@ def create_app() -> Flask:
         static_folder=STATIC_DIR,
         static_url_path=""
     )
+
+    # --- 410 Gone for pruned dead SEO pages ---
+    # These pages (old firm-name-swapped templates with zero clicks) were
+    # permanently removed on 2026-06-15 and dropped from the sitemap. Serving
+    # 410 (not 404) tells Google to deindex them. Earners are NOT in this list.
+    # Registered before the prerender middleware so crawlers get the 410 itself.
+    PRUNED_PATHS = set()
+    try:
+        _pruned_file = os.path.join(os.path.dirname(__file__), "app", "seo_pruned_urls.txt")
+        with open(_pruned_file, "r", encoding="utf-8") as _pf:
+            PRUNED_PATHS = {ln.strip().rstrip("/") for ln in _pf if ln.strip() and not ln.startswith("#")}
+        app.logger.info(f"Loaded {len(PRUNED_PATHS)} pruned (410) SEO paths")
+    except FileNotFoundError:
+        app.logger.warning("seo_pruned_urls.txt not found; 410 pruning inactive")
+
+    @app.before_request
+    def gone_pruned_pages():
+        if request.method != "GET":
+            return None
+        if (request.path.rstrip("/") or "/") in PRUNED_PATHS:
+            resp = make_response(
+                "<!doctype html><title>410 Gone</title>"
+                "<h1>410 Gone</h1><p>This page has been permanently removed.</p>"
+            )
+            resp.status_code = 410
+            resp.mimetype = "text/html"
+            return resp
+        return None
 
     # --- Prerender.io middleware for bot crawlers (SEO/AEO) ---
     PRERENDER_TOKEN = os.environ.get("PRERENDER_TOKEN")
@@ -181,7 +215,9 @@ def create_app() -> Flask:
     app.register_blueprint(emails_bp)
     app.register_blueprint(linkedin_import_bp)  # Register before contacts_bp to avoid route conflicts
     app.register_blueprint(contacts_bp)
+    app.register_blueprint(shares_bp)
     app.register_blueprint(runs_bp)
+    app.register_blueprint(runs_similar_bp)
     app.register_blueprint(enrichment_bp)
     app.register_blueprint(resume_bp)
     app.register_blueprint(coffee_chat_bp)
@@ -196,6 +232,8 @@ def create_app() -> Flask:
     app.register_blueprint(parse_prompt_bp)
     app.register_blueprint(contact_import_bp)
     app.register_blueprint(job_board_bp)
+    app.register_blueprint(auto_apply_bp)
+    app.register_blueprint(alumni_discovery_bp)
     app.register_blueprint(scout_assistant_bp)
     app.register_blueprint(scout_admin_bp)
     app.register_blueprint(auth_extension_bp)
@@ -210,7 +248,9 @@ def create_app() -> Flask:
     app.register_blueprint(briefing_bp)
     app.register_blueprint(agent_bp)
     app.register_blueprint(loops_bp)
+    app.register_blueprint(loop_notifications_bp)
     app.register_blueprint(metrics_bp)
+    app.register_blueprint(referrals_bp)
     app.register_blueprint(interview_prep_public_bp)
     app.register_blueprint(cover_letter_public_bp)
     app.register_blueprint(resume_workshop_public_bp)
@@ -219,6 +259,18 @@ def create_app() -> Flask:
     app.register_blueprint(find_companies_public_bp)
     app.register_blueprint(find_jobs_public_bp)
     app.register_blueprint(find_people_public_bp)
+
+    # --- MCP server (anonymous IP-based, mounts /mcp + /api/mcp/health) ---
+    # Skippable for local dev: the MCP mount refuses to boot against the prod
+    # Firestore project from a non-prod env, so DISABLE_MCP=1 lets a developer
+    # run the rest of the app locally without it.
+    if os.getenv("DISABLE_MCP") != "1":
+        from .app.mcp_server.flask_mount import register_mcp_blueprint
+        register_mcp_blueprint(app)
+
+    # --- /claim?token=xyz attribution landing for MCP paywall ---
+    from .app.routes.claim import claim_bp
+    app.register_blueprint(claim_bp)
 
     # --- Debug route to check frontend build (dev only) ---
     @app.route('/api/debug/frontend')
@@ -620,6 +672,62 @@ def create_app() -> Flask:
         _digest_logger.info("Agent digest daemon registered (first run in ~1 hour)")
     else:
         _digest_logger.info("Agent digest daemon disabled via AGENT_DIGEST_ENABLED=false")
+
+    # ---- Fantastic.jobs delta ingest daemon (every 24 hours) ────────────────
+    #
+    # Calls the Ultra+ Modified Jobs API (1 Request credit/call, NOT Jobs
+    # credits) to pick up postings modified in the last 24h. Matches the same
+    # filter recipes as the weekly 7d sweep. Cheap to run daily because the
+    # endpoint doesn't burn Jobs credits.
+    _fj_modified_logger = logging.getLogger("fantastic_modified_daemon")
+
+    def _fantastic_modified_loop():
+        TWENTY_FOUR_HOURS = 86400
+        _fj_modified_logger.info("Fantastic.jobs modified daemon started (interval=24h)")
+        time.sleep(1800)  # boot stabilization — 30 min
+        while True:
+            try:
+                with app.app_context():
+                    from .pipeline.main import run_fantastic_modified
+                    run_fantastic_modified()
+            except Exception:
+                _fj_modified_logger.exception("Fantastic.jobs modified daemon failed; will retry next cycle")
+            time.sleep(TWENTY_FOUR_HOURS)
+
+    if os.getenv("FJ_MODIFIED_DAEMON_ENABLED", "true").lower() == "true":
+        fj_modified_thread = threading.Thread(target=_fantastic_modified_loop, daemon=True)
+        fj_modified_thread.start()
+        _fj_modified_logger.info("Fantastic.jobs modified daemon registered (first run in ~30 minutes)")
+    else:
+        _fj_modified_logger.info("Fantastic.jobs modified daemon disabled via FJ_MODIFIED_DAEMON_ENABLED=false")
+
+    # ---- Fantastic.jobs expired sweep daemon (every 24 hours) ───────────────
+    #
+    # Calls the Ultra+ Expired Jobs API (also doesn't burn Jobs credits) to
+    # get yesterday's expired job IDs and marks the corresponding Firestore
+    # docs `status="expired"`. Keeps the active job index honest without a
+    # full re-fetch.
+    _fj_expired_logger = logging.getLogger("fantastic_expired_daemon")
+
+    def _fantastic_expired_loop():
+        TWENTY_FOUR_HOURS = 86400
+        _fj_expired_logger.info("Fantastic.jobs expired sweep daemon started (interval=24h)")
+        time.sleep(1800)  # boot stabilization — 30 min (offset from modified)
+        while True:
+            try:
+                with app.app_context():
+                    from .pipeline.main import run_sweep_expired
+                    run_sweep_expired()
+            except Exception:
+                _fj_expired_logger.exception("Fantastic.jobs expired sweep daemon failed; will retry next cycle")
+            time.sleep(TWENTY_FOUR_HOURS)
+
+    if os.getenv("FJ_EXPIRED_DAEMON_ENABLED", "true").lower() == "true":
+        fj_expired_thread = threading.Thread(target=_fantastic_expired_loop, daemon=True)
+        fj_expired_thread.start()
+        _fj_expired_logger.info("Fantastic.jobs expired sweep daemon registered (first run in ~30 minutes)")
+    else:
+        _fj_expired_logger.info("Fantastic.jobs expired sweep daemon disabled via FJ_EXPIRED_DAEMON_ENABLED=false")
 
     return app
 

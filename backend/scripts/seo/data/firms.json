@@ -1,0 +1,30 @@
+{
+  "_note": "Firm-facts table for the programmatic SEO pipeline. Hand-curated, sourced fields only. tier is the demand proxy (3 high, 2 med, 1 low). pdl is the job_company_name match string. ats is from the frontend firms.ts registry. email_format and groups are left null until curated from a real source; they are not needed for the find-people pilot and must not be invented.",
+  "firms": [
+    { "slug": "goldman-sachs", "name": "Goldman Sachs", "pdl": "goldman sachs", "industry": "banking", "tier": 3, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "morgan-stanley", "name": "Morgan Stanley", "pdl": "morgan stanley", "industry": "banking", "tier": 3, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "jpmorgan", "name": "JPMorgan", "pdl": "jpmorgan", "industry": "banking", "tier": 3, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "evercore", "name": "Evercore", "pdl": "evercore", "industry": "banking", "tier": 3, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "centerview", "name": "Centerview Partners", "pdl": "centerview partners", "industry": "banking", "tier": 3, "ats": "Greenhouse", "email_format": null, "groups": null },
+    { "slug": "bank-of-america", "name": "Bank of America", "pdl": "bank of america", "industry": "banking", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "citi", "name": "Citi", "pdl": "citi", "industry": "banking", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "lazard", "name": "Lazard", "pdl": "lazard", "industry": "banking", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "moelis", "name": "Moelis & Company", "pdl": "moelis", "industry": "banking", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "houlihan-lokey", "name": "Houlihan Lokey", "pdl": "houlihan lokey", "industry": "banking", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "mckinsey", "name": "McKinsey & Company", "pdl": "mckinsey", "industry": "consulting", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "bain", "name": "Bain & Company", "pdl": "bain", "industry": "consulting", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "bcg", "name": "Boston Consulting Group", "pdl": "boston consulting group", "industry": "consulting", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "deloitte", "name": "Deloitte Consulting", "pdl": "deloitte", "industry": "consulting", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "ey-parthenon", "name": "EY-Parthenon", "pdl": "ey-parthenon", "industry": "consulting", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "google", "name": "Google", "pdl": "google", "industry": "tech", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "meta", "name": "Meta", "pdl": "meta", "industry": "tech", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "amazon", "name": "Amazon", "pdl": "amazon", "industry": "tech", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "microsoft", "name": "Microsoft", "pdl": "microsoft", "industry": "tech", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "apple", "name": "Apple", "pdl": "apple", "industry": "tech", "tier": 3, "ats": "Internal", "email_format": null, "groups": null },
+    { "slug": "anthropic", "name": "Anthropic", "pdl": "anthropic", "industry": "tech", "tier": 3, "ats": "Lever", "email_format": null, "groups": null },
+    { "slug": "openai", "name": "OpenAI", "pdl": "openai", "industry": "tech", "tier": 3, "ats": "Greenhouse", "email_format": null, "groups": null },
+    { "slug": "stripe", "name": "Stripe", "pdl": "stripe", "industry": "tech", "tier": 2, "ats": "Greenhouse", "email_format": null, "groups": null },
+    { "slug": "nvidia", "name": "NVIDIA", "pdl": "nvidia", "industry": "tech", "tier": 2, "ats": "Workday", "email_format": null, "groups": null },
+    { "slug": "tesla", "name": "Tesla", "pdl": "tesla", "industry": "tech", "tier": 2, "ats": "Workday", "email_format": null, "groups": null }
+  ]
+}

@@ -19,6 +19,7 @@ requests==2.32.0
 dateparser==1.2.0
 python-dotenv==1.0.0
 stripe==8.0.0
+posthog==3.7.0
 email-validator==2.1.0
 youtube-transcript-api==1.2.4
 pdfplumber==0.11.9
@@ -28,6 +29,11 @@ pdf2docx==0.5.6
 Werkzeug==3.0.1
 pydantic==2.12.5
 pydantic-settings==2.12.0
+# MCP server (anonymous tools exposed to AI assistants)
+mcp==1.27.2
+# OAuth 2.1 authorization server for MCP (RFC 8414 / 9728 / 7591 / 8707).
+# Flask-native, supports DCR, JWT issuance, PKCE S256, resource indicators.
+Authlib>=1.3.0,<2
 # Optional: Error tracking (install with: pip install sentry-sdk[flask])
 # sentry-sdk[flask]==1.38.0
 
@@ -42,6 +48,12 @@ pytest-mock==3.12.0
 pytest-asyncio==0.23.8
 aiohttp==3.12.15
 beautifulsoup4==4.12.3
+# Auto-apply form-fillers connect to Browserbase via Playwright CDP.
+# No local Chromium needed — Browserbase hosts the browser remotely.
+# playwright >=1.49 pins greenlet>=3.1.1 (the first greenlet with Python 3.13
+# wheels). Render runs Python 3.13.x. Bumping from 1.47.0 was necessary
+# because 1.47.0 hard-pinned greenlet==3.0.3 which has no py3.13 wheel.
+playwright>=1.49.0
 weasyprint==67.0
 jinja2==3.1.4
 markdown==3.10.2

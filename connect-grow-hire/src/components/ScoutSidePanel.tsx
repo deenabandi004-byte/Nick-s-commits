@@ -16,9 +16,14 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { X, Send, Loader2, Trash2, MessageSquarePlus, History, Lock } from 'lucide-react';
 import { useScout, SearchHelpResponse } from '@/contexts/ScoutContext';
-import { useScoutChat, formatMessage, type ScoutNavigate, type ScoutMode, type ScoutCta, type ScoutPlanStep } from '@/hooks/useScoutChat';
+import { useScoutChat, formatMessage, type ScoutNavigate, type ScoutMode, type ScoutCta, type ScoutPlanStep, type ScoutActiveStrategy } from '@/hooks/useScoutChat';
+import { BriefingButton } from '@/components/scout/BriefingButton';
+import { CompletenessGauge } from '@/components/scout/CompletenessGauge';
+import { ActiveStrategyCard } from '@/components/scout/ActiveStrategyCard';
 import { SUGGESTED_QUESTIONS, SCOUT_CHIPS_BY_PAGE } from '@/data/scout-knowledge';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
+// Tour demo orchestration — local addition, not in loops-setup-v2.
+import { useTour } from '@/contexts/TourContext';
 import { toast } from '@/hooks/use-toast';
 import { ScoutApproveCard } from '@/components/ScoutApproveCard';
 import {
@@ -34,7 +39,7 @@ import {
   SCOUT_SEARCH_COMPLETED_EVENT,
   type ScoutSearchCompletedDetail,
 } from '@/lib/scoutBridge';
-import ScoutWavingWhite from '@/assets/ScoutWavingWhite.mp4';
+import ScoutYetiHead from '@/assets/scouts/scout-yeti-head.png';
 import { BACKEND_URL } from '@/services/api';
 import {
   listScoutChats,
@@ -114,6 +119,7 @@ export function ScoutSidePanel() {
   const { user } = useFirebaseAuth();
   const {
     isPanelOpen,
+    openPanel,
     closePanel,
     searchHelpContext,
     searchHelpResponse,
@@ -122,6 +128,11 @@ export function ScoutSidePanel() {
     pendingMessage,
     clearPendingMessage,
   } = useScout();
+  // Tour demo orchestration — local addition, not in loops-setup-v2.
+  // `demoSurface === 'scout'` means the onboarding tour reached the Ask-Scout
+  // step; the effect below seeds a synthetic demo thread while it's active.
+  const { demoSurface } = useTour();
+  const scoutDemoActive = demoSurface === 'scout';
   const panelRef = useRef<HTMLDivElement>(null);
   const [isLoadingSearchHelp, setIsLoadingSearchHelp] = useState(false);
 
@@ -145,7 +156,55 @@ export function ScoutSidePanel() {
     loadChat,
     isLoadingChat,
     appendSyntheticAssistant,
+    appendSyntheticUser,
+    requestBriefing,
   } = useScoutChat(location.pathname);
+
+  // Phase 4B auto-fire: when the user opens Scout for the very first time
+  // (no prior briefing flagged in localStorage AND a fresh chat with zero
+  // messages), kick off the strategist briefing once so they land on a
+  // profile-grounded plan, not an empty state. Manual button always works
+  // regardless of the flag and never resets it. Per-uid key so two users on
+  // the same machine each get their own first-time experience.
+  const briefingShownKey = user?.uid
+    ? `scout_briefing_shown_${user.uid}`
+    : null;
+  const briefingAutoFiredRef = useRef(false);
+  useEffect(() => {
+    if (!isPanelOpen) return;
+    if (!briefingShownKey) return;
+    if (isLoading || isLoadingChat) return;
+    if (messages.length > 0) return;
+    if (briefingAutoFiredRef.current) return;
+    try {
+      if (localStorage.getItem(briefingShownKey) === '1') return;
+    } catch {
+      // Storage disabled; fall back to once-per-session.
+    }
+    briefingAutoFiredRef.current = true;
+    void (async () => {
+      const ok = await requestBriefing();
+      if (ok) {
+        try {
+          localStorage.setItem(briefingShownKey, '1');
+        } catch {
+          // Best-effort; not worth surfacing.
+        }
+      }
+    })();
+  }, [isPanelOpen, briefingShownKey, isLoading, isLoadingChat, messages.length, requestBriefing]);
+
+  // The most-recent message carrying an active_strategy payload becomes the
+  // source for the header card. Looking at messages in reverse so a fresh
+  // briefing supersedes an older one without us tracking strategy state
+  // separately.
+  const activeStrategy: ScoutActiveStrategy | null = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const s = messages[i]?.activeStrategy;
+      if (s) return s;
+    }
+    return null;
+  })();
 
   // -------------------------------------------------------------------------
   // Sidebar (Phase 5 Stage 3): persisted chat history
@@ -183,11 +242,17 @@ export function ScoutSidePanel() {
   // first turn lands and the title generation finishes).
   useEffect(() => {
     if (!isPanelOpen) return;
+    // Tour demo orchestration — local addition, not in loops-setup-v2.
+    // Suppress the real chat-history refetch while the seeded demo is active
+    // so the user's actual chats don't bleed into the tour's demo thread.
+    if (scoutDemoActive) return;
     void refreshChats();
-  }, [isPanelOpen, refreshChats]);
+  }, [isPanelOpen, refreshChats, scoutDemoActive]);
 
   useEffect(() => {
     if (!isPanelOpen) return;
+    // Tour demo orchestration — local addition, not in loops-setup-v2.
+    if (scoutDemoActive) return;
     // Small debounce: the backend writes the title asynchronously after the
     // turn responds, so wait briefly before refetching so we pick the new
     // title up on the same render that surfaced the chat_id.
@@ -195,7 +260,7 @@ export function ScoutSidePanel() {
       void refreshChats();
     }, 1500);
     return () => clearTimeout(t);
-  }, [chatId, isPanelOpen, refreshChats]);
+  }, [chatId, isPanelOpen, refreshChats, scoutDemoActive]);
 
   const handleSidebarChatClick = useCallback(
     async (id: string) => {
@@ -213,6 +278,40 @@ export function ScoutSidePanel() {
   const handleNewChatClick = useCallback(() => {
     startNewChat();
   }, [startNewChat]);
+
+  // ── Tour Scout demo orchestration ──────────────────────────────────────
+  // Local addition, NOT in loops-setup-v2 — re-ported on top of the branch
+  // overwrite (depends on appendSyntheticUser, also re-added to useScoutChat).
+  // When the tour reaches the Ask-Scout step, open the panel programmatically
+  // and seed a two-turn strategist conversation about reaching Mark Cuban.
+  // The seed uses the appendSyntheticUser / appendSyntheticAssistant helpers
+  // (purely local, never persisted), and the sidebar history refetch is gated
+  // above so the user's real chat list won't pop in alongside the demo.
+  // Cleanup closes the panel and clears the seeded thread.
+  useEffect(() => {
+    if (!scoutDemoActive) return;
+
+    // Open the panel if it isn't already, and start from a clean thread so
+    // the demo isn't mixed with a real in-progress chat.
+    openPanel();
+    clearChat();
+    appendSyntheticUser('I want to talk to Mark Cuban');
+    appendSyntheticAssistant(
+      "Smart goal. Mark's reachable but the angle has to be sharp. Here's how I'd run this:\n\n" +
+      "1. Map the path. I'll surface mutual LinkedIn connections with bias toward Shark Tank investors, Cost Plus Drugs operators, and Mavericks-adjacent execs.\n\n" +
+      "2. Pick the channel. Skip the public Mavs email (zero signal). Target a referral through someone he's engaged with in the last 30 days.\n\n" +
+      "3. Frame the ask. One concrete idea aligned with what he's publicly focused on right now, kept under five sentences.\n\n" +
+      "Want me to start mapping connections?"
+    );
+
+    return () => {
+      // Wipe the seeded thread and close the panel. clearChat is local-only
+      // (setMessages([]) + setChatId(null)), so no backend write fires.
+      clearChat();
+      closePanel();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scoutDemoActive]);
 
   // -------------------------------------------------------------------------
   // Navigate execution + the auto-execute effect
@@ -537,12 +636,15 @@ export function ScoutSidePanel() {
       />
 
       {/* Panel. Chat mode is wider to accommodate the persisted-chat sidebar
-          (Phase 5 Stage 3); search-help mode keeps the legacy width. */}
+          AND briefing prose with deep-link URLs that don't wrap mid-token.
+          Search-help mode keeps the legacy width. */}
       <div
         ref={panelRef}
         className={
           'fixed right-0 top-0 z-50 h-full w-full bg-white shadow-xl flex flex-col transform transition-transform duration-300 ease-out rounded-l-2xl ' +
-          (isSearchHelpMode ? 'sm:w-[420px]' : 'sm:w-[600px]')
+          (isSearchHelpMode
+            ? 'sm:w-[420px]'
+            : 'sm:w-[640px] md:w-[760px] lg:w-[860px]')
         }
         style={{ animation: 'slideIn 0.3s ease-out forwards' }}
         onClick={(e) => e.stopPropagation()}
@@ -585,7 +687,7 @@ export function ScoutSidePanel() {
               {isLoadingSearchHelp ? (
                 <div className="flex flex-col items-center justify-center min-h-[300px]">
                   <div className="w-12 h-12 rounded-full bg-[#FFF7EA] flex items-center justify-center mb-4 overflow-hidden">
-                    <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
+                    <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
                   </div>
                   <div className="flex items-center gap-2 text-gray-500">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -596,7 +698,7 @@ export function ScoutSidePanel() {
                 <div className="space-y-4">
                   <div className="flex gap-3">
                     <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                      <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
+                      <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1 max-w-[85%]">
                       <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
@@ -786,6 +888,13 @@ export function ScoutSidePanel() {
 
               {/* Chat column */}
               <div className="flex-1 flex flex-col overflow-hidden">
+              {/* Phase 4B (D2-A): persistent active-strategy card lives in
+                  the chat column header so step progress is always-on context
+                  while the user scrolls older messages. Hidden when there is
+                  no strategy yet, so the empty-state hero is uncluttered. */}
+              {activeStrategy && (
+                <ActiveStrategyCard strategy={activeStrategy} />
+              )}
               <div className="flex-1 overflow-y-auto">
                 <div className="px-5 py-4">
                   {/* Empty state */}
@@ -793,12 +902,12 @@ export function ScoutSidePanel() {
                     <div className="flex flex-col">
                       <div className="flex justify-center mb-6 pt-4">
                         <div className="w-14 h-14 rounded-full bg-[#FFF7EA] flex items-center justify-center overflow-hidden">
-                          <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
+                          <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
                         </div>
                       </div>
                       <div className="flex gap-3 mb-5">
                         <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                          <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
+                          <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
                         </div>
                         <div className="max-w-[85%]">
                           <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
@@ -807,6 +916,15 @@ export function ScoutSidePanel() {
                             </p>
                           </div>
                         </div>
+                      </div>
+                      {/* Phase 4B: primary briefing CTA above the suggested
+                          chips. Auto-fires once for new users via the effect
+                          above; this button is the manual re-fire path. */}
+                      <div className="ml-10 mb-3">
+                        <BriefingButton
+                          onClick={() => void requestBriefing()}
+                          isLoading={isLoading}
+                        />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-10">
                         {(SCOUT_CHIPS_BY_PAGE[location.pathname] ?? SUGGESTED_QUESTIONS).map((question, idx) => (
@@ -852,7 +970,7 @@ export function ScoutSidePanel() {
                             {message.role === 'assistant' ? (
                               <div className="flex gap-3 max-w-[85%]">
                                 <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                                  <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
+                                  <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
                                 </div>
                                 <div className="flex flex-col gap-1.5">
                                   {/* Mode receipt pill above the response */}
@@ -874,9 +992,31 @@ export function ScoutSidePanel() {
                                   {message.content && (
                                     <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
                                       <div
-                                        className="text-sm text-gray-900 leading-relaxed"
+                                        className="text-sm text-gray-900 leading-relaxed [overflow-wrap:anywhere] break-words"
+                                        // Intercept clicks on chips marked
+                                        // data-scout-link so they route via
+                                        // react-router instead of triggering
+                                        // a full page reload (which would
+                                        // close the Scout panel).
+                                        onClick={(e) => {
+                                          const target = e.target as HTMLElement
+                                          const link = target.closest('a[data-scout-link]') as HTMLAnchorElement | null
+                                          if (!link) return
+                                          const href = link.getAttribute('href') || ''
+                                          if (!href.startsWith('/')) return
+                                          e.preventDefault()
+                                          closePanel()
+                                          navigate(href)
+                                        }}
                                         dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
                                       />
+                                      {/* Phase 4B (E1): inline coverage gauge
+                                          on briefing messages. The component
+                                          self-hides above 90% so finished
+                                          profiles don't see ambient noise. */}
+                                      {message.coverage && !message.isStreaming && (
+                                        <CompletenessGauge coverage={message.coverage} />
+                                      )}
                                     </div>
                                   )}
                                   {/* Live tool pills (still running) - shown
@@ -933,7 +1073,7 @@ export function ScoutSidePanel() {
                       {isLoading && !messages.some((m) => m.isStreaming && (m.content || (m.toolEvents && m.toolEvents.length > 0))) && (
                         <div className="flex gap-3">
                           <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                            <video src={ScoutWavingWhite} autoPlay loop muted playsInline className="w-full h-full object-cover" style={{ transform: 'scale(1.05)' }} />
+                            <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
                           </div>
                           <div className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-border)] bg-[var(--brand-bg-surface)] px-2.5 py-1 text-xs text-[var(--brand-ink-secondary)]">
                             <Loader2 className="h-3 w-3 animate-spin text-[var(--brand-blue)]" />

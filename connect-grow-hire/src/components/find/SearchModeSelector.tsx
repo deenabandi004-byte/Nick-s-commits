@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Mail, FileText, Send, Lock, Info } from "lucide-react";
 import {
   Popover,
@@ -56,6 +56,7 @@ const MODE_META: ModeMeta[] = [
 ];
 
 const ACCENT = "#4A60A8";
+const FLASH = "#3B82F6";
 
 interface SearchModeSelectorProps {
   tier: Tier;
@@ -66,6 +67,19 @@ interface SearchModeSelectorProps {
 
 export function SearchModeSelector({ tier, value, onChange, disabled }: SearchModeSelectorProps) {
   const allowed = getAllowedOutreachModes(tier);
+
+  // Flash effect: when the user picks a new mode, briefly tint the selected
+  // pill vibrant blue then fade back to the slate accent.
+  const [flashing, setFlashing] = useState(false);
+  const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flash = () => {
+    setFlashing(true);
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+    flashTimer.current = setTimeout(() => setFlashing(false), 700);
+  };
+  useEffect(() => () => {
+    if (flashTimer.current) clearTimeout(flashTimer.current);
+  }, []);
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -97,6 +111,7 @@ export function SearchModeSelector({ tier, value, onChange, disabled }: SearchMo
               onClick={() => {
                 if (disabled || locked) return;
                 onChange(meta.mode);
+                flash();
               }}
               style={{
                 display: "inline-flex",
@@ -108,9 +123,9 @@ export function SearchModeSelector({ tier, value, onChange, disabled }: SearchMo
                 fontSize: 13,
                 fontWeight: 500,
                 cursor: disabled ? "default" : locked ? "not-allowed" : "pointer",
-                background: isSelected ? ACCENT : "transparent",
+                background: isSelected ? (flashing ? FLASH : ACCENT) : "transparent",
                 color: isSelected ? "#fff" : locked ? "#94A3B8" : "#334155",
-                transition: "background .12s, color .12s",
+                transition: "background .35s ease, color .12s",
               }}
             >
               <Icon style={{ width: 14, height: 14 }} />

@@ -138,6 +138,27 @@ def get_user_career_track(user_data: dict) -> str:
     )
 
 
+def get_outreach_email(user_data: dict) -> str:
+    """Email to use as the user's identity in OUTREACH — signatures, the
+    clickable mailto link, the recruiter/contact "from" identity shown to
+    recipients.
+
+    Prefers a verified .edu (`eduEmail`) when the user has one: a school
+    address makes the student/alumni angle land harder. Falls back to the
+    primary account email otherwise.
+
+    NOTE: This is the *displayed identity* address only. It is NOT the Gmail
+    envelope sender — Gmail always sends as the connected OAuth account, so the
+    technical From header stays whatever Google account the user linked.
+    """
+    if not user_data:
+        return ""
+    edu = (user_data.get("eduEmail") or "").strip()
+    if "@" in edu and edu.lower().endswith(".edu"):
+        return edu
+    return (user_data.get("email") or "").strip()
+
+
 def get_university_mascot(university):
     """Get university mascot for alumni emails."""
     if not university:

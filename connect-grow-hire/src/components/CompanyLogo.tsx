@@ -7,6 +7,10 @@ type CompanyLogoProps = {
   rounded?: number;
   bordered?: boolean;
   className?: string;
+  // When true and the chain falls through to the monogram, render null
+  // instead of the slate letter tile. Useful inline (e.g. next to a company
+  // name in body text) where a letter tile next to text looks noisy.
+  hideWhenMonogram?: boolean;
 };
 
 export function CompanyLogo({
@@ -15,6 +19,7 @@ export function CompanyLogo({
   rounded = 9,
   bordered = true,
   className,
+  hideWhenMonogram = false,
 }: CompanyLogoProps) {
   const candidates = useMemo(() => getCompanyLogoCandidates(company), [company]);
   const [idx, setIdx] = useState(0);
@@ -23,6 +28,8 @@ export function CompanyLogo({
 
   const url = candidates[idx];
   const monogram = company.trim().charAt(0).toUpperCase() || "?";
+
+  if (!url && hideWhenMonogram) return null;
 
   const box: React.CSSProperties = {
     display: "flex",

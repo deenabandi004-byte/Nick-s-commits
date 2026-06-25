@@ -63,7 +63,11 @@ def get_user_credits_and_tier(db, uid):
         if user_doc.exists:
             user_data = user_doc.to_dict()
             credits = check_and_reset_credits(user_ref, user_data)
-            tier = user_data.get('tier', 'free')
+            # subscriptionTier is the source-of-truth field; `tier` is a legacy
+            # fallback that can be stale for upgraded accounts. Reading `tier`
+            # alone caps paid users (Pro/Elite) at the FREE company-batch limit,
+            # so prefer subscriptionTier first.
+            tier = user_data.get('subscriptionTier') or user_data.get('tier', 'free')
             max_credits = user_data.get('maxCredits', TIER_CONFIGS[tier]['credits'])
             return credits, tier, max_credits
         

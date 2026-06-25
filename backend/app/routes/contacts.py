@@ -197,9 +197,9 @@ def delete_contact(contact_id):
         
         if not ref.get().exists:
             raise NotFoundError("Contact")
-        
+
         ref.delete()
-        
+
         return jsonify({'message': 'Contact deleted successfully'})
         
     except (OfferloopException, NotFoundError):
@@ -717,7 +717,7 @@ def bulk_delete_contacts():
                 deleted_count += 1
             else:
                 not_found.append(contact_id)
-        
+
         return jsonify({
             'deleted': deleted_count,
             'not_found': not_found,
@@ -791,11 +791,18 @@ def refresh_warmth_scores():
 @contacts_bp.route('/<contact_id>/reply-draft', methods=['GET'])
 @require_firebase_auth
 def get_reply_draft(contact_id):
-    """Get or generate a reply draft for a contact."""
+    """Get or generate a reply draft for a contact.
+
+    ?refresh=1 forces a fresh generation, bypassing both the ready-draft cache
+    and the in-flight pending doc. The inbox Generate button always passes
+    this so cached webhook-path drafts (latest-snippet-only, pre-thread-aware)
+    don't surface as stale on the first click for replied contacts.
+    """
     try:
         uid = request.firebase_user['uid']
+        refresh = request.args.get('refresh', '').lower() in ('1', 'true', 'yes')
         from app.services.reply_coach import get_reply_draft as _get_draft
-        draft = _get_draft(uid, contact_id)
+        draft = _get_draft(uid, contact_id, refresh=refresh)
         if draft is None:
             return jsonify({"error": "No reply context available"}), 404
         return jsonify(draft)
@@ -919,3 +926,25 @@ def get_auto_prep(contact_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@contacts_bp.route('/clear-mcp-unseen', methods=['POST'])
+@require_firebase_auth
+def clear_mcp_unseen():
+    """Clear `mcpUnseen=true` on every contact for the current user.
+
+    The frontend calls this once after rendering My Network — the MCP
+    persistence layer (app/mcp_server/persist.py) writes new contacts
+    with mcpUnseen=true so the UI can show a one-time orange highlight,
+    and this endpoint flips them all to false so the highlight doesn't
+    persist across reloads.
+    """
+    try:
+        uid = request.firebase_user['uid']
+        db = get_db()
+        if not db:
+            return jsonify({"error": "Database not initialized"}), 500
+        from app.mcp_server.persist import clear_mcp_unseen_for_user
+        cleared = clear_mcp_unseen_for_user(uid, db)
+        return jsonify({"cleared": cleared})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

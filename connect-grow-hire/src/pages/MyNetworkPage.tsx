@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useParams, useNavigate, Navigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useParams, useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -10,7 +10,6 @@ import {
   Plus,
   Upload,
   Download,
-  RefreshCw,
   ChevronUp,
   ChevronDown,
   ChevronLeft,
@@ -21,10 +20,16 @@ import {
   Layers,
   List,
   StickyNote,
+  Loader2,
+  Share2,
+  Forward,
 } from "lucide-react";
+import ShareScout from "@/assets/share-scout.jpeg";
+import { useQueryClient } from "@tanstack/react-query";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useTour } from "@/contexts/TourContext";
 import { firebaseApi, type ManualFirm } from "@/services/firebaseApi";
-import { apiService, type Firm } from "@/services/api";
+import { apiService, type Firm, type OutboxThread, type ShareKind } from "@/services/api";
 import { getCompanyLogoUrl } from "@/utils/suggestionChips";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { toast } from "@/hooks/use-toast";
@@ -257,6 +262,15 @@ interface PersonRow {
   isAlumni?: boolean;
   notes?: string;
   createdAt?: string;
+  // Provenance — "agent" for Loop-discovered contacts, "mcp" for
+  // contacts saved via the Claude/MCP integration, "" for manual.
+  source?: string;
+  // True for MCP-sourced contacts the user hasn't seen yet. We render
+  // a one-time faint orange highlight on the row and POST to
+  // /api/contacts/clear-mcp-unseen after the page loads so the highlight
+  // doesn't persist across reloads.
+  mcpUnseen?: boolean;
+  sharedImport?: boolean;
 }
 
 type SortCol = "name" | "company" | "role" | "school" | null;
@@ -397,8 +411,15 @@ interface PeopleTableProps {
   groupedView: "list" | "grid";
   recencyDir: "newest" | "oldest";
   highlightSince: number;
+  // Set when arriving via /my-network/people?contact=<id> from a Loop
+  // draft row (or any other deep-link source). The matching row scrolls
+  // into view and gets a one-time tint so the jump destination is
+  // unambiguous.
+  focusContactId?: string | null;
   onDelete?: (id: string) => void;
   onSaveNote?: (id: string, note: string) => void;
+  // Share a single row: selects just that contact and opens the share dialog.
+  onShare?: (row: PersonRow) => void;
   // Selection is controlled by the parent so the bulk-delete pill can live
   // next to "Add person" in the filter bar instead of inside the table.
   selected: Set<string>;
@@ -422,14 +443,23 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
   groupedView,
   recencyDir,
   highlightSince,
+  focusContactId,
   onDelete,
   onSaveNote,
+  onShare,
   selected,
   onSelectionChange,
   addingMode,
   onCancelAdd,
   onSaveNew,
 }) => {
+  const focusRowRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!focusContactId) return;
+    const el = focusRowRef.current;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusContactId, rows]);
   const [sortCol, setSortCol] = useState<SortCol>(null);
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   // Track which row's note panel is open + the in-flight draft text. Drafts
@@ -437,6 +467,109 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
   // hammer the network on every keystroke.
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
   const [noteDrafts, setNoteDrafts] = useState<Record<string, string>>({});
+
+  // Mail-icon deep-link: open this contact's conversation in /outbox. If a
+  // thread already exists (deduped by lowercased email against the cached
+  // trackerContacts list), reuse the existing focusEmail deep-link. If not,
+  // synchronously generate a cold first-touch draft via the same
+  // /emails/generate-and-draft path Find uses, then navigate. The endpoint
+  // server-side backfills resume / template / signoff from Firestore — we
+  // send only Name/Email/Company/Title so the generator falls back to
+  // title+company anchors and never re-enriches via PDL.
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [generatingMailId, setGeneratingMailId] = useState<string | null>(null);
+
+  // Scroll the ?contact= deep-link target into view once the rows are present.
+  // The row's ring-highlight comes from rowBaseBg; this just brings it on
+  // screen. Re-runs when rows arrive so a freshly-fetched target still lands.
+  useEffect(() => {
+    if (!focusContactId) return;
+    const el = document.querySelector(`[data-contact-id="${focusContactId}"]`);
+    if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusContactId, rows]);
+
+  const handleMailClick = useCallback(async (row: PersonRow) => {
+    // Inert during the tour's My Network demo. The mail icon is the hero of
+    // the step — the copy points at it — so the icon still renders, but a
+    // click must NEVER reach apiService.getOutboxThreads or
+    // generateAndDraftEmails against a seeded founder. This is the
+    // load-bearing real-action guard for this surface.
+    if ((row as PersonRow & { demo?: boolean }).demo) return;
+    const email = (row.email || "").trim();
+    if (!email) return;
+    if (generatingMailId) return;
+    const targetEmail = email.toLowerCase();
+
+    // 1) Dedupe against the cached trackerContacts list. Cold cache → fetch
+    //    once and prime so the inbox sees fresh data when it mounts.
+    let threads = queryClient.getQueryData<OutboxThread[]>(["trackerContacts"]);
+    if (!threads) {
+      const res = await apiService.getOutboxThreads();
+      if ("error" in res) {
+        toast({ title: "Couldn't open inbox", description: res.error, variant: "destructive" });
+        return;
+      }
+      threads = res.threads;
+      queryClient.setQueryData(["trackerContacts"], threads);
+    }
+
+    const existing = threads.find((t) => (t.email || "").toLowerCase() === targetEmail);
+    if (existing) {
+      navigate("/outbox", { state: { focusEmail: email, segment: "people" } });
+      return;
+    }
+
+    // 2) No thread yet — generate a cold draft for this single contact, then
+    //    navigate. Backend dedupes the underlying contact doc by email, so a
+    //    double-click race is safe. batch_generate_emails reads FirstName /
+    //    LastName / Company / Title off the contact dict (see
+    //    reply_generation.py:494-497); split the saved display name so the
+    //    greeting renders "Hi <first>," instead of "Hi ,".
+    const trimmedName = (row.name || "").trim();
+    const firstSpace = trimmedName.indexOf(" ");
+    const firstName = firstSpace === -1 ? trimmedName : trimmedName.slice(0, firstSpace);
+    const lastName = firstSpace === -1 ? "" : trimmedName.slice(firstSpace + 1).trim();
+    setGeneratingMailId(row.id);
+    try {
+      const result = await apiService.generateAndDraftEmails({
+        contacts: [{
+          FirstName: firstName,
+          LastName: lastName,
+          name: trimmedName,
+          Email: email,
+          Company: row.company || "",
+          Title: row.role || "",
+        }],
+      });
+      if ("error" in result) {
+        toast({
+          title: "Couldn't draft email",
+          description: result.message || result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!result.success || !result.draft_count) {
+        toast({
+          title: "Couldn't draft email",
+          description: "No draft was created. Check that Gmail is connected.",
+          variant: "destructive",
+        });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["trackerContacts"] });
+      navigate("/outbox", { state: { focusEmail: email, segment: "people" } });
+    } catch (e: any) {
+      toast({
+        title: "Couldn't draft email",
+        description: e?.message || "Unexpected error",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingMailId(null);
+    }
+  }, [generatingMailId, navigate, queryClient]);
 
   const commitNote = (id: string, original: string | undefined) => {
     const draft = noteDrafts[id];
@@ -533,7 +666,7 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
   // right after the checkbox so the row visually echoes the Companies tab.
   // Each cell uses overflow truncation so long values don't bleed into
   // adjacent cells.
-  const COLS = "28px 36px minmax(180px, 1.5fr) minmax(140px, 1.1fr) minmax(170px, 1.25fr) minmax(150px, 1.1fr) 76px";
+  const COLS = "28px 36px minmax(180px, 1.5fr) minmax(140px, 1.1fr) minmax(140px, 1fr) minmax(150px, 1.1fr) 104px";
 
   const HeaderRow = (
     <div
@@ -579,7 +712,15 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
   // Rows created after the last visit get a faint blue tint so the user can
   // spot what's new at a glance. The tint replaces the normal alternating
   // background for that row.
+  //
+  // MCP-sourced contacts that the user hasn't seen yet get a one-time
+  // faint orange highlight (the same accent the focus tint uses, dimmer).
+  // After the page loads we POST to /api/contacts/clear-mcp-unseen so the
+  // highlight only shows on this one visit.
   const rowBaseBg = (row: PersonRow, idx: number): string => {
+    if (focusContactId && row.id === focusContactId) return "rgba(224,122,62,0.12)";
+    if (row.mcpUnseen) return "rgba(224,122,62,0.08)";
+    if (row.sharedImport) return "rgba(34,197,94,0.10)";
     const ts = row.createdAt ? Date.parse(row.createdAt) : 0;
     if (highlightSince && ts > highlightSince) return "rgba(59,130,246,0.08)";
     return idx % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white";
@@ -589,9 +730,12 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
     const noteOpen = openNoteId === row.id;
     const draftValue = noteDrafts[row.id] ?? row.notes ?? "";
     const hasNote = !!(row.notes && row.notes.trim());
+    const isFocused = !!(focusContactId && row.id === focusContactId);
     return (
       <React.Fragment key={row.id}>
         <div
+      ref={isFocused ? focusRowRef : undefined}
+      data-contact-id={row.id}
       className={`grid items-center transition-colors ${
         isLast && !noteOpen ? "" : "border-b border-line-2"
       }`}
@@ -628,7 +772,29 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
         )}
       </div>
       <div style={{ minWidth: 0 }}>
-        <div className="truncate" style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink, #0F172A)" }}>{row.name}</div>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <div className="truncate" style={{ fontSize: 13.5, fontWeight: 600, color: "var(--ink, #0F172A)" }}>{row.name}</div>
+          {row.source === "agent" && (
+            <span
+              title="Discovered by a Loop"
+              style={{
+                flexShrink: 0,
+                fontSize: 9.5,
+                fontWeight: 600,
+                letterSpacing: "0.05em",
+                textTransform: "uppercase",
+                color: "var(--ink-3, #64748B)",
+                background: "var(--paper-2, #FAFBFF)",
+                border: "1px solid var(--line, #E2E8F0)",
+                borderRadius: 4,
+                padding: "0 5px",
+                lineHeight: "15px",
+              }}
+            >
+              Loop
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2 mt-0.5">
           {row.email && (
             <span className="font-mono text-[10.5px] text-ink-3 truncate">{row.email}</span>
@@ -644,15 +810,36 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
         {row.school || (row.location ? <span className="text-ink-3">{row.location}</span> : " - ")}
       </div>
       <div className="flex items-center justify-end gap-1.5 text-ink-3">
-        {row.email && (
-          <a
-            href={`mailto:${row.email}`}
-            title="Email"
+        {onShare && (
+          <button
+            type="button"
+            title="Share"
             className="hover:text-ink p-0.5"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onShare(row);
+            }}
           >
-            <Mail className="h-3.5 w-3.5" />
-          </a>
+            <Forward className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {row.email && (
+          <button
+            type="button"
+            title={generatingMailId === row.id ? "Drafting first email…" : "Open conversation"}
+            className="hover:text-ink p-0.5 disabled:cursor-wait disabled:opacity-60"
+            disabled={generatingMailId === row.id}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMailClick(row);
+            }}
+          >
+            {generatingMailId === row.id ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Mail className="h-3.5 w-3.5" />
+            )}
+          </button>
         )}
         {onSaveNote && (
           <button
@@ -702,7 +889,7 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
               <span
                 style={{
                   fontSize: 9.5,
-                  fontFamily: "'JetBrains Mono', monospace",
+                  fontFamily: "inherit",
                   letterSpacing: "0.08em",
                   textTransform: "uppercase",
                   color: "#64748B",
@@ -744,7 +931,17 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
                   });
                   setOpenNoteId(null);
                 }}
-                className="text-[11px] text-ink-3 hover:text-ink-2"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  lineHeight: 1.4,
+                  color: "var(--ink-2, #475569)",
+                  background: "transparent",
+                  border: "1px solid var(--line, #E2E8F0)",
+                  borderRadius: 4,
+                  padding: "5px 14px",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
@@ -754,7 +951,17 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
                   commitNote(row.id, row.notes);
                   setOpenNoteId(null);
                 }}
-                className="text-[11px] font-medium text-[#64748B] hover:text-[#3F5878]"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  lineHeight: 1.4,
+                  color: "#fff",
+                  background: "var(--accent, #4A60A8)",
+                  border: "1px solid var(--accent, #4A60A8)",
+                  borderRadius: 4,
+                  padding: "5px 14px",
+                  cursor: "pointer",
+                }}
               >
                 Save
               </button>
@@ -826,6 +1033,7 @@ interface CompanyRow {
   // Most recent underlying timestamp (max of contact.createdAt, manual firm
   // createdAt, exploring ts) - used for recency highlight in My Network.
   recencyTs?: number;
+  sharedImport?: boolean;
 }
 
 // Soft-blue color tokens used across both the list and grid views - picked to
@@ -1115,7 +1323,9 @@ const CompaniesTable: React.FC<{
                   gridTemplateColumns: COMPANIES_LIST_COLS,
                   gap: 14,
                   padding: "12px 16px",
-                  background: (highlightSince && (row.recencyTs || 0) > highlightSince)
+                  background: row.sharedImport
+                    ? "rgba(34,197,94,0.10)"
+                    : (highlightSince && (row.recencyTs || 0) > highlightSince)
                     ? "rgba(59,130,246,0.08)"
                     : (i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white"),
                   cursor: rowClickable ? "pointer" : "default",
@@ -1123,10 +1333,12 @@ const CompaniesTable: React.FC<{
                 }}
                 onMouseEnter={(e) => {
                   if (!rowClickable) return;
-                  e.currentTarget.style.background = COMPANY_BLUE_TINT;
+                  if (!row.sharedImport) e.currentTarget.style.background = COMPANY_BLUE_TINT;
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = (highlightSince && (row.recencyTs || 0) > highlightSince)
+                  e.currentTarget.style.background = row.sharedImport
+                    ? "rgba(34,197,94,0.10)"
+                    : (highlightSince && (row.recencyTs || 0) > highlightSince)
                     ? "rgba(59,130,246,0.08)"
                     : (i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white");
                 }}
@@ -1431,6 +1643,7 @@ interface ManagerRow {
   company?: string;
   location?: string;
   dateAdded?: string;
+  sharedImport?: boolean;
 }
 
 const AddManagerRow: React.FC<{
@@ -1497,6 +1710,7 @@ const AddManagerRow: React.FC<{
         placeholder="Company"
         style={ADD_INPUT_STYLE}
       />
+      <div /> {/* Added slot - empty for in-progress add row */}
       <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
         <button
           type="button"
@@ -1544,6 +1758,128 @@ const ManagersTable: React.FC<{
     else onSelectionChange(new Set(rows.map((r) => r.id)));
   };
 
+  // Mail-icon deep-link for the Hiring Managers tab. Mirrors PeopleTable's
+  // handler with three deltas: deep-link uses segment "hiringManagers" to
+  // match RecruiterSpreadsheetPage; the cold-generate path overrides the
+  // user's saved email purpose with "referral" (more appropriate than the
+  // networking default for a hiring-manager ask); and a fitContext carrying
+  // roleHiringFor + company is threaded through when present so the LLM has
+  // the job hook for a stronger referral ask. The override is per-call only
+  // and we merge the rest of the user's saved template back in (signoff +
+  // signature already have fallback in emails.py, but stylePreset and
+  // customInstructions don't — without the merge the user would lose their
+  // tuned voice for this single email).
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [generatingMailId, setGeneratingMailId] = useState<string | null>(null);
+
+  const handleMailClick = useCallback(async (row: ManagerRow) => {
+    const email = (row.email || "").trim();
+    if (!email) return;
+    if (generatingMailId) return;
+    const targetEmail = email.toLowerCase();
+
+    // 1) Dedupe against the cached trackerContacts list (same key the
+    //    inbox uses).
+    let threads = queryClient.getQueryData<OutboxThread[]>(["trackerContacts"]);
+    if (!threads) {
+      const res = await apiService.getOutboxThreads();
+      if ("error" in res) {
+        toast({ title: "Couldn't open inbox", description: res.error, variant: "destructive" });
+        return;
+      }
+      threads = res.threads;
+      queryClient.setQueryData(["trackerContacts"], threads);
+    }
+
+    const existing = threads.find((t) => (t.email || "").toLowerCase() === targetEmail);
+    if (existing) {
+      navigate("/outbox", { state: { focusEmail: email, segment: "hiringManagers" } });
+      return;
+    }
+
+    // 2) No thread — fetch the user's saved email template (cached for the
+    //    session), merge with our per-call purpose override, then generate
+    //    a cold referral draft. The endpoint runs an OpenAI call + Gmail
+    //    draft creation in series and routinely takes 15-30s. A persistent
+    //    toast (use-toast.ts keeps it up until explicitly dismissed) sets
+    //    expectations so the row-level spinner doesn't read as "frozen."
+    //    We explicitly dismiss it on every exit path (success, both error
+    //    branches, catch) so behavior doesn't depend on TOAST_LIMIT=1
+    //    silently replacing it.
+    setGeneratingMailId(row.id);
+    const drafting = toast({
+      title: "Drafting referral email…",
+      description: "Generating a personalized first email — this usually takes 15–30 seconds.",
+    });
+    try {
+      const savedTemplate = await queryClient.fetchQuery({
+        queryKey: ["emailTemplate"],
+        queryFn: () => apiService.getEmailTemplate(),
+        staleTime: 5 * 60 * 1000,
+      });
+
+      const trimmedName = (row.name || "").trim();
+      const firstSpace = trimmedName.indexOf(" ");
+      const firstName = firstSpace === -1 ? trimmedName : trimmedName.slice(0, firstSpace);
+      const lastName = firstSpace === -1 ? "" : trimmedName.slice(firstSpace + 1).trim();
+      const roleHiringFor = (row.roleHiringFor || "").trim();
+
+      const payload: Parameters<typeof apiService.generateAndDraftEmails>[0] & {
+        emailTemplate?: Record<string, any>;
+        fitContext?: { job_title: string; company: string };
+      } = {
+        contacts: [{
+          FirstName: firstName,
+          LastName: lastName,
+          name: trimmedName,
+          Email: email,
+          Company: row.company || "",
+          Title: row.title || "",
+        }],
+        emailTemplate: {
+          ...(savedTemplate || {}),
+          purpose: "referral",
+        },
+      };
+      if (roleHiringFor) {
+        payload.fitContext = { job_title: roleHiringFor, company: row.company || "" };
+      }
+
+      const result = await apiService.generateAndDraftEmails(payload as any);
+      if ("error" in result) {
+        drafting.dismiss();
+        toast({
+          title: "Couldn't draft email",
+          description: result.message || result.error,
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!result.success || !result.draft_count) {
+        drafting.dismiss();
+        toast({
+          title: "Couldn't draft email",
+          description: "No draft was created. Check that Gmail is connected.",
+          variant: "destructive",
+        });
+        return;
+      }
+      queryClient.invalidateQueries({ queryKey: ["trackerContacts"] });
+      drafting.dismiss();
+      navigate("/outbox", { state: { focusEmail: email, segment: "hiringManagers" } });
+    } catch (e: any) {
+      drafting.dismiss();
+      toast({
+        title: "Couldn't draft email",
+        description: e?.message || "Unexpected error",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingMailId(null);
+    }
+  }, [generatingMailId, navigate, queryClient]);
+
   // Format dateAdded → "3d", "2w", "1mo" relative
   const formatAdded = (iso: string | undefined): string => {
     if (!iso) return "";
@@ -1557,10 +1893,18 @@ const ManagersTable: React.FC<{
     return `${Math.floor(days / 365)}y`;
   };
 
-  // 8 columns: checkbox | company logo | Name+email | LinkedIn | Title |
-  // Role hiring for | Company text | Added. Logo sits to the left of the
-  // name, matching the People tab layout.
-  const COLS = "28px 36px minmax(190px, 1.5fr) 64px minmax(150px, 1.1fr) minmax(190px, 1.4fr) minmax(150px, 1.1fr) 64px";
+  // 9 columns: checkbox | company logo | Name+email | LinkedIn | Title |
+  // Role hiring for | Company text | Added | Actions. The Actions column
+  // mirrors PeopleTable's 76px slot; today it holds only the mail icon, but
+  // the cell uses the same flex container as People so note/delete can be
+  // dropped in later without re-doing the grid. Minimums trimmed (Name 190→
+  // 170, LinkedIn 64→56, Title 150→130, Hiring for 190→150, Company 150→
+  // 130, Added 64→56) so the 9 tracks + 8×14px gaps + 32px row padding fit
+  // inside the page container's max-w-[1100px] (≈1052px usable) — without
+  // these trims the 76px Actions track overflows and `overflow-hidden` on
+  // the table wrapper clips it off the right edge. fr max-widths are
+  // unchanged so columns still expand on wider viewports.
+  const COLS = "28px 36px minmax(170px, 1.5fr) 56px minmax(130px, 1.1fr) minmax(150px, 1.4fr) minmax(130px, 1.1fr) 56px 76px";
 
   const HeaderRow = (
     <div
@@ -1583,10 +1927,12 @@ const ManagersTable: React.FC<{
       <span className="font-sans text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Hiring for</span>
       <span className="font-sans text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">Company</span>
       <span className="font-sans text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3 text-right">Added</span>
+      <span /> {/* actions column - no header label, matches People */}
     </div>
   );
 
   const rowBaseBg = (row: ManagerRow, i: number): string => {
+    if (row.sharedImport) return "rgba(34,197,94,0.10)";
     const ts = row.dateAdded ? Date.parse(row.dateAdded) : 0;
     if (highlightSince && ts > highlightSince) return "rgba(59,130,246,0.08)";
     return i % 2 === 1 ? "var(--paper-2, #FAFBFF)" : "white";
@@ -1665,6 +2011,26 @@ const ManagersTable: React.FC<{
       </div>
       <div className="font-mono text-[10.5px] text-ink-3 text-right">
         {formatAdded(row.dateAdded)}
+      </div>
+      <div className="flex items-center justify-end gap-1.5 text-ink-3">
+        {row.email && (
+          <button
+            type="button"
+            title={generatingMailId === row.id ? "Drafting referral email…" : "Open conversation"}
+            className="hover:text-ink p-0.5 disabled:cursor-wait disabled:opacity-60"
+            disabled={generatingMailId === row.id}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleMailClick(row);
+            }}
+          >
+            {generatingMailId === row.id ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Mail className="h-3.5 w-3.5" />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1761,9 +2127,18 @@ const FB_GROUP = "flex items-center gap-1.5";                    // a cluster of
 const MyNetworkPage: React.FC = () => {
   const { tab } = useParams<{ tab: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useFirebaseAuth();
 
   const activeTab: TabId = tab === "companies" ? "companies" : tab === "managers" ? "managers" : "people";
+
+  // Deep-link from the Loops activity feed: /my-network/people?contact=<id>
+  // opens this contact row in the People tab — PeopleTable scrolls it into
+  // view and tints it on mount so the user sees what they jumped to. Only
+  // honored on the People tab — companies/managers have their own surfaces.
+  const focusContactId = activeTab === "people"
+    ? (searchParams.get("contact") || undefined)
+    : undefined;
 
   const [people, setPeople] = useState<PersonRow[]>([]);
   const [managers, setManagers] = useState<ManagerRow[]>([]);
@@ -1786,6 +2161,63 @@ const MyNetworkPage: React.FC = () => {
   // (it's listed in that effect's dependency array) so the user can pull the
   // latest contacts/firms/managers without a full page reload.
   const [refreshNonce, setRefreshNonce] = useState(0);
+
+  // ── Tour demo state ──────────────────────────────────────────────────────
+  // Mirrors the People / Companies / HM pattern: the tour step declares
+  // `demoSurface: 'my-network'`, which flips `myNetworkDemoActive` here.
+  // The effect REPLACES (not appends) the People list with the three
+  // founders so a real user never sees fake rows mixed in with their actual
+  // network. No typing animation — this surface isn't a search; the rows
+  // simply appear as the "saved network." Teardown wipes the demo rows AND
+  // bumps `refreshNonce`, which re-runs the existing Firestore-load effect
+  // and fully restores the user's real People list. Per-row guards on
+  // `handleMailClick` (via `row.demo`) plus page-level guards on every
+  // backend-touching parent handler (delete, notes save, inline-add,
+  // bulk-delete, CSV export) keep the seeded rows fully inert.
+  const { demoSurface } = useTour();
+  const myNetworkDemoActive = demoSurface === 'my-network';
+  const MY_NETWORK_DEMO_ROWS: Array<PersonRow & { demo: true }> = [
+    {
+      demo: true,
+      id: 'demo-nick',
+      name: 'Nick Wittig',
+      email: 'nickwittig@offerloop.ai',
+      role: 'Cofounder',
+      company: 'Offerloop',
+    },
+    {
+      demo: true,
+      id: 'demo-rylan',
+      name: 'Rylan Bohnett',
+      email: 'rylan@offerloop.ai',
+      role: 'CMO',
+      company: 'Offerloop',
+    },
+    {
+      demo: true,
+      id: 'demo-deena',
+      name: 'Deena Bandi',
+      email: 'deena@offerloop.ai',
+      role: 'CTO',
+      company: 'Offerloop',
+    },
+  ];
+
+  useEffect(() => {
+    if (!myNetworkDemoActive) return;
+    // Replace the People list with the seeded founders. Other tabs
+    // (Companies, Managers) keep real data — the spotlight is on People and
+    // a tour-deviation to another tab still shows the user's true state.
+    setPeople(MY_NETWORK_DEMO_ROWS);
+    return () => {
+      // Drop the seeded rows immediately, then nudge the real-load effect
+      // (deps include refreshNonce) to re-fetch contacts from Firestore.
+      // The user's full real list is fully restored within one fetch.
+      setPeople([]);
+      setRefreshNonce((n) => n + 1);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myNetworkDemoActive]);
 
   // "Exploring" companies - a localStorage watch-list populated when the user
   // clicks a company card on Find > Companies. These bubble to the top of the
@@ -1883,6 +2315,7 @@ const MyNetworkPage: React.FC = () => {
       firm?: Firm;
       manualFirmId?: string;
       latestTs: number;
+      sharedImport?: boolean;
     };
     const map = new Map<string, Bucket>();
     const tsOf = (s?: string): number => (s ? Date.parse(s) || 0 : 0);
@@ -1926,6 +2359,7 @@ const MyNetworkPage: React.FC = () => {
         map.set(key, b);
       }
       if (mf.id) b.manualFirmId = mf.id;
+      if ((mf as any).sharedImport) b.sharedImport = true;
       const t = tsOf(mf.createdAt);
       if (t > b.latestTs) b.latestTs = t;
       if (!b.firm) {
@@ -1961,6 +2395,7 @@ const MyNetworkPage: React.FC = () => {
         alumni: b.count,
         manualFirmId: b.manualFirmId,
         recencyTs: b.latestTs,
+        sharedImport: b.sharedImport,
       };
     });
 
@@ -2068,6 +2503,22 @@ const MyNetworkPage: React.FC = () => {
 
   useEffect(() => {
     if (!user?.uid) return;
+    // Entry guard: no real fetch kicks off while the tour's My Network demo
+    // is live. The teardown bumps refreshNonce, which re-fires this effect
+    // once the flag is false again, fully restoring the real list.
+    if (myNetworkDemoActive) return;
+
+    // Cancellable-effect pattern. When deps change (specifically when
+    // myNetworkDemoActive flips false→true), React runs this cleanup BEFORE
+    // any new effect body. Setting `cancelled = true` is synchronous, and
+    // the in-flight .then callbacks below all read the same closure
+    // variable at resolution time — so a fetch started while demoSurface
+    // was still null (during cross-route nav, before pending-step promotes
+    // stepIndex/run) drops its write the moment the demo activates. This is
+    // the React-canonical fix for the microtask-vs-render race that broke
+    // the earlier ref-mirror attempt: a plain variable check has no
+    // dependency on render scheduling.
+    let cancelled = false;
 
     // Load people from contacts. Field names match the Firestore Contact shape
     // (firstName/lastName/jobTitle/company/email/linkedinUrl/college/location/
@@ -2075,27 +2526,38 @@ const MyNetworkPage: React.FC = () => {
     // c.full_name / c.job_title which never exists in the saved docs, so every
     // row collapsed to "Unknown" / blanks.
     firebaseApi.getContacts(user.uid).then((contacts) => {
-      setPeople(
-        contacts.map((c: any) => {
-          const fullName = `${c.firstName || ""} ${c.lastName || ""}`.trim();
-          return {
-            id: c.id || c.contactId || Math.random().toString(),
-            name: fullName || c.name || "Unknown",
-            email: c.email || undefined,
-            linkedinUrl: c.linkedinUrl || c.linkedin_url || c.LinkedIn || undefined,
-            role: c.jobTitle || c.title || c.Title || undefined,
-            company: c.company || c.Company || undefined,
-            location: c.location || undefined,
-            school: c.college || c.College || undefined,
-            schoolYear: c.schoolYear || undefined,
-            status: c.status || undefined,
-            warmthTier: c.warmthTier || undefined,
-            isAlumni: !!c.isAlumni,
-            notes: c.notes || undefined,
-            createdAt: c.createdAt || c.firstContactDate || undefined,
-          };
-        })
-      );
+      if (cancelled) return;
+      const rows = contacts.map((c: any) => {
+        const fullName = `${c.firstName || ""} ${c.lastName || ""}`.trim();
+        return {
+          id: c.id || c.contactId || Math.random().toString(),
+          name: fullName || c.name || "Unknown",
+          email: c.email || undefined,
+          linkedinUrl: c.linkedinUrl || c.linkedin_url || c.LinkedIn || undefined,
+          role: c.jobTitle || c.title || c.Title || undefined,
+          company: c.company || c.Company || undefined,
+          location: c.location || undefined,
+          school: c.college || c.College || undefined,
+          schoolYear: c.schoolYear || undefined,
+          status: c.status || undefined,
+          warmthTier: c.warmthTier || undefined,
+          isAlumni: !!c.isAlumni,
+          notes: c.notes || undefined,
+          createdAt: c.createdAt || c.firstContactDate || undefined,
+          source: c.source || undefined,
+          mcpUnseen: !!c.mcpUnseen,
+          sharedImport: !!c.sharedImport,
+        };
+      });
+      setPeople(rows);
+
+      // Fire-and-forget: clear mcpUnseen=true server-side so the orange
+      // highlight only shows on this first visit. The local rows keep
+      // mcpUnseen=true for this render; subsequent loads see the cleared
+      // value from Firestore.
+      if (rows.some((r) => r.mcpUnseen)) {
+        apiService.clearMcpUnseen().catch(() => {});
+      }
     }).catch(() => {});
 
     // Companies - auto-derived from saved People. The "company tracker" is a
@@ -2107,6 +2569,7 @@ const MyNetworkPage: React.FC = () => {
     // same data Find used to render its "188 companies saved" view, so the two
     // surfaces stay in sync.
     apiService.getFirmSearchHistory(100, true).then((history: any[]) => {
+      if (cancelled) return;
       console.log('[MyNetwork] firm-search/history returned', {
         searchCount: (history || []).length,
         sample: (history || []).slice(0, 2).map((h: any) => ({
@@ -2142,11 +2605,15 @@ const MyNetworkPage: React.FC = () => {
     });
 
     // Load manually-added firms (Add company → Firestore).
-    firebaseApi.getManualFirms(user.uid).then(setManualFirms).catch(() => {});
+    firebaseApi.getManualFirms(user.uid).then((firms) => {
+      if (cancelled) return;
+      setManualFirms(firms);
+    }).catch(() => {});
 
     // Load hiring managers. Same field-mapping fix as People - Firestore docs
     // use camelCase firstName/lastName/jobTitle/etc., NOT PDL's raw schema.
     firebaseApi.getRecruiters(user.uid).then((recs: any[]) => {
+      if (cancelled) return;
       setManagers(
         recs.map((r: any) => {
           const fullName = `${r.firstName || ""} ${r.lastName || ""}`.trim();
@@ -2161,11 +2628,16 @@ const MyNetworkPage: React.FC = () => {
             company: r.company || undefined,
             location: r.location || undefined,
             dateAdded: r.dateAdded || r.createdAt || undefined,
+            sharedImport: !!r.sharedImport,
           };
         })
       );
     }).catch(() => {});
-  }, [user?.uid, refreshNonce]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.uid, refreshNonce, myNetworkDemoActive]);
 
   // ─── Inline-add save handlers ─────────────────────────────────────────────
   // Each table opens an empty row when its adding flag is true. The table
@@ -2183,6 +2655,9 @@ const MyNetworkPage: React.FC = () => {
     name: string; email?: string; linkedinUrl?: string;
     company?: string; role?: string; school?: string;
   }): Promise<void> => {
+    // Inert during the tour's My Network demo. The inline-add row could
+    // otherwise reach firebaseApi.addContact and create a real Firestore doc.
+    if (myNetworkDemoActive) return;
     if (!user?.uid) return;
     if (!draft.name.trim()) {
       toast({ title: "Name required", variant: "destructive" });
@@ -2308,6 +2783,10 @@ const MyNetworkPage: React.FC = () => {
   const [managersSelected, setManagersSelected] = useState<Set<string>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareEmail, setShareEmail] = useState("");
+  const [shareError, setShareError] = useState<string | null>(null);
+  const [sharing, setSharing] = useState(false);
 
   // Redirect bare /my-network to /my-network/people (AFTER all hooks)
   if (!tab) {
@@ -2339,6 +2818,10 @@ const MyNetworkPage: React.FC = () => {
   };
 
   const runBulkDelete = async () => {
+    // Inert during the tour's My Network demo. Even if the user toggled
+    // checkboxes on the seeded founder rows, this must not fire
+    // firebaseApi.deleteContact against ids that don't exist in Firestore.
+    if (myNetworkDemoActive) return;
     if (!user?.uid || activeSelection.size === 0) return;
     setDeleting(true);
     const ids = [...activeSelection];
@@ -2394,15 +2877,21 @@ const MyNetworkPage: React.FC = () => {
     activeTab === "managers" ? (activeSelection.size === 1 ? "hiring manager" : "hiring managers") :
     activeSelection.size === 1 ? "person" : "people";
 
-  // "Add X" pill — shared across all three tabs. Stays dark/filled (default
-  // variant) with white text; FB_SIZE keeps it the exact height/shape/font of
-  // every other control.
+  // "Add X" pill — shared across all three tabs. Filled with navy/slate-blue
+  // (--accent) and white text; FB_SIZE keeps it the exact height/shape/font
+  // of every other control. Overrides the shadcn primary so the brand color
+  // is explicit (not whatever --primary happens to resolve to globally).
   const renderAddButton = () => (
     <Button
       variant="default"
       size="sm"
       onClick={onClickAdd}
       className={FB_SIZE}
+      style={{
+        background: 'var(--accent, #4A60A8)',
+        color: '#fff',
+        border: 'none',
+      }}
     >
       <Plus className={FB_ICON} />
       {addLabel}
@@ -2439,17 +2928,14 @@ const MyNetworkPage: React.FC = () => {
     </button>
   );
 
-  // Re-pull the active tab's data (contacts/firms/managers) without a full
-  // page reload by bumping the nonce wired into the data-loading effect.
-  const handleRefresh = () => {
-    setRefreshNonce((n) => n + 1);
-    toast({ title: "Refreshing your network…" });
-  };
-
   // Export the active tab's rows to a CSV download. Exports the full saved
   // set for that tab (not just the current search filter) so the file is a
   // complete snapshot of that part of the network.
   const handleExportCsv = () => {
+    // Inert during the tour's My Network demo. Local download only, no
+    // backend reach, but exporting a CSV of three fake founders would leave
+    // a confusing artifact on the user's machine.
+    if (myNetworkDemoActive) return;
     if (activeTab === "companies") {
       downloadCsv(
         "my-network-companies.csv",
@@ -2471,7 +2957,51 @@ const MyNetworkPage: React.FC = () => {
     }
   };
 
-  // Pill (icon + optional label) for the Refresh / Export CSV actions — shares
+  // Share helpers — map the active selection to the items array for the API.
+  const shareKind = (): ShareKind =>
+    activeTab === "companies" ? "companies" : activeTab === "managers" ? "hiringManagers" : "contacts";
+
+  const selectedItems = (): any[] => {
+    const ids = activeSelection;
+    if (activeTab === "companies") {
+      return companies.filter((c) => ids.has(c.id)).map((c) => ({
+        name: c.name, industry: c.industry, hq: c.hq, alumni: c.alumni ?? 0,
+      }));
+    }
+    if (activeTab === "managers") {
+      return managers.filter((m) => ids.has(m.id)).map((m) => ({
+        firstName: (m.name || "").split(" ")[0] || "", lastName: (m.name || "").split(" ").slice(1).join(" "),
+        name: m.name, email: m.email, linkedinUrl: m.linkedinUrl, jobTitle: m.title,
+        company: m.company, roleHiringFor: m.roleHiringFor, location: m.location,
+      }));
+    }
+    return people.filter((p) => ids.has(p.id)).map((p) => ({
+      firstName: (p.name || "").split(" ")[0] || "", lastName: (p.name || "").split(" ").slice(1).join(" "),
+      name: p.name, email: p.email, linkedinUrl: p.linkedinUrl, jobTitle: p.role,
+      company: p.company, college: p.school, location: p.location,
+    }));
+  };
+
+  const handleShareSubmit = async () => {
+    setShareError(null);
+    const email = shareEmail.trim().toLowerCase();
+    if (!email) { setShareError("Enter an email."); return; }
+    setSharing(true);
+    try {
+      const res: any = await apiService.shareRecords({ toEmail: email, kind: shareKind(), items: selectedItems() });
+      if (res?.error) { setShareError(res.error); return; }
+      setShareOpen(false);
+      setShareEmail("");
+      clearActiveSelection();
+      toast({ title: `Shared with ${res.toName || email}` });
+    } catch (e: any) {
+      setShareError(e?.message || "Something went wrong.");
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  // Pill (icon + optional label) for the Export CSV actions — shares
   // the same FB_SIZE/FB_FILL tokens as every other control.
   const renderToolButton = (
     icon: React.ReactNode,
@@ -2554,10 +3084,11 @@ const MyNetworkPage: React.FC = () => {
       variant="outline"
       size="sm"
       onClick={() => setConfirmOpen(true)}
-      className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+      title="Delete selected"
+      aria-label="Delete selected"
+      className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 px-2"
     >
-      <Trash2 className="h-3.5 w-3.5" />
-      Delete selected ({activeSelection.size})
+      <Trash2 className="h-4 w-4" />
     </Button>
   ) : null;
 
@@ -2580,26 +3111,50 @@ const MyNetworkPage: React.FC = () => {
 
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-[1100px] mx-auto px-6 py-5">
-              {/* Tabs */}
+              {/* Tabs — recolored to match the Job Board palette: vibrant
+                  blue active state with a soft periwinkle count badge. */}
               <div className="flex items-center gap-1 mb-5">
-                {TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => navigate(`/my-network/${t.id}`, { replace: true })}
-                    className={`inline-flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-medium border-b-2 transition-all ${
-                      activeTab === t.id
-                        ? "text-ink border-ink"
-                        : "text-ink-3 border-transparent hover:text-ink-2"
-                    }`}
-                  >
-                    {t.label}
-                    {counts[t.id] > 0 && (
-                      <span className="font-mono text-[10px] bg-paper-2 px-1.5 py-0.5 rounded-st-sm">
-                        {counts[t.id]}
-                      </span>
-                    )}
-                  </button>
-                ))}
+                {TABS.map((t) => {
+                  const isActive = activeTab === t.id;
+                  return (
+                    <button
+                      key={t.id}
+                      onClick={() => navigate(`/my-network/${t.id}`, { replace: true })}
+                      className="inline-flex items-center gap-2 px-3.5 py-2.5 text-[13px] font-medium border-b-2 transition-all"
+                      style={{
+                        color: isActive
+                          ? 'var(--brand-blue, #3B82F6)'
+                          : 'var(--ink-3, #94A3B8)',
+                        borderBottomColor: isActive
+                          ? 'var(--brand-blue, #3B82F6)'
+                          : 'transparent',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!isActive) e.currentTarget.style.color = 'var(--ink-2, #475569)';
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!isActive) e.currentTarget.style.color = 'var(--ink-3, #94A3B8)';
+                      }}
+                    >
+                      {t.label}
+                      {counts[t.id] > 0 && (
+                        <span
+                          className="font-mono text-[10px] px-1.5 py-0.5 rounded-st-sm"
+                          style={{
+                            background: isActive
+                              ? 'var(--primary-50, #EEF1F9)'
+                              : 'var(--paper-2, #FAFBFF)',
+                            color: isActive
+                              ? 'var(--accent, #4A60A8)'
+                              : 'var(--ink-3, #94A3B8)',
+                          }}
+                        >
+                          {counts[t.id]}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Filter bar - People */}
@@ -2632,7 +3187,7 @@ const MyNetworkPage: React.FC = () => {
 
                   {/* Right group: actions */}
                   <div className={FB_GROUP}>
-                    {renderToolButton(<RefreshCw className={FB_ICON} />, "Refresh", handleRefresh, false)}
+                    {renderToolButton(<Share2 className={`${FB_ICON} text-muted-foreground`} />, "Share", () => { if (activeSelection.size > 0) setShareOpen(true); else toast({ title: "Select rows to share first." }); }, true)}
                     {renderToolButton(<Download className={FB_ICON} />, "Export CSV", handleExportCsv)}
                     {BulkDeleteButton}
                     {renderAddButton()}
@@ -2670,7 +3225,7 @@ const MyNetworkPage: React.FC = () => {
 
                   {/* Right group: actions */}
                   <div className={FB_GROUP}>
-                    {renderToolButton(<RefreshCw className={FB_ICON} />, "Refresh", handleRefresh, false)}
+                    {renderToolButton(<Share2 className={`${FB_ICON} text-muted-foreground`} />, "Share", () => { if (activeSelection.size > 0) setShareOpen(true); else toast({ title: "Select rows to share first." }); }, true)}
                     {renderToolButton(<Download className={FB_ICON} />, "Export CSV", handleExportCsv)}
                     {BulkDeleteButton}
                     {renderAddButton()}
@@ -2702,7 +3257,7 @@ const MyNetworkPage: React.FC = () => {
 
                   {/* Right group: actions */}
                   <div className={FB_GROUP}>
-                    {renderToolButton(<RefreshCw className={FB_ICON} />, "Refresh", handleRefresh, false)}
+                    {renderToolButton(<Share2 className={`${FB_ICON} text-muted-foreground`} />, "Share", () => { if (activeSelection.size > 0) setShareOpen(true); else toast({ title: "Select rows to share first." }); }, true)}
                     {renderToolButton(<Download className={FB_ICON} />, "Export CSV", handleExportCsv)}
                     {BulkDeleteButton}
                     {renderAddButton()}
@@ -2712,6 +3267,7 @@ const MyNetworkPage: React.FC = () => {
 
               {/* Table */}
               {activeTab === "people" && (
+                <div data-tour="tour-network-table">
                 <PeopleTable
                   rows={people}
                   query={searchQuery}
@@ -2720,18 +3276,30 @@ const MyNetworkPage: React.FC = () => {
                   groupedView={peopleGroupedView}
                   recencyDir={peopleSortDir}
                   highlightSince={peopleHighlightSince}
+                  focusContactId={focusContactId}
                   selected={peopleSelected}
                   onSelectionChange={setPeopleSelected}
+                  onShare={(row) => {
+                    setPeopleSelected(new Set([row.id]));
+                    setShareOpen(true);
+                  }}
                   addingMode={addingPerson}
                   onCancelAdd={() => setAddingPerson(false)}
                   onSaveNew={handleSavePerson}
                   onDelete={(id) => {
+                    // Inert during the tour's My Network demo — the seeded
+                    // founder rows have no Firestore doc to delete.
+                    if (myNetworkDemoActive) return;
                     setPeople((prev) => prev.filter((p) => p.id !== id));
                     if (user?.uid) {
                       firebaseApi.deleteContact(user.uid, id).catch(() => {});
                     }
                   }}
                   onSaveNote={(id, note) => {
+                    // Inert during the tour's My Network demo — note typing
+                    // is allowed (local UI state) but commit must NOT reach
+                    // firebaseApi.updateContact against a seeded id.
+                    if (myNetworkDemoActive) return;
                     // Optimistic - patch local state immediately so the
                     // sticky-note icon goes "filled" without waiting on
                     // Firestore. Backend write fires in the background.
@@ -2745,6 +3313,7 @@ const MyNetworkPage: React.FC = () => {
                     }
                   }}
                 />
+                </div>
               )}
               {activeTab === "companies" && (
                 <>
@@ -2824,6 +3393,59 @@ const MyNetworkPage: React.FC = () => {
               className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             >
               {deleting ? "Deleting..." : `Delete ${activeSelection.size}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={shareOpen}
+        onOpenChange={(o) => {
+          if (sharing) return;
+          setShareOpen(o);
+          if (!o) { setShareEmail(""); setShareError(null); }
+        }}
+      >
+        <AlertDialogContent>
+          <div className="flex flex-col items-center text-center">
+            <img
+              src={ShareScout}
+              alt=""
+              className="h-20 w-20 rounded-2xl object-contain"
+              style={{ background: "#F7F5EC" }}
+            />
+            <AlertDialogHeader className="mt-3 space-y-1">
+              <AlertDialogTitle className="text-center text-xl">
+                Share {activeSelection.size} {bulkSubject}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-center">
+                Enter the Offerloop account email to share with. They'll get a popup to accept.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+          </div>
+          <div className="mt-4">
+            <input
+              type="email"
+              autoFocus
+              value={shareEmail}
+              onChange={(e) => { setShareEmail(e.target.value); setShareError(null); }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleShareSubmit(); } }}
+              placeholder="name@example.com"
+              className="w-full rounded-lg border border-slate-200 px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-[#3B82F6] focus:ring-2 focus:ring-[#3B82F6]/20"
+            />
+            {shareError && <p className="mt-2 text-sm text-red-600">{shareError}</p>}
+          </div>
+          <AlertDialogFooter className="mt-5 gap-2 sm:justify-center">
+            <AlertDialogCancel disabled={sharing} className="mt-0 rounded-lg border-slate-200 text-ink-2 hover:bg-slate-50">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); handleShareSubmit(); }}
+              disabled={sharing}
+              className="rounded-lg bg-[#3B82F6] text-white shadow-sm hover:bg-[#2563EB] gap-1.5"
+            >
+              <Forward className="h-4 w-4" />
+              {sharing ? "Sharing…" : "Share"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

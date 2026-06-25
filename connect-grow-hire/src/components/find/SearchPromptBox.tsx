@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface SearchPromptBoxProps {
   /** Input region rendered inside the white type-area (textarea + any overlays). */
@@ -15,6 +15,13 @@ interface SearchPromptBoxProps {
   footer?: React.ReactNode;
   /** Min height of the white type-area. Defaults to 120, matching the People tab. */
   typeAreaMinHeight?: number;
+  /**
+   * Optional input value used to trigger the typing-flash on the send button.
+   * When this changes, the button briefly tints vibrant-blue then fades back
+   * to slate. Pass the parent's prompt/text state. Skipped on first render so
+   * the flash only fires on user-typed changes.
+   */
+  inputValue?: string;
 }
 
 /** Small helper to render an underlined keyword inside a helper line. */
@@ -63,8 +70,35 @@ export const COMPANIES_SEARCH_HELPER = (
  */
 export const SearchPromptBox: React.FC<SearchPromptBoxProps> = ({
   children, onSubmit, submitDisabled, submitIcon, submitAriaLabel = 'Search',
-  helper = PEOPLE_SEARCH_HELPER, footer, typeAreaMinHeight = 120,
-}) => (
+  helper = PEOPLE_SEARCH_HELPER, footer, typeAreaMinHeight = 120, inputValue,
+}) => {
+  // Vibrant-on-hover state for the circular send button.
+  const [btnHovering, setBtnHovering] = useState(false);
+
+  // Typing flash: each change to inputValue tints the button vibrant blue,
+  // then fades back to the slate accent ~700ms after typing stops. The first
+  // render is skipped so the flash only fires on user-typed updates, not on
+  // initial mount.
+  const [btnFlashing, setBtnFlashing] = useState(false);
+  const btnFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isInitialRender = useRef(true);
+  useEffect(() => {
+    if (inputValue === undefined) return;
+    if (isInitialRender.current) {
+      isInitialRender.current = false;
+      return;
+    }
+    setBtnFlashing(true);
+    if (btnFlashTimer.current) clearTimeout(btnFlashTimer.current);
+    btnFlashTimer.current = setTimeout(() => setBtnFlashing(false), 700);
+  }, [inputValue]);
+  useEffect(() => () => {
+    if (btnFlashTimer.current) clearTimeout(btnFlashTimer.current);
+  }, []);
+
+  const showVibrant = btnFlashing || btnHovering;
+
+  return (
   <div
     style={{
       display: 'flex', flexDirection: 'column', position: 'relative',
@@ -91,20 +125,31 @@ export const SearchPromptBox: React.FC<SearchPromptBoxProps> = ({
       }}
     >
       {children}
-      {/* Circular send button */}
+      {/* Circular send button — slate-blue (--accent) while dormant, flashes
+          vibrant --brand-blue while the user is typing (each input change
+          resets the timer), and stays vibrant on hover. */}
       <button
         type="button"
         onClick={onSubmit}
         disabled={submitDisabled}
+        onMouseEnter={() => setBtnHovering(true)}
+        onMouseLeave={() => setBtnHovering(false)}
         aria-label={submitAriaLabel}
         style={{
           position: 'absolute', right: 12, bottom: 12,
           width: 34, height: 34, borderRadius: '50%',
-          background: 'var(--accent, #4A60A8)', color: '#fff', border: 'none',
+          background: showVibrant
+            ? 'var(--brand-blue, #3B82F6)'
+            : 'var(--accent, #4A60A8)',
+          color: '#fff', border: 'none',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           cursor: submitDisabled ? 'not-allowed' : 'pointer',
-          opacity: submitDisabled ? 0.55 : 1,
-          transition: 'opacity .15s, background .15s', zIndex: 2,
+          opacity: submitDisabled ? 0.75 : 1,
+          boxShadow: showVibrant
+            ? '0 2px 8px rgba(59,130,246,0.35)'
+            : 'none',
+          transition: 'background .35s ease, box-shadow .25s ease, opacity .15s ease',
+          zIndex: 2,
         }}
       >
         {submitIcon}
@@ -113,6 +158,7 @@ export const SearchPromptBox: React.FC<SearchPromptBoxProps> = ({
 
     {footer}
   </div>
-);
+  );
+};
 
 export default SearchPromptBox;

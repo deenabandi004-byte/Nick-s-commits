@@ -94,6 +94,41 @@ _STATE_CODES = {
 }
 
 
+# Major US job hubs — always pass the location gate regardless of the
+# user's preferredLocation. Why: a student who picked "Boston" still
+# wants to see strong roles in NYC/SF/Seattle/etc. — those hubs are
+# where most internships and new-grad roles cluster, and dropping them
+# silently makes the feed feel empty. The user's preference remains the
+# primary signal (matched-city jobs sort higher upstream); this list
+# is an additive allowlist, not a replacement.
+_MAJOR_US_HUBS = {
+    # NYC metro
+    "new york", "manhattan", "brooklyn", "queens", "jersey city", "newark",
+    # SF Bay Area
+    "san francisco", "south san francisco", "san jose", "palo alto",
+    "mountain view", "menlo park", "cupertino", "sunnyvale", "redwood city",
+    "santa clara", "oakland", "berkeley", "fremont",
+    # LA metro
+    "los angeles", "santa monica", "culver city", "el segundo", "long beach",
+    "pasadena", "burbank", "irvine", "anaheim",
+    # Boston metro
+    "boston", "cambridge", "somerville", "waltham",
+    # Chicago
+    "chicago", "evanston",
+    # Seattle metro
+    "seattle", "bellevue", "redmond", "kirkland",
+    # DC metro
+    "washington", "arlington", "alexandria", "reston", "mclean",
+    # Other top hubs
+    "austin", "atlanta", "denver", "boulder", "san diego",
+    "dallas", "plano", "irving", "fort worth",
+    "miami", "philadelphia", "houston",
+    "minneapolis", "st. paul", "saint paul",
+    "portland", "phoenix", "raleigh", "durham",
+    "nashville", "charlotte", "pittsburgh", "detroit",
+}
+
+
 def _extract_state_codes(text: str) -> list[str]:
     """Pull 2-letter US state codes from a location preference.
 
@@ -505,6 +540,16 @@ def _gate_by_location(job: dict, intent: dict) -> bool:
         if loc_states & pref_states:
             return False
 
+    # 3) Major-hub pass-through: always allow jobs in big-tech / big-finance
+    #    cities so a student who picked one location still sees high-quality
+    #    roles in other major hubs. Their preferred location is honored by
+    #    upstream ranking (matched-city jobs sort higher); this gate just
+    #    stops silently hiding NYC/SF/LA/Boston/Seattle/Austin/etc. jobs
+    #    from someone who picked a single city elsewhere.
+    for hub in _MAJOR_US_HUBS:
+        if hub in loc_text:
+            return False
+
     return True
 
 
@@ -581,29 +626,45 @@ def _gate_by_interest(job: dict, intent: dict) -> bool:
 # Public API
 # ---------------------------------------------------------------------------
 
-def apply_intent_gates(jobs: list[dict], intent: dict) -> tuple[list[dict], dict]:
-    """Run all three gates against the candidate pool.
+def apply_intent_gates(jobs: list[dict], intent: dict, profile: dict | None = None) -> tuple[list[dict], dict]:
+    """Run intent gates against the candidate pool.
 
-    Each gate is evaluated independently per job so a job that fails multiple
-    gates is counted in EACH bucket, not just the first one. This makes the
-    SPA banner ("12 too senior · 5 wrong location · 8 off-topic") truthful:
-    those counts now reflect actual gate failures, not "which gate happened
-    to short-circuit first".
+    Phase 1 ranking refactor: when the active job_ranking profile sets
+    hard_drop.landability_below > 0 (the default), the level and location
+    gates are SKIPPED here because the landability hard-drop in
+    job_ranking.attach_signals_and_buckets has already removed the same
+    jobs. The interest gate continues to run independently (toggled by
+    profile.interest_gate.enabled, default True).
 
-    A job is kept only if it passes all three gates. `dropped` (total unique
-    jobs removed from the feed) is also returned so the SPA can show an
-    accurate "N filtered" headline that isn't the sum of overlapping buckets.
+    Setting hard_drop.landability_below to 0 in the config reverts to the
+    pre-phase-1 behavior (all three gates fire here) without any code
+    edit. That is the phase-2 escape hatch.
+
+    Each gate is evaluated independently per job so a job that fails
+    multiple gates is counted in EACH bucket, not just the first one. A
+    job is kept only if it passes all active gates. `dropped` (total
+    unique jobs removed) is also returned.
     """
     if not jobs:
         return [], {"by_level": 0, "by_location": 0, "by_interest": 0, "dropped": 0}
+
+    if profile is None:
+        try:
+            from app.job_ranking_config import get_active_profile
+            profile = get_active_profile()
+        except Exception:
+            profile = {}
+
+    landability_active = int((profile.get("hard_drop") or {}).get("landability_below", 0)) > 0
+    interest_enabled = bool((profile.get("interest_gate") or {}).get("enabled", True))
 
     kept = []
     counts = {"by_level": 0, "by_location": 0, "by_interest": 0, "dropped": 0}
 
     for job in jobs:
-        fails_level = _gate_by_level(job, intent)
-        fails_location = _gate_by_location(job, intent)
-        fails_interest = _gate_by_interest(job, intent)
+        fails_level = (not landability_active) and _gate_by_level(job, intent)
+        fails_location = (not landability_active) and _gate_by_location(job, intent)
+        fails_interest = interest_enabled and _gate_by_interest(job, intent)
 
         if fails_level:
             counts["by_level"] += 1
@@ -618,9 +679,10 @@ def apply_intent_gates(jobs: list[dict], intent: dict) -> tuple[list[dict], dict
             kept.append(job)
 
     logger.info(
-        "intent gates: kept %d/%d (dropped=%d, by_level=%d, by_location=%d, by_interest=%d)",
+        "intent gates: kept %d/%d (dropped=%d, by_level=%d, by_location=%d, by_interest=%d, landability_active=%s, interest_enabled=%s)",
         len(kept), len(jobs), counts["dropped"],
         counts["by_level"], counts["by_location"], counts["by_interest"],
+        landability_active, interest_enabled,
     )
     return kept, counts
 

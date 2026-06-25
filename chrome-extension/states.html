@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<!--
+  Design QA preview — renders all four Contact-tab popup states side-by-side.
+  Not loaded by manifest.json; open this file directly to compare against the design.
+  Pulls in the live popup.css so changes to the real popup flow into this preview.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Offerloop Extension — All States</title>
+  <style>
+    html, body { margin: 0; }
+    body {
+      background: #E7E5DF;
+      min-height: 100vh;
+      box-sizing: border-box;
+      padding: 48px;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, 350px);
+      gap: 56px;
+      align-items: flex-start;
+      width: max-content;
+    }
+    .frame { width: 350px; }
+    .frame__label {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #64748B;
+      margin: 0 0 14px 4px;
+    }
+    .frame__card {
+      width: 350px;
+      border-radius: 14px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.10), 0 8px 30px rgba(0,0,0,0.06);
+      background: #fff;
+    }
+    .frame__card iframe {
+      display: block;
+      width: 350px;
+      height: 580px;
+      border: 0;
+    }
+    .frame__card iframe[data-state="profileWithSimilar"] { height: 760px; }
+  </style>
+</head>
+<body>
+  <div class="row">
+    <div class="frame">
+      <p class="frame__label">1 · Sign in</p>
+      <div class="frame__card"><iframe data-state="login" title="Sign in to Offerloop"></iframe></div>
+    </div>
+    <div class="frame">
+      <p class="frame__label">2 · Open a LinkedIn profile</p>
+      <div class="frame__card"><iframe data-state="noProfile" title="Open a LinkedIn profile"></iframe></div>
+    </div>
+    <div class="frame">
+      <p class="frame__label">3 · Profile detected</p>
+      <div class="frame__card"><iframe data-state="profile" title="Profile detected"></iframe></div>
+    </div>
+    <div class="frame">
+      <p class="frame__label">4 · Email found</p>
+      <div class="frame__card"><iframe data-state="profileWithResults" title="Email found"></iframe></div>
+    </div>
+    <div class="frame">
+      <p class="frame__label">5 · Similar contacts expanded</p>
+      <div class="frame__card"><iframe data-state="profileWithSimilar" title="Email found with similar contacts"></iframe></div>
+    </div>
+  </div>
+
+  <script>
+    // Mirrors popup.html. data-show-when filters per-state visibility; non-matching
+    // elements are stripped before rendering each frame.
+    const POPUP_BODY = `
+      <header class="header">
+        <div class="brand"><img class="brand__wordmark" src="images/wordmark.png" alt="Offerloop"></div>
+      </header>
+
+      <nav class="tab-switcher" role="tablist">
+        <button class="tab active" data-tab="contact" role="tab">
+          <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+          </svg>
+          <span>Contact</span>
+        </button>
+        <button class="tab" data-tab="job" role="tab">
+          <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+          </svg>
+          <span>Job</span>
+        </button>
+      </nav>
+
+      <main class="content">
+        <div class="tab-content" id="contact-tab">
+
+          <section class="section" data-show-when="login">
+            <div class="state-card">
+              <div class="state-card__visual">
+                <img class="state-card__scout" src="images/yeti-mascot.png" alt="Yeti">
+              </div>
+              <h2 class="state-card__title">Sign in to <em>Offerloop</em></h2>
+              <p class="state-card__body">Find verified emails and draft personalized outreach right from any LinkedIn profile.</p>
+              <button class="btn btn-google btn-full">
+                <svg class="btn__icon google-icon" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"></path>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"></path>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"></path>
+                </svg>
+                <span>Sign in with Google</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="section" data-show-when="noProfile">
+            <div class="state-card">
+              <div class="state-card__visual state-card__visual--linkedin" aria-hidden="true">
+                <span class="state-card__halo state-card__halo--blue"></span>
+                <span class="linkedin-tile">
+                  <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                    <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path>
+                  </svg>
+                </span>
+              </div>
+              <h2 class="state-card__title">Open a <em>LinkedIn</em> profile</h2>
+              <p class="state-card__body">Navigate to anyone's profile to find their email and draft a personalized outreach in seconds.</p>
+              <a href="https://www.linkedin.com" target="_blank" class="btn btn-outline btn-full">
+                <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                  <polyline points="15 3 21 3 21 9"></polyline>
+                  <line x1="10" y1="14" x2="21" y2="3"></line>
+                </svg>
+                <span>Open LinkedIn</span>
+              </a>
+            </div>
+          </section>
+
+          <section class="section" data-show-when="profile profileWithResults profileWithSimilar">
+            <div class="profile-card">
+              <span class="profile-card__eyebrow">Profile detected</span>
+              <div class="profile-card__row">
+                <svg class="profile-card__icon" viewBox="0 0 24 24" fill="#0A66C2">
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path>
+                </svg>
+                <span class="profile-card__text">linkedin.com/in/sarah-chen</span>
+              </div>
+            </div>
+
+            <div class="actions" data-show-when="profile">
+              <button class="btn btn-action btn-full btn-hero">
+                <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span>Find Email &amp; Draft</span>
+              </button>
+              <button class="btn btn-outline btn-full btn-hero">
+                <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2.5" ry="2.5"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                  <circle cx="12" cy="16" r="1.4" fill="currentColor"></circle>
+                </svg>
+                <span>Meeting Prep</span>
+              </button>
+              <p class="coffee-chat-hint">Uses 15 credits · PDF saved to your library</p>
+            </div>
+
+            <div class="result-card result-card--success" data-show-when="profileWithResults profileWithSimilar">
+              <div class="result-card__header">
+                <div class="result-card__heading">
+                  <span class="result-card__scout-avatar" aria-hidden="true">
+                    <img src="images/scout-noprofile.png" alt="">
+                  </span>
+                  <span class="result-card__who">
+                    <span class="result-card__title">Sarah Chen</span>
+                    <span class="result-card__meta">Ready to reach out</span>
+                  </span>
+                </div>
+                <span class="badge status-badge badge--success">Found</span>
+              </div>
+
+              <div class="result-card__email-row">
+                <svg class="result-card__email-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span class="result-card__email">sarah.chen@gmail.com</span>
+                <svg class="result-card__verified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </div>
+
+              <div class="result-card__actions">
+                <a href="#" class="result-action result-action--primary">
+                  <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                    <polyline points="22,6 12,13 2,6"></polyline>
+                  </svg>
+                  <span class="result-action__label">Open Email Draft</span>
+                  <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="7" y1="17" x2="17" y2="7"></line>
+                    <polyline points="7 7 17 7 17 17"></polyline>
+                  </svg>
+                </a>
+                <a href="#" class="result-action result-action--ghost">
+                  <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                  </svg>
+                  <span class="result-action__label">View in Contact Library</span>
+                  <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+
+              <div class="similar-section">
+                <button id="similarToggleBtn" class="similar-toggle" aria-expanded="false" type="button">
+                  <span class="similar-toggle__label">Find similar at <strong>Goldman Sachs</strong></span>
+                  <svg class="similar-toggle__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
+                <div id="similarBody" class="similar-body hidden">
+                  <div class="similar-results" role="list">
+                    <div class="similar-row" role="listitem">
+                      <span class="similar-row__avatar">AM</span>
+                      <div class="similar-row__who">
+                        <span class="similar-row__name">aakash mehta</span>
+                        <span class="similar-row__meta">Analyst · USC</span>
+                      </div>
+                      <button type="button" class="similar-row__action">Find email</button>
+                    </div>
+                    <div class="similar-row" role="listitem">
+                      <span class="similar-row__avatar">LC</span>
+                      <div class="similar-row__who">
+                        <span class="similar-row__name">lin chen</span>
+                        <span class="similar-row__meta">Associate · NYU</span>
+                      </div>
+                      <a class="similar-row__email-pill" href="#">lin.chen@gs.com</a>
+                    </div>
+                    <div class="similar-row" role="listitem">
+                      <span class="similar-row__avatar">DR</span>
+                      <div class="similar-row__who">
+                        <span class="similar-row__name">diego reyes</span>
+                        <span class="similar-row__meta">Analyst · Michigan</span>
+                      </div>
+                      <button type="button" class="similar-row__action">Find email</button>
+                    </div>
+                  </div>
+                  <a class="similar-footer-link" href="#">
+                    <span>See all alumni at Goldman Sachs</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </a>
+                </div>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </main>
+
+      <footer class="footer">
+        <div class="credits-pill" aria-label="Credits remaining">
+          <span class="credits-pill__label">Credits</span>
+          <span class="credits-pill__value">—</span>
+        </div>
+        <div class="footer-actions">
+          <a href="https://www.offerloop.ai" target="_blank" class="footer-link footer-btn footer-btn--primary">
+            <img class="footer-btn__logo" src="images/footer-mark.png" alt="">
+            <span>Open Offerloop</span>
+          </a>
+        </div>
+      </footer>
+    `;
+
+    function buildSrcdoc(state) {
+      const doc = new DOMParser().parseFromString(
+        `<!DOCTYPE html><html><head><meta charset="UTF-8">
+          <link rel="stylesheet" href="popup.css">
+          <style>
+            html, body { width: 350px; overflow: hidden; }
+          </style>
+         </head><body><div class="container">${POPUP_BODY}</div></body></html>`,
+        'text/html'
+      );
+      doc.querySelectorAll('[data-show-when]').forEach((el) => {
+        const states = el.getAttribute('data-show-when').split(/\s+/);
+        if (!states.includes(state)) el.remove();
+      });
+
+      // State 4 keeps the similar disclosure closed; state 5 expands it.
+      const similarBody = doc.getElementById('similarBody');
+      const similarToggle = doc.getElementById('similarToggleBtn');
+      if (state === 'profileWithSimilar') {
+        similarBody?.classList.remove('hidden');
+        similarToggle?.setAttribute('aria-expanded', 'true');
+      }
+
+      return '<!DOCTYPE html>' + doc.documentElement.outerHTML;
+    }
+
+    document.querySelectorAll('iframe[data-state]').forEach((frame) => {
+      frame.srcdoc = buildSrcdoc(frame.getAttribute('data-state'));
+    });
+  </script>
+</body>
+</html>

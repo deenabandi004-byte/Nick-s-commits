@@ -46,7 +46,7 @@ export function GoalsPromptBanner() {
         </span>
         <button
           type="button"
-          onClick={() => navigate("/account-settings")}
+          onClick={() => navigate("/profile#goals")}
           className="text-sm font-medium underline underline-offset-2 hover:no-underline focus:outline-none focus:underline shrink-0"
         >
           Add goals

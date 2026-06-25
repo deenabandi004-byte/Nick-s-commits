@@ -335,9 +335,6 @@ export function QueuePanel({ isActive }: QueuePanelProps) {
     return (
       <div className="p-3 space-y-3">
         <div className="rounded-[6px] bg-gradient-to-br from-[#EFF6FF] to-white border border-[#3B82F6]/20 px-4 py-4 flex items-start gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#3B82F6]/10 flex items-center justify-center flex-shrink-0">
-            <Sparkles className="w-4 h-4 text-[#3B82F6]" />
-          </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-semibold text-gray-900">
               Your personal networking coach — on Pro.
@@ -489,9 +486,6 @@ export function QueuePanel({ isActive }: QueuePanelProps) {
     return (
       <div className="p-3">
         <div className="rounded-[6px] border border-gray-100 bg-white px-4 py-5 text-center">
-          <div className="w-10 h-10 rounded-full bg-[#EFF6FF] flex items-center justify-center mx-auto mb-2">
-            <Sparkles className="w-5 h-5 text-[#3B82F6]" />
-          </div>
           <p className="text-sm font-semibold text-gray-900">No suggestions yet</p>
           <p className="text-xs text-gray-500 mt-1">
             Generate your first queue of 5 pre-vetted contacts.

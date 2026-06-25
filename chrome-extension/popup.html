@@ -3,257 +3,442 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Offerloop Extension</title>
+  <title>Offerloop</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div class="container">
-    <!-- Header -->
+<div class="container">
+
+    <!-- ============================ Header ============================ -->
     <header class="header">
-      <div class="logo">
-        <img class="logo-icon" src="icons/iconinvertcolor-removebg-preview.png" alt="Offerloop">
-        <span class="logo-text">Offerloop</span>
+      <div class="brand">
+        <img class="brand__logo" src="images/offerloop_logo2_cropped.png" alt="Offerloop">
       </div>
     </header>
 
-    <!-- Tab Switcher -->
-    <div class="tab-switcher">
-      <button class="tab active" data-tab="contact">Contact</button>
-      <button class="tab" data-tab="job">Job</button>
-    </div>
+    <!-- ============================ Tabs ============================ -->
+    <nav class="tab-switcher" role="tablist">
+      <button class="tab active" data-tab="contact" role="tab">
+        <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+        </svg>
+        <span>Contact</span>
+      </button>
+      <button class="tab" data-tab="job" role="tab">
+        <svg class="tab__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+          <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+        </svg>
+        <span>Job</span>
+      </button>
+    </nav>
 
-    <!-- Main Content -->
+    <!-- ============================ Content ============================ -->
     <main class="content">
-      <!-- Contact Tab Content -->
+
+      <!-- ====================== Contact Tab ====================== -->
       <div class="tab-content" id="contact-tab">
-        <!-- Not Logged In State -->
-        <div id="loginSection" class="section hidden">
-          <div class="message-box">
-            <svg class="message-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-              <polyline points="10 17 15 12 10 7"/>
-              <line x1="15" y1="12" x2="3" y2="12"/>
-            </svg>
-            <h3>Sign in to Offerloop</h3>
-            <p>Connect your Offerloop account to find emails and draft outreach.</p>
-            <button id="loginBtn" class="btn btn-google">
-              <svg class="btn-icon google-icon" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+
+        <!-- Sign-in state -->
+        <section id="loginSection" class="section hidden">
+          <div class="state-card">
+            <div class="state-card__visual">
+              <img class="state-card__scout" src="images/yeti-mascot.png" alt="Yeti">
+            </div>
+            <h2 class="state-card__title">Sign in to <em>Offerloop</em></h2>
+            <p class="state-card__body">Find verified emails and draft personalized outreach right from any LinkedIn profile.</p>
+            <button id="loginBtn" class="btn btn-google btn-full">
+              <svg class="btn__icon google-icon" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"></path>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"></path>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"></path>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"></path>
               </svg>
               <span>Sign in with Google</span>
             </button>
           </div>
+        </section>
+
+        <!-- Not on a LinkedIn profile -->
+        <section id="noProfileSection" class="section hidden">
+          <div class="state-card">
+            <div class="state-card__visual state-card__visual--linkedin" aria-hidden="true">
+              <span class="state-card__halo state-card__halo--blue"></span>
+              <span class="linkedin-tile">
+                <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path>
+                </svg>
+              </span>
+            </div>
+            <h2 class="state-card__title">Open a <em>LinkedIn</em> profile</h2>
+            <p class="state-card__body">Navigate to anyone's profile to find their email and draft a personalized outreach in seconds.</p>
+            <a href="https://www.linkedin.com" target="_blank" class="btn btn-outline btn-full">
+              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                <polyline points="15 3 21 3 21 9"></polyline>
+                <line x1="10" y1="14" x2="21" y2="3"></line>
+              </svg>
+              <span>Open LinkedIn</span>
+            </a>
+          </div>
+        </section>
+
+        <!-- LinkedIn Profile detected -->
+        <section id="profileSection" class="section">
+
+          <div class="profile-card">
+            <span class="profile-card__eyebrow">Profile detected</span>
+            <div class="profile-card__row">
+              <svg class="profile-card__icon" viewBox="0 0 24 24" fill="#0A66C2">
+                <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"></path>
+              </svg>
+              <span id="profileUrl" class="profile-card__text">linkedin.com/in/sarah-chen</span>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button id="findEmailBtn" class="btn btn-action btn-full btn-hero">
+              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span>Find Email &amp; Draft</span>
+            </button>
+
+            <button id="coffeeChatBtn" class="btn btn-outline btn-full btn-hero">
+              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2.5" ry="2.5"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <circle cx="12" cy="16" r="1.4" fill="currentColor"></circle>
+              </svg>
+              <span>Meeting Prep</span>
+            </button>
+
+            <p id="coffeeChatHint" class="coffee-chat-hint">Uses 15 credits · PDF saved to your library</p>
+          </div>
+
+          <!-- Meeting Prep loading -->
+          <div id="coffeeChatLoading" class="loading-card hidden">
+            <div class="pulse-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <p id="coffeeChatLoadingText">Generating Meeting Prep…</p>
+          </div>
+
+          <!-- Meeting Prep results -->
+          <div class="result-card result-card--success" id="coffeeChatResults" style="display: none;">
+            <div class="result-card__header">
+              <div class="result-card__heading">
+                <span class="result-card__check" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </span>
+                <span class="result-card__title">Meeting Prep ready</span>
+              </div>
+              <span class="badge badge--success">Done</span>
+            </div>
+            <div id="coffeeChatContact" class="result-card__sub"></div>
+            <div class="result-card__actions">
+              <a href="#" id="coffeeChatDownloadLink" target="_blank" class="result-action result-action--primary">
+                <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span class="result-action__label">Download PDF</span>
+                <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </a>
+              <a href="https://www.offerloop.ai/coffee-chat-prep" target="_blank" class="result-action result-action--ghost">
+                <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span class="result-action__label">Open Meeting Library</span>
+                <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </a>
+            </div>
+          </div>
+
+          <!-- Meeting Prep error -->
+          <div class="error-card" id="coffeeChatError" style="display: none;">
+            <svg class="error-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p id="coffeeChatErrorMessage" class="error-card__message"></p>
+          </div>
+
+          <!-- Find Email results -->
+          <div id="resultsSection" class="result-card result-card--success hidden">
+            <div class="result-card__header">
+              <div class="result-card__heading">
+                <span class="result-card__scout-avatar" aria-hidden="true">
+                  <img src="images/scout-noprofile.png" alt="">
+                </span>
+                <span class="result-card__who">
+                  <span id="resultName" class="result-card__title">Sarah Chen</span>
+                  <span class="result-card__meta">Ready to reach out</span>
+                </span>
+              </div>
+              <span id="resultStatus" class="badge status-badge badge--success">Found</span>
+            </div>
+
+            <div class="result-card__email-row">
+              <svg class="result-card__email-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span id="resultEmail" class="result-card__email">sarah.chen@goldmansachs.com</span>
+              <svg class="result-card__verified" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+
+            <div id="successLinksSection" class="result-card__actions">
+              <a id="openDraftLink" href="https://mail.google.com/mail/u/0/#drafts" target="_blank" class="result-action result-action--primary">
+                <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                  <polyline points="22,6 12,13 2,6"></polyline>
+                </svg>
+                <span class="result-action__label">Open Email Draft</span>
+                <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="7" y1="17" x2="17" y2="7"></line>
+                  <polyline points="7 7 17 7 17 17"></polyline>
+                </svg>
+              </a>
+              <a id="contactLibraryLink" href="https://www.offerloop.ai/contact-search?tab=contact-library" target="_blank" class="result-action result-action--ghost">
+                <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span class="result-action__label">View in Contact Library</span>
+                <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </a>
+            </div>
+
+            <!-- Find similar contacts disclosure -->
+            <div class="similar-section">
+              <button id="similarToggleBtn" class="similar-toggle" aria-expanded="false" aria-controls="similarBody" type="button">
+                <span class="similar-toggle__label">Find similar at <strong id="similarToggleCompany">this company</strong></span>
+                <svg class="similar-toggle__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div id="similarBody" class="similar-body hidden">
+                <div id="similarLoading" class="similar-loading hidden">
+                  <div class="pulse-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+                  <p>Finding similar contacts…</p>
+                </div>
+                <div id="similarResults" class="similar-results hidden" role="list"></div>
+                <p id="similarEmpty" class="similar-empty hidden">No similar contacts found at <span></span>.</p>
+                <p id="similarError" class="similar-error hidden"></p>
+                <a id="similarFooterLink" class="similar-footer-link" href="#" target="_blank">
+                  <span>See all alumni at <span class="similar-footer-link__company">this company</span></span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Find Email loading -->
+          <div id="loadingSection" class="loading-card hidden">
+            <div class="pulse-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+            <p id="loadingText">Finding email…</p>
+          </div>
+
+          <!-- Find Email error -->
+          <div id="errorSection" class="error-card hidden">
+            <svg class="error-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p id="errorText" class="error-card__message">An error occurred</p>
+            <button id="retryBtn" class="btn btn-secondary">
+              <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+              </svg>
+              <span>Try Again</span>
+            </button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ====================== Job Tab ====================== -->
+      <div class="tab-content hidden" id="job-tab">
+
+        <div class="profile-card" id="job-url-display">
+          <span class="profile-card__eyebrow">Job posting</span>
+          <div class="profile-card__row">
+            <svg class="profile-card__icon" viewBox="0 0 24 24" fill="none" stroke="#0A66C2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+            </svg>
+            <span class="profile-card__text" id="job-url-text">Loading…</span>
+          </div>
         </div>
 
-        <!-- Not on LinkedIn Profile -->
-        <div id="noProfileSection" class="section hidden">
-          <div class="message-box">
-            <svg class="message-icon linkedin" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+        <div class="job-status" id="job-status">
+          <p class="job-status__text" id="job-status-text">Detecting job page…</p>
+        </div>
+
+        <div class="manual-form hidden" id="manual-form">
+          <p class="manual-form__notice">Couldn't extract job details. Enter them manually:</p>
+          <div class="form-group">
+            <label for="manual-company">Company</label>
+            <input type="text" id="manual-company" placeholder="e.g. Google">
+          </div>
+          <div class="form-group">
+            <label for="manual-job-title">Job Title</label>
+            <input type="text" id="manual-job-title" placeholder="e.g. Software Engineer">
+          </div>
+          <div class="form-group">
+            <label for="manual-description">Job Description</label>
+            <textarea id="manual-description" rows="4" placeholder="Paste the job description here…"></textarea>
+          </div>
+        </div>
+
+        <div class="job-actions">
+          <button class="btn btn-action btn-full btn-hero" id="find-recruiters-btn">
+            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <h3>Visit a LinkedIn Profile</h3>
-            <p>Navigate to any LinkedIn profile page to get started.</p>
-            <a href="https://www.linkedin.com" target="_blank" class="btn btn-secondary">
-              Open LinkedIn
+            <span>Find &amp; Email Recruiters</span>
+          </button>
+          <button class="btn btn-outline btn-full btn-hero" id="cover-letter-btn">
+            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span>Generate Cover Letter</span>
+          </button>
+        </div>
+
+        <div class="loading-card hidden" id="job-loading">
+          <div class="pulse-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+          <p id="job-loading-text">Processing…</p>
+        </div>
+
+        <div class="result-card result-card--success hidden" id="job-results">
+          <div class="result-card__header">
+            <div class="result-card__heading">
+              <span class="result-card__check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span class="result-card__title">Recruiters found</span>
+            </div>
+            <span class="badge badge--success">Success</span>
+          </div>
+          <div class="result-card__sub" id="job-result-details"></div>
+          <div class="result-card__actions">
+            <a href="https://www.offerloop.ai/hiring-manager-tracker" target="_blank" class="result-action result-action--primary">
+              <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 7h-3V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v2H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"></path>
+                <line x1="2" y1="13" x2="22" y2="13"></line>
+              </svg>
+              <span class="result-action__label">Hiring Manager Tracker</span>
+              <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+              </svg>
+            </a>
+            <a href="https://mail.google.com/mail/u/0/#drafts" target="_blank" class="result-action result-action--ghost">
+              <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+              </svg>
+              <span class="result-action__label">Open Email Drafts</span>
+              <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="7" y1="17" x2="17" y2="7"></line>
+                <polyline points="7 7 17 7 17 17"></polyline>
+              </svg>
             </a>
           </div>
         </div>
 
-        <!-- LinkedIn Profile Detected -->
-        <div id="profileSection" class="section hidden">
-          <div class="profile-card">
-            <div class="profile-url">
-              <img class="url-icon" src="icons/icon16.png" alt="Offerloop">
-              <span id="profileUrl" class="url-text">linkedin.com/in/...</span>
+        <div class="result-card result-card--success hidden" id="cover-letter-results">
+          <div class="result-card__header">
+            <div class="result-card__heading">
+              <span class="result-card__check" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+              </span>
+              <span class="result-card__title">Cover letter ready</span>
             </div>
+            <span class="badge badge--success">Done</span>
           </div>
-
-          <!-- Action Buttons -->
-          <div class="actions">
-            <button id="findEmailBtn" class="btn btn-primary btn-full">
-              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                <polyline points="22,6 12,13 2,6"/>
+          <div class="result-card__sub" id="cover-letter-details"></div>
+          <div class="result-card__actions">
+            <a href="#" id="cover-letter-download-link" class="result-action result-action--primary">
+              <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
               </svg>
-              <span>Find Email & Draft</span>
-            </button>
-            <button id="coffeeChatBtn" class="btn btn-outline btn-full">
-              <span>☕</span> Coffee Chat Prep
-            </button>
-            <p id="coffeeChatHint" class="coffee-chat-hint">Uses 15 credits • PDF saved to Library</p>
-          </div>
-
-          <!-- Coffee Chat Loading State -->
-          <div id="coffeeChatLoading" class="coffee-chat-loading hidden">
-            <div class="spinner"></div>
-            <p id="coffeeChatLoadingText">Generating Coffee Chat Prep...</p>
-          </div>
-
-          <!-- Coffee Chat Results (shown after completion) -->
-          <div class="coffee-chat-results" id="coffeeChatResults" style="display: none;">
-            <div class="result-card">
-              <div class="result-header">
-                <span class="result-name">☕ Coffee Chat Prep Ready</span>
-                <span class="status-badge">Done</span>
-              </div>
-              <div class="result-contact" id="coffeeChatContact">
-                <!-- Contact name populated by JS -->
-              </div>
-              <div class="result-links">
-                <p><a href="#" id="coffeeChatDownloadLink" target="_blank">📥 Download PDF</a></p>
-                <p>See all preps in <a href="https://www.offerloop.ai/coffee-chat-prep" target="_blank">Coffee Chat Library</a></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Coffee Chat Error -->
-          <div class="coffee-chat-error" id="coffeeChatError" style="display: none;">
-            <p class="error-message" id="coffeeChatErrorMessage"></p>
-          </div>
-
-          <!-- Results Section -->
-          <div id="resultsSection" class="results hidden">
-            <div class="result-card">
-              <div class="result-header">
-                <span id="resultName" class="result-name">John Doe</span>
-                <span id="resultStatus" class="status-badge">Found</span>
-              </div>
-              <div class="result-details">
-                <div class="result-row">
-                  <svg class="result-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                  <span id="resultEmail" class="result-value">email@example.com</span>
-                </div>
-              </div>
-              <div id="successLinksSection" class="success-links hidden">
-                <p class="success-link-text">See information in <a id="contactLibraryLink" href="https://www.offerloop.ai/contact-search?tab=contact-library" target="_blank">Contact Library</a></p>
-                <p class="success-link-text"><a id="openDraftLink" href="https://mail.google.com/mail/u/0/#drafts" target="_blank">Open Email Draft</a></p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Loading State -->
-          <div id="loadingSection" class="loading hidden">
-            <div class="spinner"></div>
-            <p id="loadingText">Finding email...</p>
-          </div>
-
-          <!-- Error State -->
-          <div id="errorSection" class="error-box hidden">
-            <svg class="error-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <p id="errorText">An error occurred</p>
-            <button id="retryBtn" class="btn btn-secondary">Try Again</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Job Tab Content -->
-      <div class="tab-content hidden" id="job-tab">
-        <!-- Job URL Display -->
-        <div class="url-display" id="job-url-display">
-          <img src="icons/icon16.png" alt="" class="url-icon">
-          <span class="url-text" id="job-url-text">Loading...</span>
-        </div>
-
-        <!-- Status Message -->
-        <div class="job-status" id="job-status">
-          <p class="status-text" id="job-status-text">Detecting job page...</p>
-        </div>
-
-        <!-- Manual Input Form (hidden by default, shown when URL parsing fails) -->
-        <div class="manual-form hidden" id="manual-form">
-          <p class="form-notice">Could not extract job details. Please enter manually:</p>
-          <div class="form-group">
-            <label for="manual-company">Company *</label>
-            <input type="text" id="manual-company" placeholder="e.g. Google">
-          </div>
-          <div class="form-group">
-            <label for="manual-job-title">Job Title *</label>
-            <input type="text" id="manual-job-title" placeholder="e.g. Software Engineer">
-          </div>
-          <div class="form-group">
-            <label for="manual-description">Job Description (required for Cover Letter)</label>
-            <textarea id="manual-description" rows="4" placeholder="Paste job description here..."></textarea>
+              <span class="result-action__label">Download Cover Letter</span>
+              <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </a>
+            <a href="https://www.offerloop.ai/cover-letters" target="_blank" class="result-action result-action--ghost">
+              <svg class="result-action__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              <span class="result-action__label">Cover Letter Library</span>
+              <svg class="result-action__chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </a>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="job-actions">
-          <button class="btn btn-primary btn-full" id="find-recruiters-btn">
-            Find & Email Recruiters
-          </button>
-          <button class="btn btn-outline btn-full" id="cover-letter-btn">
-            <span>📝</span> Generate Cover Letter
-          </button>
-        </div>
-
-        <!-- Loading State -->
-        <div class="job-loading hidden" id="job-loading">
-          <div class="spinner"></div>
-          <p id="job-loading-text">Processing...</p>
-        </div>
-
-        <!-- Results Section (Find Recruiters) -->
-        <div class="job-results hidden" id="job-results">
-          <div class="result-card">
-            <div class="result-header">
-              <span class="result-name">✓ Recruiters Found</span>
-              <span class="status-badge">Success</span>
-            </div>
-            <div class="result-details" id="job-result-details"></div>
-            <div class="result-links">
-              <p>See recruiters in <a href="https://www.offerloop.ai/hiring-manager-tracker" target="_blank">Hiring Manager Tracker</a></p>
-              <p><a href="https://mail.google.com/mail/u/0/#drafts" target="_blank">Open Email Drafts</a></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Cover Letter Results -->
-        <div class="cover-letter-results hidden" id="cover-letter-results">
-          <div class="result-card">
-            <div class="result-header">
-              <span class="result-name">📝 Cover Letter Ready</span>
-              <span class="status-badge">Done</span>
-            </div>
-            <div class="result-details" id="cover-letter-details"></div>
-            <div class="result-links">
-              <p><a href="#" id="cover-letter-download-link">📥 Download Cover Letter</a></p>
-              <p>See all cover letters in <a href="https://www.offerloop.ai/cover-letters" target="_blank">Cover Letter Library</a></p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Error Display -->
-        <div class="job-error hidden" id="job-error">
-          <p class="error-message" id="job-error-message"></p>
+        <div class="error-card hidden" id="job-error">
+          <svg class="error-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <p id="job-error-message" class="error-card__message"></p>
         </div>
       </div>
     </main>
 
-    <!-- Footer -->
+    <!-- ============================ Footer ============================ -->
     <footer class="footer">
-      <div class="credits-display">
-        <span>Credits: </span>
-        <span id="creditsCount">--</span>
+      <div class="credits-pill" aria-label="Credits remaining">
+        <span class="credits-pill__label">Credits</span>
+        <span id="creditsCount" class="credits-pill__value">—</span>
       </div>
       <div class="footer-actions">
-        <button id="signOutBtn" class="footer-link hidden">Sign Out</button>
-        <a href="https://www.offerloop.ai" target="_blank" class="footer-link">
-          Open Offerloop
+        <button id="signOutBtn" class="footer-link footer-btn footer-btn--ghost hidden" aria-label="Sign out">
+          <span>Sign Out</span>
+        </button>
+        <a href="https://www.offerloop.ai" target="_blank" class="footer-link footer-btn footer-btn--primary">
+          <span>Open Offerloop</span>
         </a>
       </div>
     </footer>
+
   </div>
-  
   <script src="popup.js"></script>
 </body>
 </html>

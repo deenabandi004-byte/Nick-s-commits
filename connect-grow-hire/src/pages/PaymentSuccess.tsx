@@ -6,14 +6,18 @@ import { useEffect, useState, useRef } from "react";
 import { getAuth } from 'firebase/auth';
 import { trackCheckoutCompleted, trackError } from "../lib/analytics";
 import { BACKEND_URL } from "@/services/api";
+import { PostCheckoutUpsell } from "@/components/PostCheckoutUpsell";
 
 export default function PaymentSuccess() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const { user, refreshUser } = useFirebaseAuth();
-  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  const [status, setStatus] = useState<'processing' | 'success' | 'error' | 'upsell'>('processing');
   const [message, setMessage] = useState('Completing your upgrade...');
   const hasProcessedRef = useRef(false); // Prevent multiple calls
+  // Tracks what tier the just-completed checkout landed on. Drives the upsell
+  // gate — we only offer Pro→Elite, never Elite→anything.
+  const [purchasedTier, setPurchasedTier] = useState<string | null>(null);
 
   // Try multiple parameter names in case Stripe uses different ones
   // Also check URL hash and full URL for session ID
@@ -154,13 +158,12 @@ export default function PaymentSuccess() {
 
         if (response.ok && result.success) {
           console.log('PaymentSuccess: Upgrade successful:', result);
-          setStatus('success');
-          setMessage('Successfully upgraded to Pro! 🎉');
-          
+
           // Track checkout completion
-          const plan = result.user?.tier || 'pro';
+          const plan = (result.user?.tier as string) || 'pro';
           trackCheckoutCompleted(plan);
-          
+          setPurchasedTier(plan);
+
           // Refresh user data
           try {
             await refreshUser();
@@ -169,11 +172,31 @@ export default function PaymentSuccess() {
             console.error('PaymentSuccess: Error refreshing user:', refreshError);
             // Don't fail the upgrade if refresh fails
           }
-          
-          // Redirect after 2 seconds
-          setTimeout(() => {
-            navigate('/home');
-          }, 2000);
+
+          // Branch: offer the Pro→Elite upsell when:
+          //   - the purchased tier is Pro (not Elite — no upsell out of Elite)
+          //   - the user hasn't seen the upsell before (`upsellShownAt` empty)
+          // Backend re-validates the existing-discount collision guard.
+          const alreadySaw = Boolean((result.user as { upsellShownAt?: unknown } | undefined)?.upsellShownAt);
+          if (plan === 'pro' && !alreadySaw) {
+            setStatus('upsell');
+            // Fire telemetry — landed on the upsell screen.
+            try {
+              const { trackUpgradeClick } = await import('@/lib/analytics');
+              trackUpgradeClick('post_checkout_upsell_shown', {
+                from_location: 'payment_success',
+                plan_selected: 'pro',
+              });
+            } catch {
+              /* analytics best-effort */
+            }
+          } else {
+            setStatus('success');
+            setMessage('Successfully upgraded to Pro! 🎉');
+            setTimeout(() => {
+              navigate('/home');
+            }, 2000);
+          }
         } else {
           console.error('PaymentSuccess: Upgrade failed:', result);
           const errorMsg = result.error || result.message || 'Upgrade failed. Please contact support.';
@@ -196,6 +219,27 @@ export default function PaymentSuccess() {
       completeUpgrade();
     }
   }, [user, sessionId]); // Removed refreshUser and navigate from dependencies to prevent re-runs
+
+  // Pro→Elite upsell screen. Brand-honest version of Higgsfield's post-checkout
+  // next-tier offer: $10 more right now, $25 effective this month on Elite,
+  // renews at $35 on Day 31 (date is plainly stated in the component copy).
+  if (status === 'upsell' && purchasedTier === 'pro') {
+    return (
+      <PostCheckoutUpsell
+        onAccepted={async () => {
+          try {
+            await refreshUser();
+          } catch {
+            /* refresh best-effort */
+          }
+          navigate('/home');
+        }}
+        onDeclined={() => {
+          navigate('/home');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0F172A] text-white px-6">

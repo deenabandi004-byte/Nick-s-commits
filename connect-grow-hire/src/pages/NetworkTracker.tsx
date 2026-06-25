@@ -291,7 +291,7 @@ export default function NetworkTracker() {
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-xl font-bold text-[#0F172A] tracking-tight">
-                    Network Tracker
+                    Inbox
                   </h1>
                   <p className="text-sm text-gray-500 mt-0.5">
                     Stay on top of every conversation

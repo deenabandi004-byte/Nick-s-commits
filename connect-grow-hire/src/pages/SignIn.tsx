@@ -44,6 +44,14 @@ const SignIn: React.FC = () => {
   // ✅ useEffects come AFTER function definitions
   useEffect(() => setActiveTab(initialTab), [initialTab]);
 
+  // Capture referral code from ?ref= query param and persist in localStorage
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get('ref');
+    if (ref) {
+      localStorage.setItem('offerloop_ref', ref.trim().toUpperCase());
+    }
+  }, []);
+
 
   // ✅ AUTO-CHECK Gmail when signed-in user loads page
   // NOTE: This only runs if user navigates to /signin manually

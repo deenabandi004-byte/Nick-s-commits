@@ -426,6 +426,72 @@ class TestResolutions:
 
 
 # =============================================================================
+# outbox_service.py — get_outbox_contacts (archivedAt filter)
+# =============================================================================
+
+class TestGetOutboxContacts:
+    """The active list hides archivedAt-set contacts. A reply that clears
+    archivedAt (see _build_reply_updates) must therefore resurface the contact
+    here. These assert the filter half of that contract."""
+
+    def _make_doc(self, doc_id, data):
+        doc = MagicMock()
+        doc.id = doc_id
+        doc.to_dict.return_value = data
+        return doc
+
+    def _patch_db(self, mock_db, docs):
+        mock_query = MagicMock()
+        mock_query.stream.return_value = docs
+        mock_db.return_value.collection.return_value.document.return_value \
+            .collection.return_value.where.return_value = mock_query
+
+    @patch("app.services.outbox_service.get_db")
+    def test_archived_contact_filtered_out_by_default(self, mock_db):
+        from app.services.outbox_service import get_outbox_contacts
+        docs = [
+            self._make_doc("active", {"inOutbox": True, "archivedAt": None}),
+            self._make_doc("archived", {"inOutbox": True, "archivedAt": "2024-01-01T00:00:00Z"}),
+        ]
+        self._patch_db(mock_db, docs)
+
+        results = get_outbox_contacts("uid1")
+        ids = {r["id"] for r in results}
+        assert "active" in ids
+        assert "archived" not in ids
+
+    @patch("app.services.outbox_service.get_db")
+    def test_cleared_archivedat_appears_in_active_list(self, mock_db):
+        """A contact whose archivedAt was cleared (set to None) by a reply
+        resurfaces into the active list."""
+        from app.services.outbox_service import get_outbox_contacts
+        docs = [
+            self._make_doc("resurfaced", {
+                "inOutbox": True,
+                "archivedAt": None,
+                "pipelineStage": "replied",
+                "hasUnreadReply": True,
+            }),
+        ]
+        self._patch_db(mock_db, docs)
+
+        results = get_outbox_contacts("uid1")
+        assert {r["id"] for r in results} == {"resurfaced"}
+
+    @patch("app.services.outbox_service.get_db")
+    def test_include_archived_returns_archived(self, mock_db):
+        from app.services.outbox_service import get_outbox_contacts
+        docs = [
+            self._make_doc("active", {"inOutbox": True, "archivedAt": None}),
+            self._make_doc("archived", {"inOutbox": True, "archivedAt": "2024-01-01T00:00:00Z"}),
+        ]
+        self._patch_db(mock_db, docs)
+
+        results = get_outbox_contacts("uid1", include_archived=True)
+        assert {r["id"] for r in results} == {"active", "archived"}
+
+
+# =============================================================================
 # outbox_service.py — get_outbox_stats (BUG 3 fix)
 # =============================================================================
 
@@ -773,6 +839,56 @@ class TestWebhookReplyDetection:
         # Old code: "if 'SENT' not in label_ids:\n                continue"
         # Should not have this pattern anymore
         assert "if 'SENT' not in label_ids:" not in source
+
+
+# =============================================================================
+# gmail_webhook.py — _build_reply_updates (archived contact resurfacing)
+# =============================================================================
+
+class TestBuildReplyUpdates:
+    """The reply-update dict marks the thread replied/unread and clears
+    archivedAt only when it was set, so a reply to an auto-archived
+    (hard_no / ghosted) contact resurfaces it into the active list."""
+
+    NOW = "2024-06-15T10:30:00Z"
+
+    def test_clears_archivedat_when_set(self):
+        from app.routes.gmail_webhook import _build_reply_updates
+        contact_data = {"archivedAt": "2024-01-01T00:00:00Z"}
+        updates = _build_reply_updates(contact_data, "hi there", self.NOW)
+        assert "archivedAt" in updates
+        assert updates["archivedAt"] is None
+
+    def test_does_not_touch_archivedat_when_never_archived(self):
+        from app.routes.gmail_webhook import _build_reply_updates
+        # archivedAt absent entirely
+        updates = _build_reply_updates({}, "hi there", self.NOW)
+        assert "archivedAt" not in updates
+        # archivedAt explicitly None (never archived) is also left untouched
+        updates_none = _build_reply_updates({"archivedAt": None}, "hi there", self.NOW)
+        assert "archivedAt" not in updates_none
+
+    def test_base_reply_fields_present(self):
+        from app.routes.gmail_webhook import _build_reply_updates
+        updates = _build_reply_updates({}, "snippet text", self.NOW)
+        assert updates["pipelineStage"] == "replied"
+        assert updates["hasUnreadReply"] is True
+        assert updates["inOutbox"] is True
+        assert updates["threadStatus"] == "new_reply"
+        assert updates["lastMessageSnippet"] == "snippet text"
+        assert updates["lastActivityAt"] == self.NOW
+        assert updates["updatedAt"] == self.NOW
+
+    def test_replyreceivedat_set_on_first_reply(self):
+        from app.routes.gmail_webhook import _build_reply_updates
+        updates = _build_reply_updates({}, "hi", self.NOW)
+        assert updates["replyReceivedAt"] == self.NOW
+
+    def test_replyreceivedat_not_overwritten(self):
+        from app.routes.gmail_webhook import _build_reply_updates
+        contact_data = {"replyReceivedAt": "2023-12-01T00:00:00Z"}
+        updates = _build_reply_updates(contact_data, "hi", self.NOW)
+        assert "replyReceivedAt" not in updates
 
 
 # =============================================================================
@@ -1260,7 +1376,271 @@ class TestWebhookMatchingStrategies:
         assert '"email_sent"' in source
 
     def test_reply_transitions_to_replied(self):
-        from app.routes.gmail_webhook import _process_gmail_notification
-        source = inspect.getsource(_process_gmail_notification)
+        # The reply-update dict was extracted into _build_reply_updates; inspect
+        # it there. Behavior is also covered directly by TestBuildReplyUpdates.
+        from app.routes.gmail_webhook import _build_reply_updates
+        source = inspect.getsource(_build_reply_updates)
         assert '"pipelineStage": "replied"' in source
         assert '"hasUnreadReply": True' in source
+
+
+# =============================================================================
+# outbox_service.py — hiring-manager outbox contact (builder + upsert)
+# =============================================================================
+
+class _FakeContactsCollection:
+    """Minimal Firestore collection stub supporting the exact chain
+    upsert_hm_outbox_contact uses: where(field, '==', value).limit(n).stream(),
+    add(doc) -> (ts, ref), and ref.set(data, merge=True). Not a general mock,
+    just enough surface for the dedup/merge test without standing up Firestore.
+    """
+
+    def __init__(self):
+        self.store = {}
+        self._counter = 0
+
+    # query side ----------------------------------------------------------
+    def where(self, field, op, value):
+        assert op == "=="
+        return _FakeQuery(self, field, value)
+
+    # write side ----------------------------------------------------------
+    def add(self, doc):
+        self._counter += 1
+        doc_id = f"doc{self._counter}"
+        self.store[doc_id] = dict(doc)
+        return (None, _FakeDocRef(self, doc_id))
+
+
+class _FakeQuery:
+    def __init__(self, coll, field, value):
+        self.coll = coll
+        self.field = field
+        self.value = value
+        self._limit = None
+
+    def limit(self, n):
+        self._limit = n
+        return self
+
+    def stream(self):
+        hits = [
+            _FakeDocSnap(self.coll, did)
+            for did, data in self.coll.store.items()
+            if data.get(self.field) == self.value
+        ]
+        if self._limit is not None:
+            hits = hits[: self._limit]
+        return iter(hits)
+
+
+class _FakeDocRef:
+    def __init__(self, coll, doc_id):
+        self.coll = coll
+        self.id = doc_id
+
+    def set(self, data, merge=False):
+        if merge:
+            self.coll.store[self.id].update(data)
+        else:
+            self.coll.store[self.id] = dict(data)
+
+    def update(self, data):
+        self.coll.store[self.id].update(data)
+
+
+class _FakeDocSnap:
+    def __init__(self, coll, doc_id):
+        self.coll = coll
+        self.id = doc_id
+
+    @property
+    def reference(self):
+        return _FakeDocRef(self.coll, self.id)
+
+    def to_dict(self):
+        return dict(self.coll.store[self.id])
+
+
+class _FakeDB:
+    """db.collection('users').document(uid).collection('contacts') -> one
+    shared _FakeContactsCollection."""
+
+    def __init__(self):
+        self.contacts = _FakeContactsCollection()
+
+    def collection(self, name):
+        assert name == "users"
+        return self
+
+    def document(self, uid):
+        return self
+
+    # second .collection('contacts') hop lands here
+    def __getattr__(self, _):  # pragma: no cover - not used
+        raise AttributeError
+
+
+class _FakeUsers:
+    def __init__(self, contacts):
+        self._contacts = contacts
+
+    def document(self, uid):
+        return _FakeUserDoc(self._contacts)
+
+
+class _FakeUserDoc:
+    def __init__(self, contacts):
+        self._contacts = contacts
+
+    def collection(self, name):
+        assert name == "contacts"
+        return self._contacts
+
+
+class _RootDB:
+    def __init__(self):
+        self.contacts = _FakeContactsCollection()
+
+    def collection(self, name):
+        assert name == "users"
+        return _FakeUsers(self.contacts)
+
+
+class TestBuildHmOutboxContactDoc:
+    """Pure builder, no mocks."""
+
+    def _build(self, **over):
+        from app.services.outbox_service import build_hm_outbox_contact_doc
+        kwargs = dict(
+            uid="u1",
+            first_name="Jane",
+            last_name="Doe",
+            email="Jane.Doe@Acme.com",
+            company="Acme",
+            job_title="Eng Manager",
+            now_iso="2026-06-05T00:00:00Z",
+            today="06/05/2026",
+            source="manual_find_hm",
+            email_body="hi there",
+        )
+        kwargs.update(over)
+        return build_hm_outbox_contact_doc(**kwargs)
+
+    def test_manual_doc_core_flags(self):
+        doc = self._build()
+        assert doc["inOutbox"] is True
+        assert doc["isHiringManager"] is True
+        assert doc["pipelineStage"] == "draft_created"
+        assert doc["source"] == "manual_find_hm"
+
+    def test_draft_to_email_is_lowercased(self):
+        doc = self._build(email="Jane.Doe@Acme.com")
+        assert doc["draftToEmail"] == "jane.doe@acme.com"
+
+    def test_manual_doc_has_no_agent_provenance(self):
+        doc = self._build()
+        for k in ("agentCycleId", "discoveredVia", "sourceJobId", "loopId"):
+            assert k not in doc
+
+    def test_no_body_is_not_contacted(self):
+        doc = self._build(email_body="")
+        assert doc["pipelineStage"] == "not_contacted"
+
+    def test_agent_doc_has_provenance(self):
+        doc = self._build(
+            source="agent",
+            agent_cycle_id="cyc1",
+            discovered_via="networking",
+            loop_id="L1",
+        )
+        assert doc["agentCycleId"] == "cyc1"
+        assert doc["discoveredVia"] == "networking"
+        assert doc["loopId"] == "L1"
+        # Agent path also gains draftToEmail under the unified builder.
+        assert doc["draftToEmail"] == "jane.doe@acme.com"
+
+    def test_draft_link_omitted_when_empty(self):
+        doc = self._build()
+        assert "gmailDraftId" not in doc
+        assert "gmailDraftUrl" not in doc
+
+    def test_draft_link_included_when_present(self):
+        doc = self._build(gmail_draft_id="d1", gmail_draft_url="http://d/1")
+        assert doc["gmailDraftId"] == "d1"
+        assert doc["gmailDraftUrl"] == "http://d/1"
+
+
+class TestUpsertHmOutboxContact:
+    """Dedup + conservative merge, using the lightweight Firestore stub."""
+
+    def _upsert(self, db, **over):
+        from app.services.outbox_service import upsert_hm_outbox_contact
+        kwargs = dict(
+            first_name="Jane",
+            last_name="Doe",
+            email="Jane@Acme.com",
+            company="Acme",
+            job_title="Eng Manager",
+            now_iso="2026-06-05T00:00:00Z",
+            today="06/05/2026",
+            email_subject="Quick intro",
+            email_body="hello",
+            gmail_draft_id="d1",
+            gmail_draft_url="http://d/1",
+        )
+        kwargs.update(over)
+        return upsert_hm_outbox_contact(db, "u1", **kwargs)
+
+    def test_first_draft_creates_hm_outbox_contact(self):
+        db = _RootDB()
+        self._upsert(db)
+        rows = list(db.contacts.store.values())
+        assert len(rows) == 1
+        assert rows[0]["inOutbox"] is True
+        assert rows[0]["isHiringManager"] is True
+        assert rows[0]["pipelineStage"] == "draft_created"
+        # Stored + keyed on the lowercased email.
+        assert rows[0]["email"] == "jane@acme.com"
+        assert rows[0]["draftToEmail"] == "jane@acme.com"
+
+    def test_drafting_same_hm_twice_does_not_duplicate(self):
+        db = _RootDB()
+        self._upsert(db)
+        self._upsert(db, email="JANE@acme.com", gmail_draft_id="d2", gmail_draft_url="http://d/2")
+        rows = list(db.contacts.store.values())
+        assert len(rows) == 1
+        # The merge refreshed the draft pointer.
+        assert rows[0]["gmailDraftId"] == "d2"
+
+    def test_merge_does_not_clobber_lifecycle_or_reply_state(self):
+        db = _RootDB()
+        # Pre-seed a contact that has already advanced past draft.
+        db.contacts.store["existing"] = {
+            "email": "jane@acme.com",
+            "pipelineStage": "replied",
+            "hasUnreadReply": True,
+            "status": "Contacted",
+            "createdAt": "2026-01-01T00:00:00Z",
+            "firstContactDate": "01/01/2026",
+        }
+        self._upsert(db)
+        row = db.contacts.store["existing"]
+        # Conservative merge: these must be preserved.
+        assert row["pipelineStage"] == "replied"
+        assert row["hasUnreadReply"] is True
+        assert row["status"] == "Contacted"
+        assert row["createdAt"] == "2026-01-01T00:00:00Z"
+        assert row["firstContactDate"] == "01/01/2026"
+        # But outbox membership + draft event are refreshed.
+        assert row["inOutbox"] is True
+        assert row["isHiringManager"] is True
+        assert row["gmailDraftId"] == "d1"
+        # And no duplicate was created.
+        assert len(db.contacts.store) == 1
+
+    def test_no_email_skips_write(self):
+        db = _RootDB()
+        result = self._upsert(db, email="")
+        assert result is None
+        assert len(db.contacts.store) == 0

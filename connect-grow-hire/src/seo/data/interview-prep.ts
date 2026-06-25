@@ -7,8 +7,10 @@
  * drill, firm intel) per the McKinsey reference implementation.
  */
 import type { InterviewPrepRow } from './types';
+import generatedInterviewPrep from './generated/interview-prep.generated.json';
 
 export const INTERVIEW_PREP_ROWS: InterviewPrepRow[] = [
+  ...(generatedInterviewPrep as unknown as InterviewPrepRow[]),
   // ──────────────────────────────────────────────────────────────────
   // 1. McKinsey BA case (hand-built reference)
   // ──────────────────────────────────────────────────────────────────

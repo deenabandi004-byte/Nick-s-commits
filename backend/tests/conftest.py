@@ -8,6 +8,11 @@ from unittest.mock import Mock, patch
 # Set test environment
 os.environ['FLASK_ENV'] = 'testing'
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'test-credentials.json'
+# Industry expansion tests assume the flag is on (they're testing the gate
+# logic itself, not whether the flag is set). Must be in place BEFORE
+# app.config is first imported by any test module — config reads env at
+# module-load and the value is locked thereafter.
+os.environ.setdefault('ENABLE_INDUSTRY_EXPANSION', 'true')
 
 
 @pytest.fixture

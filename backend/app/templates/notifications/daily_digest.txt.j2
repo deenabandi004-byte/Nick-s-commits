@@ -1,0 +1,15 @@
+Your loop found {{ items|length }} {{ "thing" if items|length == 1 else "things" }}.
+
+{% for item in items %}
+- {{ item.company }} · {{ item.title }}
+{%- if item.context %}
+  {{ item.context }}
+{%- endif %}
+{%- if item.loop_url %}
+  View: {{ item.loop_url }}
+{%- endif %}
+
+{% endfor %}
+--
+OFFERLOOP · NOT FORWARDED.
+Unsubscribe: {{ unsubscribe_url }}

@@ -7,6 +7,10 @@ class JobPostingExtract(BaseModel):
     title: str = ""
     company: str = ""
     location: str = ""
+    # Full job-description prose, as written on the posting. Sources like
+    # Simplify ingest with an empty description_raw; this lets the enricher's
+    # existing Firecrawl scrape recover the description in the same call.
+    description: str = ""
     employment_type: Optional[str] = None
     salary_range: Optional[str] = None
     requirements: List[str] = []

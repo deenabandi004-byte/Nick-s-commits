@@ -6,6 +6,32 @@ import re
 from app.services.openai_client import get_openai_client
 
 
+def strip_dashes(text):
+    """Replace em/en dashes with a comma so generated copy never ships a dash.
+
+    Standing product rule: no em dashes (\u2014) or en dashes (\u2013) in
+    user-facing email copy. A dash used mid-sentence becomes ", "; the cleanup
+    passes then collapse the double spaces, double commas, and stray " ," the
+    swap can leave behind. Single ASCII hyphens (real-world, check-in) are
+    intentionally left alone.
+
+    This is the dash chokepoint for generated email text: clean_email_text below
+    calls it, and the recruiter email generator calls it on the finalized body,
+    so both the HTML body and plain_body are covered in one place per generator.
+    """
+    if not text:
+        return text
+    # Fast path: nothing to do when there is no em/en dash present.
+    if "\u2014" not in text and "\u2013" not in text:
+        return text
+    text = re.sub(r"\s*[\u2014\u2013]\s*", ", ", text)
+    text = re.sub(r" {2,}", " ", text)            # doubled spaces
+    text = re.sub(r",\s*,+", ", ", text)           # doubled commas
+    text = re.sub(r"\s+,", ",", text)              # space before a comma
+    text = re.sub(r",\s*([.!?])", r"\1", text)     # comma butting end punctuation
+    return text
+
+
 def clean_email_text(text):
     """Clean email text to remove problematic characters"""
     if not text:
@@ -14,14 +40,17 @@ def clean_email_text(text):
     # Decode HTML entities (e.g. &#39; -> ', &amp; -> &, etc.)
     text = html.unescape(text)
 
+    # Em / en dashes are banned in user-facing copy. Convert them to commas
+    # BEFORE the ASCII pass below so they never become "--"/"-" artifacts. See
+    # strip_dashes for the policy. Single ASCII hyphens are preserved.
+    text = strip_dashes(text)
+
     # Replace common Unicode characters with ASCII equivalents
     replacements = {
         '\u2019': "'",  # Right single quote
         '\u2018': "'",  # Left single quote
         '\u201C': '"',  # Left double quote
         '\u201D': '"',  # Right double quote
-        '\u2013': '-',  # En dash
-        '\u2014': '--', # Em dash
         '\u2026': '...',  # Ellipsis
         '\u00A0': ' ',  # Non-breaking space
         '\u00AD': '',   # Soft hyphen
@@ -36,10 +65,10 @@ def clean_email_text(text):
         'Å': '',
         '¸': '',
         'Â': '',
-        '–': '-',
-        '—': '--',
-        ''': "'",
-        ''': "'",
+        # Em / en dashes are handled by strip_dashes() above (converted to
+        # commas), so they are intentionally not mapped to hyphens here.
+        '’': "'",
+        '‘': "'",
         '"': '"',
         '"': '"',
     }
@@ -57,9 +86,8 @@ def clean_email_text(text):
             cleaned.append(char)
         else:
             # Replace other characters with space or appropriate substitute
-            if ord(char) in [8211, 8212]:  # em dash, en dash
-                cleaned.append('-')
-            elif ord(char) in [8216, 8217]:  # smart quotes
+            # (em / en dashes are already gone via strip_dashes above)
+            if ord(char) in [8216, 8217]:  # smart quotes
                 cleaned.append("'")
             elif ord(char) in [8220, 8221]:  # smart double quotes
                 cleaned.append('"')

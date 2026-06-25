@@ -132,10 +132,14 @@ export const OnboardingSource = ({ onNext, initialLinkedinUrl }: OnboardingSourc
   return (
     <div>
       <h1 className="text-2xl font-semibold tracking-tight text-[#0F172A] mb-1.5 text-center" style={{ fontFamily: "'Lora', Georgia, serif" }}>
-        Add your résumé or LinkedIn
+        Add your resume and LinkedIn
       </h1>
+      <p className="text-sm text-[#475569] leading-relaxed mb-2 text-center">
+        We'll prefill everything from these — no typing required.
+      </p>
       <p className="text-sm text-[#475569] leading-relaxed mb-8 text-center">
-        We'll prefill the rest. You can also enter it by hand.
+        Your resume powers far better emails, and adding both gives the best
+        results. You can always add the other later, or enter it by hand.
       </p>
 
       <div className="space-y-4">
@@ -148,9 +152,9 @@ export const OnboardingSource = ({ onNext, initialLinkedinUrl }: OnboardingSourc
             <div className="flex items-center gap-3">
               <FileText className="h-5 w-5 text-[#1E3A8A]" />
               <div>
-                <div className="text-sm font-medium text-[#0F172A]">Upload résumé</div>
+                <div className="text-sm font-medium text-[#0F172A]">Upload resume</div>
                 <div className="text-xs text-[#64748B]">
-                  {resumeFile ? resumeFile.name : "PDF, DOCX, or DOC — highly recommended"}
+                  {resumeFile ? resumeFile.name : "PDF, DOCX, or DOC — strongly recommended for great emails"}
                 </div>
               </div>
             </div>
@@ -175,11 +179,18 @@ export const OnboardingSource = ({ onNext, initialLinkedinUrl }: OnboardingSourc
 
         {/* LinkedIn */}
         <div className="rounded-lg border p-4" style={{ borderColor: linkedinValid ? "#1E3A8A" : "#E2E8F0", background: linkedinValid ? "#EFF6FF" : "#FFFFFF" }}>
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-1">
             <Linkedin className="h-5 w-5 text-[#1E3A8A]" />
-            <div className="text-sm font-medium text-[#0F172A]">Or paste your LinkedIn URL</div>
+            <div>
+              <div className="text-sm font-medium text-[#0F172A]">Add your LinkedIn URL</div>
+              <div className="text-xs text-[#64748B]">
+                {resumePrefill
+                  ? "Adding this on top of your resume makes your emails even sharper"
+                  : "Even better paired with your resume"}
+              </div>
+            </div>
           </div>
-          <Input className="focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]"
+          <Input className="mt-2 focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]"
             type="url"
             placeholder="https://www.linkedin.com/in/your-handle"
             value={linkedinUrl}

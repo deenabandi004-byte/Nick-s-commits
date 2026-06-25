@@ -12,8 +12,9 @@ import logging
 
 from flask import Blueprint, current_app, jsonify, request
 
-from app.extensions import require_firebase_auth, require_tier
+from app.extensions import get_db, require_firebase_auth, require_tier
 from app.services.agent_brief_parser import parse_brief
+from app.services.brief_proposer import propose_brief
 from app.utils.exceptions import ValidationError
 from app.utils.validation import (
     AgentBriefRequest,
@@ -104,6 +105,54 @@ def parse_and_save_brief():
             "error": "Brief parser is temporarily unavailable.",
         }), 502
     return jsonify({"briefParsed": parsed, "config": config, "parseStatus": status})
+
+
+@agent_bp.route("/propose-brief", methods=["POST"])
+@require_firebase_auth
+def propose_brief_route():
+    """Draft a starting Loop brief from the user's resume + profile.
+
+    Used by the V2 Loops setup wizard to pre-fill the Step 01 textarea +
+    chips on mount, so students never face a blank page. Body is empty —
+    everything we need lives on the user's Firestore doc.
+
+    Returns 200 with ProposedBrief on ok / empty, 502 on failed (the wizard
+    falls back to a blank textarea and a friendly toast).
+
+    Not tier-gated: V2 wizard is the single Loop-creation surface across
+    free / pro / elite.
+    """
+    uid = request.firebase_user["uid"]
+    db = get_db()
+    snap = db.collection("users").document(uid).get()
+    user_data = snap.to_dict() if snap.exists else {}
+    resume_text = user_data.get("resumeText") or ""
+    profile = user_data.get("professionalInfo") or {}
+
+    # Direction extractor stores chip-style preferences at the top level
+    # (targetFirms / targetIndustries / extractedRoles / preferredLocations).
+    # Pass them through so Claude drafts a sentence aligned with the
+    # student's stated preferences, not just resume inference. Legacy doc
+    # shape kept the dream-companies list under `dreamCompanies`; honored
+    # here so older accounts still benefit.
+    direction = {
+        "targetFirms": user_data.get("targetFirms") or user_data.get("dreamCompanies") or [],
+        "targetIndustries": user_data.get("targetIndustries") or [],
+        "extractedRoles": user_data.get("extractedRoles") or [],
+        "preferredLocations": user_data.get("preferredLocations") or [],
+    }
+
+    proposal = propose_brief(
+        resume_text=resume_text,
+        profile=profile,
+        direction=direction,
+    )
+    if proposal["status"] == "failed":
+        return jsonify({
+            **proposal,
+            "error": "Brief proposer is temporarily unavailable.",
+        }), 502
+    return jsonify(proposal)
 
 
 @agent_bp.route("/deploy", methods=["POST"])

@@ -6,6 +6,7 @@ Routes call these functions; they should never touch Gmail or Firestore directly
 """
 import html
 import logging
+import re
 from datetime import datetime, timedelta, timezone
 
 from google.cloud.firestore_v1 import transactional
@@ -14,6 +15,7 @@ from app.extensions import get_db
 from app.services.gmail_client import (
     _load_user_gmail_creds,
     _gmail_service,
+    get_full_thread_chain,
     sync_thread_message,
 )
 
@@ -183,12 +185,187 @@ def _contact_to_dict(contact_id, data):
         "lastSyncError": data.get("lastSyncError"),
         "lastSyncAt": data.get("lastSyncAt"),
         "needsManualSync": needs_manual_sync,
+        # Provenance — lets the tracker / My Network badge a Loop-sourced row
+        # and lets approve-send verify Loop ownership. Empty string for manual
+        # contacts (source is only set by the agent / queue / HM paths).
+        "source": data.get("source") or "",
+        "loopId": data.get("loopId") or "",
         # Legacy aliases for frontend compatibility (remove after Outbox.tsx migration)
         "contactName": name,
         "jobTitle": data.get("jobTitle") or "",
         "hasDraft": bool(data.get("gmailDraftId")),
         "status": data.get("pipelineStage") or "",
     }
+
+
+# ---------------------------------------------------------------------------
+# Hiring-manager outbox contact (shared by agent + manual Find HM paths)
+# ---------------------------------------------------------------------------
+
+def build_hm_outbox_contact_doc(
+    *,
+    uid,
+    first_name,
+    last_name,
+    email,
+    company,
+    job_title,
+    now_iso,
+    today,
+    source,
+    linkedin_url="",
+    email_subject="",
+    email_body="",
+    gmail_draft_id="",
+    gmail_draft_url="",
+    agent_cycle_id=None,
+    discovered_via="",
+    source_job_id="",
+    loop_id="",
+):
+    """Build a users/{uid}/contacts/* doc for a hiring-manager outbox row.
+
+    Single source of truth shared by the agent / Loop HM path
+    (agent_actions.execute_find_hiring_managers) and the manual
+    Find -> Hiring Managers path (job_board.find_hiring_manager_endpoint), so
+    the two cannot drift again. Both log at DRAFT time, matching Find People.
+
+    pipelineStage is "draft_created" when an email body exists, else
+    "not_contacted". "not_contacted" is intentionally outside
+    ALLOWED_PIPELINE_STAGES (the metrics histogram set): such contacts still
+    surface in the outbox and bucket as active, they are simply excluded from
+    the per-stage counts.
+
+    draftToEmail is always the lowercased recipient address. The Gmail reply
+    webhook matches inbound mail on draftToEmail, so setting it here is what
+    lets a reply to a manually drafted HM attach back to this contact. The
+    agent path historically omitted draftToEmail; unifying on this builder
+    backfills it for agent-surfaced HMs too (named improvement, 2026-06).
+    """
+    doc = {
+        "firstName": first_name,
+        "lastName": last_name,
+        "email": email,
+        "company": company,
+        "jobTitle": job_title,
+        "source": source,
+        "pipelineStage": "draft_created" if email_body else "not_contacted",
+        "emailSubject": email_subject,
+        "emailBody": email_body,
+        "inOutbox": True,
+        "createdAt": now_iso,
+        "firstContactDate": today,
+        "lastContactDate": today,
+        "status": "Not Contacted",
+        "isHiringManager": True,
+        "userId": uid,
+        "emailGeneratedAt": now_iso,
+        "draftCreatedAt": now_iso,
+        "draftStillExists": True,
+        "lastActivityAt": now_iso,
+        "hasUnreadReply": False,
+        "linkedinUrl": linkedin_url,
+        "draftToEmail": (email or "").strip().lower(),
+    }
+    # Agent / Loop provenance. Only the agent path sets these; the manual path
+    # leaves them off so a manually found HM is not mislabeled as agent-sourced.
+    if source == "agent":
+        doc["agentCycleId"] = agent_cycle_id
+        doc["discoveredVia"] = discovered_via
+        doc["sourceJobId"] = source_job_id
+        doc["loopId"] = loop_id
+    # gmailDraftId/Url are added only when present. The agent path leaves these
+    # empty here and sets them post-hoc after the Gmail draft call, so omitting
+    # the empty keys keeps that path byte-identical.
+    if gmail_draft_id:
+        doc["gmailDraftId"] = gmail_draft_id
+    if gmail_draft_url:
+        doc["gmailDraftUrl"] = gmail_draft_url
+    return doc
+
+
+def upsert_hm_outbox_contact(
+    db,
+    uid,
+    *,
+    first_name,
+    last_name,
+    email,
+    company,
+    job_title,
+    now_iso,
+    today,
+    linkedin_url="",
+    email_subject="",
+    email_body="",
+    gmail_draft_id="",
+    gmail_draft_url="",
+):
+    """Create or merge a manual hiring-manager outbox contact, keyed on the
+    lowercased email. Returns the contact doc id (or None if no email).
+
+    Dedup convention mirrors the Find People draft endpoint (emails.py): query
+    contacts where email == lowercased address, merge if present else add. This
+    keeps a person drafted to twice from creating duplicate outbox rows, and a
+    later recruiters/* save from double-logging.
+
+    Conservative merge: on an existing contact we refresh only draft-event and
+    outbox-membership fields. We deliberately do NOT touch createdAt,
+    firstContactDate, status, pipelineStage, or hasUnreadReply. This is where
+    HM intentionally differs from the emails.py Find People re-draft path, which
+    resets pipelineStage to "draft_created" on every draft: for HM we must not
+    knock a contact already advanced to replied / sent / meeting_scheduled back
+    to a fresh draft, nor clear an unread reply, just because the user generated
+    another draft.
+    """
+    key_email = (email or "").strip().lower()
+    if not key_email:
+        return None
+
+    contacts_ref = db.collection("users").document(uid).collection("contacts")
+    existing = list(contacts_ref.where("email", "==", key_email).limit(1).stream())
+
+    if existing:
+        ref = existing[0].reference
+        update = {
+            "inOutbox": True,
+            "isHiringManager": True,
+            "emailSubject": email_subject,
+            "emailBody": email_body,
+            "draftToEmail": key_email,
+            "draftCreatedAt": now_iso,
+            "emailGeneratedAt": now_iso,
+            "draftStillExists": True,
+            "lastActivityAt": now_iso,
+            "lastContactDate": today,
+        }
+        # Only refresh the draft link when we actually have one, so a retry that
+        # failed to produce a draft cannot wipe an existing draft pointer.
+        if gmail_draft_id:
+            update["gmailDraftId"] = gmail_draft_id
+        if gmail_draft_url:
+            update["gmailDraftUrl"] = gmail_draft_url
+        ref.set(update, merge=True)
+        return existing[0].id
+
+    doc = build_hm_outbox_contact_doc(
+        uid=uid,
+        first_name=first_name,
+        last_name=last_name,
+        email=key_email,
+        company=company,
+        job_title=job_title,
+        now_iso=now_iso,
+        today=today,
+        source="manual_find_hm",
+        linkedin_url=linkedin_url,
+        email_subject=email_subject,
+        email_body=email_body,
+        gmail_draft_id=gmail_draft_id,
+        gmail_draft_url=gmail_draft_url,
+    )
+    _, ref = contacts_ref.add(doc)
+    return ref.id
 
 
 # ---------------------------------------------------------------------------
@@ -767,6 +944,231 @@ def sync_contact_thread(uid, contact_id):
         data.update(all_updates)
 
     return _contact_to_dict(contact_id, data)
+
+
+def send_reply_for_contact(uid, contact_id, body):
+    """
+    Send a reply (or follow-up) for a contact via the user's Gmail and update
+    outbox state. Used by the "Send" button in the inbox detail panel.
+
+    State changes on success:
+        - pipelineStage:
+            - "replied"   -> "waiting_on_reply"   (we just answered them)
+            - "draft_created" / "new" -> "email_sent"
+            - otherwise unchanged (already mid-thread or terminal)
+          Done-stage contacts are left alone — sending another note shouldn't
+          unwind a manually-marked won/closed state.
+        - lastMessageFrom = "user", lastActivityAt = now, emailSentAt = now,
+          hasUnreadReply = False (any unread flag is cleared by responding),
+          followUpCount += 1 when this send was a follow-up (no inbound reply
+          to react to).
+        - gmailThreadId / gmailMessageId stamped from the Gmail response if we
+          didn't already have them, so future syncs can join replies on the
+          thread id rather than the draftToEmail fallback.
+        - Any cached replyDrafts/<id> doc is cleared so the next Generate
+          click can't surface the now-stale draft.
+    """
+    import base64
+    from email.mime.text import MIMEText
+
+    text = (body or "").strip()
+    if not text:
+        raise ValueError("missing_body")
+
+    ref, data = _get_contact(uid, contact_id)
+    to_email = data.get("draftToEmail") or data.get("email") or ""
+    if not to_email:
+        raise ValueError("missing_recipient")
+
+    subject = data.get("emailSubject") or data.get("draftSubject") or ""
+    thread_id = data.get("gmailThreadId")
+    had_unread_reply = bool(data.get("hasUnreadReply"))
+    current_stage = data.get("pipelineStage") or ""
+
+    creds = _load_user_gmail_creds(uid)
+    if not creds:
+        raise ValueError("gmail_disconnected")
+    try:
+        service = _gmail_service(creds)
+    except Exception as e:
+        logger.warning("[outbox] send_reply: gmail service init failed uid=%s contact=%s: %s", uid, contact_id, e)
+        _capture_sentry(e)
+        raise ValueError("gmail_disconnected")
+
+    msg = MIMEText(text)
+    msg["to"] = to_email
+    if subject:
+        msg["subject"] = subject if subject.lower().startswith("re:") else f"Re: {subject}"
+    raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
+    message_body = {"raw": raw}
+    if thread_id:
+        message_body["threadId"] = thread_id
+
+    try:
+        sent = service.users().messages().send(userId="me", body=message_body).execute() or {}
+    except Exception as e:
+        logger.warning("[outbox] send_reply: Gmail send failed uid=%s contact=%s: %s", uid, contact_id, e)
+        _capture_sentry(e)
+        raise
+
+    sent_message_id = sent.get("id") or ""
+    sent_thread_id = sent.get("threadId") or thread_id or ""
+    now = _now_iso()
+
+    updates = {
+        "lastMessageFrom": "user",
+        "lastActivityAt": now,
+        "emailSentAt": now,
+        "hasUnreadReply": False,
+        "updatedAt": now,
+    }
+    if sent_message_id:
+        updates["gmailMessageId"] = sent_message_id
+    if sent_thread_id and not thread_id:
+        updates["gmailThreadId"] = sent_thread_id
+    # A follow-up is a send to a contact who hadn't replied yet. Counts up so
+    # the existing "Nth follow-up" UI in ConversationPanel.tsx stays accurate.
+    is_followup_send = not had_unread_reply and current_stage not in ("replied",)
+    if is_followup_send:
+        prior_followups = data.get("followUpCount") or 0
+        updates["followUpCount"] = prior_followups + 1
+
+    # Pipeline-stage transitions. Done-stage contacts are intentionally left
+    # alone — the user marked them resolved and sending another note shouldn't
+    # silently un-resolve them.
+    if current_stage not in DONE_STAGES:
+        if current_stage == "replied":
+            updates["pipelineStage"] = "waiting_on_reply"
+        elif current_stage in ("new", "draft_created", "draft_deleted", ""):
+            updates["pipelineStage"] = "email_sent"
+        # Otherwise leave the stage where it is (email_sent / waiting_on_reply
+        # stays — we're just sending another follow-up in the same state).
+
+    ref.update(updates)
+    data.update(updates)
+
+    # Cooldown: log this send against the recipient so other product paths
+    # don't over-contact the same person. Mirrors the same hook used by
+    # update_contact_stage on the email_sent transition.
+    try:
+        from app.services.cooldown_service import record_outreach
+        record_outreach(to_email, uid)
+    except Exception as cd_err:
+        logger.warning("[outbox] send_reply: cooldown record failed contact=%s: %s", contact_id, cd_err)
+
+    # Clear the cached reply draft so the next Generate click can't surface
+    # the now-stale draft body that the user just sent.
+    try:
+        get_db().collection("users").document(uid).collection("replyDrafts").document(contact_id).delete()
+    except Exception:
+        pass
+
+    try:
+        from app.utils.metrics_events import log_event
+        log_event(uid, "reply_response_sent", {
+            "contact_id": contact_id,
+            "is_followup": is_followup_send,
+            "used_auto_draft": True,
+        })
+    except Exception:
+        pass
+
+    return _contact_to_dict(contact_id, data)
+
+
+def html_to_plain_text(value):
+    """Convert an HTML email body to readable plain text.
+
+    Legacy hiring-manager / recruiter drafts were stored as HTML (a
+    font-family wrapper div with <br> line breaks and escaped entities). The
+    tracker renders the stored emailBody as text, so that markup showed up raw.
+    This normalizes such bodies for display. Newly stored bodies are already
+    plain text, so the no-op fast path below returns them untouched.
+
+    Conversion order: block tags to newlines, strip remaining tags, decode
+    entities last (so a literal &lt; in the source never becomes a tag we then
+    strip), then collapse 3+ newlines to 2.
+    """
+    if not value:
+        return value
+    # Fast path: nothing to convert when there is no markup or entity.
+    if "<" not in value and "&" not in value:
+        return value
+    text = re.sub(r"(?i)<br\s*/?>", "\n", value)
+    text = re.sub(r"(?i)</(p|div)>", "\n", text)
+    text = re.sub(r"<[^>]+>", "", text)
+    text = html.unescape(text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text.strip()
+
+
+def get_contact_thread_messages(uid, contact_id):
+    """
+    Return the full message chain for a contact's thread, for the inbox view.
+
+    When gmailThreadId is set AND Gmail creds load AND the fetch succeeds,
+    returns {"source": "gmail", "messages": [...]}.
+
+    Otherwise (no thread id, no creds, or any Gmail failure) returns
+    {"source": "local", "messages": [<single locally-stored emailBody as one
+    msg>]} so the panel can still render the sent draft. Never raises on a
+    missing Gmail connection — that's the explicit fallback path.
+    """
+    ref, data = _get_contact(uid, contact_id)
+    gmail_thread_id = data.get("gmailThreadId")
+
+    def _local_fallback(reason=None):
+        # html_to_plain_text covers contacts saved before the storage fix, whose
+        # emailBody is still HTML. No-op for plain-text bodies.
+        body = html_to_plain_text((data.get("emailBody") or "").strip())
+        subject = data.get("emailSubject") or ""
+        sent_at = data.get("emailSentAt") or data.get("draftCreatedAt") or data.get("createdAt")
+        messages = []
+        if body:
+            messages.append({
+                "messageId": None,
+                "sender": None,
+                "isFromRecipient": False,
+                "isFromUser": True,
+                "sentAt": sent_at,
+                "subject": subject,
+                "body": body,
+            })
+        result = {"source": "local", "messages": messages}
+        if reason:
+            result["reason"] = reason
+        return result
+
+    if not gmail_thread_id:
+        return _local_fallback("no_thread")
+
+    try:
+        creds = _load_user_gmail_creds(uid)
+    except Exception as e:
+        logger.warning("[outbox] thread messages: creds load failed for uid=%s contact=%s: %s", uid, contact_id, e)
+        return _local_fallback("gmail_disconnected")
+    if not creds:
+        return _local_fallback("gmail_disconnected")
+
+    contact_email = data.get("draftToEmail") or data.get("email")
+    user_email = None
+    try:
+        user_doc = get_db().collection("users").document(uid).get()
+        if user_doc.exists:
+            user_email = (user_doc.to_dict() or {}).get("email")
+    except Exception:
+        pass
+
+    try:
+        service = _gmail_service(creds)
+        chain = get_full_thread_chain(service, gmail_thread_id, contact_email, user_email)
+    except Exception as e:
+        logger.warning("[outbox] thread messages: Gmail fetch failed for uid=%s contact=%s thread=%s: %s",
+                       uid, contact_id, gmail_thread_id, e)
+        _capture_sentry(e)
+        return _local_fallback("gmail_error")
+
+    return {"source": "gmail", "messages": chain}
 
 
 # ---------------------------------------------------------------------------

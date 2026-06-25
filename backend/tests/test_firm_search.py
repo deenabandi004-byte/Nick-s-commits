@@ -464,17 +464,24 @@ class TestFirmSearchValidation:
         assert req.query == "consulting firms in NYC"
         assert req.batchSize == 10
 
-    def test_batch_size_over_15_rejected(self):
+    def test_elite_max_batch_size_accepted(self):
+        # The Find Companies slider allows up to 50 for Elite, so the schema
+        # must accept the full range. Per-tier caps (free 10 / pro 25 / elite 50)
+        # are enforced in the route after the tier is resolved.
         from app.utils.validation import FirmSearchRequest
-        from pydantic import ValidationError as PydanticValidationError
-        with pytest.raises(PydanticValidationError):
-            FirmSearchRequest(query="test", batchSize=16)
+        req = FirmSearchRequest(query="test", batchSize=50)
+        assert req.batchSize == 50
 
-    def test_batch_size_40_rejected(self):
+    def test_pro_batch_size_accepted(self):
+        from app.utils.validation import FirmSearchRequest
+        req = FirmSearchRequest(query="test", batchSize=25)
+        assert req.batchSize == 25
+
+    def test_batch_size_over_50_rejected(self):
         from app.utils.validation import FirmSearchRequest
         from pydantic import ValidationError as PydanticValidationError
         with pytest.raises(PydanticValidationError):
-            FirmSearchRequest(query="test", batchSize=40)
+            FirmSearchRequest(query="test", batchSize=51)
 
     def test_batch_size_0_rejected(self):
         from app.utils.validation import FirmSearchRequest

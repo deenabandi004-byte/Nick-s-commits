@@ -7,7 +7,6 @@ import {
   Target,
   Search,
   Mail,
-  Sparkles,
   ChevronRight,
   ArrowUpRight,
   TrendingUp,
@@ -530,7 +529,6 @@ function EmptyWelcome({ onGoToSearch }: { onGoToSearch: () => void }) {
         background: "var(--surface)",
       }}
     >
-      <Sparkles style={{ width: 28, height: 28, color: "#3B82F6", margin: "0 auto 12px" }} />
       <h3 style={{ fontSize: 16, fontWeight: 600, margin: "0 0 8px", color: "var(--ink)" }}>
         Your briefing fills in as you network
       </h3>

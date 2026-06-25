@@ -1,221 +1,84 @@
-import { useEffect, useRef, useState } from 'react';
-import { Bell, BookOpen, Settings } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { MobileMenuButton } from '@/components/ui/sidebar';
-import ScoutHeaderButton from './ScoutHeaderButton';
-import { useTour } from '@/contexts/TourContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useToast } from '@/hooks/use-toast';
-import type { NotificationItem } from '@/hooks/useNotifications';
 
 interface AppHeaderProps {
   title?: string;
-  /** Optional icon to display next to the title */
   titleIcon?: React.ReactNode;
-  /** Optional content to display in the center of the header */
   centerContent?: React.ReactNode;
-  /** Optional content to display in the right section (before Scout button) */
   rightContent?: React.ReactNode;
-  /** Callback when job title suggestion is received from Scout */
   onJobTitleSuggestion?: (title: string, company?: string, location?: string) => void;
 }
 
-function formatNotificationTime(timestamp: string): string {
-  try {
-    const d = new Date(timestamp);
-    if (Number.isNaN(d.getTime())) return '';
-    return formatDistanceToNow(d, { addSuffix: true });
-  } catch {
-    return '';
-  }
-}
-
 /**
- * AppHeader - Standardized header component for all app pages
- *
- * Layout:
- * - Left: Mobile menu button, notification icons, page title
- * - Center: Optional custom content (e.g., stats for Dashboard)
- * - Right: Scout button
+ * AppHeader — visually removed. The 3 header icons moved to the sidebar and
+ * Scout opens via a floating button. The global "new reply" toast now lives in
+ * ReplyNotifier (mounted once in App.tsx), so this component no longer needs to
+ * run any effect. It is kept as a null-rendering no-op because many pages still
+ * import and render it; props are accepted but ignored for backward
+ * compatibility.
  */
-export function AppHeader({
-  title,
-  titleIcon,
-  centerContent,
-  rightContent,
-  onJobTitleSuggestion,
-}: AppHeaderProps) {
-  const navigate = useNavigate();
+export function AppHeader(_props: AppHeaderProps) {
   const location = useLocation();
-  const { startTour } = useTour();
-  const { notifications, markAllRead, markOneRead } = useNotifications();
+  const { notifications } = useNotifications();
   const { toast } = useToast();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const prevUnreadCountRef = useRef(notifications.unreadReplyCount);
+  const prevReplyCountRef = useRef(notifications.unreadReplyCount);
+  const prevLoopRunCountRef = useRef(notifications.unreadLoopRunCount);
   const hasInitializedRef = useRef(false);
 
   useEffect(() => {
     if (!hasInitializedRef.current) {
-      prevUnreadCountRef.current = notifications.unreadReplyCount;
+      prevReplyCountRef.current = notifications.unreadReplyCount;
+      prevLoopRunCountRef.current = notifications.unreadLoopRunCount;
       hasInitializedRef.current = true;
       return;
     }
-    const prev = prevUnreadCountRef.current;
-    const curr = notifications.unreadReplyCount;
-    prevUnreadCountRef.current = curr;
-    if (curr > prev && location.pathname !== '/tracker') {
-      const firstUnread = notifications.items.find((i) => !i.read) ?? notifications.items[0];
+
+    // Reply toast — existing behavior. Suppressed on /tracker since the
+    // user is already looking at the surface that just updated.
+    const prevReply = prevReplyCountRef.current;
+    const currReply = notifications.unreadReplyCount;
+    prevReplyCountRef.current = currReply;
+    if (currReply > prevReply && location.pathname !== '/tracker') {
+      const firstUnread =
+        notifications.items.find((i) => !i.read && (i.kind ?? 'reply') === 'reply') ??
+        notifications.items.find((i) => (i.kind ?? 'reply') === 'reply');
       if (firstUnread) {
         toast({
           title: `${firstUnread.contactName} responded to you!`,
-          description: firstUnread.snippet ? firstUnread.snippet.slice(0, 80) + (firstUnread.snippet.length > 80 ? '…' : '') : undefined,
+          description: firstUnread.snippet
+            ? firstUnread.snippet.slice(0, 80) + (firstUnread.snippet.length > 80 ? '…' : '')
+            : undefined,
         });
       }
     }
-  }, [notifications.unreadReplyCount, notifications.items, location.pathname, toast]);
 
-  useEffect(() => {
-    if (!dropdownOpen) return;
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setDropdownOpen(false);
+    // Loop-run toast — new in fix #4. Suppressed on /agent since the user
+    // is already looking at the fleet surface; toast on every other page.
+    const prevLoopRun = prevLoopRunCountRef.current;
+    const currLoopRun = notifications.unreadLoopRunCount;
+    prevLoopRunCountRef.current = currLoopRun;
+    if (currLoopRun > prevLoopRun && location.pathname !== '/agent') {
+      const firstLoopRun =
+        notifications.items.find((i) => !i.read && i.kind === 'loop_run') ??
+        notifications.items.find((i) => i.kind === 'loop_run');
+      if (firstLoopRun) {
+        toast({
+          title: `Your Loop "${firstLoopRun.loopName ?? 'Untitled Loop'}" ran`,
+          description: firstLoopRun.snippet
+            ? firstLoopRun.snippet.slice(0, 100) + (firstLoopRun.snippet.length > 100 ? '…' : '')
+            : undefined,
+        });
       }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [dropdownOpen]);
+    }
+  }, [
+    notifications.unreadReplyCount,
+    notifications.unreadLoopRunCount,
+    notifications.items,
+    location.pathname,
+    toast,
+  ]);
 
-  const handleBellClick = () => {
-    setDropdownOpen((o) => !o);
-  };
-
-  const handleNotificationClick = (item: NotificationItem) => {
-    markOneRead(item.contactId);
-    setDropdownOpen(false);
-    navigate('/tracker', { state: { selectContactId: item.contactId } });
-  };
-
-  const handleSettingsClick = () => {
-    navigate('/account-settings');
-  };
-
-  return (
-    <header className="h-16 flex items-center justify-between px-4 lg:px-6 flex-shrink-0 relative z-20" style={{ borderBottom: "1px solid var(--warm-border-light, #E2E8F0)", background: 'var(--warm-bg, #FFFFFF)' }}>
-      {/* Left Section: Mobile menu, icons, title */}
-      <div className="flex items-center gap-2 lg:gap-3">
-        <MobileMenuButton />
-
-        {/* Header Icons: Tour, Outbox, Calendar, Settings */}
-        <div className="hidden sm:flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={startTour}
-            className="h-8 w-8 text-[#6B7280] hover:bg-[#F8FAFF] hover:text-[#0F172A]"
-            aria-label="View tour"
-          >
-            <BookOpen className="h-5 w-5" />
-          </Button>
-          <div className="relative" ref={dropdownRef}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleBellClick}
-              className={`h-8 w-8 hover:bg-[#F8FAFF] ${notifications.unreadReplyCount > 0 ? 'text-[#3B82F6]' : 'text-[#6B7280] hover:text-[#0F172A]'}`}
-              aria-label="Notifications"
-            >
-              <div className="relative">
-                <Bell className={`h-5 w-5 ${notifications.unreadReplyCount > 0 ? 'fill-[#3B82F6]' : ''}`} />
-                {notifications.unreadReplyCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-medium rounded-full flex items-center justify-center">
-                    {notifications.unreadReplyCount > 9 ? '9+' : notifications.unreadReplyCount}
-                  </span>
-                )}
-              </div>
-            </Button>
-            {dropdownOpen && (
-              <div className="absolute left-0 top-full mt-1 w-[320px] max-w-[calc(100vw-2rem)] bg-white rounded-[3px] shadow-lg border border-[#E2E8F0] max-h-80 overflow-hidden flex flex-col z-50">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E2E8F0]">
-                  <span className="text-sm font-semibold text-foreground">Notifications</span>
-                  {notifications.unreadReplyCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => markAllRead()}
-                      className="text-xs text-[#3B82F6] hover:underline"
-                    >
-                      Mark all read
-                    </button>
-                  )}
-                </div>
-                <div className="overflow-y-auto flex-1">
-                  {notifications.items.length === 0 ? (
-                    <p className="px-4 py-6 text-sm text-muted-foreground">No notifications yet</p>
-                  ) : (
-                    <ul className="divide-y divide-[#EEF2F8]">
-                      {notifications.items.map((item) => (
-                        <li key={`${item.contactId}-${item.timestamp}`}>
-                          <button
-                            type="button"
-                            onClick={() => handleNotificationClick(item)}
-                            className={`w-full text-left px-4 py-3 transition-colors hover:bg-[#F8FAFF] ${
-                              !item.read ? 'bg-[#F8FAFF]' : ''
-                            }`}
-                          >
-                            <p className="text-sm font-medium text-foreground">
-                              {item.contactName} responded to you!
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {formatNotificationTime(item.timestamp)}
-                            </p>
-                            {item.snippet && (
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                {item.snippet}
-                              </p>
-                            )}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-<Button
-            variant="ghost"
-            size="icon"
-            onClick={handleSettingsClick}
-            className="h-8 w-8 text-[#6B7280] hover:bg-[#F8FAFF] hover:text-[#0F172A]"
-            aria-label="Account settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Page Title */}
-        <div className="flex items-center gap-2">
-          {titleIcon && <span className="text-[#6B7280]">{titleIcon}</span>}
-          <h1 className="text-lg lg:text-xl font-semibold text-[#0F172A] truncate max-w-[150px] sm:max-w-none font-serif">
-            {title}
-          </h1>
-        </div>
-      </div>
-
-      {/* Center Section: Optional custom content */}
-      {centerContent && (
-        <div className="absolute left-1/2 -translate-x-1/2 hidden md:flex items-center">
-          {centerContent}
-        </div>
-      )}
-
-      {/* Right Section: optional rightContent + Scout */}
-      <div className="flex items-center gap-2 lg:gap-3">
-        {rightContent}
-        <ScoutHeaderButton />
-      </div>
-    </header>
-  );
+  return null;
 }

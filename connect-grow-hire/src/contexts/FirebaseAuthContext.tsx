@@ -3,7 +3,7 @@
 "use client";
 
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import {
   User as FirebaseUser,
   signInWithPopup,
@@ -16,13 +16,15 @@ import {
 } from "firebase/auth";
 import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 import { auth, db } from "../lib/firebase";
+import { BACKEND_URL } from "@/services/api";
 import posthog from "../lib/posthog";
 
 const getMonthKey = () => new Date().toISOString().slice(0, 7);
 const initialCreditsByTier = (tier: "free" | "pro" | "elite") => {
+  // Keep in sync with TIER_CONFIGS (@/lib/constants) and backend config.py.
   if (tier === "free") return 300;
-  if (tier === "pro") return 1500;
-  if (tier === "elite") return 3000;
+  if (tier === "pro") return 2000;
+  if (tier === "elite") return 5000;
   return 300; // default to free
 };
 
@@ -32,7 +34,8 @@ interface User {
   name: string;
   picture?: string;
   accessToken?: string;
-  tier: "free" | "pro";
+  tier: "free" | "pro" | "elite";
+  subscriptionTier?: "free" | "pro" | "elite";
   credits: number;
   maxCredits: number;
   subscriptionId?: string;
@@ -77,6 +80,9 @@ export const useFirebaseAuth = () => {
 export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Tracks the uid whose Firestore profile we've already loaded, so token
+  // refreshes (which also fire onIdTokenChanged) don't re-fetch the user doc.
+  const lastLoadedUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     let unsub: undefined | (() => void);
@@ -93,11 +99,39 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
             userId: firebaseUser?.uid || "none"
           });
           if (firebaseUser) {
-            console.log("[AUTH CONTEXT] Loading user data");
-            await loadUserData(firebaseUser);
-            console.log("🔐 [AUTH CONTEXT] User data loaded");
+            // onIdTokenChanged also fires on hourly token refreshes and on any
+            // getIdToken(true) call (e.g. completeOnboarding). Only (re)load the
+            // Firestore profile when the signed-in uid actually changes — a token
+            // refresh for the same user must not re-fetch the doc or churn state.
+            if (lastLoadedUidRef.current !== firebaseUser.uid) {
+              lastLoadedUidRef.current = firebaseUser.uid;
+              console.log("[AUTH CONTEXT] Loading user data");
+              await loadUserData(firebaseUser);
+              console.log("🔐 [AUTH CONTEXT] User data loaded");
+              // D11 lazy backfill: fire-and-forget call to the sync endpoint.
+              // Backend gates on ENABLE_APIFY_USER_LINKEDIN + per-user flag +
+              // cooldown so a misfire here is just a no-op. Wrapped so a
+              // network error here does NOT block auth resolution.
+              void (async () => {
+                try {
+                  const token = await firebaseUser.getIdToken();
+                  await fetch(`${BACKEND_URL}/api/users/me/sync-linkedin`, {
+                    method: 'POST',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      Authorization: `Bearer ${token}`,
+                    },
+                  });
+                } catch (e) {
+                  console.log("[Apify Backfill] sync call failed (non-fatal):", e);
+                }
+              })();
+            } else {
+              console.log("🔐 [AUTH CONTEXT] Token refresh for same uid, skipping reload");
+            }
           } else {
             console.log("🔐 [AUTH CONTEXT] No Firebase user, setting user state to null");
+            lastLoadedUidRef.current = null;
             setUser(null);
           }
           setIsLoading(false);
@@ -138,14 +172,19 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
       const snap = await getDoc(userDocRef);
       if (snap.exists()) {
         const d = snap.data() as Partial<User>;
+        // subscriptionTier is the source of truth; tier is a legacy fallback
+        // that can be stale (e.g. "free") on upgraded Pro/Elite accounts. Read
+        // both so tier-gated UI (e.g. ProGate) sees the real plan.
+        const resolvedTier = d.subscriptionTier || d.tier || "free";
         const userData = {
           uid: firebaseUser.uid,
           email: firebaseUser.email || "",
           name: firebaseUser.displayName || "",
           picture: firebaseUser.photoURL || undefined,
-          tier: d.tier || "free",
-          credits: d.credits ?? initialCreditsByTier(d.tier || "free"),
-          maxCredits: d.maxCredits ?? initialCreditsByTier(d.tier || "free"),
+          tier: resolvedTier,
+          subscriptionTier: resolvedTier,
+          credits: d.credits ?? initialCreditsByTier(resolvedTier),
+          maxCredits: d.maxCredits ?? initialCreditsByTier(resolvedTier),
           stripeCustomerId: d.stripeCustomerId,
           stripeSubscriptionId: d.stripeSubscriptionId,
           subscriptionStatus: d.subscriptionStatus,
@@ -173,6 +212,20 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
           needsOnboarding: true,
         };
         await setDoc(userDocRef, { ...newUser, createdAt: new Date().toISOString() });
+        // Referral attribution (best-effort, must not block onboarding)
+        try {
+          const refCode =
+            new URLSearchParams(window.location.search).get('ref') ||
+            localStorage.getItem('offerloop_ref');
+          if (refCode) {
+            const { apiService } = await import('../services/api');
+            await apiService.attributeReferral(refCode);
+          }
+        } catch (e) {
+          console.error('Referral attribution failed:', e);
+        } finally {
+          localStorage.removeItem('offerloop_ref');
+        }
         setUser(newUser);
         // Identify new user after data is set
         identifyUser(newUser);
@@ -217,6 +270,13 @@ const signIn = async (opts?: SignInOptions): Promise<NextRoute> => {
         createdAt: new Date().toISOString(),
         lastSignIn: new Date().toISOString(),
       });
+      // Brand-new account: no Firestore doc existed. Co-gate on Firebase's own
+      // isNewUser so this cannot misfire if a doc is ever missing for an
+      // existing account. No email or PII; attribution is handled by the
+      // onIdTokenChanged identify path.
+      if (info?.isNewUser) {
+        posthog.capture('sign_up', { signup_method: 'google' });
+      }
       return "onboarding";
     } else {
       await updateDoc(ref, { lastSignIn: new Date().toISOString() });
@@ -251,6 +311,8 @@ const signIn = async (opts?: SignInOptions): Promise<NextRoute> => {
         console.error("❌ [PostHog] Failed to reset session:", error);
       }
       console.log("🔐 [AUTH CONTEXT] Firebase signOut() completed, setting user state to null");
+      // Clear the pricing-page tier hint so a signed-out visitor never sees a stale tier.
+      try { localStorage.removeItem('offerloop_tier'); } catch {}
       setUser(null);
       console.log("🔐 [AUTH CONTEXT] User state set to null");
     } catch (error) {

@@ -56,6 +56,21 @@ export const OnboardingProfile = ({ onNext, onBack, initialData }: OnboardingPro
 
       if (result?.success) {
         setLinkedinFetched(true);
+        // D9: when Apify failed but PDL caught us, surface a quiet
+        // transparency toast. No user action required - we'll refresh the
+        // enrichment in the background. Imported lazily so this page does
+        // not pay a startup cost when the flag is off and fallback_used
+        // never appears in the response.
+        if (result?.fallback_used) {
+          try {
+            const { toast } = await import("@/hooks/use-toast");
+            toast({
+              title: "LinkedIn enrichment using fallback",
+              description: "We'll refresh your profile data shortly.",
+              duration: 5000,
+            });
+          } catch {}
+        }
         const filled = new Set<string>();
 
         setProfile(prev => {

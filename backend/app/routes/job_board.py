@@ -26,6 +26,7 @@ from app.services.auth import deduct_credits_atomic, refund_credits_atomic, chec
 from app.services.openai_client import get_async_openai_client, get_openai_client
 from app.services.ats_scorer import calculate_ats_score
 from app.services.recruiter_finder import find_recruiters, determine_job_type, find_hiring_manager
+from app.utils.users import get_outreach_email
 from app.services.resume_optimizer_v2 import optimize_resume_v2 as run_resume_optimization
 from app.services.resume_capabilities import get_capabilities
 from app.services.pdf_builder import generate_cover_letter_pdf
@@ -4352,27 +4353,45 @@ def filter_jobs_by_quality(jobs: List[dict], min_quality_score: int = MIN_QUALIT
     return filtered
 
 
-def score_jobs_by_resume_match(jobs: List[dict], user_profile: dict, query_weights: dict = None) -> List[dict]:
+def score_jobs_by_resume_match(
+    jobs: List[dict],
+    user_profile: dict,
+    query_weights: dict = None,
+    user_id: str = "",
+) -> List[dict]:
     """
     Score and rank all jobs based on user profile match AND quality.
-    
+
     Combined scoring:
     - Resume Match Score: 0-100 (how well job matches user's profile)
     - Quality Score: 0-50 (job posting quality signals)
-    - Final Score: Weighted combination with match prioritized
-    
+    - Phase 2 boost: dream/target/alumni/saved-affinity (folded into combined_score)
+    - Final Score: Weighted combination with match prioritized, plus signal boost
+
     Args:
         jobs: List of job dicts
         user_profile: User's career profile
         query_weights: Optional dict mapping job_id to query weight
-        
+        user_id: Firebase uid — required to load per-user signals (Phase 2).
+                 If omitted, signal boosts are skipped (legacy callers).
+
     Returns:
-        List of jobs with matchScore and qualityScore added, sorted by combined score descending
+        List of jobs with matchScore, qualityScore, combinedScore, and
+        matchSignals added, sorted by combined score descending.
     """
+    # Phase 2: load per-user signals once and reuse for every job in the
+    # batch. UserSignals.boost() returns (score_delta, [reason_codes]).
+    signals = None
+    if user_id:
+        try:
+            from app.services.job_ranker_signals import load_user_signals
+            signals = load_user_signals(user_id)
+        except Exception:
+            logger.exception("[JobBoard] Failed to load user signals; scoring without boosts")
+
     # Check if profile is empty or has no meaningful data
-    # Check for actual non-empty values (not just existence of keys)
     has_profile_data = (
-        user_profile and 
+        user_profile and
         (
             (user_profile.get("major") and user_profile.get("major").strip()) or
             (user_profile.get("skills") and len(user_profile.get("skills", [])) > 0) or
@@ -4382,37 +4401,46 @@ def score_jobs_by_resume_match(jobs: List[dict], user_profile: dict, query_weigh
             (user_profile.get("target_industries") and len(user_profile.get("target_industries", [])) > 0)
         )
     )
-    
+
     if not has_profile_data:
-        # No profile or empty profile, assign neutral match scores but still calculate quality
+        # No profile or empty profile, assign neutral match scores but still
+        # calculate quality + signal boost. A user with no resume but a dream
+        # companies list should still see those companies ranked first.
         logger.info("[JobBoard] No user profile data found, using neutral scores")
         for job in jobs:
+            boost, reasons = (signals.boost(job) if signals else (0, []))
+            quality_score = calculate_quality_score(job)
             job["matchScore"] = 50
-            job["qualityScore"] = calculate_quality_score(job)
-            job["combinedScore"] = 50 + (job["qualityScore"] * 0.5)  # Quality as tiebreaker
+            job["qualityScore"] = quality_score
+            job["combinedScore"] = round(50 + (quality_score * 0.5) + boost, 1)
+            job["matchSignals"] = reasons
         jobs.sort(key=lambda x: x.get("combinedScore", 0), reverse=True)
         return jobs
-    
+
     query_weights = query_weights or {}
-    
+
     for job in jobs:
         weight = query_weights.get(job.get("id"), 1.0)
-        
-        # Calculate both scores
+
+        # Calculate base scores (unchanged — kept inside 0-100 / 0-50 ranges
+        # for the UI display).
         match_score = score_job_for_user(job, user_profile, weight)
         quality_score = calculate_quality_score(job)
-        
-        # Combined score: 70% match, 30% quality
-        # This prioritizes relevance while still surfacing higher quality jobs
-        combined_score = (match_score * 0.7) + (quality_score * 0.6)
-        
+
+        # Phase 2 signal boost applied at the combined_score level so the
+        # matchScore display stays in its familiar 0-100 range, but a
+        # dream-company job reliably outranks a strong-keyword non-dream job.
+        boost, reasons = (signals.boost(job) if signals else (0, []))
+
+        combined_score = (match_score * 0.7) + (quality_score * 0.6) + boost
+
         job["matchScore"] = match_score
         job["qualityScore"] = quality_score
         job["combinedScore"] = round(combined_score, 1)
-    
-    # Sort by combined score descending
+        job["matchSignals"] = reasons
+
     jobs.sort(key=lambda x: x.get("combinedScore", 0), reverse=True)
-    
+
     return jobs
 
 
@@ -6388,24 +6416,109 @@ def fetch_personalized_jobs(
     user_profile: dict,
     job_types: List[str],
     locations: List[str],
-    max_jobs: int = 50,  # QUICK WIN: Reduced default from 150 to 50 for faster loading
+    max_jobs: int = 50,
     refresh: bool = False,
-    user_id: str = ""  # PHASE 2: Added for hard gate logging
+    user_id: str = ""
 ) -> tuple[List[dict], dict]:
+    """Serve the user-facing job feed from the Fantastic.jobs curated Firestore pool.
+
+    The pool is populated daily by the ingest pipeline (backend/pipeline/main.py)
+    with student-shaped recipes — internships, new-grad, MBB/IB/quant whitelists,
+    visa-sponsoring roles — and pre-filtered by quality_gate.py (no staffing
+    agencies, no scams, no senior-only roles, nothing >60 days old). This
+    function applies the per-user hard gates, dedup, and ranking on top.
+
+    Plan: docs/JOB_BOARD_ELEVATION_PLAN.md Phase 1.
     """
-    PHASE 3: Fetch jobs using intent-aligned queries and merge results.
-    Uses parallel execution for faster performance.
-    
-    Args:
-        user_profile: User's career profile (must have _intent_contract from Phase 1)
-        job_types: List of job types
-        locations: List of preferred locations
-        max_jobs: Maximum jobs to return (default 50)
-        refresh: Whether to bypass cache
-        user_id: User ID for logging (optional)
-        
-    Returns:
-        Tuple of (jobs list, metadata dict)
+    from app.services.job_serving import fetch_jobs_from_firestore
+    from app.services.job_ranker_signals import load_user_signals
+
+    pool_jobs, pool_meta = fetch_jobs_from_firestore()
+
+    # Phase 2: drop jobs the user has explicitly dismissed before any other
+    # processing. Cheap negative signal — they told us they don't want this
+    # role, we shouldn't waste a slot scoring it.
+    signals_preload = load_user_signals(user_id) if user_id else None
+    dismissed_count = 0
+    if signals_preload and signals_preload.dismissed_job_ids:
+        before = len(pool_jobs)
+        pool_jobs = [j for j in pool_jobs if j.get("id") not in signals_preload.dismissed_job_ids]
+        dismissed_count = before - len(pool_jobs)
+
+    quality_filtered = filter_jobs_by_quality(pool_jobs, min_quality_score=MIN_QUALITY_SCORE)
+
+    intent_contract = user_profile.get("_intent_contract", {})
+    if intent_contract:
+        gated_jobs, gate_stats = apply_all_hard_gates(quality_filtered, intent_contract, user_id)
+    else:
+        logger.warning("[JobBoard] No intent_contract; skipping hard gates")
+        gated_jobs = quality_filtered
+        gate_stats = {
+            "total_rejected": 0,
+            "total_kept": len(quality_filtered),
+            "career_domain": 0,
+            "job_type": 0,
+            "location": 0,
+            "seniority": 0,
+        }
+
+    deduped, dedup_stats = deduplicate_jobs(gated_jobs)
+    weights = {job.get("id"): 1.0 for job in deduped if job.get("id")}
+    scored = score_jobs_by_resume_match(deduped, user_profile, weights, user_id=user_id)
+
+    # Phase 2 telemetry: how many top-N results carry signal badges. Lets us
+    # tell from logs whether ranking is actually surfacing user-specific
+    # matches or whether the badges are all blank (= the boosts aren't firing
+    # because nobody filled in dreamCompanies, etc.).
+    top_10 = scored[:10]
+    badge_counts = {
+        "dream_company": sum(1 for j in top_10 if "dream_company" in (j.get("matchSignals") or [])),
+        "target_company": sum(1 for j in top_10 if "target_company" in (j.get("matchSignals") or [])),
+        "alumni_at_company": sum(1 for j in top_10 if "alumni_at_company" in (j.get("matchSignals") or [])),
+        "saved_company_affinity": sum(1 for j in top_10 if "saved_company_affinity" in (j.get("matchSignals") or [])),
+    }
+
+    metadata = {
+        "serving_source": "firestore",
+        "queries_used": [{
+            "query": "firestore_curated_pool",
+            "source": "fantasticjobs",
+            "jobs_found": len(pool_jobs),
+            "weight": 1.0,
+        }],
+        "total_fetched": pool_meta.get("pool_size", len(pool_jobs)),
+        "total_after_quality_filter": len(quality_filtered),
+        "total_after_intent_gates": len(gated_jobs),
+        "total_after_deduplication": len(deduped),
+        "total_after_filter": len(deduped),
+        "filtered_out": len(pool_jobs) - len(deduped),
+        "dismissed_filtered": dismissed_count,
+        "badge_counts_top10": badge_counts,
+        "location": build_location_query(locations or user_profile.get("preferred_locations") or []),
+        "gate_stats": gate_stats,
+        "dedup_stats": dedup_stats,
+        "firestore_pool": pool_meta,
+    }
+    logger.info(
+        "[JobBoard] pool=%d quality=%d gated=%d deduped=%d scored=%d dismissed=%d badges_top10=%s",
+        len(pool_jobs), len(quality_filtered), len(gated_jobs), len(deduped), len(scored),
+        dismissed_count, badge_counts,
+    )
+    return scored[:max_jobs], metadata
+
+
+def _fetch_personalized_jobs_legacy_serpapi(
+    user_profile: dict,
+    job_types: List[str],
+    locations: List[str],
+    max_jobs: int = 50,
+    refresh: bool = False,
+    user_id: str = ""
+) -> tuple[List[dict], dict]:
+    """Legacy SerpAPI-fanout job feed. No longer wired to the user-facing
+    endpoint — kept only because /api/job-board/search and agent_actions.py
+    still call fetch_jobs_from_serpapi directly. Slated for removal once
+    those call sites migrate (Phase 7 cleanup in the elevation plan).
     """
     # PHASE 3: Build intent-aligned queries (queries now include location)
     queries = build_personalized_queries(user_profile, job_types)
@@ -6573,12 +6686,22 @@ def get_job_listings():
     try:
         data = request.get_json(force=True, silent=True) or {}
         user_id = request.firebase_user.get('uid')
-        
+
         job_types = data.get("jobTypes", ["Internship"])
         industries = data.get("industries", [])
         locations = data.get("locations", [])
         search_query = data.get("searchQuery", "")
         refresh = data.get("refresh", False)  # Force refresh bypasses cache
+
+        # Phase 1 (Job Board Elevation Plan): cap the refresh path so a runaway
+        # client can't burn external API quota by spamming refresh=true. Normal
+        # cache-hit requests are not counted — only forced refreshes that
+        # bypass the cache. 50/day per user is well above any human pattern.
+        if refresh and not _check_user_rate_limit(user_id, "job-feed-refresh-daily", "50 per day"):
+            return jsonify({
+                "error": "Daily refresh limit reached",
+                "message": "You've refreshed the job feed 50 times today. The next refresh will be available tomorrow."
+            }), 429
         
         # Get pagination parameters
         page = data.get("page", 1)
@@ -7597,6 +7720,29 @@ def _check_find_humans_hourly_cap(user_id: str) -> bool:
         return True
 
 
+def _check_user_rate_limit(user_id: str, scope: str, limit_str: str) -> bool:
+    """Generic per-user rate-limit check backed by the Flask-Limiter storage.
+
+    Added as part of Phase 1 of the Job Board Elevation Plan to cap abuse on
+    expensive endpoints (recruiter/hiring-manager discovery, job-feed refresh).
+    Returns True if the request is allowed, False if it should be rejected
+    with HTTP 429. Fail-open on storage errors so a Firestore outage doesn't
+    block users.
+    """
+    try:
+        lim = get_limiter()
+        if not lim or not getattr(lim, "_storage", None):
+            return True
+        from limits import parse
+        from limits.strategies import FixedWindowRateLimiter
+        item = parse(limit_str)
+        strategy = FixedWindowRateLimiter(lim._storage)
+        return strategy.hit(item, scope, user_id or "anon")
+    except Exception as e:
+        logger.error(f"[RateLimit] {scope} check failed: {e}")
+        return True
+
+
 @job_board_bp.route("/find-recruiter", methods=["POST"])
 @require_firebase_auth
 @require_tier(['pro', 'elite'])
@@ -7640,6 +7786,16 @@ def find_recruiter_endpoint():
                     "error": "Hourly limit reached",
                     "message": "You've used Find the Humans 20 times this hour. Try again later."
                 }), 429
+
+        # Phase 1 (Job Board Elevation Plan): daily cap on recruiter discovery.
+        # Each call fans out to PDL + Hunter (5 app credits but ~$10-15 in
+        # external API spend pre-fixes). 100/day is comfortably above any
+        # legitimate user pattern but stops runaway clients.
+        if not _check_user_rate_limit(user_id, "find-recruiter-daily", "100 per day"):
+            return jsonify({
+                "error": "Daily limit reached",
+                "message": "You've used Find Recruiter 100 times today. Try again tomorrow."
+            }), 429
 
         no_parse = bool(data.get('no_parse'))
 
@@ -7759,12 +7915,16 @@ def find_recruiter_endpoint():
                 "creditsAvailable": current_credits
             }), 402
         
-        # Get user's requested max_results (default: 5, max: 10)
+        # Get user's requested max_results. Cap lowered 10 -> 4 (2026-06)
+        # because the unified referral-draft workflow proved that beyond 3-4
+        # recruiters per company, click-through drops sharply AND each extra
+        # PDL record is another billed credit. Default 3 to match the SPA's
+        # FindHumansModal usage.
         try:
-            max_results_requested = int(data.get('maxResults', 5))
+            max_results_requested = int(data.get('maxResults', 3))
         except (TypeError, ValueError):
-            max_results_requested = 5
-        max_results_requested = min(max(max_results_requested, 1), 10)
+            max_results_requested = 3
+        max_results_requested = min(max(max_results_requested, 1), 4)
         
         # Calculate how many recruiters user can afford (RECRUITER_CREDIT_COST per recruiter)
         max_affordable = current_credits // RECRUITER_CREDIT_COST
@@ -7778,7 +7938,7 @@ def find_recruiter_endpoint():
         resume_linkedin = user_resume.get('contact', {}).get('linkedin', '') if isinstance(user_resume.get('contact'), dict) else ''
         user_contact = {
             "name": user_resume.get('name', user_data.get('displayName', '')),
-            "email": user_data.get('email', ''),
+            "email": get_outreach_email(user_data),
             "phone": resume_phone or user_data.get('phone', ''),
             "linkedin": resume_linkedin or user_data.get('linkedin', '')
         }
@@ -7962,6 +8122,34 @@ def find_recruiter_endpoint():
                 logger.info(f"[FindRecruiter] Gmail not connected (no credentials found in integrations/gmail), skipping draft creation")
                 logger.info(f"[FindRecruiter] User ID: {user_id}")
 
+        # Phase 6 (June 2026): unified referral-draft workflow.
+        # Cache the validated recruiter list so the new
+        # /referral-draft/from-find-recruiter endpoint can read it back
+        # (server-side trust boundary — clients never send contact fields).
+        # 60-min TTL matches discovery_cache; cache_doc keyed per (uid,
+        # company, jobTitle, hour-bucket) so the same search within the
+        # cache window collides cleanly.
+        from app.services.alumni_discovery import (
+            _generate_search_id as _gen_recruiter_search_id,
+            write_recruiter_cache,
+        )
+        recruiter_search_id = _gen_recruiter_search_id(
+            user_id, company, job_title or "",
+        )
+        try:
+            write_recruiter_cache(user_id, recruiter_search_id, {
+                "search_id": recruiter_search_id,
+                "company": result.get("company_cleaned") or company,
+                "job_title": job_title or "",
+                "recruiters": affordable_recruiters,
+            })
+        except Exception as _cache_err:
+            # Cache write is best-effort — never fail the search over it.
+            logger.warning(
+                "[FindRecruiter] recruiter_cache write failed uid=%s: %s",
+                user_id, _cache_err,
+            )
+
         response = {
             "recruiters": affordable_recruiters,
             "emails": affordable_emails,
@@ -7974,7 +8162,8 @@ def find_recruiter_endpoint():
             "foundCount": len(affordable_recruiters),
             "creditsCharged": credits_charged,
             "creditsRemaining": new_balance,
-            "message": result.get("message")
+            "message": result.get("message"),
+            "searchId": recruiter_search_id,
         }
         
         # Add message if there are more available
@@ -7996,6 +8185,556 @@ def find_recruiter_endpoint():
         import traceback
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
+
+
+def derive_employee_titles(job_title: str, company: str, job_description: str = "") -> List[str]:
+    """
+    Use OpenAI to derive 3 to 5 peer / teammate job titles worth a coffee chat on
+    the team behind a posting (the Find People flow). Excludes recruiter / HR and
+    people-manager titles (those have their own buttons) and the posting's own
+    junior / intern level. Returns a bounded, de-duplicated list, or [] when the
+    model is unavailable or returns nothing usable (the caller handles fallback).
+
+    Mirrors the OpenAI usage pattern in extract_job_details_with_openai.
+    """
+    try:
+        client = get_openai_client()
+        if not client:
+            logger.info("[FindEmployee] OpenAI client not available for title derivation")
+            return []
+
+        truncated_desc = (job_description or "")[:4000]
+        prompt = f"""A student wants to network with the right people on the team behind this job posting before applying. Identify the individual contributors and adjacent teammates they should reach out to for a coffee chat.
+
+Company: {company}
+Posting title: {job_title}
+Job description:
+{truncated_desc or "(no description provided)"}
+
+Return 3 to 5 specific job titles of likely teammates and adjacent individual contributors worth a coffee chat. Rules:
+- EXCLUDE recruiter, talent acquisition, HR, sourcing, and "people" titles.
+- EXCLUDE people-manager titles (anything with Manager, Director, Head, VP, Chief, or President).
+- EXCLUDE the posting's own intern / junior level so you do not just return more people at the level being hired. Example: for a "Data Science Intern", return "Data Scientist", "Senior Data Scientist", "Data Engineer", "Machine Learning Engineer", NOT "Data Science Intern".
+- Prefer current individual-contributor titles in the same and directly adjacent functions.
+
+Return ONLY a valid JSON object, no markdown, no code blocks, in this exact format:
+{{"titles": ["Title One", "Title Two", "Title Three"]}}"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You map a job posting to the individual-contributor teammates a student should network with. Return only valid JSON with no explanation or markdown."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=200,
+            temperature=0.2
+        )
+
+        result_text = response.choices[0].message.content.strip()
+        if '```' in result_text:
+            result_text = result_text.split('```')[1]
+            if result_text.startswith('json'):
+                result_text = result_text[4:]
+            result_text = result_text.strip()
+
+        import json
+        json_match = re.search(r'\{.*\}', result_text, re.DOTALL)
+        parsed = json.loads(json_match.group() if json_match else result_text)
+
+        raw_titles = parsed.get("titles", []) if isinstance(parsed, dict) else []
+        cleaned: List[str] = []
+        seen = set()
+        for t in raw_titles:
+            if not isinstance(t, str):
+                continue
+            t = t.strip()
+            key = t.lower()
+            if t and key not in seen and key not in ('null', 'none', 'n/a'):
+                seen.add(key)
+                cleaned.append(t)
+        return cleaned[:5]
+    except Exception as e:
+        logger.error(f"[FindEmployee] Title derivation failed: {e}")
+        return []
+
+
+def _fallback_employee_titles(job_title: str) -> List[str]:
+    """
+    Heuristic fallback when LLM title derivation is unavailable: strip the
+    junior / intern qualifiers from the posting title to get a broader base role.
+    Returns a single base title, or [] if nothing usable remains.
+    """
+    if not job_title:
+        return []
+    base = job_title
+    for token in ["Intern", "Internship", "Co-op", "Coop", "Junior", "Jr.", "Jr",
+                  "Entry Level", "Entry-Level", "New Grad", "New Graduate", "Trainee"]:
+        base = re.sub(rf"\b{re.escape(token)}\b", "", base, flags=re.IGNORECASE)
+    base = re.sub(r"\s+", " ", base).strip(" -,/")
+    return [base] if len(base) >= 2 else []
+
+
+def _create_gmail_drafts_for_emails(user_id: str, user_data: Dict, emails_to_draft: List[Dict]) -> List[Dict]:
+    """
+    Create Gmail drafts (with resume attachment) for a list of generated emails
+    and return [{recruiter_email, draft_id, draft_url}]. Factored out of the inline
+    /find-recruiter draft logic for reuse by /find-employee. Best-effort: a per
+    email failure never aborts the batch, and a missing Gmail connection is a
+    no-op rather than an error.
+    """
+    drafts_created: List[Dict] = []
+    if not emails_to_draft:
+        return drafts_created
+
+    from app.services.gmail_client import _load_user_gmail_creds, get_gmail_service_for_user
+    from app.services.gmail_client import download_resume_from_url
+    import base64
+    from email.mime.multipart import MIMEMultipart
+    from email.mime.text import MIMEText
+    from email.mime.base import MIMEBase
+    from email import encoders
+
+    gmail_creds = _load_user_gmail_creds(user_id)
+    if not gmail_creds:
+        logger.info(f"[FindEmployee] Gmail not connected for user {user_id}, skipping drafts")
+        return drafts_created
+
+    resume_url = user_data.get('resumeURL') or user_data.get('resumeUrl')
+    resume_content = None
+    resume_filename = None
+    if resume_url:
+        try:
+            resume_content, resume_filename = download_resume_from_url(resume_url)
+            stored_filename = user_data.get('resumeFileName')
+            if stored_filename:
+                resume_filename = stored_filename
+        except Exception as e:
+            logger.error(f"[FindEmployee] Failed to download resume: {e}")
+
+    gmail_service = get_gmail_service_for_user(user_data.get('email'), user_id=user_id)
+    if not gmail_service:
+        logger.info("[FindEmployee] Gmail service not available")
+        return drafts_created
+
+    email_re = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$')
+    for email_data in emails_to_draft:
+        try:
+            to_email = email_data.get("to_email")
+            if not to_email or not email_re.match(to_email):
+                continue
+            to_name = (email_data.get("to_name", "") or "").replace('"', '').replace('\n', '').replace('\r', '')
+            subject = email_data.get("subject", "")
+            body_html = email_data.get("body", "")
+            body_plain = email_data.get("plain_body", "")
+
+            message = MIMEMultipart('mixed')
+            message['to'] = f'"{to_name}" <{to_email}>' if to_name else to_email
+            message['subject'] = subject
+
+            alt = MIMEMultipart('alternative')
+            alt.attach(MIMEText(body_plain, 'plain'))
+            alt.attach(MIMEText(body_html, 'html'))
+            message.attach(alt)
+
+            if resume_content and resume_filename:
+                part = MIMEBase('application', 'pdf')
+                part.set_payload(resume_content)
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', f'attachment; filename="{resume_filename}"')
+                message.attach(part)
+
+            raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+            draft = gmail_service.users().drafts().create(userId='me', body={'message': {'raw': raw_message}}).execute()
+            draft_id = draft['id']
+
+            try:
+                profile = gmail_service.users().getProfile(userId='me').execute()
+                connected_email = profile.get('emailAddress', '')
+            except Exception:
+                connected_email = user_data.get('email', '')
+
+            draft_url = (
+                f"https://mail.google.com/mail/?authuser={connected_email}#draft/{draft_id}"
+                if connected_email else f"https://mail.google.com/mail/u/0/#draft/{draft_id}"
+            )
+            drafts_created.append({"recruiter_email": to_email, "draft_id": draft_id, "draft_url": draft_url})
+        except Exception as e:
+            logger.error(f"[FindEmployee] Failed to create draft for {email_data.get('to_email')}: {e}")
+
+    return drafts_created
+
+
+@job_board_bp.route("/find-employee", methods=["POST"])
+@require_firebase_auth
+@require_tier(['pro', 'elite'])
+def find_employee_endpoint():
+    """
+    Find peers / teammates (individual contributors) on the team behind a job
+    posting, for coffee-chat networking. Distinct from /find-recruiter (recruiters)
+    and /find-hiring-manager (the manager).
+
+    Target titles are derived once per job by an LLM and cached on the shared job
+    doc (target_titles field); later clicks on the same job skip the LLM and go
+    straight to PDL. The titles feed the shared find_recruiters pipeline via
+    titles_override so email / draft / receipt logic is reused. Charges
+    RECRUITER_CREDIT_COST (5) per person returned.
+
+    Request: { jobId?, company?, jobTitle?, jobDescription?, location?, maxResults? }
+    Response mirrors /find-recruiter (people in the `recruiters` field).
+    """
+    try:
+        user_id = request.firebase_user.get('uid')
+        data = request.get_json(force=True, silent=True) or {}
+
+        # Daily cap mirrors the other discovery endpoints (PDL + Hunter spend).
+        if not _check_user_rate_limit(user_id, "find-employee-daily", "100 per day"):
+            return jsonify({
+                "error": "Daily limit reached",
+                "message": "You've used Find People 100 times today. Try again tomorrow."
+            }), 429
+
+        job_id = data.get('jobId')
+        company = data.get('company')
+        job_title = data.get('jobTitle', '')
+        job_description = data.get('jobDescription', '')
+        job_type = data.get('jobType')
+        location = data.get('location')
+
+        db = get_db()
+        if not db:
+            return jsonify({"error": "Database not available"}), 500
+
+        # Pull description / title / company and any cached target titles from the
+        # shared job doc (server-trusted). The feed strips description_raw, so the
+        # doc is the source of truth for the posting prose.
+        cached_titles = None
+        job_doc_ref = None
+        if job_id:
+            job_doc_ref = db.collection("jobs").document(job_id)
+            job_doc = job_doc_ref.get()
+            if job_doc.exists:
+                jd = job_doc.to_dict() or {}
+                if not job_description:
+                    job_description = (jd.get("description_raw") or "").strip()
+                if not job_title:
+                    job_title = jd.get("title") or job_title
+                if not company:
+                    company = jd.get("company") or company
+                ct = jd.get("target_titles")
+                if isinstance(ct, list):
+                    valid = [t.strip() for t in ct if isinstance(t, str) and t.strip()]
+                    if valid:
+                        cached_titles = valid
+
+        # Normalize / validate company (mirrors /find-recruiter).
+        invalid_company_names = {
+            'job type', 'job details', 'job description', 'job title', 'job location',
+            'employer', 'company', 'organization', 'corporation',
+            'n/a', 'null', 'none', '', 'full-time', 'part-time', 'contract',
+            'remote', 'hybrid', 'on-site', 'location', 'details', 'description'
+        }
+        if company and company.lower().strip() in invalid_company_names:
+            company = None
+        elif company:
+            company = normalize_company_name(company)
+
+        if not company:
+            return jsonify({
+                "error": "Company name is required",
+                "suggestion": "Open this job from the board so we can read its company."
+            }), 400
+
+        # Resolve target titles: cached -> LLM (then cache) -> heuristic fallback.
+        titles = cached_titles
+        if not titles:
+            titles = derive_employee_titles(job_title, company, job_description)
+            if titles and job_doc_ref is not None:
+                try:
+                    job_doc_ref.update({
+                        "target_titles": titles,
+                        "target_titles_at": datetime.now(timezone.utc),
+                    })
+                except Exception as cache_err:
+                    logger.warning(f"[FindEmployee] target_titles cache write failed job={job_id}: {cache_err}")
+        if not titles:
+            titles = _fallback_employee_titles(job_title)
+        if not titles:
+            return jsonify({
+                "error": "Couldn't infer who to reach for this role. Try again."
+            }), 422
+
+        # Credits.
+        user_ref = db.collection('users').document(user_id)
+        user_doc = user_ref.get()
+        if not user_doc.exists:
+            return jsonify({"error": "User not found"}), 404
+
+        user_data = user_doc.to_dict()
+        user_data = sanitize_firestore_data(user_data, depth=0, max_depth=20)
+        current_credits = check_and_reset_credits(user_ref, user_data)
+
+        if current_credits < RECRUITER_CREDIT_COST:
+            return jsonify({
+                "error": "Insufficient credits",
+                "creditsRequired": RECRUITER_CREDIT_COST,
+                "creditsAvailable": current_credits
+            }), 402
+
+        # Requested count: 1..5, capped by affordability.
+        try:
+            max_results_requested = int(data.get('maxResults', 3))
+        except (TypeError, ValueError):
+            max_results_requested = 3
+        max_results_requested = min(max(max_results_requested, 1), 5)
+        max_affordable = current_credits // RECRUITER_CREDIT_COST
+        max_results_to_fetch = min(max_results_requested, max_affordable)
+
+        # Resume / contact for email generation.
+        user_resume = user_data.get('resumeParsed', {})
+        resume_text = user_data.get('resumeText', '')
+        resume_phone = user_resume.get('contact', {}).get('phone', '') if isinstance(user_resume.get('contact'), dict) else ''
+        resume_linkedin = user_resume.get('contact', {}).get('linkedin', '') if isinstance(user_resume.get('contact'), dict) else ''
+        user_contact = {
+            "name": user_resume.get('name', user_data.get('displayName', '')),
+            "email": get_outreach_email(user_data),
+            "phone": resume_phone or user_data.get('phone', ''),
+            "linkedin": resume_linkedin or user_data.get('linkedin', '')
+        }
+        generate_emails = data.get('generateEmails', True)
+        create_drafts = data.get('createDrafts', True)
+
+        # Search via the shared pipeline with our derived titles.
+        result = find_recruiters(
+            company_name=company,
+            job_type=job_type,
+            job_title=job_title,
+            job_description=job_description,
+            location=location,
+            max_results=max_results_to_fetch,
+            generate_emails=generate_emails,
+            user_resume=user_resume,
+            user_contact=user_contact,
+            resume_text=resume_text,
+            titles_override=titles,
+            role_type="employee",
+        )
+
+        if result.get("error"):
+            return jsonify({
+                "error": result["error"],
+                "recruiters": [],
+                "requestedCount": max_results_requested,
+                "foundCount": 0,
+                "creditsCharged": 0
+            }), 500
+
+        all_people = result.get("recruiters", [])
+        all_emails = result.get("emails", [])
+        total_found = result.get("total_found", 0)
+        affordable_people = all_people[:max_affordable]
+
+        affordable_emails = []
+        if all_emails:
+            affordable_email_set = set()
+            for r in affordable_people:
+                if r.get("Email") and r.get("Email") != "Not available":
+                    affordable_email_set.add(r.get("Email"))
+                if r.get("WorkEmail") and r.get("WorkEmail") != "Not available":
+                    affordable_email_set.add(r.get("WorkEmail"))
+            affordable_emails = [e for e in all_emails if e.get("to_email") in affordable_email_set]
+
+        has_more = len(all_people) > max_affordable or total_found > max_affordable
+        credits_needed_for_more = (len(all_people) - max_affordable) * RECRUITER_CREDIT_COST if has_more else 0
+
+        # Deduct credits atomically BEFORE creating Gmail drafts (prevents TOCTOU).
+        credits_charged = RECRUITER_CREDIT_COST * len(affordable_people)
+        if credits_charged > 0:
+            success, new_balance = deduct_credits_atomic(user_id, credits_charged, "find_employee")
+            if not success:
+                return jsonify({
+                    "error": "Insufficient credits",
+                    "creditsRequired": credits_charged,
+                    "creditsAvailable": 0
+                }), 402
+        else:
+            new_balance = current_credits
+
+        drafts_created = []
+        if create_drafts and affordable_emails:
+            drafts_created = _create_gmail_drafts_for_emails(user_id, user_data, affordable_emails)
+
+        response = {
+            "recruiters": affordable_people,
+            "emails": affordable_emails,
+            "draftsCreated": drafts_created,
+            "jobTypeDetected": result.get("job_type_detected", job_type or "general"),
+            "companyCleaned": result.get("company_cleaned", company),
+            "searchTitles": titles[:5],
+            "targetTitles": titles[:5],
+            "totalFound": total_found,
+            "requestedCount": max_results_requested,
+            "foundCount": len(affordable_people),
+            "creditsCharged": credits_charged,
+            "creditsRemaining": new_balance,
+            "message": result.get("message"),
+        }
+        if has_more and len(affordable_people) > 0:
+            response["hasMore"] = True
+            response["moreAvailable"] = len(all_people) - max_affordable
+            response["creditsNeededForMore"] = credits_needed_for_more
+
+        return jsonify(response)
+
+    except Exception as e:
+        logger.error(f"[FindEmployee] Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
+@job_board_bp.route("/referral-draft", methods=["POST"])
+@require_firebase_auth
+def referral_draft_endpoint():
+    """Phase 5 quality lift: generate a referral outreach draft for a saved
+    contact at a job's company.
+
+    Distinct from /find-recruiter (which cold-searches for new contacts at the
+    company). This endpoint runs when the user already has a contact saved —
+    it pulls richer per-contact context (coffee-chat prep, recent activity,
+    JD/resume overlap) and produces a two-step "ask for chat" email, then
+    creates a Gmail draft and returns the URL for the SPA to open.
+
+    Request:
+      {
+        "contact_id": "<doc id under users/{uid}/contacts>",
+        "job": {
+          "job_id": "...",      // used for cache key
+          "title": "...",
+          "company": "...",
+          "location": "...",
+          "description": "...", // optional; falls back to structured
+          "structured": {...},  // optional; Firecrawl-extracted bullets
+          "apply_url": "..."    // optional
+        }
+      }
+
+    Response (200 on success):
+      {
+        "ok": true,
+        "gmailUrl": "https://mail.google.com/...",
+        "draftId": "...",
+        "subject": "...",
+        "body": "...",
+        "cached": false,
+        "context_used": {
+          "has_coffee_chat_prep": bool,
+          "has_recent_activity": bool,
+          "overlap_count": int,
+          "two_step_framing": true
+        }
+      }
+    Falls back to ok:true with gmailUrl:null when Gmail isn't connected —
+    the SPA can still show subject/body for copy-paste in that case.
+    """
+    try:
+        user_id = request.firebase_user.get("uid")
+        user_email = request.firebase_user.get("email") or ""
+        data = request.get_json(force=True, silent=True) or {}
+
+        contact_id = (data.get("contact_id") or "").strip()
+        job = data.get("job") or {}
+        if not contact_id:
+            return jsonify({"error": "contact_id required"}), 400
+        if not isinstance(job, dict) or not job.get("company"):
+            return jsonify({"error": "job with company required"}), 400
+
+        # Rate limit: gpt-4o per click is ~$0.05; 30/day is well above any
+        # legitimate single-session use and stops accidental spam from
+        # double-clicks or stuck UI states.
+        if not _check_user_rate_limit(user_id, "referral-draft-daily", "30 per day"):
+            return jsonify({
+                "error": "Daily limit reached",
+                "message": "You've drafted 30 referral emails today. Try again tomorrow.",
+            }), 429
+
+        from app.services.referral_email import build_referral_draft
+        result = build_referral_draft(
+            uid=user_id,
+            user_email=user_email,
+            contact_id=contact_id,
+            job=job,
+            # Phase 5 step 1: generate text only. The SPA opens a preview/
+            # edit modal; the user then commits via /referral-draft/commit
+            # which creates the actual Gmail draft from their edited text.
+            commit=False,
+        )
+        if not result.get("ok"):
+            err = result.get("error", "unknown")
+            logger.warning("[ReferralDraft] generation failed uid=%s err=%s", user_id, err)
+            status = 404 if err == "contact_not_found" else 500
+            return jsonify({"error": err}), status
+        return jsonify(result), 200
+    except Exception as e:
+        logger.exception("[ReferralDraft] endpoint failed: %s", e)
+        return jsonify({"error": "internal_error"}), 500
+
+
+@job_board_bp.route("/referral-draft/commit", methods=["POST"])
+@require_firebase_auth
+def referral_draft_commit_endpoint():
+    """Phase 5 step 2: create the Gmail draft from user-edited text.
+
+    Called after the student reviews the LLM-generated draft in the SPA
+    preview modal. Trusts whatever subject/body the user submits — no
+    regeneration. Returns the Gmail URL.
+
+    Request:
+      {
+        "contact_id": "...",
+        "subject": "...",
+        "body": "..."
+      }
+    """
+    try:
+        user_id = request.firebase_user.get("uid")
+        user_email = request.firebase_user.get("email") or ""
+        data = request.get_json(force=True, silent=True) or {}
+
+        contact_id = (data.get("contact_id") or "").strip()
+        subject = (data.get("subject") or "").strip()
+        body = (data.get("body") or "").strip()
+        if not contact_id:
+            return jsonify({"error": "contact_id required"}), 400
+        if not subject or not body:
+            return jsonify({"error": "subject and body required"}), 400
+
+        # Cheaper than generation — no LLM call. Still rate-limited so a
+        # stuck UI can't spam Gmail drafts.
+        if not _check_user_rate_limit(user_id, "referral-commit-daily", "60 per day"):
+            return jsonify({
+                "error": "Daily limit reached",
+                "message": "You've created 60 referral drafts today. Try again tomorrow.",
+            }), 429
+
+        from app.services.referral_email import commit_referral_draft
+        result = commit_referral_draft(
+            uid=user_id,
+            user_email=user_email,
+            contact_id=contact_id,
+            subject=subject,
+            body=body,
+        )
+        if not result.get("ok"):
+            err = result.get("error", "unknown")
+            logger.warning("[ReferralDraftCommit] failed uid=%s err=%s", user_id, err)
+            status = 404 if err == "contact_not_found" else (
+                400 if err in ("empty_text", "text_too_long") else 500
+            )
+            return jsonify(result), status
+        return jsonify(result), 200
+    except Exception as e:
+        logger.exception("[ReferralDraftCommit] endpoint failed: %s", e)
+        return jsonify({"error": "internal_error"}), 500
 
 
 @job_board_bp.route("/parse-hiring-prompt", methods=["POST"])
@@ -8132,6 +8871,16 @@ def find_hiring_manager_endpoint():
         user_id = request.firebase_user.get('uid')
         data = request.get_json(force=True, silent=True) or {}
 
+        # Phase 1 (Job Board Elevation Plan): daily cap on hiring-manager
+        # discovery. Each call fans out to a multi-tier PDL search + Hunter
+        # verification — by far the most expensive endpoint per request.
+        # 100/day caps abuse while leaving room for legitimate Pro/Elite use.
+        if not _check_user_rate_limit(user_id, "find-hiring-manager-daily", "100 per day"):
+            return jsonify({
+                "error": "Daily limit reached",
+                "message": "You've used Find Hiring Manager 100 times today. Try again tomorrow."
+            }), 429
+
         # Get job information from various sources
         company = data.get('company')
         job_title = data.get('jobTitle', '')
@@ -8258,7 +9007,7 @@ def find_hiring_manager_endpoint():
         resume_linkedin = user_resume.get('contact', {}).get('linkedin', '') if isinstance(user_resume.get('contact'), dict) else ''
         user_contact = {
             "name": user_resume.get('name', user_data.get('displayName', '')),
-            "email": user_data.get('email', ''),
+            "email": get_outreach_email(user_data),
             "phone": resume_phone or user_data.get('phone', ''),
             "linkedin": resume_linkedin or user_data.get('linkedin', '')
         }
@@ -8461,6 +9210,50 @@ def find_hiring_manager_endpoint():
                             })
 
                             logger.info(f"[FindHiringManager] Created Gmail draft for {to_email}")
+
+                            # Log this manually drafted hiring manager into the
+                            # outbox tracker at DRAFT time, matching Find People,
+                            # so they appear in /outbox. Routed through the shared
+                            # builder via upsert_hm_outbox_contact so this path and
+                            # the agent / Loop HM path write the identical shape
+                            # (inOutbox + isHiringManager, dedup on lowercased
+                            # email, conservative merge on re-draft). The
+                            # recruiters/* save in save-recruiters is unchanged;
+                            # this write is purely additive. Own try/except so a
+                            # Firestore hiccup never gets logged as a
+                            # draft-creation failure.
+                            try:
+                                from app.services.outbox_service import upsert_hm_outbox_contact
+                                hm_first = (manager.get("FirstName") or manager.get("firstName") or manager.get("first_name") or "").strip()
+                                hm_last = (manager.get("LastName") or manager.get("lastName") or manager.get("last_name") or "").strip()
+                                if not hm_first and not hm_last and to_name:
+                                    name_parts = to_name.split()
+                                    hm_first = name_parts[0]
+                                    hm_last = " ".join(name_parts[1:])
+                                now_iso = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+                                today = datetime.now().strftime("%m/%d/%Y")
+                                upsert_hm_outbox_contact(
+                                    db,
+                                    user_id,
+                                    first_name=hm_first,
+                                    last_name=hm_last,
+                                    email=to_email,
+                                    company=(manager.get("Company") or manager.get("company") or company or "").strip(),
+                                    job_title=(manager.get("Title") or manager.get("title") or manager.get("jobTitle") or manager.get("job_title") or "").strip(),
+                                    linkedin_url=(manager.get("LinkedIn") or manager.get("linkedin") or manager.get("linkedinUrl") or manager.get("linkedin_url") or "").strip(),
+                                    email_subject=subject,
+                                    # Store the plain-text body in Firestore. The HTML
+                                    # version (body_html) is only for the Gmail MIME part
+                                    # above; the tracker renders emailBody as text.
+                                    email_body=body_plain,
+                                    gmail_draft_id=draft_id,
+                                    gmail_draft_url=draft_url,
+                                    now_iso=now_iso,
+                                    today=today,
+                                )
+                                logger.info(f"[FindHiringManager] Logged outbox contact for {to_email}")
+                            except Exception as outbox_err:
+                                logger.error(f"[FindHiringManager] Outbox contact upsert failed for {to_email}: {outbox_err}")
 
                         except Exception as e:
                             logger.error(f"[FindHiringManager] Failed to create draft for {email_data.get('to_email')}: {e}")
@@ -9146,4 +9939,59 @@ def get_mock_jobs(
     
     # Return more jobs (up to 50) to simulate real API behavior
     return all_jobs * 3  # Repeat the list 3 times to get ~36 jobs for internships
+
+
+# =============================================================================
+# SAVED JOBS — student bookmarks
+# =============================================================================
+# Stored at users/{uid}/savedJobs/{job_id}. The frontend POSTs here when a
+# student clicks "Save" on a job card; the read at jobs.py:312 powers the
+# "saved company" affinity badge in the feed.
+
+@job_board_bp.route("/saved-jobs", methods=["GET"])
+@require_firebase_auth
+def list_saved_jobs():
+    uid = request.firebase_user["uid"]
+    db = get_db()
+    snap = db.collection("users").document(uid).collection("savedJobs").stream()
+    saved = []
+    for d in snap:
+        data = d.to_dict() or {}
+        data["job_id"] = data.get("job_id") or d.id
+        saved_at = data.get("saved_at")
+        if hasattr(saved_at, "isoformat"):
+            data["saved_at"] = saved_at.isoformat()
+        saved.append(data)
+    return jsonify({"saved": saved, "count": len(saved)})
+
+
+@job_board_bp.route("/saved-jobs", methods=["POST"])
+@require_firebase_auth
+def save_job():
+    uid = request.firebase_user["uid"]
+    payload = request.get_json(silent=True) or {}
+    job_id = payload.get("job_id")
+    if not job_id:
+        return jsonify({"error": "job_id required"}), 400
+    db = get_db()
+    doc_ref = db.collection("users").document(uid).collection("savedJobs").document(str(job_id))
+    doc_ref.set({
+        "job_id": str(job_id),
+        "title": payload.get("title"),
+        "company": payload.get("company"),
+        "location": payload.get("location"),
+        "apply_url": payload.get("apply_url"),
+        "match_score": payload.get("match_score"),
+        "saved_at": firestore.SERVER_TIMESTAMP,
+    })
+    return jsonify({"success": True, "job_id": str(job_id)})
+
+
+@job_board_bp.route("/saved-jobs/<job_id>", methods=["DELETE"])
+@require_firebase_auth
+def unsave_job(job_id: str):
+    uid = request.firebase_user["uid"]
+    db = get_db()
+    db.collection("users").document(uid).collection("savedJobs").document(str(job_id)).delete()
+    return jsonify({"success": True, "job_id": str(job_id)})
 

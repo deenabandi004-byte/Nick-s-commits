@@ -60,7 +60,7 @@ const ExtensionPrivacyPolicy = () => {
                 Offerloop for LinkedIn
               </p>
               <p className="text-gray-500 text-sm mb-8">
-                <strong>Last Updated:</strong> 02.01.26
+                <strong>Last Updated:</strong> 06.22.26
               </p>
 
               {/* Content */}
@@ -152,10 +152,15 @@ const ExtensionPrivacyPolicy = () => {
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
                   <li><strong>Firebase (Google):</strong> Authentication — receives email, profile info, and auth tokens.</li>
                   <li><strong>People Data Labs:</strong> Email lookup — receives name, company, and position from the LinkedIn page.</li>
-                  <li><strong>OpenAI:</strong> AI-generated emails and prep docs — receives name, company, position, and context needed for personalization.</li>
+                  <li><strong>OpenAI / Anthropic:</strong> AI-generated emails and prep docs — receive name, company, position, and context needed for personalization.</li>
                   <li><strong>Stripe:</strong> Payment processing — receives subscription status only (we never receive full card details).</li>
                   <li><strong>Render:</strong> Backend hosting — all data processed through our API.</li>
                 </ul>
+                <p className="text-gray-600">
+                  Requests you make through the Extension are processed by our backend, which may use the additional
+                  service providers listed in our{" "}
+                  <Link to="/privacy" className="text-[#3B82F6] hover:underline">platform Privacy Policy</Link>.
+                </p>
                 <p className="text-gray-600">
                   All third-party providers are bound by contractual obligations to protect your data. We do
                   not sell, rent, or trade your data to any third party.
@@ -166,8 +171,7 @@ const ExtensionPrivacyPolicy = () => {
                   The Extension requests the following Chrome permissions, limited to what is necessary:
                 </p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><strong>tabs</strong> — Detects when you are on a LinkedIn profile or job page to activate relevant features.</li>
-                  <li><strong>activeTab</strong> — Reads publicly visible LinkedIn page content when you click the Extension icon.</li>
+                  <li><strong>activeTab</strong> — Reads publicly visible LinkedIn page content when you click the Extension icon or use the context menu.</li>
                   <li><strong>storage</strong> — Saves authentication state and preferences locally in your browser.</li>
                   <li><strong>identity</strong> — Authenticates you via Google OAuth through Chrome's Identity API.</li>
                   <li><strong>contextMenus</strong> — Provides right-click menu options for quick access to Extension features.</li>
@@ -242,9 +246,9 @@ const ExtensionPrivacyPolicy = () => {
 
                 <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">13. Children's Privacy</h2>
                 <p className="text-gray-600">
-                  The Extension is not intended for use by anyone under the age of 13 (or 16 in certain
-                  jurisdictions). We do not knowingly collect data from children. If we discover such data has
-                  been collected, it will be deleted promptly.
+                  The Extension is intended for users who are 18 or older. We do not knowingly collect data from
+                  anyone under 13, and we do not knowingly sell or share the personal information of anyone under 16.
+                  If we discover such data has been collected, it will be deleted promptly.
                 </p>
 
                 <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">14. Changes to This Policy</h2>

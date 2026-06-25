@@ -1,7 +1,6 @@
 // src/pages/RecruiterSpreadsheetPage.tsx
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import RecruiterSpreadsheet from '@/components/RecruiterSpreadsheet';
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -12,6 +11,7 @@ import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { toast } from "@/hooks/use-toast";
 import { ACCEPTED_RESUME_TYPES, isValidResumeFile } from "@/utils/resumeFileTypes";
+import { useTour } from "@/contexts/TourContext";
 import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { VideoDemo } from "@/components/VideoDemo";
 import { ProGate } from "@/components/ProGate";
@@ -19,8 +19,10 @@ import { apiService, type Recruiter, type FeedJob } from "@/services/api";
 import { firebaseApi, type Recruiter as FirebaseRecruiter } from "../services/firebaseApi";
 import {
   Users, Link, CheckCircle, ArrowUp,
-  ArrowRight, Loader2, Upload, ChevronDown, ChevronUp
+  ArrowRight, Loader2, Upload, ChevronDown, ChevronUp,
+  Mail, Inbox, Linkedin
 } from "lucide-react";
+import { ResultActionButton } from "@/components/find/ResultActionButton";
 import { SearchPromptBox } from "@/components/find/SearchPromptBox";
 import { SearchModeSelector } from "@/components/find/SearchModeSelector";
 import { SendConfirmDialog } from "@/components/SendConfirmDialog";
@@ -73,6 +75,12 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
   const [estimatedManagers] = useState(2);
   const [managersFound, setManagersFound] = useState(0);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  // Found hiring managers rendered as Find-People-style result cards. Display
+  // shape only; the durable write still goes to users/{uid}/recruiters below.
+  const [foundManagers, setFoundManagers] = useState<any[]>([]);
+  // Scroll target for the result cards, so a successful search lands the user
+  // on the cards inline (mirrors the People tab's searchSuccessRef behavior).
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   // Job feed chips + profile-based fallback
   const [recentJobs, setRecentJobs] = useState<FeedJob[]>([]);
@@ -81,6 +89,79 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
   const [hmSuggestions, setHmSuggestions] = useState<any[]>([]);
   // Set true when a chip click prefills the form so the next render auto-runs the search
   const pendingAutoSearch = useRef(false);
+
+  // ── Tour demo state ──────────────────────────────────────────────────────
+  // When the product tour reaches the Find Hiring Manager step it sets
+  // `demoSurface` to 'hiring-managers'. The effect below types an example URL
+  // into the real `jobPostingUrl` state, holds a brief "Searching…" beat, then
+  // seeds a single inert manager card. Cleanup wipes every demo write so
+  // there is zero residue on tour-end or unmount.
+  const { demoSurface } = useTour();
+  const hmDemoActive = demoSurface === 'hiring-managers';
+  const HM_DEMO_URL = 'https://jobs.lever.co/offerloop/cmo-2026';
+  const HM_DEMO_CARD = {
+    demo: true as const,
+    name: 'Rylan Bohnett',
+    title: 'CMO',
+    company: 'Offerloop',
+    email: 'rylan@offerloop.ai',
+  };
+
+  useEffect(() => {
+    if (!hmDemoActive) return;
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const TYPE_DELAY_MS = 32;
+    const SEARCHING_HOLD_MS = 1500;
+    const POST_TYPE_PAUSE_MS = 250;
+
+    setJobPostingUrl('');
+    setFoundManagers([]);
+    setManagersFound(0);
+    setSearchComplete(false);
+    setIsSearching(false);
+    setProgress(0);
+
+    for (let i = 1; i <= HM_DEMO_URL.length; i++) {
+      timers.push(
+        setTimeout(() => {
+          if (cancelled) return;
+          setJobPostingUrl(HM_DEMO_URL.slice(0, i));
+        }, i * TYPE_DELAY_MS),
+      );
+    }
+
+    const typingDoneAt = HM_DEMO_URL.length * TYPE_DELAY_MS + POST_TYPE_PAUSE_MS;
+    timers.push(
+      setTimeout(() => {
+        if (cancelled) return;
+        setIsSearching(true);
+        setProgress(50);
+      }, typingDoneAt),
+    );
+    timers.push(
+      setTimeout(() => {
+        if (cancelled) return;
+        setIsSearching(false);
+        setProgress(100);
+        setFoundManagers([HM_DEMO_CARD]);
+        setManagersFound(1);
+        setSearchComplete(true);
+      }, typingDoneAt + SEARCHING_HOLD_MS),
+    );
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      setJobPostingUrl('');
+      setFoundManagers([]);
+      setManagersFound(0);
+      setIsSearching(false);
+      setSearchComplete(false);
+      setProgress(0);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hmDemoActive]);
 
   // Outreach mode (preview / draft / send), same contract as the People tab.
   // Backend re-validates against tier; this drives the UI. Free lands on
@@ -98,11 +179,6 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
 
   // Ref for original button to track visibility
-
-  // Tracker count (would come from API in real implementation)
-  const [trackerCount, setTrackerCount] = useState(0);
-  // Refresh key to force RecruiterSpreadsheet to reload when changed
-  const [refreshKey, setRefreshKey] = useState(0);
 
   // Validate parsed job title - reject common error messages from JS-required pages
   const isValidJobTitle = (title: string | undefined | null): boolean => {
@@ -262,6 +338,10 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
   // Handle search
   const handleFindHiringManagers = async (confirmedSend = false) => {
+    // Hard short-circuit while the tour's demo is active on this surface.
+    // Catches button click, form submit, and the chip-driven pendingAutoSearch
+    // path with a single guard. No API call fires.
+    if (hmDemoActive) return;
     if (!canSearch || !user) return;
     // Send is irreversible: gate it behind the hard confirm dialog. The dialog's
     // confirm handler re-invokes this with confirmedSend=true. This also covers
@@ -274,6 +354,12 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
     setIsSearching(true);
     setProgress(0);
     setHmSuggestions([]);
+    // Clear prior result state so a follow-up search starts clean. setFoundManagers
+    // only fires when managers are found, so a second search returning zero would
+    // otherwise leave stale cards on screen and a stuck searchComplete flag.
+    setFoundManagers([]);
+    setManagersFound(0);
+    setSearchComplete(false);
 
     // Simulate progress
     const progressInterval = setInterval(() => {
@@ -390,6 +476,18 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
             });
           }
 
+          // Map of email -> generated email content (subject/body) so the
+          // result cards can show the drafted subject line, mirroring People.
+          const emailMap = new Map<string, any>();
+          if (response.emails && Array.isArray(response.emails)) {
+            response.emails.forEach((em: any) => {
+              const email = em.to_email || em.toEmail;
+              if (email) {
+                emailMap.set(email.toLowerCase(), em);
+              }
+            });
+          }
+
           // Convert API format to Firebase format
           const firebaseRecruiters: Omit<FirebaseRecruiter, 'id'>[] = response.hiringManagers.map((manager: any) => {
             // Build base object with required fields
@@ -444,6 +542,29 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
             return recruiter;
           });
 
+          // Build the result-card display list from every found manager (not
+          // just the deduped ones) so the cards mirror the People result view.
+          const managerCards = response.hiringManagers.map((manager: any) => {
+            const managerEmail = manager.Email || manager.email || manager.WorkEmail || manager.work_email || '';
+            const key = managerEmail.toLowerCase();
+            const draftInfo = key ? draftMap.get(key) : undefined;
+            const emailInfo = key ? emailMap.get(key) : undefined;
+            const sentInfo = key ? sentMap.get(key) : undefined;
+            const fullName = `${manager.FirstName || manager.firstName || manager.first_name || ''} ${manager.LastName || manager.lastName || manager.last_name || ''}`.trim();
+            return {
+              name: fullName || managerEmail || 'Hiring manager',
+              title: manager.Title || manager.title || manager.jobTitle || manager.job_title || '',
+              company: manager.Company || manager.company || companyName,
+              email: managerEmail,
+              linkedin: manager.LinkedIn || manager.linkedin || manager.linkedinUrl || manager.linkedin_url || '',
+              gmailDraftUrl: draftInfo?.draft_url || '',
+              gmailDraftId: draftInfo?.draft_id || '',
+              emailSubject: emailInfo?.subject || '',
+              emailSent: !!sentInfo,
+            };
+          });
+          setFoundManagers(managerCards);
+
           console.log('📋 Converted to Firebase format:', JSON.stringify(firebaseRecruiters, null, 2));
 
           // Check for duplicates before saving
@@ -461,14 +582,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
           if (newRecruiters.length > 0) {
             await firebaseApi.bulkCreateRecruiters(user.uid, newRecruiters);
-            setTrackerCount(prev => prev + newRecruiters.length);
             console.log(`✅ Saved ${newRecruiters.length} hiring manager(s) to tracker`);
-
-            // Trigger refresh of RecruiterSpreadsheet component
-            setRefreshKey(prev => prev + 1);
-
-            // Switch to tracker tab to show the saved hiring managers
-            setActiveTab('hiring-manager-tracker');
           } else {
             console.log('⚠️ All hiring managers were duplicates, nothing saved');
           }
@@ -540,19 +654,13 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
     }
   }, [jobPostingUrl, jobDescription, savedResumeUrl, user, canSearch]);
 
-  const handleViewResults = () => {
-    setSearchComplete(false);
-    setActiveTab('hiring-manager-tracker');
-  };
-
-  const resetForm = () => {
-    setSearchComplete(false);
-    setJobPostingUrl('');
-    setCompany('');
-    setJobTitle('');
-    setLocation('');
-    setJobDescription('');
-  };
+  // On a successful search, scroll the result cards into view so the user lands
+  // on them inline (mirrors the People tab; there is no interstitial modal).
+  useEffect(() => {
+    if (foundManagers.length > 0 && !isSearching && resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [foundManagers.length, isSearching]);
 
   const embeddedContent = (
     <>
@@ -612,6 +720,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                           helper={null}
                           onSubmit={() => handleFindHiringManagers()}
                           submitDisabled={!canSearch}
+                          inputValue={jobPostingUrl}
                           submitAriaLabel="Find hiring managers"
                           submitIcon={isSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
                         >
@@ -628,7 +737,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                                 }
                               }}
                               placeholder="Paste a job posting URL (LinkedIn, Greenhouse, Lever, etc.)"
-                              disabled={isSearching}
+                              disabled={isSearching || hmDemoActive}
                               style={{
                                 flex: 1,
                                 border: 'none',
@@ -646,6 +755,142 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                           </div>
                         </SearchPromptBox>
                       </div>
+
+                      {/* Found hiring managers, rendered as Find-People-style
+                          result cards. Mirrors the People result view: an
+                          identity row with a per-card Gmail action, plus a
+                          shared footer trio (Open Gmail drafts / See in inbox /
+                          See in spreadsheet). */}
+                      {foundManagers.length > 0 && (
+                        <div ref={resultsRef} style={{ marginTop: 8, marginBottom: 16 }}>
+                          {foundManagers.map((m: any, i: number) => {
+                            const initials = (m.name || '').split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+                            const linkedinHref = m.linkedin
+                              ? (m.linkedin.startsWith('http') ? m.linkedin : `https://${m.linkedin}`)
+                              : '';
+                            const gmailHref = m.gmailDraftUrl || 'https://mail.google.com/mail/u/0/#drafts';
+                            return (
+                              <div
+                                key={i}
+                                style={{
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  padding: '11px 13px',
+                                  background: '#fff',
+                                  border: '0.5px solid #E2E8F0',
+                                  borderRadius: 3,
+                                  marginBottom: 6,
+                                  transition: 'all .12s',
+                                }}
+                              >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                                  <div style={{
+                                    width: 34,
+                                    height: 34,
+                                    borderRadius: '50%',
+                                    background: 'rgba(74,96,168,0.10)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    color: '#0F172A',
+                                    flexShrink: 0,
+                                  }}>
+                                    {initials}
+                                  </div>
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontSize: 13, fontWeight: 500, color: '#0F172A' }}>{m.name}</div>
+                                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>
+                                      {[m.title, m.company].filter(Boolean).join(' at ')}
+                                    </div>
+                                    {m.email && (
+                                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{m.email}</div>
+                                    )}
+                                    {m.emailSubject && (
+                                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3, lineHeight: 1.3 }}>{m.emailSubject}</div>
+                                    )}
+                                  </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
+                                    <ResultActionButton
+                                      variant="secondary"
+                                      size="sm"
+                                      className="text-st-accent hover:text-st-accent font-semibold"
+                                      href={m.demo ? undefined : gmailHref}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e: React.MouseEvent) => {
+                                        if (m.demo) e.preventDefault();
+                                      }}
+                                    >
+                                      <Mail style={{ width: 13, height: 13 }} /> View in Gmail
+                                    </ResultActionButton>
+                                    {linkedinHref && (
+                                      <ResultActionButton
+                                        variant="secondary"
+                                        size="sm"
+                                        href={linkedinHref}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                      >
+                                        <Linkedin style={{ width: 14, height: 14 }} /> LinkedIn
+                                      </ResultActionButton>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                          {/* Shared footer trio, mirroring the People result view. */}
+                          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+                            {foundManagers.some((m: any) => m.gmailDraftUrl && !m.emailSent) && (
+                              <ResultActionButton
+                                variant="primary"
+                                href="https://mail.google.com/mail/u/0/#drafts"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex-1"
+                              >
+                                <Mail className="w-3.5 h-3.5" />
+                                Open Gmail drafts
+                              </ResultActionButton>
+                            )}
+                            <ResultActionButton
+                              variant="secondary"
+                              onClick={() => {
+                                // Inert during the tour's hiring-manager demo —
+                                // the seeded card isn't a real contact, so
+                                // navigating to /outbox would land on nothing.
+                                if (foundManagers.some((m: any) => m.demo)) return;
+                                // Same deep-link mechanism as the People card.
+                                // Manually drafted HMs are now logged to the
+                                // outbox at draft time by find_hiring_manager_endpoint
+                                // (shared upsert_hm_outbox_contact), so the target
+                                // contact exists and the segment switch + refetch
+                                // land on it.
+                                const focusEmail = foundManagers.find((m: any) => m.email)?.email || undefined;
+                                navigate('/outbox', { state: { focusEmail, segment: 'hiringManagers' } });
+                              }}
+                              className="flex-1"
+                            >
+                              <Inbox className="w-3.5 h-3.5" />
+                              See in inbox
+                            </ResultActionButton>
+                            <ResultActionButton
+                              variant="secondary"
+                              onClick={() => {
+                                if (foundManagers.some((m: any) => m.demo)) return;
+                                navigate('/my-network/managers');
+                              }}
+                              className="flex-1"
+                            >
+                              <Users className="w-3.5 h-3.5" />
+                              See in spreadsheet
+                            </ResultActionButton>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Job/recommendation cards — below search box, like People tab */}
                       {!jobPostingUrl.trim() && !isSearching && (() => {
@@ -1166,15 +1411,6 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
                     </div>
                   </TabsContent>
-
-                  {/* TAB 2: Hiring Manager Tracker */}
-                  <TabsContent value="hiring-manager-tracker" className="mt-0">
-                    <div className="animate-fadeInUp" style={{ animationDelay: '200ms', maxWidth: '900px', margin: '0 auto' }}>
-                      <div className="py-4">
-                        <RecruiterSpreadsheet key={refreshKey} />
-                      </div>
-                    </div>
-                  </TabsContent>
                 </Tabs>
               </div>
             </div>
@@ -1202,35 +1438,6 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                 ></div>
               </div>
               <p className="text-sm text-[#6B7280] mt-3">This usually takes 15-30 seconds</p>
-            </div>
-          </div>
-        )}
-
-        {/* Success Modal */}
-        {searchComplete && managersFound > 0 && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-[3px] p-8 max-w-md text-center animate-scaleIn">
-              <div className="w-16 h-16 bg-green-100 rounded-[3px] flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-10 h-10 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-[#0F172A] mb-1" style={{ fontFamily: "'Lora', Georgia, serif" }}>Found {managersFound} hiring manager{managersFound !== 1 ? 's' : ''}!</h3>
-              <p className="text-[#6B7280] mb-2">{jobTitle || 'Role'} at {company || 'Company'}</p>
-              <p className="text-sm text-[#6B7280] font-medium mb-6">Draft emails saved to your Gmail</p>
-
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <button
-                  onClick={handleViewResults}
-                  className="px-6 py-3 bg-[#3B82F6] text-white font-semibold rounded-[3px] hover:bg-[#2563EB] transition-all"
-                >
-                  View Hiring Managers →
-                </button>
-                <button
-                  onClick={resetForm}
-                  className="px-6 py-3 bg-[#FAFBFF] text-[#6B7280] font-semibold rounded-[3px] hover:bg-[#EEF2F8] transition-colors"
-                >
-                  Search again
-                </button>
-              </div>
             </div>
           </div>
         )}

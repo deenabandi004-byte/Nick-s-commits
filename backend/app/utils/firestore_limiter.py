@@ -8,10 +8,15 @@ Uses Firestore documents with atomic increments and TTL-based expiry.
 Collection: rate_limits/{hashed_key}
 """
 import hashlib
+import logging
 import time
 
+from firebase_admin import firestore
 from limits.storage import Storage
 from google.cloud.firestore_v1 import SERVER_TIMESTAMP
+
+
+logger = logging.getLogger(__name__)
 
 
 COLLECTION = "rate_limits"
@@ -26,6 +31,14 @@ class FirestoreStorage(Storage):
     """limits Storage backed by Firestore."""
 
     STORAGE_SCHEME = ["firestore"]
+
+    # limits >= 4.x added `base_exceptions` as an abstract property on
+    # Storage. Without this, FirestoreStorage() raises TypeError at
+    # instantiation, and extensions.init_app_extensions swallowed it
+    # silently, falling back to in-memory storage. Empty tuple means
+    # "no backend-specific recoverable exceptions"; the try/except
+    # blocks in incr/get/etc. already fail-open on any error.
+    base_exceptions = ()
 
     def __init__(self, uri: str = "firestore://", **options):
         super().__init__(uri, **options)
@@ -46,23 +59,32 @@ class FirestoreStorage(Storage):
             return False
 
     def incr(self, key: str, expiry: int, amount: int = 1) -> int:
-        """Atomically increment a counter, resetting if expired."""
+        """Atomically increment a counter, resetting if expired.
+
+        Uses the firestore.transactional decorator pattern (the same one
+        used by services/auth.deduct_credits_atomic). The previous
+        @self.db.transaction (no-parens) form silently fails against
+        the real Firestore client (Client.transaction is a method, not
+        a decorator factory), and the blanket except below masked it
+        as a fail-open. With this fix, real atomic increments fire
+        instead of every call dropping to the 0-allow path.
+        """
         doc_ref = self.db.collection(COLLECTION).document(_doc_key(key))
         now = time.time()
         expires_at = now + expiry
 
-        @self.db.transaction
-        def _txn(txn):
-            snap = doc_ref.get(transaction=txn)
+        @firestore.transactional
+        def _txn(transaction):
+            snap = doc_ref.get(transaction=transaction)
             if snap.exists:
                 data = snap.to_dict() or {}
                 if data.get("expires_at", 0) > now:
                     new_count = data.get("count", 0) + amount
-                    txn.update(doc_ref, {"count": new_count})
+                    transaction.update(doc_ref, {"count": new_count})
                     return new_count
-            # Expired or missing — start fresh
+            # Expired or missing, start fresh
             new_count = amount
-            txn.set(doc_ref, {
+            transaction.set(doc_ref, {
                 "count": new_count,
                 "expires_at": expires_at,
                 "key": key,
@@ -71,8 +93,12 @@ class FirestoreStorage(Storage):
 
         try:
             return _txn(self.db.transaction())
-        except Exception:
-            # On Firestore error, allow the request (fail-open)
+        except Exception as e:
+            # Fail-open: a Firestore blip never takes Flask-Limiter down.
+            # Now that the transaction pattern is correct, this branch
+            # should only fire on genuine Firestore unavailability.
+            logger.warning("[FirestoreStorage.incr] txn failed for key %s: %s",
+                           _doc_key(key), e)
             return 0
 
     def get(self, key: str) -> int:

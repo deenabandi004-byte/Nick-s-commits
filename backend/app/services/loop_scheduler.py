@@ -107,10 +107,28 @@ def run_due_loops() -> None:
                     continue
                 # Update pauseReason + flip status when it's a real pause.
                 update = {"pauseReason": reason}
-                if reason in ("budget_capped", "inactivity", "credits_capped"):
+                if reason in ("budget_capped", "inactivity", "credits_capped", "rate_limited"):
                     update["status"] = "paused"
                 doc.reference.update(update)
                 paused += 1
+                # Out-of-credits is the only pause reason where the user
+                # can't recover from the fleet view (no "resume" button
+                # restores credits). Email them. Deduped per billing
+                # period in credit_cap_notifier so this is safe to call
+                # on every cycle that lands in credits_capped.
+                if reason == "credits_capped":
+                    try:
+                        from app.services.credit_cap_notifier import notify_credits_capped
+                        notify_credits_capped(
+                            uid=uid,
+                            loop_id=loop_id,
+                            loop_name=loop.get("name") or "Untitled Loop",
+                        )
+                    except Exception:
+                        logger.exception(
+                            "loop_scheduler: credit_cap_notifier failed uid=%s loop=%s",
+                            uid, loop_id,
+                        )
                 continue
 
             # Clear to fire. Enqueue the cycle and bump nextRunAt forward by

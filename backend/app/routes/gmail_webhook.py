@@ -14,7 +14,7 @@ from flask import Blueprint, jsonify, request
 
 logger = logging.getLogger(__name__)
 
-from google.cloud.firestore_v1 import ArrayUnion
+from google.cloud.firestore_v1 import ArrayUnion, transactional
 
 from app.config import GMAIL_WEBHOOK_SECRET
 from app.extensions import get_db
@@ -23,6 +23,7 @@ from app.services.gmail_client import (
     get_gmail_service_for_user,
     start_gmail_watch,
 )
+from app.utils.bounce_detection import is_bounce_message
 
 gmail_webhook_bp = Blueprint("gmail_webhook", __name__, url_prefix="/api/gmail")
 
@@ -71,6 +72,143 @@ def _lookup_impression_context(db, uid, contact_email):
     except Exception as e:
         logger.warning(f"[gmail_webhook] Impression lookup failed for uid={uid}: {e}")
     return result
+
+
+def _append_reply_notification(db, notif_ref, new_item, now_iso):
+    """Idempotently prepend a reply notification item, keyed on Gmail message id.
+
+    Pub/Sub delivers at-least-once, so the same reply can be processed by two
+    overlapping webhook workers. This runs the read-modify-write inside a
+    Firestore transaction and skips the insert when an item with the same
+    messageId already exists, so a redelivery cannot produce a second item for
+    the same reply (which would differ only by timestamp and slip past the
+    frontend dedupe). Returns the resulting unreadReplyCount, or None when the
+    item was skipped as a duplicate.
+    """
+    transaction = db.transaction()
+
+    @transactional
+    def _run(txn):
+        snapshot = notif_ref.get(transaction=txn)
+        data = snapshot.to_dict() if snapshot.exists else {}
+        items = list(data.get("items", []))
+        message_id = new_item.get("messageId")
+        if message_id and any(it.get("messageId") == message_id for it in items):
+            return None
+        items.insert(0, new_item)
+        items = items[:20]
+        unread_count = max(0, int(data.get("unreadReplyCount", 0))) + 1
+        txn.set(
+            notif_ref,
+            {
+                "unreadReplyCount": unread_count,
+                "items": items,
+                "updatedAt": now_iso,
+            },
+            merge=True,
+        )
+        return unread_count
+
+    return _run(transaction)
+
+
+def _apply_bounce(
+    *,
+    uid,
+    db,
+    contact_doc,
+    from_email,
+    subject_header,
+    snippet,
+    now_iso,
+):
+    """Full bounce treatment for a single contact match.
+
+    Called from both bounce gates in _process_gmail_notification: the early
+    gate (before reply detection, prevents notification false positives) and
+    the per-contact gate inside the reply branch. Shared so both paths
+    stamp the contact, push to the suppression list, fire the metric, and
+    dismiss pending nudges identically. Pre-extraction, the early gate did a
+    bare-minimum update and skipped suppression+metrics, which meant bounces
+    detected there silently leaked back through future send paths.
+    """
+    contact_data = contact_doc.to_dict() or {}
+    contact_id = contact_doc.id
+    bounced_email = (
+        contact_data.get("email")
+        or contact_data.get("draftToEmail")
+        or ""
+    ).strip().lower()
+
+    contact_ref = db.collection("users").document(uid).collection("contacts").document(contact_id)
+    bounce_updates = {
+        "pipelineStage": "bounced",
+        "inOutbox": False,
+        "hasUnreadReply": False,
+        "threadStatus": "bounced",
+        "emailVerificationStatus": "bounced",
+        "bouncedAt": now_iso,
+        "lastActivityAt": now_iso,
+        "lastMessageSnippet": (snippet or "")[:200],
+        "updatedAt": now_iso,
+    }
+    logger.info(
+        f"[gmail_webhook] uid={uid} BOUNCE for contact_id={contact_id} "
+        f"email={bounced_email} from={from_email} subject={subject_header!r}"
+    )
+    contact_ref.update(bounce_updates)
+
+    try:
+        from app.services.suppression import record_bounce
+        record_bounce(uid, bounced_email, contact_id=contact_id, reason="dsn")
+    except Exception as supp_err:
+        logger.warning(f"[gmail_webhook] suppression record failed: {supp_err}")
+
+    try:
+        from app.utils.metrics_events import log_event
+        log_event(uid, "email_bounced", {
+            "contact_id": contact_id,
+            "email": bounced_email,
+            "from": from_email,
+        })
+    except Exception:
+        pass
+
+    try:
+        from app.services.nudge_service import dismiss_pending_nudges_for_contact
+        dismiss_pending_nudges_for_contact(db, uid, contact_id)
+    except Exception:
+        pass
+
+
+def _build_reply_updates(contact_data, message_snippet, now_iso):
+    """Build the Firestore update dict for an inbound reply matched to a contact.
+
+    Pure function (no I/O) so the reply-update logic stays unit-testable. The
+    base fields mirror the inline dict this replaced: mark the thread replied and
+    unread, stamp activity, and set replyReceivedAt only on the first reply.
+
+    Additionally clears archivedAt when it was set. A contact auto-archived by
+    mark_contact_resolution (hard_no / ghosted) keeps inOutbox and gmailThreadId,
+    so the reply still matches it, but get_outbox_contacts (outbox_service.py)
+    filters out any archivedAt-set contact. Without clearing it, a genuine reply
+    would be recorded and notified yet stay hidden. Cleared only when actually
+    set, so never-archived contacts are untouched.
+    """
+    updates = {
+        "pipelineStage": "replied",
+        "inOutbox": True,
+        "hasUnreadReply": True,
+        "lastActivityAt": now_iso,
+        "lastMessageSnippet": message_snippet,
+        "threadStatus": "new_reply",
+        "updatedAt": now_iso,
+    }
+    if not contact_data.get("replyReceivedAt"):
+        updates["replyReceivedAt"] = now_iso
+    if contact_data.get("archivedAt"):
+        updates["archivedAt"] = None
+    return updates
 
 
 def _process_gmail_notification(email_address, history_id):
@@ -413,6 +551,37 @@ def _process_gmail_notification(email_address, history_id):
 
                 continue
 
+            # Bounce / DSN detection: Mailer-Daemon and similar postmaster
+            # messages share the original thread_id, so without this gate we
+            # mis-label them as "{contact} responded to you!" and surface a
+            # notification.
+            subject_header = next((h.get("value", "") for h in headers if h.get("name", "").lower() == "subject"), "")
+            raw_snippet = msg_resp.get("snippet") or ""
+            if is_bounce_message(from_email, subject_header, raw_snippet):
+                logger.info(
+                    f"[gmail_webhook] uid={uid} msg_id={msg_id} detected BOUNCE "
+                    f"from={from_email!r} subject={subject_header[:80]!r}"
+                )
+                try:
+                    bounce_matches = contacts_ref.where("gmailThreadId", "==", thread_id).limit(1).get()
+                    if bounce_matches:
+                        _apply_bounce(
+                            uid=uid, db=db, contact_doc=bounce_matches[0],
+                            from_email=from_email, subject_header=subject_header,
+                            snippet=raw_snippet, now_iso=now_iso,
+                        )
+                    else:
+                        logger.info(
+                            f"[gmail_webhook] uid={uid} bounce for thread={thread_id} "
+                            f"had no matching contact — dropping silently"
+                        )
+                except Exception as bounce_err:
+                    logger.warning(
+                        f"[gmail_webhook] uid={uid} bounce contact update failed for "
+                        f"thread={thread_id}: {bounce_err}"
+                    )
+                continue
+
             # Find contact with this thread (reply from contact)
             logger.info(f"[gmail_webhook] uid={uid} msg_id={msg_id} detected as INCOMING reply from={from_email}")
             logger.info(f"[gmail_webhook] uid={uid} Reply Strategy 1: matching gmailThreadId={thread_id}")
@@ -467,20 +636,26 @@ def _process_gmail_notification(email_address, history_id):
             contact_name += (contact_data.get("lastName") or "").strip()
             contact_name = contact_name.strip() or contact_data.get("email", "")
             company = (contact_data.get("company") or "").strip()
-            message_snippet = (msg_resp.get("snippet") or "")[:100]
+            full_snippet = msg_resp.get("snippet") or ""
+            message_snippet = full_snippet[:100]
+
+            # Bounce / DSN gate: if this message looks like a Mailer-Daemon
+            # delivery failure, stamp the contact as bounced + suppress the
+            # address instead of treating it as a reply.
+            subject_header = next(
+                (h.get("value", "") for h in headers if h.get("name", "").lower() == "subject"),
+                "",
+            )
+            if is_bounce_message(from_email, subject_header, full_snippet):
+                _apply_bounce(
+                    uid=uid, db=db, contact_doc=contact_doc,
+                    from_email=from_email, subject_header=subject_header,
+                    snippet=full_snippet, now_iso=now_iso,
+                )
+                continue
 
             contact_ref = contacts_ref.document(contact_id)
-            updates = {
-                "pipelineStage": "replied",
-                "inOutbox": True,
-                "hasUnreadReply": True,
-                "lastActivityAt": now_iso,
-                "lastMessageSnippet": message_snippet,
-                "threadStatus": "new_reply",
-                "updatedAt": now_iso,
-            }
-            if not contact_data.get("replyReceivedAt"):
-                updates["replyReceivedAt"] = now_iso
+            updates = _build_reply_updates(contact_data, message_snippet, now_iso)
             logger.info(f"[gmail_webhook] uid={uid} contact_id={contact_id} UPDATING reply: stage->replied, hasUnreadReply->True, fields={list(updates.keys())}")
             contact_ref.update(updates)
 
@@ -525,32 +700,23 @@ def _process_gmail_notification(email_address, history_id):
 
             logger.info(f"[gmail_webhook] uid={uid} Reply detected and processed for contact={contact_id} from={from_header}")
 
-            # Notification doc
-            notif_doc = notif_ref.get()
-            notif_data = notif_doc.to_dict() if notif_doc.exists else {}
-            unread_count = max(0, int(notif_data.get("unreadReplyCount", 0))) + 1
-            items = list(notif_data.get("items", []))
-            items.insert(
-                0,
-                {
-                    "contactId": contact_id,
-                    "contactName": contact_name,
-                    "company": company,
-                    "snippet": message_snippet,
-                    "timestamp": now_iso,
-                    "read": False,
-                },
-            )
-            items = items[:20]
-            notif_ref.set(
-                {
-                    "unreadReplyCount": unread_count,
-                    "items": items,
-                    "updatedAt": now_iso,
-                },
-                merge=True,
-            )
-            logger.info(f"[gmail_webhook] uid={uid} notification updated: unreadReplyCount={unread_count} for contact={contact_id}")
+            # Notification doc (idempotent: dedupe by Gmail message id so an
+            # at-least-once Pub/Sub redelivery, or two overlapping workers,
+            # cannot append a second item for the same reply).
+            new_item = {
+                "contactId": contact_id,
+                "contactName": contact_name,
+                "company": company,
+                "snippet": message_snippet,
+                "timestamp": now_iso,
+                "read": False,
+                "messageId": msg_id,
+            }
+            unread_count = _append_reply_notification(db, notif_ref, new_item, now_iso)
+            if unread_count is None:
+                logger.info(f"[gmail_webhook] uid={uid} notification skipped (duplicate messageId={msg_id}) for contact={contact_id}")
+            else:
+                logger.info(f"[gmail_webhook] uid={uid} notification updated: unreadReplyCount={unread_count} for contact={contact_id}")
 
             # Reply Coach: auto-generate a draft reply in the background
             try:

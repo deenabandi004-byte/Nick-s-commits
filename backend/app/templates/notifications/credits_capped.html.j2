@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Loop paused — out of credits</title>
+</head>
+<body style="margin:0;padding:0;background:#FAFAF7;font-family:Georgia,'Times New Roman',serif;color:#1A1A1A;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#FAFAF7;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#FFFFFF;">
+          <tr>
+            <td style="padding:40px 32px 16px 32px;">
+              <h1 style="margin:0;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-weight:400;font-size:26px;line-height:1.3;color:#1A1A1A;">
+                {% if first_name %}{{ first_name }} — your Loop paused.{% else %}Your Loop paused.{% endif %}
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px 24px 32px;">
+              <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.55;color:#1A1A1A;">
+                <span style="font-weight:700;">{{ loop_name }}</span> ran out of credits for this month. It'll resume on its own when your next month's credits land.
+              </p>
+              <p style="margin:14px 0 0 0;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.55;color:#1A1A1A;">
+                If you want it running sooner, you can upgrade your plan.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:8px 32px 32px 32px;">
+              <a href="{{ fleet_url }}" style="display:inline-block;font-family:Georgia,'Times New Roman',serif;font-size:14px;color:#1A1A1A;text-decoration:underline;margin-right:18px;">View your Loops &rarr;</a>
+              <a href="{{ upgrade_url }}" style="display:inline-block;font-family:Georgia,'Times New Roman',serif;font-size:14px;color:#1A1A1A;text-decoration:underline;">Upgrade &rarr;</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px 32px 40px 32px;border-top:1px solid #E5E5E5;">
+              <div style="font-family:Georgia,'Times New Roman',serif;font-size:14px;line-height:1.5;color:#1A1A1A;">
+                — Sid
+              </div>
+              <div style="margin-top:18px;font-family:'Courier New',Courier,monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#888888;">
+                Offerloop &middot; Not Forwarded.
+              </div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

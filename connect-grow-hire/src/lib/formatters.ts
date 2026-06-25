@@ -32,3 +32,27 @@ export function decodeHtmlEntities(text: string | null | undefined): string {
   _textarea.innerHTML = text;
   return _textarea.value;
 }
+
+/**
+ * Convert an HTML email body to readable plain text. Mirrors the backend
+ * html_to_plain_text in outbox_service.py: legacy hiring-manager / recruiter
+ * drafts were stored as HTML (a font-family wrapper div with <br> breaks and
+ * escaped entities), which renders raw when interpolated as text. Surfaces that
+ * read emailBody / draft.body directly (not via the thread endpoint, which is
+ * already normalized server-side) use this for defense in depth.
+ *
+ * Conversion order: block tags to newlines, strip remaining tags, decode
+ * entities last, then collapse 3+ newlines to 2. No-op fast path when the
+ * string has no < or &.
+ */
+export function htmlToPlainText(text: string | null | undefined): string {
+  if (!text) return "";
+  // Fast path: nothing to convert when there is no markup or entity.
+  if (!text.includes("<") && !text.includes("&")) return text;
+  let out = text.replace(/<br\s*\/?>/gi, "\n");
+  out = out.replace(/<\/(p|div)>/gi, "\n");
+  out = out.replace(/<[^>]+>/g, "");
+  out = decodeHtmlEntities(out);
+  out = out.replace(/\n{3,}/g, "\n\n");
+  return out.trim();
+}

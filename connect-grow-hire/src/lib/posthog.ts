@@ -8,8 +8,8 @@ if (typeof window !== 'undefined') {
     posthog.init(posthogKey, {
       api_host: posthogHost,
 
-      autocapture: false,        // 🚫 no noisy click tracking
-      capture_pageview: false,   // 🚫 no automatic pageviews
+      autocapture: true,
+      capture_pageview: true,
       capture_pageleave: true,
 
       persistence: 'localStorage',

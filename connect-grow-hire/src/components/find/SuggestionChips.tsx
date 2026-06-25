@@ -515,14 +515,20 @@ const SuggestionChips: React.FC<SuggestionChipsProps> = ({
                     marginBottom: 10,
                     lineHeight: 1.4,
                   }}>
-                    <span style={{
-                      fontFamily: "'JetBrains Mono', monospace",
-                      fontWeight: 600,
-                      color: 'var(--accent, #1B2A44)',
-                    }}>
-                      {rec.reasoning.primary.number}
-                    </span>
-                    {' '}
+                    {/* Number intentionally omitted — only show it once a
+                        real data source backs the count. */}
+                    {typeof rec.reasoning.primary.number === 'number' && (
+                      <>
+                        <span style={{
+                          fontFamily: "'JetBrains Mono', monospace",
+                          fontWeight: 600,
+                          color: 'var(--accent, #1B2A44)',
+                        }}>
+                          {rec.reasoning.primary.number}
+                        </span>
+                        {' '}
+                      </>
+                    )}
                     <span style={{ color: 'var(--ink-2, #4A4F5B)' }}>
                       {rec.reasoning.primary.label}
                     </span>

@@ -134,3 +134,93 @@ export function trackError(
     ...(error_code && { error_code }),
   });
 }
+
+
+// ---------------------------------------------------------------------------
+// Pricing overhaul telemetry (Wave 7) — surfaces the funnel signal we need to
+// tune the lifecycle email sequences, the post-checkout upsell discount, the
+// slider stops, and the top-up pack pricing.
+// ---------------------------------------------------------------------------
+
+/** User landed on the active-trial banner for the first time. */
+export function trackTrialStarted(opts?: { tier?: string; from_location?: string }): void {
+  posthog.capture('trial_started', {
+    ...(opts?.tier && { tier: opts.tier }),
+    ...(opts?.from_location && { from_location: opts.from_location }),
+  });
+}
+
+/** Active trial dropped to Free — fired from TrialBanner when the polled
+ *  status returns is_active=false after a previous active read. */
+export function trackTrialExpired(opts?: { days_used?: number }): void {
+  posthog.capture('trial_expired', {
+    ...(opts?.days_used !== undefined && { days_used: opts.days_used }),
+  });
+}
+
+/** Pricing-page exit-intent popup mounted (visible) — sequence 1 lead funnel. */
+export function trackPricingPageExit(): void {
+  posthog.capture('pricing_page_exit', {});
+}
+
+/** User submitted email in the pricing-page exit-intent popup. */
+export function trackPricingEmailCaptured(opts?: { had_coupon?: boolean }): void {
+  posthog.capture('pricing_email_captured', {
+    ...(opts?.had_coupon !== undefined && { had_coupon: opts.had_coupon }),
+  });
+}
+
+/** Slider stop changed on the pricing page (Pro or Elite credit dial). */
+export function trackSliderDragged(opts: { tier: 'pro' | 'elite'; credits: number; from_index: number; to_index: number }): void {
+  posthog.capture('slider_dragged', opts);
+}
+
+/** Season Pass CTA tapped. */
+export function trackSeasonPassClicked(opts?: { audience?: 'student' | 'list' }): void {
+  posthog.capture('season_pass_clicked', {
+    ...(opts?.audience && { audience: opts.audience }),
+  });
+}
+
+/** Top-up modal opened (from UsageMeter or pricing-page pack tile). */
+export function trackTopupModalOpened(opts?: { from: string }): void {
+  posthog.capture('topup_modal_opened', {
+    ...(opts?.from && { from: opts.from }),
+  });
+}
+
+/** User selected a top-up pack inside the modal (before payment). */
+export function trackTopupPackSelected(opts: { pack_id: string; credits: number; price: number }): void {
+  posthog.capture('topup_pack_selected', opts);
+}
+
+/** Top-up successfully purchased via Stripe checkout (fire on payment-success
+ *  page when topup=… query param present). */
+export function trackCreditPackPurchased(opts: { pack_id: string; credits: number; price: number }): void {
+  posthog.capture('credit_pack_purchased', opts);
+}
+
+/** Low-credits in-app banner shown (when remaining/max < 10%). */
+export function trackLowCreditsBannerShown(opts?: { remaining: number; max: number }): void {
+  posthog.capture('low_credits_banner_shown', {
+    ...(opts?.remaining !== undefined && { remaining: opts.remaining }),
+    ...(opts?.max !== undefined && { max: opts.max }),
+  });
+}
+
+/** User clicked the top-up CTA inside a low-credits banner. */
+export function trackLowCreditsTopupClicked(): void {
+  posthog.capture('low_credits_topup_clicked', {});
+}
+
+/** Lifecycle email recipient clicked through and landed on the site —
+ *  captured by checking UTM params on the landing page mount. */
+export function trackLifecycleEmailClicked(opts: { campaign: string; content?: string }): void {
+  posthog.capture('lifecycle_email_clicked', opts);
+}
+
+/** Win-back lifecycle email click (subset of lifecycle_email_clicked, fired
+ *  in addition when utm_campaign === 'winback'). */
+export function trackWinbackClicked(): void {
+  posthog.capture('winback_clicked', {});
+}

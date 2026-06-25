@@ -6,13 +6,15 @@ for legacy callers that expect different output shapes.
 """
 import json
 import hashlib
+import os
 import threading
 import time
-from typing import Dict, Any
+from typing import Dict, Any, List
 from app.services.openai_client import get_openai_client
 
 # Default timeout for OpenAI prompt parsing (keep prompt search fast)
 PROMPT_PARSE_TIMEOUT = 10.0
+EXPANSION_TIMEOUT = 8.0
 
 # Shared empty result template
 _EMPTY_STRUCTURED = {
@@ -31,6 +33,28 @@ _parse_cache: dict[str, tuple[float, dict]] = {}
 _parse_cache_lock = threading.Lock()
 _PARSE_CACHE_TTL = 3600   # 1 hour
 _PARSE_CACHE_MAX = 500
+
+# Cache for industry/title expansion (separate keyspace; same TTL/limits)
+_expand_cache: dict[str, tuple[float, dict]] = {}
+_expand_cache_lock = threading.Lock()
+_EXPAND_CACHE_TTL = 3600
+_EXPAND_CACHE_MAX = 500
+
+
+def _load_pdl_industry_taxonomy() -> frozenset:
+    """Load PDL canonical industry enum from JSON. Frozen at import."""
+    path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)), "data", "pdl_industries.json"
+    )
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return frozenset(s.lower().strip() for s in json.load(f) if s)
+    except Exception as e:
+        print(f"[PromptParser] Failed to load PDL industry taxonomy: {e}")
+        return frozenset()
+
+
+PDL_INDUSTRY_TAXONOMY = _load_pdl_industry_taxonomy()
 
 
 def _make_empty(prompt: str, error: str = "") -> Dict[str, Any]:
@@ -197,6 +221,177 @@ def _validate_structured_parse(parsed: Dict, original_prompt: str) -> Dict[str, 
     else:
         conf = (parsed.get("confidence") or "").strip().lower()
         out["confidence"] = "high" if conf == "high" else "low"
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Industry-aware semantic expansion
+#
+# Broadens a parsed prompt whose `industries` is non-empty into the set of
+# related PDL taxonomy industries AND generates industry-aligned title
+# variations. Strictly additive: original entries are preserved and dedup'd
+# against the LLM's additions. The expanded industries list is hard-filtered
+# against PDL_INDUSTRY_TAXONOMY (PDL industry is an exact-match enum — labels
+# outside the enum match nothing and waste credits).
+# ---------------------------------------------------------------------------
+
+
+def _expansion_cache_key(parsed: Dict[str, Any]) -> str:
+    industries = sorted(
+        s.lower().strip()
+        for s in (parsed.get("industries") or [])
+        if s and str(s).strip()
+    )
+    companies = sorted(
+        (c.get("name") or "").lower().strip()
+        for c in (parsed.get("companies") or [])
+        if isinstance(c, dict) and c.get("name")
+    )
+    original = (parsed.get("original_prompt") or "").lower().strip()
+    raw = json.dumps(
+        {"industries": industries, "companies": companies, "original": original},
+        sort_keys=True,
+    )
+    return hashlib.md5(raw.encode()).hexdigest()
+
+
+def expand_industries_and_titles(parsed: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Broaden `industries` to related PDL taxonomy entries and add aligned
+    `title_variations`. Soft-fails to the input dict on any error.
+
+    Returns a NEW dict (caller can safely mutate either copy). No-op when
+    `industries` is empty.
+    """
+    industries_in = [
+        s.strip() for s in (parsed.get("industries") or []) if s and str(s).strip()
+    ]
+    if not industries_in:
+        return parsed
+
+    cache_key = _expansion_cache_key(parsed)
+    with _expand_cache_lock:
+        if cache_key in _expand_cache:
+            ts, cached = _expand_cache[cache_key]
+            if time.time() - ts < _EXPAND_CACHE_TTL:
+                print(f"[ExpandIndustries] Cache hit (MD5: {cache_key})")
+                return cached
+            else:
+                del _expand_cache[cache_key]
+
+    client = get_openai_client()
+    if not client:
+        return parsed
+
+    existing_titles = [
+        str(t).strip()
+        for t in (parsed.get("title_variations") or [])
+        if t and str(t).strip()
+    ]
+    original_prompt = parsed.get("original_prompt") or ""
+
+    system_prompt = (
+        "You broaden a contact-search query so PDL returns more relevant people. "
+        "Given the user's original prompt, the industries they mentioned, and their "
+        "existing job titles, return JSON with TWO arrays:\n"
+        "  - related_industries: PDL-canonical industry labels closely related to "
+        "the user's stated industries (siblings + parents in the same sector). "
+        "Use lowercase labels matching PDL's enum exactly (e.g. \"media production\", "
+        "\"broadcast media\", \"online media\", \"entertainment\", \"motion pictures and film\" "
+        "for \"media\"). Do NOT invent new labels. Aim for 4-8 entries.\n"
+        "  - title_additions: 6-12 job titles common in those industries, aligned with "
+        "the seniority and intent in the original prompt. Include domain-specific "
+        "titles AND their generic fallbacks (e.g. \"Producer\", \"Editor\", \"Reporter\").\n"
+        "Return ONLY valid JSON: "
+        '{"related_industries": [...], "title_additions": [...]}'
+    )
+    user_prompt = (
+        f"Original prompt: {original_prompt}\n"
+        f"User industries: {industries_in}\n"
+        f"User titles so far: {existing_titles}"
+    )
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            max_tokens=600,
+            temperature=0.2,
+            response_format={"type": "json_object"},
+            timeout=EXPANSION_TIMEOUT,
+        )
+        text = (response.choices[0].message.content or "").strip()
+        if not text:
+            return parsed
+        data = json.loads(text)
+    except Exception as e:
+        print(f"[ExpandIndustries] soft-fail: {e}")
+        return parsed
+
+    related = data.get("related_industries") or []
+    additions = data.get("title_additions") or []
+    if not isinstance(related, list):
+        related = []
+    if not isinstance(additions, list):
+        additions = []
+
+    # Merge industries: keep originals, append LLM additions, hard-filter against
+    # PDL enum (exact-match). Originals stay even if not in enum — the caller
+    # decides whether to drop them; we don't silently discard user intent.
+    merged_industries: List[str] = []
+    seen_ind = set()
+    for ind in industries_in:
+        key = ind.lower().strip()
+        if key and key not in seen_ind:
+            merged_industries.append(ind)
+            seen_ind.add(key)
+    for ind in related:
+        if not isinstance(ind, str):
+            continue
+        key = ind.lower().strip()
+        if not key or key in seen_ind:
+            continue
+        if PDL_INDUSTRY_TAXONOMY and key not in PDL_INDUSTRY_TAXONOMY:
+            continue
+        merged_industries.append(key)
+        seen_ind.add(key)
+
+    # Merge titles: keep originals first, append additions, dedupe case-insensitive.
+    merged_titles: List[str] = []
+    seen_titles = set()
+    for t in existing_titles:
+        key = t.lower().strip()
+        if key and key not in seen_titles:
+            merged_titles.append(t)
+            seen_titles.add(key)
+    for t in additions:
+        if not isinstance(t, str):
+            continue
+        clean = t.strip()
+        key = clean.lower()
+        if not key or key in seen_titles:
+            continue
+        merged_titles.append(clean)
+        seen_titles.add(key)
+
+    out = dict(parsed)
+    out["industries"] = merged_industries
+    out["title_variations"] = merged_titles
+    out["industry_expansion_applied"] = True
+
+    with _expand_cache_lock:
+        if len(_expand_cache) >= _EXPAND_CACHE_MAX:
+            oldest = min(_expand_cache, key=lambda k: _expand_cache[k][0])
+            del _expand_cache[oldest]
+        _expand_cache[cache_key] = (time.time(), out)
+
+    print(
+        f"[ExpandIndustries] industries {len(industries_in)} -> "
+        f"{len(merged_industries)}, titles {len(existing_titles)} -> {len(merged_titles)}"
+    )
     return out
 
 

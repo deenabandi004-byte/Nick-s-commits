@@ -1,12 +1,11 @@
-// LoopGrid — fleet view. Top 4 Loops as large cards; the rest as compact rows.
+// LoopGrid — fleet view.
 //
-// Sort order is meant to surface what needs the user's attention first:
-//   1. Done with unread drafts/replies (the dopamine ones)
-//   2. Running
-//   3. Paused
-//   4. Idle
-//   5. Done (no unreads)
-// Within each bucket, newer first.
+// Editorial revision (Loops Overview.html):
+//   • Header: serif "Your Loops." + tagline + Scout companion on the right.
+//   • The "X of Y" capacity counter is dropped — the enforcement still
+//     lives on NewLoopTile (lock state) so we don't need to print it twice.
+//   • Top-right "Start another Loop" button only shows when the grid is
+//     already full of cards (i.e. NewLoopTile won't appear inline).
 
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
@@ -14,7 +13,9 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { LOOP_COPY } from "@/lib/loopCopy";
 import type { Loop, LoopLimits } from "@/services/loops";
 import { LoopCard } from "./LoopCard";
+import { LoopsCommandBar } from "./LoopsCommandBar";
 import { NewLoopTile } from "./NewLoopTile";
+import { ScoutGuide } from "./ScoutGuide";
 
 const VISIBLE_LIMIT = 4;
 
@@ -52,69 +53,105 @@ export function LoopGrid({
   const overflow = sorted.slice(VISIBLE_LIMIT);
   const [showOverflow, setShowOverflow] = useState(false);
 
-  // Whether to show the "+ New Loop" tile inside the grid. We always show it
-  // when there's room visually (i.e. <4 visible Loops) so the call-to-action
-  // doesn't disappear. If there are 4+ Loops, we move the New Loop button
-  // up next to the header instead.
   const newTileInGrid = visible.length < VISIBLE_LIMIT;
 
   return (
-    <div className="max-w-[1100px] mx-auto px-4 sm:px-6 py-8">
-      {/* ── Header strip ── */}
-      <div className="flex items-baseline justify-between mb-6 flex-wrap gap-3">
-        <div>
+    <div
+      className="mx-auto"
+      style={{ maxWidth: 1040, padding: "44px 44px 80px" }}
+    >
+      {/* ── Editorial header strip ───────────────────────────────────── */}
+      <div
+        className="flex items-end justify-between flex-wrap"
+        style={{ gap: 24, marginBottom: 28 }}
+      >
+        <div className="min-w-0">
           <h1
-            className="font-serif text-[34px] leading-tight tracking-[-0.02em]"
-            style={{ color: "var(--ink)" }}
+            className="font-serif"
+            style={{
+              margin: 0,
+              fontWeight: 500,
+              fontSize: 52,
+              lineHeight: 1,
+              letterSpacing: "-0.028em",
+              color: "var(--heading)",
+            }}
           >
             Your{" "}
-            <em className="font-serif" style={{ fontWeight: 400 }}>
+            <em
+              className="italic"
+              style={{ color: "var(--accent)", fontWeight: 500 }}
+            >
               Loops.
             </em>
           </h1>
           <p
-            className="text-[13.5px] mt-1.5"
-            style={{ color: "var(--ink-3)" }}
+            style={{
+              margin: "14px 0 0",
+              fontSize: 15.5,
+              color: "var(--ink-3)",
+              lineHeight: 1.5,
+            }}
           >
-            {LOOP_COPY.fleetSubtitle}
+            Walk away. We'll text you when there's something to look at.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span
-            className="text-[12.5px] tabular-nums"
-            style={{ color: "var(--ink-3)" }}
-          >
-            {limits.used} of {limits.cap}
-          </span>
-          {!newTileInGrid && limits.canCreate && (
+        <ScoutGuide />
+      </div>
+
+      {/* ── Top-right "Start another Loop" — only when grid is full ── */}
+      {!newTileInGrid && (
+        <div className="flex justify-end" style={{ marginBottom: 16 }}>
+          {limits.canCreate ? (
             <button
               onClick={onCreate}
-              className="rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
-              style={{ background: "var(--ink)", color: "white" }}
+              className="inline-flex items-center gap-1.5"
+              style={{
+                background: "var(--accent)",
+                color: "white",
+                borderRadius: 10,
+                padding: "10px 18px",
+                fontSize: 13.5,
+                fontWeight: 600,
+                boxShadow: "0 2px 8px rgba(74,96,168,0.20)",
+              }}
             >
-              + Start another Loop
+              <span style={{ fontSize: 16, lineHeight: 1 }}>+</span> Start another Loop
             </button>
-          )}
-          {!newTileInGrid && !limits.canCreate && (
+          ) : (
             <Link
               to="/pricing"
-              className="rounded-md border bg-white px-3.5 py-2 text-[13px] font-medium transition-colors hover:bg-[var(--paper-2)]"
-              style={{ borderColor: "var(--line)", color: "var(--ink)" }}
+              className="rounded-md border bg-white"
+              style={{
+                padding: "8px 14px",
+                fontSize: 13,
+                fontWeight: 500,
+                borderColor: "var(--line)",
+                color: "var(--ink)",
+              }}
             >
               {LOOP_COPY.newTile.upgradeCta}
             </Link>
           )}
         </div>
-      </div>
+      )}
+
+      {/* ── Fleet command bar (proof + ticker) ── */}
+      <LoopsCommandBar />
 
       {/* ── Grid (top 4) ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-4">
+      <div
+        className="grid"
+        style={{
+          gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+          gap: 20,
+          marginTop: 24,
+        }}
+      >
         {visible.map((loop) => (
           <LoopCard key={loop.id} loop={loop} />
         ))}
-        {newTileInGrid && (
-          <NewLoopTile limits={limits} onCreate={onCreate} />
-        )}
+        {newTileInGrid && <NewLoopTile limits={limits} onCreate={onCreate} />}
       </div>
 
       {/* ── Overflow (compact rows) ── */}

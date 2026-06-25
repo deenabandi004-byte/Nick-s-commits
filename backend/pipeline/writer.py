@@ -77,6 +77,60 @@ def write_jobs(normalized_jobs: list[dict]) -> dict:
     return result
 
 
+def mark_expired_jobs(fj_ids: list[str]) -> dict:
+    """Flag Firestore docs as expired based on the Fantastic.jobs Expired Jobs feed.
+
+    Args:
+        fj_ids: Raw FJ-side IDs (not yet prefixed). Each is translated to our
+            Firestore job_id of the form `fantasticjobs_{id}` before update.
+
+    Returns: {"marked": N, "not_found": M, "total": len(fj_ids)}.
+
+    Doesn't delete — only sets `expired=true` and `expired_at`. Downstream
+    job-board reads should filter expired=true. Keeping the doc lets the
+    UI optionally show "this role closed" for users who saved it.
+    """
+    db = get_db()
+    if not db:
+        raise RuntimeError("Firestore DB not initialized")
+
+    if not fj_ids:
+        return {"marked": 0, "not_found": 0, "total": 0}
+
+    now = datetime.now(timezone.utc)
+    firestore_ids = [f"fantasticjobs_{fid}" for fid in fj_ids]
+
+    # Check existence in chunks (Firestore get_all caps around 500/call)
+    existing_ids = set()
+    for i in range(0, len(firestore_ids), EXISTENCE_CHECK_CHUNK):
+        chunk = firestore_ids[i : i + EXISTENCE_CHECK_CHUNK]
+        refs = [db.collection(COLLECTION).document(jid) for jid in chunk]
+        for doc in db.get_all(refs):
+            if doc.exists:
+                existing_ids.add(doc.id)
+
+    # Batch-update only the docs we actually have
+    marked = 0
+    targets = list(existing_ids)
+    for i in range(0, len(targets), BATCH_WRITE_SIZE):
+        batch = db.batch()
+        chunk = targets[i : i + BATCH_WRITE_SIZE]
+        for jid in chunk:
+            ref = db.collection(COLLECTION).document(jid)
+            batch.update(ref, {"expired": True, "expired_at": now})
+        batch.commit()
+        marked += len(chunk)
+        logger.info("  Expired-mark batch: %d jobs flagged", len(chunk))
+
+    result = {
+        "marked": marked,
+        "not_found": len(fj_ids) - marked,
+        "total": len(fj_ids),
+    }
+    logger.info("Expired sweep complete: %s", result)
+    return result
+
+
 def delete_expired_jobs() -> int:
     """Delete jobs where expires_at < now. Returns total deleted."""
     db = get_db()

@@ -420,3 +420,78 @@ def confirm_structured_profile():
     except Exception as e:
         print(f"[ProfileConfirm] Error for uid={uid}: {e}")
         return jsonify({"error": "Failed to update profile"}), 500
+
+
+# =============================================================================
+# Pro Free Trial — Wave 3
+# =============================================================================
+# See `backend/app/services/trial_service.py` for the full policy + lifecycle.
+# - 14 days, no credit card required, one trial per account lifetime
+# - 300 credits/day daily allocation (no rollover, anti-skim)
+# - At expiry, auto-downgrade to Free tier on next authenticated request
+# =============================================================================
+
+from app.services.trial_service import start_trial, get_trial_status, apply_trial_expiry
+
+
+@users_bp.route('/start-trial', methods=['POST'])
+@require_firebase_auth
+def start_pro_trial():
+    """Activate the one-time 14-day Pro free trial. No credit card required.
+
+    Returns:
+      200 + {ok, trial_ends_at, daily_credits, duration_days} on success
+      409 + {error: 'trial_already_used' | 'already_subscribed'} when ineligible
+      404 + {error: 'user_not_found'} when user doc missing
+    """
+    user_id = request.firebase_user.get('uid')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+
+    result = start_trial(user_id)
+    if not result.get('ok'):
+        err = result.get('error', 'unknown')
+        if err == 'user_not_found':
+            return jsonify(result), 404
+        if err in ('trial_already_used', 'already_subscribed'):
+            return jsonify(result), 409
+        return jsonify(result), 500
+
+    return jsonify(result), 200
+
+
+@users_bp.route('/trial-status', methods=['GET'])
+@require_firebase_auth
+def get_pro_trial_status():
+    """Return the user's trial state — used by TrialBanner.tsx to show days +
+    daily credits remaining. Also lazily handles trial expiry transition: if
+    the trial has expired but we haven't processed it yet, this call also
+    runs the auto-downgrade to Free.
+    """
+    user_id = request.firebase_user.get('uid')
+    if not user_id:
+        return jsonify({'error': 'unauthenticated'}), 401
+
+    db = get_db()
+    user_ref = db.collection('users').document(user_id)
+    snap = user_ref.get()
+    if not snap.exists:
+        return jsonify({'error': 'user_not_found'}), 404
+    user_data = snap.to_dict() or {}
+
+    status = get_trial_status(user_data)
+
+    # Lazy expiry processing — flip to Free if needed
+    if status.get('is_expired_unprocessed'):
+        apply_trial_expiry(user_id)
+        # Re-read to surface the new state
+        snap = user_ref.get()
+        user_data = snap.to_dict() or {}
+        status = get_trial_status(user_data)
+
+    return jsonify({
+        'ok': True,
+        'status': status,
+        'has_trial_used': bool(user_data.get('trialUsedAt')),
+        'current_tier': user_data.get('subscriptionTier') or user_data.get('tier') or 'free',
+    }), 200

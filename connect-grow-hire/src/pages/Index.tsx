@@ -1,5 +1,5 @@
 // src/pages/Index.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Fragment } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate, Link } from 'react-router-dom';
 import { ArrowRight, Menu, X } from 'lucide-react';
@@ -9,11 +9,109 @@ import FindCompanyImg from '@/assets/findcompanylandingpage.png';
 import FindHiringManagerImg from '@/assets/findhiringmanagerlandingpage.png';
 import EmailOutreachImg from '@/assets/emailoutreach.png.png';
 import MeetingImg from '@/assets/meetinglandingpage.png';
+import DavidJiPhoto from '@/assets/David-Ji.jpeg';
+import SarahUcuzogluPhoto from '@/assets/Sarah-Ucuzoglu.jpeg';
+import USCLogo from '@/assets/USC-Logo.png';
+import UCLALogo from '@/assets/UCLA logo.png';
+import StanfordLogo from '@/assets/Stanford logo.avif';
+import BerkeleyLogo from '@/assets/UC Berkeley logo.png';
+import MichiganLogo from '@/assets/Michigan logo.png';
+import NotreDameLogo from '@/assets/Notre Dame logo.png';
+import WhartonLogo from '@/assets/Wharton Logo .png';
+import DartmouthLogo from '@/assets/Dartmouth logo.png';
+import NYULogo from '@/assets/NYU Logo.png';
+import GeorgetownLogo from '@/assets/Georgetown logo.png';
+import MountainsLake from '@/assets/for-students/mountains-lake.png';
 import HeroSearchCTA from '@/components/HeroSearchCTA';
 import TimeComparison from '@/components/TimeComparison';
 import BulletinBoard from '@/components/BulletinBoard';
 
 const CHROME_EXTENSION_URL = 'https://chromewebstore.google.com/detail/offerloop/aabnjgecmobcnnhkilbeocggbmgilpcl';
+
+const UNIVERSITY_LOGOS: { src: string; alt: string; h: number }[] = [
+  { src: BerkeleyLogo, alt: 'UC Berkeley', h: 38 },
+  { src: UCLALogo, alt: 'UCLA', h: 32 },
+  { src: WhartonLogo, alt: 'Wharton', h: 38 },
+  { src: NotreDameLogo, alt: 'Notre Dame', h: 50 },
+  { src: GeorgetownLogo, alt: 'Georgetown', h: 50 },
+  { src: MichiganLogo, alt: 'Michigan', h: 50 },
+  { src: DartmouthLogo, alt: 'Dartmouth', h: 50 },
+  { src: NYULogo, alt: 'NYU', h: 32 },
+  { src: StanfordLogo, alt: 'Stanford', h: 32 },
+  { src: USCLogo, alt: 'USC', h: 32 },
+];
+
+const BIG_TESTIMONIALS = [
+  {
+    name: 'David Ji',
+    role: 'Incoming FedEx Intern',
+    photo: DavidJiPhoto,
+    quote:
+      'As an international student, I had no pre-existing network, and Offerloop allowed me to find and connect with professionals that resulted in me landing an offer.',
+  },
+  {
+    name: 'Sarah Ucuzoglu',
+    role: 'Advisory Intern, PwC',
+    photo: SarahUcuzogluPhoto,
+    quote:
+      'Automating cold outreach gave me more time spent face to face with professionals who could actually help.',
+  },
+];
+
+type AnyoneStepKey = 'find' | 'draft' | 'track' | 'prep';
+
+type AnyoneStep = {
+  key: AnyoneStepKey;
+  n: string;
+  label: string;
+  title: string;
+  eyebrow: string;
+  description: string;
+  image: string;
+};
+
+const ANYONE_STEPS: AnyoneStep[] = [
+  {
+    key: 'find',
+    n: '1',
+    label: 'FIND',
+    title: "Search anyone, sorted by who's most likely to reply.",
+    eyebrow: '01 FIND',
+    description:
+      'Type a role, a company, or a school. We surface people who share your school, major, hometown, career path, etc. The ones with a reason to write back.',
+    image: FindHiringManagerImg,
+  },
+  {
+    key: 'draft',
+    n: '2',
+    label: 'DRAFT',
+    title: 'Personalized emails, drafted into your Gmail.',
+    eyebrow: '02 DRAFT',
+    description:
+      "We write the message using your commonalities. Drafts land in your real Gmail. Your account, your voice. Won't go to spam.",
+    image: EmailOutreachImg,
+  },
+  {
+    key: 'track',
+    n: '3',
+    label: 'TRACK',
+    title: 'The moment someone replies, we take it from there.',
+    eyebrow: '03 TRACK',
+    description:
+      'The tracker updates. A follow-up draft appears. Prep is ready before you need it.',
+    image: FindCompanyImg,
+  },
+  {
+    key: 'prep',
+    n: '4',
+    label: 'PREP',
+    title: 'When the meeting gets booked, the prep is already done.',
+    eyebrow: '04 PREP',
+    description:
+      'Research, talking points, and questions worth asking. Generated the moment they say yes.',
+    image: MeetingImg,
+  },
+];
 
 
 const Index = () => {
@@ -24,6 +122,8 @@ const Index = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [showBackToTop, setShowBackToTop] = useState(false);
   const [konamiActivated, setKonamiActivated] = useState(false);
+  const [anyoneStep, setAnyoneStep] = useState<AnyoneStepKey>('find');
+  const currentAnyoneStep = ANYONE_STEPS.find((s) => s.key === anyoneStep) ?? ANYONE_STEPS[0];
   const heroRef = useRef<HTMLDivElement>(null);
   const dashboardRef = useRef<HTMLDivElement>(null);
 
@@ -201,44 +301,73 @@ const Index = () => {
             />
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-5" style={{ flexShrink: 1, minWidth: 0 }}>
-            <Link to="/for-students" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
+          {/* Desktop Navigation — persona toggle meshed into the banner */}
+          <style>{`
+            .idx-nav-link {
+              position: relative;
+              font-family: 'Libre Baskerville', Georgia, serif;
+              font-size: 13px;
+              font-weight: 600;
+              text-decoration: none;
+              color: #4A5E80;
+              padding: 4px 2px;
+              transition: color 0.15s ease;
+            }
+            .idx-nav-link::after {
+              content: '';
+              position: absolute;
+              left: 0;
+              right: 0;
+              bottom: -2px;
+              height: 2px;
+              background: #2563EB;
+              transform: scaleX(0);
+              transform-origin: center;
+              transition: transform 0.2s ease;
+            }
+            .idx-nav-link:hover { color: #0F172A; }
+            .idx-nav-link:hover::after { transform: scaleX(0.5); }
+            .idx-nav-link.is-active { color: #2563EB; }
+            .idx-nav-link.is-active::after { transform: scaleX(1); }
+          `}</style>
+          <nav
+            className="hidden md:flex items-center"
+            style={{
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              gap: 32,
+            }}
+          >
+            <Link to="/for-students" className="idx-nav-link">
               For Students
             </Link>
-            <Link to="/pricing" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
-              Pricing
-            </Link>
-            <Link to="/about" className="nav-link text-sm relative" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", fontWeight: 600, textDecoration: 'none' }}>
-              About
-            </Link>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+              <Link to="/pricing" className="idx-nav-link">
+                Pricing
+              </Link>
+              <Link to="/about" className="idx-nav-link">
+                About
+              </Link>
+            </div>
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3" style={{ flexShrink: 0 }}>
+          <div className="hidden md:flex items-center" style={{ marginLeft: 'auto', flexShrink: 0 }}>
             {user ? (
               <button onClick={() => navigate('/find')} className="btn-ghost" style={{ fontSize: '13px', fontWeight: 700, padding: '8px 16px' }}>
                 Find people
               </button>
             ) : (
-              <>
-                <button
-                  onClick={() => navigate('/signin?mode=signin')}
-                  style={{ background: 'transparent', color: '#0F172A', fontSize: '13px', fontWeight: 600, fontFamily: "'Libre Baskerville', Georgia, serif", padding: '8px 20px', borderRadius: '100px', border: '1px solid rgba(37,99,235,0.2)', cursor: 'pointer', transition: 'all 0.15s ease' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.03)'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.35)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(37,99,235,0.2)'; }}
-                >
-                  Sign in
-                </button>
-                <button
-                  onClick={() => navigate('/signin?mode=signup')}
-                  style={{ background: '#2563EB', color: '#fff', fontSize: '13px', fontWeight: 600, fontFamily: "'Libre Baskerville', Georgia, serif", padding: '8px 20px', borderRadius: '3px', border: 'none', cursor: 'pointer', transition: 'background 0.15s ease', flexShrink: 0, whiteSpace: 'nowrap' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = '#1D4ED8'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = '#2563EB'; }}
-                >
-                  Create account
-                </button>
-              </>
+              <button
+                onClick={() => navigate('/signin')}
+                style={{ background: '#2563EB', color: '#fff', fontSize: '13px', fontWeight: 600, fontFamily: "'Libre Baskerville', Georgia, serif", padding: '8px 20px', borderRadius: '100px', border: 'none', cursor: 'pointer', transition: 'background 0.15s ease, transform 0.15s ease', whiteSpace: 'nowrap' }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = '#1D4ED8'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = '#2563EB'; e.currentTarget.style.transform = 'translateY(0)'; }}
+              >
+                Sign in
+              </button>
             )}
           </div>
 
@@ -256,12 +385,11 @@ const Index = () => {
             <Link to="/for-students" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>For Students</Link>
             <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>Pricing</Link>
             <Link to="/about" onClick={() => setMobileMenuOpen(false)} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif", textDecoration: 'none' }}>About</Link>
-            <button onClick={() => { navigate('/signin?mode=signup'); setMobileMenuOpen(false); }} className="text-left px-4 py-3 text-sm font-medium rounded-lg hover:bg-gray-50" style={{ color: '#4A5E80', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Get started</button>
             <div className="border-t mt-2 pt-2" style={{ borderColor: 'rgba(37,99,235,0.08)' }}>
               {user ? (
-                <button onClick={() => { navigate('/find'); setMobileMenuOpen(false); }} className="btn-primary-lg w-full" style={{ borderRadius: '3px' }}>Find people</button>
+                <button onClick={() => { navigate('/find'); setMobileMenuOpen(false); }} className="btn-primary-lg w-full" style={{ borderRadius: '100px' }}>Find people</button>
               ) : (
-                <button onClick={() => { navigate('/signin?mode=signup'); setMobileMenuOpen(false); }} className="w-full text-center py-3 text-sm font-semibold" style={{ background: '#2563EB', color: '#fff', borderRadius: '3px', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Create account</button>
+                <button onClick={() => { navigate('/signin'); setMobileMenuOpen(false); }} className="w-full text-center py-3 text-sm font-semibold" style={{ background: '#2563EB', color: '#fff', borderRadius: '100px', fontFamily: "'Libre Baskerville', Georgia, serif" }}>Sign in</button>
               )}
             </div>
           </nav>
@@ -310,6 +438,32 @@ const Index = () => {
         }}
       >
         {/* ─── Ambient depth layers - all non-interactive ─── */}
+
+        {/* Mountains + lake backdrop — sits at the bottom of the hero with a
+            long mask fade so it dissolves into the upper haze instead of
+            cutting in. Matches the For Students hero treatment but tuned for
+            this hero's softer blue base. */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '70%',
+            backgroundImage: `url(${MountainsLake})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center bottom',
+            backgroundRepeat: 'no-repeat',
+            opacity: 0.55,
+            pointerEvents: 'none',
+            zIndex: 0,
+            maskImage:
+              'linear-gradient(180deg, transparent 0%, #000 28%, #000 70%, rgba(0,0,0,0.6) 90%, transparent 100%)',
+            WebkitMaskImage:
+              'linear-gradient(180deg, transparent 0%, #000 28%, #000 70%, rgba(0,0,0,0.6) 90%, transparent 100%)',
+          }}
+        />
 
         {/* Large slow-drifting blue blob behind the headline */}
         <div
@@ -448,7 +602,51 @@ const Index = () => {
         </div>
       </section>
 
-      {/* ═══════════════ TESTIMONIALS (moved up - Hormozi: attack perceived likelihood under hero) ═══════════════ */}
+      {/* ═══════════════ TESTIMONIALS ═══════════════ */}
+      <style>{`
+        @keyframes idx-logo-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        .idx-logo-track {
+          display: flex;
+          gap: clamp(40px, 5vw, 76px);
+          align-items: center;
+          width: max-content;
+          animation: idx-logo-scroll 38s linear infinite;
+        }
+        .idx-logo-track:hover { animation-play-state: paused; }
+        .idx-mask-edges {
+          -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+                  mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
+        }
+        .idx-bigtest-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 28px;
+          max-width: 1180px;
+          margin: 0 auto;
+        }
+        .idx-bigtest-card {
+          display: grid;
+          grid-template-columns: minmax(220px, 1fr) 1.25fr;
+          gap: 0;
+          background: linear-gradient(180deg, #102E5C 0%, #0B2348 100%);
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 1px 2px rgba(15, 37, 69, 0.06), 0 18px 36px rgba(15, 37, 69, 0.18);
+        }
+        .idx-bigtest-photo {
+          width: 100%;
+          height: 100%;
+          min-height: 300px;
+          object-fit: cover;
+          object-position: center top;
+          display: block;
+        }
+        @media (max-width: 880px) {
+          .idx-bigtest-grid { grid-template-columns: 1fr !important; }
+          .idx-bigtest-card { grid-template-columns: 1fr !important; }
+          .idx-bigtest-photo { aspect-ratio: 16/10; min-height: 0; }
+        }
+      `}</style>
       <section
         id="testimonials"
         style={{
@@ -457,342 +655,127 @@ const Index = () => {
         }}
       >
         <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-          {/* Section header */}
-          <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto 56px' }}>
+          {/* University trust band */}
+          <div className="reveal" style={{ textAlign: 'center', maxWidth: 820, margin: '0 auto 36px' }}>
             <h2
               style={{
                 fontFamily: "'Libre Baskerville', Georgia, serif",
-                fontSize: 'clamp(32px, 5vw, 52px)',
+                fontSize: 'clamp(26px, 3.8vw, 38px)',
                 fontWeight: 400,
-                lineHeight: 1.1,
-                letterSpacing: '-.025em',
+                lineHeight: 1.15,
+                letterSpacing: '-.02em',
                 color: '#0f2545',
-                margin: '0 0 16px',
-              }}
-            >
-              Real conversations. Real meetings. Real results.
-            </h2>
-            <p
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 17,
-                lineHeight: 1.6,
-                color: '#475569',
                 margin: 0,
               }}
             >
-              In their words.
-            </p>
+              Trusted by students at the country&apos;s top universities
+            </h2>
           </div>
 
-          {/* Cork-board reviews: 6 visible + Show 6 more */}
-          <BulletinBoard />
-        </div>
-      </section>
-
-      {/* ═══════════════ START A LOOP ═══════════════ */}
-      <section
-        id="loops"
-        style={{
-          background: 'linear-gradient(180deg, #0B1F3D 0%, #0f2545 100%)',
-          borderTop: '1px solid #EEF2F8',
-          padding: '120px 32px 128px',
-          overflow: 'hidden',
-          position: 'relative',
-        }}
-      >
-        {/* Ambient blue glow */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: '-20%',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            width: '80%',
-            height: '70%',
-            background:
-              'radial-gradient(ellipse, rgba(37, 99, 235, 0.28), transparent 65%)',
-            filter: 'blur(80px)',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-        {/* Faint dot grid for texture */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundImage:
-              'radial-gradient(rgba(96, 165, 250, 0.08) 1px, transparent 1px)',
-            backgroundSize: '28px 28px',
-            maskImage:
-              'radial-gradient(ellipse 70% 60% at center, black 5%, transparent 90%)',
-            WebkitMaskImage:
-              'radial-gradient(ellipse 70% 60% at center, black 5%, transparent 90%)',
-            pointerEvents: 'none',
-            zIndex: 0,
-          }}
-        />
-
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1000, margin: '0 auto' }}>
-          {/* Eyebrow */}
-          <div className="reveal" style={{ textAlign: 'center', marginBottom: 20 }}>
-            <span
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 12,
-                fontWeight: 600,
-                letterSpacing: '0.18em',
-                color: '#60A5FA',
-                textTransform: 'uppercase',
-              }}
-            >
-              New · works for you 24/7
-            </span>
-          </div>
-
-          {/* Headline */}
-          <h2
-            className="reveal"
-            style={{
-              fontFamily: "'Libre Baskerville', Georgia, serif",
-              fontSize: 'clamp(40px, 6.5vw, 68px)',
-              fontWeight: 400,
-              lineHeight: 1.05,
-              letterSpacing: '-.025em',
-              color: '#FFFFFF',
-              textAlign: 'center',
-              margin: '0 auto 18px',
-              maxWidth: 820,
-            }}
-          >
-            Start a Loop.
-          </h2>
-          <div
-            style={{
-              height: 1.5,
-              background:
-                'linear-gradient(90deg, transparent, #60A5FA, #93C5FD, transparent)',
-              maxWidth: 240,
-              margin: '0 auto 28px',
-            }}
-          />
-
-          {/* Subhead */}
-          <p
-            className="reveal"
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 19,
-              lineHeight: 1.6,
-              color: '#C7D5E8',
-              textAlign: 'center',
-              margin: '0 auto 88px',
-              maxWidth: 660,
-            }}
-          >
-            Tell it what you want. Walk away. Get a text when the work&apos;s done.
-          </p>
-
-          {/* 4-step flow */}
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: 24,
-              marginBottom: 80,
-            }}
-          >
-            {[
-              {
-                n: '01',
-                h: 'Tell it what you’re after.',
-                p: '“30 IB analysts at Goldman, JPM, and Morgan Stanley.” Or a specific company. Or the kind of person you want to meet. Plain English.',
-              },
-              {
-                n: '02',
-                h: 'Hit Run.',
-                p: 'Your Loop goes to work in the background. Close the tab. Go to class.',
-              },
-              {
-                n: '03',
-                h: 'It finds everything.',
-                p: 'Companies, open roles, hiring managers, the right people, verified emails. Anything that matters.',
-              },
-              {
-                n: '04',
-                h: 'You get a text.',
-                p: 'Full report on your phone. One tap to send the emails. That’s the end of the Loop.',
-              },
-            ].map((step) => (
-              <div
-                key={step.n}
-                className="reveal"
-                style={{
-                  padding: '28px 24px',
-                  borderRadius: 14,
-                  background: 'rgba(255, 255, 255, 0.035)',
-                  border: '1px solid rgba(96, 165, 250, 0.18)',
-                  backdropFilter: 'blur(8px)',
-                  WebkitBackdropFilter: 'blur(8px)',
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: "'Libre Baskerville', Georgia, serif",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: '0.08em',
-                    color: '#60A5FA',
-                    marginBottom: 14,
-                  }}
-                >
-                  {step.n}
-                </div>
-                <h3
-                  style={{
-                    fontFamily: "'Libre Baskerville', Georgia, serif",
-                    fontSize: 22,
-                    fontWeight: 400,
-                    lineHeight: 1.2,
-                    color: '#FFFFFF',
-                    margin: '0 0 12px',
-                    letterSpacing: '-0.01em',
-                  }}
-                >
-                  {step.h}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 15,
-                    lineHeight: 1.6,
-                    color: '#94A8C2',
-                    margin: 0,
-                  }}
-                >
-                  {step.p}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* Video placeholder */}
-          <div
-            className="reveal"
-            style={{
-              position: 'relative',
-              maxWidth: 820,
-              margin: '0 auto 64px',
-              borderRadius: 14,
-              overflow: 'hidden',
-              border: '1px solid rgba(96, 165, 250, 0.22)',
-              background:
-                'linear-gradient(180deg, rgba(96,165,250,0.06), rgba(96,165,250,0.02))',
-              aspectRatio: '16 / 9',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow:
-                '0 1px 2px rgba(0,0,0,0.2), 0 30px 60px rgba(0,0,0,0.35)',
-            }}
-          >
-            {/* TODO: replace with <video> when the demo is ready */}
-            <div style={{ textAlign: 'center' }}>
-              <div
-                aria-hidden
-                style={{
-                  width: 64,
-                  height: 64,
-                  borderRadius: '50%',
-                  background: 'rgba(37, 99, 235, 0.85)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  margin: '0 auto 16px',
-                  boxShadow: '0 10px 40px rgba(37, 99, 235, 0.4)',
-                }}
-              >
-                <div
-                  style={{
-                    width: 0,
-                    height: 0,
-                    borderLeft: '14px solid #fff',
-                    borderTop: '9px solid transparent',
-                    borderBottom: '9px solid transparent',
-                    marginLeft: 4,
-                  }}
-                />
-              </div>
-              <p
-                style={{
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: 13,
-                  color: '#94A8C2',
-                  margin: 0,
-                  letterSpacing: '0.04em',
-                }}
-              >
-                Demo video - coming soon
-              </p>
+          <div className="idx-mask-edges reveal" style={{ overflow: 'hidden', marginBottom: 88 }}>
+            <div className="idx-logo-track">
+              {[...UNIVERSITY_LOGOS, ...UNIVERSITY_LOGOS, ...UNIVERSITY_LOGOS].map(
+                (logo, i) => (
+                  <img
+                    key={`${logo.alt}-${i}`}
+                    src={logo.src}
+                    alt={logo.alt}
+                    style={{
+                      height: logo.h,
+                      width: 'auto',
+                      objectFit: 'contain',
+                      flexShrink: 0,
+                    }}
+                  />
+                ),
+              )}
             </div>
           </div>
 
-          {/* Demystifying line - single Agent mention on the page */}
-          <p
-            className="reveal"
-            style={{
-              fontFamily: "'Libre Baskerville', Georgia, serif",
-              fontSize: 16,
-              lineHeight: 1.6,
-              color: '#94A8C2',
-              textAlign: 'center',
-              margin: '0 auto 40px',
-              maxWidth: 560,
-              fontStyle: 'italic',
-            }}
-          >
-            Some people call it an agent. We call it a Loop. Either way, it&apos;s working while you do anything else.
-          </p>
-
-          {/* CTA */}
-          <div className="reveal" style={{ textAlign: 'center' }}>
-            <button
-              onClick={() => navigate('/signin?mode=signup')}
-              style={{
-                background: '#2563EB',
-                color: '#fff',
-                fontFamily: "'Libre Baskerville', Georgia, serif",
-                fontSize: 15,
-                fontWeight: 600,
-                padding: '14px 32px',
-                borderRadius: 3,
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background 0.15s ease',
-              }}
-              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1D4ED8'; }}
-              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#2563EB'; }}
-            >
-              Start your first Loop
-            </button>
+          {/* Two big personable cards */}
+          <div className="reveal idx-bigtest-grid">
+            {BIG_TESTIMONIALS.map((p) => (
+              <article key={p.name} className="idx-bigtest-card">
+                <img
+                  src={p.photo}
+                  alt={p.name}
+                  className="idx-bigtest-photo"
+                />
+                <div
+                  style={{
+                    padding: '32px 32px 28px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: 24,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: 17,
+                      lineHeight: 1.65,
+                      color: '#E2EAF7',
+                      margin: 0,
+                      flex: 1,
+                    }}
+                  >
+                    “{p.quote}”
+                  </p>
+                  <div>
+                    <p
+                      style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 15,
+                        fontWeight: 700,
+                        color: '#FFFFFF',
+                        margin: 0,
+                        letterSpacing: '-0.005em',
+                      }}
+                    >
+                      {p.name}
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 12.5,
+                        color: '#93C5FD',
+                        margin: '3px 0 0',
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      {p.role}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════ CHAPTER III: FEATURES ═══════════════ */}
+      {/* ═══════════════ CHAPTER III: HOW IT WORKS (interactive) ═══════════════ */}
       <style>{`
-        .feature-card {
-          transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        .idx-step-btn {
+          all: unset;
+          width: 100%;
+          display: flex;
+          gap: 16px;
+          align-items: flex-start;
+          padding: 18px 0;
+          border-bottom: 2px solid rgba(15, 37, 69, 0.10);
+          cursor: pointer;
+          opacity: 0.42;
+          transition: opacity 0.2s ease, transform 0.2s ease;
         }
-        .feature-card:hover {
-          transform: translateY(-4px);
-          box-shadow:
-            0 1px 2px rgba(15, 37, 69, 0.04),
-            0 14px 36px rgba(37, 99, 235, 0.12),
-            0 28px 64px rgba(15, 23, 42, 0.12);
+        .idx-step-btn:hover { opacity: 0.7; transform: translateX(2px); }
+        .idx-step-btn.is-active { opacity: 1; transform: translateX(0); }
+        .idx-step-btn:focus-visible { outline: 2px solid #2563EB; outline-offset: 4px; border-radius: 6px; }
+        @media (max-width: 880px) {
+          .idx-steps-grid {
+            grid-template-columns: 1fr !important;
+            gap: 32px !important;
+          }
         }
       `}</style>
       <section
@@ -839,6 +822,20 @@ const Index = () => {
         />
 
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 760, margin: '0 auto', textAlign: 'center' }}>
+          <p
+            className="reveal"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 14,
+              fontWeight: 700,
+              letterSpacing: '0.18em',
+              color: '#2563EB',
+              textTransform: 'uppercase',
+              margin: '0 0 16px',
+            }}
+          >
+            How it works
+          </p>
           <h2 className="reveal" style={{ fontFamily: "'Libre Baskerville', Georgia, serif", fontSize: 'clamp(32px, 5vw, 52px)', fontWeight: 400, lineHeight: 1.1, letterSpacing: '-.025em', color: '#0f2545', marginBottom: 0 }}>
             Outreach, end to end.
           </h2>
@@ -846,103 +843,444 @@ const Index = () => {
         </div>
 
         <div
+          className="reveal idx-steps-grid"
           style={{
-            maxWidth: 1040,
-            margin: '64px auto 0',
+            maxWidth: 1180,
+            margin: '56px auto 0',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))',
-            gap: 24,
+            gridTemplateColumns: 'minmax(280px, 340px) minmax(0, 1fr)',
+            gap: 64,
+            alignItems: 'start',
             position: 'relative',
             zIndex: 1,
           }}
         >
-          {[
-            {
-              title: "Search anyone, sorted by who's most likely to reply.",
-              description: 'Type a role, a company, or a school. We surface people who share your school, major, hometown, career path, etc. The ones with a reason to write back.',
-              image: FindHiringManagerImg,
-            },
-            {
-              title: 'Personalized emails, drafted into your Gmail.',
-              description: "We write the message using your commonalities. Drafts land in your real Gmail. Your account, your voice. Won't go to spam.",
-              image: EmailOutreachImg,
-            },
-            {
-              title: 'The moment someone replies, we take it from there.',
-              description: 'The tracker updates. A follow-up draft appears. Prep is ready before you need it.',
-              image: FindCompanyImg,
-            },
-            {
-              title: 'When the meeting gets booked, the prep is already done.',
-              description: 'Research, talking points, and questions worth asking. Generated the moment they say yes.',
-              image: MeetingImg,
-            },
-          ].map((feature) => (
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              paddingLeft: 8,
+              borderLeft: '2px solid rgba(15, 37, 69, 0.10)',
+            }}
+          >
+            {ANYONE_STEPS.map((step) => {
+              const isActive = step.key === anyoneStep;
+              return (
+                <button
+                  key={step.key}
+                  type="button"
+                  className={`idx-step-btn ${isActive ? 'is-active' : ''}`}
+                  onClick={() => setAnyoneStep(step.key)}
+                  onMouseEnter={() => setAnyoneStep(step.key)}
+                  aria-pressed={isActive}
+                >
+                  <div
+                    style={{
+                      width: 50,
+                      height: 50,
+                      borderRadius: 10,
+                      background: isActive ? '#DBEAFE' : '#F1F5F9',
+                      border: `1px solid ${isActive ? '#93C5FD' : 'rgba(15, 37, 69, 0.10)'}`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      transition: 'background 0.2s ease, border-color 0.2s ease',
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontFamily: "'Libre Baskerville', Georgia, serif",
+                        fontSize: 26,
+                        color: '#0f2545',
+                      }}
+                    >
+                      {step.n}
+                    </span>
+                  </div>
+                  <div style={{ flex: 1, textAlign: 'left' }}>
+                    <p
+                      style={{
+                        fontFamily: "'Inter', sans-serif",
+                        fontSize: 14,
+                        fontWeight: isActive ? 700 : 600,
+                        letterSpacing: '0.14em',
+                        color: '#2563EB',
+                        margin: '0 0 6px',
+                      }}
+                    >
+                      {step.label}
+                    </p>
+                    <p
+                      style={{
+                        fontFamily: "'Libre Baskerville', Georgia, serif",
+                        fontSize: 16,
+                        lineHeight: 1.35,
+                        color: '#0f2545',
+                        margin: 0,
+                      }}
+                    >
+                      {step.title}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div>
             <div
-              key={feature.title}
-              className="reveal feature-card"
+              key={currentAnyoneStep.key}
               style={{
-                background: '#ffffff',
+                borderRadius: 16,
+                overflow: 'hidden',
                 border: '1px solid rgba(15, 37, 69, 0.08)',
-                borderRadius: 20,
-                padding: 28,
-                display: 'flex',
-                flexDirection: 'column',
                 boxShadow:
-                  '0 1px 2px rgba(15, 37, 69, 0.03), 0 8px 28px rgba(15, 37, 69, 0.06)',
+                  '0 1px 2px rgba(15, 37, 69, 0.03), 0 20px 36px rgba(15, 37, 69, 0.10)',
+                marginBottom: 28,
+                background: '#ffffff',
               }}
             >
-              <h3
+              <img
+                src={currentAnyoneStep.image}
+                alt={currentAnyoneStep.title}
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+              />
+            </div>
+            <p
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 14,
+                fontWeight: 700,
+                letterSpacing: '0.18em',
+                color: '#2563EB',
+                margin: '0 0 14px',
+              }}
+            >
+              {currentAnyoneStep.eyebrow}
+            </p>
+            <p
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 18,
+                lineHeight: 1.6,
+                color: '#475569',
+                margin: 0,
+                maxWidth: 720,
+              }}
+            >
+              {currentAnyoneStep.description}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ START A LOOP ═══════════════ */}
+      <section
+        id="loops"
+        style={{
+          background: 'linear-gradient(180deg, #0B1F3D 0%, #0f2545 100%)',
+          borderTop: '1px solid #EEF2F8',
+          padding: '72px 32px 80px',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* Ambient blue glow */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            top: '-20%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '80%',
+            height: '70%',
+            background:
+              'radial-gradient(ellipse, rgba(37, 99, 235, 0.28), transparent 65%)',
+            filter: 'blur(80px)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+        {/* Faint dot grid for texture */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage:
+              'radial-gradient(rgba(96, 165, 250, 0.08) 1px, transparent 1px)',
+            backgroundSize: '28px 28px',
+            maskImage:
+              'radial-gradient(ellipse 70% 60% at center, black 5%, transparent 90%)',
+            WebkitMaskImage:
+              'radial-gradient(ellipse 70% 60% at center, black 5%, transparent 90%)',
+            pointerEvents: 'none',
+            zIndex: 0,
+          }}
+        />
+
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 1000, margin: '0 auto' }}>
+          {/* Eyebrow */}
+          <div className="reveal" style={{ textAlign: 'center', marginBottom: 12 }}>
+            <span
+              style={{
+                fontFamily: "'Inter', sans-serif",
+                fontSize: 12,
+                fontWeight: 600,
+                letterSpacing: '0.18em',
+                color: '#60A5FA',
+                textTransform: 'uppercase',
+              }}
+            >
+              New · outreach agent · works for you 24/7
+            </span>
+          </div>
+
+          {/* Headline */}
+          <h2
+            className="reveal"
+            style={{
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 'clamp(32px, 4.6vw, 48px)',
+              fontWeight: 400,
+              lineHeight: 1.08,
+              letterSpacing: '-.025em',
+              color: '#FFFFFF',
+              textAlign: 'center',
+              margin: '0 auto 12px',
+              maxWidth: 820,
+            }}
+          >
+            Start a Loop.
+          </h2>
+          <div
+            style={{
+              height: 1.5,
+              background:
+                'linear-gradient(90deg, transparent, #60A5FA, #93C5FD, transparent)',
+              maxWidth: 200,
+              margin: '0 auto 18px',
+            }}
+          />
+
+          {/* Subhead */}
+          <p
+            className="reveal"
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 17,
+              lineHeight: 1.55,
+              color: '#C7D5E8',
+              textAlign: 'center',
+              margin: '0 auto 48px',
+              maxWidth: 620,
+            }}
+          >
+            Tell it what you want. Walk away. Get a text when the work&apos;s done.
+          </p>
+
+          {/* 4-step flow — arrows between cards make the progression
+              explicit. Arrows hide on narrower viewports where cards
+              wrap onto multiple rows. */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'stretch',
+              gap: 10,
+              marginBottom: 48,
+            }}
+          >
+            {[
+              {
+                n: '01',
+                h: 'Tell it what you’re after.',
+                p: '“30 IB analysts at Goldman, JPM, and Morgan Stanley.” Or a specific company. Or the kind of person you want to meet. Plain English.',
+              },
+              {
+                n: '02',
+                h: 'Hit Run.',
+                p: 'Your Loop goes to work in the background. Close the tab. Go to class.',
+              },
+              {
+                n: '03',
+                h: 'It finds everything.',
+                p: 'Companies, open roles, hiring managers, the right people, verified emails. Anything that matters.',
+              },
+              {
+                n: '04',
+                h: 'You get a text.',
+                p: 'Full report on your phone. One tap to send the emails. That’s the end of the Loop.',
+              },
+            ].map((step, i, all) => (
+              <Fragment key={step.n}>
+                <div
+                  className="reveal"
+                  style={{
+                    flex: '1 1 200px',
+                    padding: '20px 18px',
+                    borderRadius: 12,
+                    background: 'rgba(255, 255, 255, 0.035)',
+                    border: '1px solid rgba(96, 165, 250, 0.18)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: "'Libre Baskerville', Georgia, serif",
+                      fontSize: 12,
+                      fontWeight: 700,
+                      letterSpacing: '0.08em',
+                      color: '#60A5FA',
+                      marginBottom: 8,
+                    }}
+                  >
+                    {step.n}
+                  </div>
+                  <h3
+                    style={{
+                      fontFamily: "'Libre Baskerville', Georgia, serif",
+                      fontSize: 18,
+                      fontWeight: 400,
+                      lineHeight: 1.2,
+                      color: '#FFFFFF',
+                      margin: '0 0 8px',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {step.h}
+                  </h3>
+                  <p
+                    style={{
+                      fontFamily: "'Inter', sans-serif",
+                      fontSize: 14,
+                      lineHeight: 1.55,
+                      color: '#94A8C2',
+                      margin: 0,
+                    }}
+                  >
+                    {step.p}
+                  </p>
+                </div>
+                {i < all.length - 1 && (
+                  <div
+                    aria-hidden
+                    className="hidden lg:flex"
+                    style={{
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: '#60A5FA',
+                      flex: '0 0 auto',
+                      padding: '0 2px',
+                    }}
+                  >
+                    <ArrowRight size={20} strokeWidth={2.3} />
+                  </div>
+                )}
+              </Fragment>
+            ))}
+          </div>
+
+          {/* Demo placeholder — shorter than 16:9, honest "Coming soon"
+              treatment (no fake play button). Swap in an <img> or <video>
+              when the real demo asset is ready. */}
+          <div
+            className="reveal"
+            style={{
+              position: 'relative',
+              maxWidth: 720,
+              margin: '0 auto 28px',
+              borderRadius: 12,
+              overflow: 'hidden',
+              border: '1px dashed rgba(96, 165, 250, 0.28)',
+              background:
+                'linear-gradient(180deg, rgba(96,165,250,0.06), rgba(96,165,250,0.02))',
+              aspectRatio: '16 / 7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow:
+                '0 1px 2px rgba(0,0,0,0.18), 0 18px 36px rgba(0,0,0,0.22)',
+            }}
+          >
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '7px 14px',
+                background: 'rgba(96, 165, 250, 0.10)',
+                border: '1px solid rgba(96, 165, 250, 0.30)',
+                borderRadius: 100,
+              }}
+            >
+              <span
+                aria-hidden
                 style={{
-                  fontFamily: "'Libre Baskerville', Georgia, serif",
-                  fontSize: 22,
-                  fontWeight: 400,
-                  lineHeight: 1.25,
-                  letterSpacing: '-0.012em',
-                  color: '#0f2545',
-                  margin: '0 0 12px',
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#60A5FA',
+                  boxShadow: '0 0 8px rgba(96, 165, 250, 0.7)',
                 }}
-              >
-                {feature.title}
-              </h3>
-              <p
+              />
+              <span
                 style={{
                   fontFamily: "'Inter', sans-serif",
-                  fontSize: 15,
-                  lineHeight: 1.6,
-                  color: '#475569',
-                  margin: 0,
-                  flex: 1,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  letterSpacing: '0.16em',
+                  color: '#C7D5E8',
+                  textTransform: 'uppercase',
                 }}
               >
-                {feature.description}
-              </p>
-
-              {/* Inset media preview - swap to <video> when ready */}
-              <div
-                style={{
-                  marginTop: 24,
-                  aspectRatio: '16 / 10',
-                  borderRadius: 12,
-                  border: '1px solid rgba(15, 37, 69, 0.08)',
-                  overflow: 'hidden',
-                  background: '#F4F7FB',
-                }}
-              >
-                <img
-                  src={feature.image}
-                  alt={feature.title}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    objectPosition: 'top center',
-                    display: 'block',
-                  }}
-                />
-              </div>
+                Coming soon
+              </span>
             </div>
-          ))}
+          </div>
+
+          {/* Demystifying line - single Agent mention on the page */}
+          <p
+            className="reveal"
+            style={{
+              fontFamily: "'Libre Baskerville', Georgia, serif",
+              fontSize: 14,
+              lineHeight: 1.55,
+              color: '#94A8C2',
+              textAlign: 'center',
+              margin: '0 auto 24px',
+              maxWidth: 540,
+              fontStyle: 'italic',
+            }}
+          >
+            Some people call it an agent. We call it a Loop. Either way, it&apos;s working while you do anything else.
+          </p>
+
+          {/* CTA */}
+          <div className="reveal" style={{ textAlign: 'center' }}>
+            <button
+              onClick={() => navigate('/signin?mode=signup')}
+              style={{
+                background: '#2563EB',
+                color: '#fff',
+                fontFamily: "'Libre Baskerville', Georgia, serif",
+                fontSize: 15,
+                fontWeight: 600,
+                padding: '14px 32px',
+                borderRadius: 3,
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background 0.15s ease',
+              }}
+              onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#1D4ED8'; }}
+              onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#2563EB'; }}
+            >
+              Start your first Loop
+            </button>
+          </div>
         </div>
       </section>
 
@@ -950,6 +1288,9 @@ const Index = () => {
       <section id="comparison" style={{ borderTop: '1px solid #EEF2F8', background: '#ffffff' }}>
         <TimeComparison />
       </section>
+
+      {/* Bulletin wall transitions from two faces into wider volume of social proof */}
+      <BulletinBoard />
 
       {/* ═══════════════ TRUST BAND ═══════════════ */}
       <section style={{ background: '#ffffff', padding: '88px 32px', borderTop: '1px solid #EEF2F8', textAlign: 'center' }}>
@@ -1033,7 +1374,7 @@ const Index = () => {
               },
               {
                 q: "What's free vs paid?",
-                a: 'Free gives you 5 contacts per search and 300 credits a month. Pro and Elite raise the limits and unlock advanced search, resume tools, and prep. Full details on the pricing page.',
+                a: 'Free gives you 3 contacts per search and 300 credits a month. Pro and Elite raise the limits and unlock advanced search, resume tools, and prep. Full details on the pricing page.',
               },
               {
                 q: 'How is this different from LinkedIn, Apollo, or coaching?',

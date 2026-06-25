@@ -12,6 +12,11 @@ logger = logging.getLogger(__name__)
 VALID_EVENT_TYPES = {
     "email_generated",
     "email_actually_sent",
+    "email_bounced",
+    "hunter_rate_limited",
+    "pdl_topup_triggered",
+    "pdl_topup_records_fetched",
+    "pdl_budget_cap_hit",
     "reply_received",
     "search_performed",
     "briefing_viewed",

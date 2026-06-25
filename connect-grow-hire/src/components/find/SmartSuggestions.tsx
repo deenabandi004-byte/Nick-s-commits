@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { apiService, type SearchSuggestion } from "@/services/api";
 
 interface SmartSuggestionsProps {
@@ -35,7 +35,6 @@ export function SmartSuggestions({ onSelect, disabled, hidden }: SmartSuggestion
         textTransform: "uppercase" as const,
         letterSpacing: "0.04em",
       }}>
-        <Sparkles style={{ width: 12, height: 12, color: "#F59E0B" }} />
         Suggested for you
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>

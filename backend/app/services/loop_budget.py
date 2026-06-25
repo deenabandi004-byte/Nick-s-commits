@@ -32,6 +32,35 @@ CREDIT_COSTS = {
     "company": 1,          # execute_discover_companies (per saved company)  (was 2)
 }
 
+# Bundled per-person cost shown in the Loop wizard. Reflects the typical
+# cycle mix calibrated against estimate_cycle_cost() — contact (9) plus
+# the amortized share of HM (13), job (1×~5), and company (1×~3) lookups
+# that fire per cycle. Used by loop_service.create_loop() to derive
+# creditBudgetPerWeek from the user's weeklyTarget so the wizard can be
+# output-first ("how many people / week") instead of asking the user to
+# pick credits directly.
+# Mirrored in connect-grow-hire/src/components/agent/AgentSetupInline.tsx —
+# keep in sync.
+BUNDLED_COST_PER_PERSON = {
+    "people": 12,  # 9 contact + ~3 amortized HM/job/company per outreach
+    "roles":  6,   # job-driven; fewer per-person contact spends
+    "both":   10,  # half-and-half blend
+}
+
+# Safety buffer applied to the derived weekly budget so cycle-to-cycle
+# variance (an extra HM, a few more jobs) doesn't trip budget_capped on a
+# user who picked the recommended setting.
+BUNDLED_BUDGET_BUFFER = 1.15
+
+# Phase 9 — per-send overhead when a Loop is in autoSendMode="send_for_me".
+# Covers the Hunter email verification call (~$0.005). The Gmail send itself
+# is free. Charged in agent_actions._try_auto_send only on successful send;
+# Hunter overhead on rejected sends is absorbed.
+# loop_service.create_loop adds weeklyTarget × this × BUNDLED_BUDGET_BUFFER
+# to the derived creditBudgetPerWeek when the Loop is send_for_me. Surface
+# in the wizard as "+1 credit per send".
+AUTO_SEND_CREDIT_COST = 1
+
 # Hours per cycle by cadence. None = manual, never auto-fires.
 CADENCE_HOURS = {
     "daily": 24,
@@ -46,6 +75,7 @@ PauseReason = Literal[
     "inactivity",       # user hasn't reviewed drafts in N days
     "quiet_hours",      # outside 8am-10pm in user timezone
     "paused",           # explicitly paused by user
+    "rate_limited",     # 3+ consecutive cycles hit upstream rate limits
 ]
 
 # Phase 8 — quiet-hours window (user-local).
@@ -59,35 +89,69 @@ INACTIVITY_DAYS = 5
 # a small buffer. Mirrors MIN_CREDIT_BALANCE in agent_service.py.
 MIN_RESERVE = 25
 
+# After this many consecutive rate-limited cycles, pause the Loop so we stop
+# burning planner calls + Firestore writes against an upstream that's saying
+# "back off." User can resume manually once the upstream recovers.
+RATE_LIMIT_STRIKE_THRESHOLD = 3
+
 
 # ── Estimation ─────────────────────────────────────────────────────────────
 
 
-def estimate_cycle_cost(brief_parsed: dict | None, cadence: str = "every_other_day") -> dict:
+def estimate_cycle_cost(
+    brief_parsed: dict | None,
+    cadence: str = "every_other_day",
+    loop_mode: str = "people",
+) -> dict:
     """Estimate credits per cycle based on what the planner will likely
     produce for this brief. Used by the Loop creation hero so users see
     expected cost before they hit Start.
 
-    The numbers below are heuristics from the legacy agent's behavior:
-    typical cycle yields 2-3 contacts, 1 HM, 4-5 jobs, 3 companies.
+    The three modes produce different cycle mixes:
+      - people: 2-3 contacts (primary), 1 HM, 4-5 jobs, 3 companies
+      - roles:  10 jobs (primary), 3 small-company HM drafts, 10 companies,
+                no PDL bulk contact search
+      - both:   networking + job-search running together against one budget.
+                Half-and-half allocation: 2 contacts + 2 HMs (mixed founder /
+                people style) + 5 jobs + 5 companies. Cost lands between
+                pure people and pure roles by design.
     """
     bp = brief_parsed or {}
     target_count = bp.get("targetCount") or 3
     has_companies = bool(bp.get("companies"))
     has_roles = bool(bp.get("roles"))
 
-    # Per cycle the planner usually emits ~1 find action against the top
-    # company. If multiple companies are listed, it may rotate through them
-    # across cycles but typically picks 1 per cycle.
-    contacts = min(target_count, 3)  # planner caps at 3 per find action
+    if loop_mode == "roles":
+        # The roles cycle is dominated by job discovery. The plan's worked
+        # example: 10 companies + 10 jobs + 3 founder drafts ≈ 59 cred.
+        contacts = 0  # PDL bulk contact search is not emitted in roles mode
+        companies = 10 if (has_companies or has_roles) else 5
+        jobs = 10 if (has_roles or has_companies) else 0
+        hms = 3 if (has_companies or has_roles) else 0
+    elif loop_mode == "both":
+        # Half-and-half allocation: networking pipeline contributes contacts
+        # + a people-style HM; roles pipeline contributes jobs + a founder-
+        # style HM; discovery is shared. Each side runs at ~half its pure-
+        # mode rate so the cycle stays affordable and neither pipeline
+        # starves the other (planner Rule 1 for both mode).
+        contacts = min(target_count, 2)  # 2 networking contacts per cycle
+        hms = 2 if (has_companies or has_roles) else 0  # 1 founder-style + 1 people-style
+        jobs = 5 if (has_roles or has_companies) else 0  # half of pure roles
+        companies = 5 if has_companies else 5  # shared discovery feeding both pipelines
+    else:
+        # People mode preserves today's heuristics.
+        # Per cycle the planner usually emits ~1 find action against the top
+        # company. If multiple companies are listed, it may rotate through them
+        # across cycles but typically picks 1 per cycle.
+        contacts = min(target_count, 3)  # planner caps at 3 per find action
 
-    # HM action fires for ~70% of cycles when target_count >= 3
-    hms = 1 if contacts >= 3 else 0
+        # HM action fires for ~70% of cycles when target_count >= 3
+        hms = 1 if contacts >= 3 else 0
 
-    # Job and company discovery fire whenever flags are on (default true).
-    # Yield ~5 jobs and ~3 companies per cycle.
-    jobs = 5 if (has_roles or has_companies) else 0
-    companies = 3 if has_companies else 4  # discover more if no targets named
+        # Job and company discovery fire whenever flags are on (default true).
+        # Yield ~5 jobs and ~3 companies per cycle.
+        jobs = 5 if (has_roles or has_companies) else 0
+        companies = 3 if has_companies else 4  # discover more if no targets named
 
     per_cycle = (
         contacts * CREDIT_COSTS["contact"]
@@ -176,6 +240,15 @@ def can_run_now(
     spent = int(loop.get("weekCreditsSpent", 0) or 0)
     if spent >= budget:
         return False, "budget_capped"
+
+    # 4b. Upstream rate-limit strike. After threshold the Loop should stop
+    # trying — loop_jobs flips status to "paused" when it bumps past the
+    # threshold, but we also gate here so a Loop manually flipped back to
+    # "running" while the upstream is still saying "back off" doesn't
+    # immediately re-fire and re-strike.
+    strikes = int(loop.get("consecutiveRateLimitCycles", 0) or 0)
+    if strikes >= RATE_LIMIT_STRIKE_THRESHOLD:
+        return False, "rate_limited"
 
     # 5. Inactivity — only pause if there's pending work the user is ignoring
     last_reviewed = loop.get("lastReviewedAt")

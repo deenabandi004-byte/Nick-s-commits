@@ -6,7 +6,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { X, Plus, Sparkles } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { companies } from "@/data/companies";
 import { EXTRA_DREAM_COMPANIES } from "@/data/dreamCompanies";
@@ -317,7 +317,6 @@ export const DreamCompanyAutocomplete = forwardRef<
               marginBottom: 6,
             }}
           >
-            <Sparkles size={11} />
             Common picks for {careerTrack.toLowerCase()}
           </div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>

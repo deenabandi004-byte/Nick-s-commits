@@ -1,93 +1,170 @@
 // NewLoopTile — the dashed "+ Start another Loop" card at the end of the grid.
 //
-// Two states:
-//   - canCreate=true  → primary CTA opens the inline brief composer
-//   - canCreate=false → muted state pushing the upgrade flow
+// Editorial revision: stripped the two lightning-bolt quickstart chips
+// (Sid: "dead AI giveaway"). The tile is now just a clean plus circle,
+// a serif title with italic slate-blue accent, and a one-line tagline.
+// At-cap state still routes to /pricing with the same affordance.
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { Plus, Lock, ArrowUpRight } from "lucide-react";
 import { LOOP_COPY } from "@/lib/loopCopy";
 import type { LoopLimits } from "@/services/loops";
+
+const SETUP_ROUTE = "/agent/setup";
+const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
 
 export function NewLoopTile({
   limits,
   onCreate,
 }: {
   limits: LoopLimits;
-  onCreate: () => void;
+  onCreate?: () => void;
 }) {
   const canCreate = limits.canCreate;
+  const navigate = useNavigate();
+  const [hov, setHov] = useState(false);
 
-  if (canCreate) {
+  if (!canCreate) {
     return (
-      <button
-        onClick={onCreate}
-        className="group flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed p-5 transition-colors hover:bg-[var(--paper-2)]"
+      <div
+        className="relative flex flex-col items-center justify-center text-center"
         style={{
-          borderColor: "var(--line)",
+          borderRadius: 20,
+          border: "1.5px dashed var(--line)",
+          background: "var(--paper-2)",
           color: "var(--ink-3)",
+          padding: 26,
           minHeight: 200,
+          gap: 14,
         }}
       >
         <span
-          className="inline-flex items-center justify-center rounded-full w-10 h-10 transition-colors group-hover:bg-white"
+          className="inline-flex items-center justify-center rounded-full"
           style={{
-            background: "var(--paper-2)",
-            color: "var(--ink-2)",
+            width: 52,
+            height: 52,
+            background: "#fff",
+            color: "var(--ink-3)",
+            border: "1px solid var(--line)",
           }}
         >
-          <Plus className="h-5 w-5" />
+          <Lock className="h-4 w-4" />
         </span>
-        <div className="text-center">
-          <div
-            className="text-[14px] font-semibold tracking-[-0.01em]"
-            style={{ color: "var(--ink)" }}
+        <div>
+          <h3
+            className="font-serif"
+            style={{
+              margin: 0,
+              fontWeight: 500,
+              fontSize: 23,
+              lineHeight: 1.15,
+              letterSpacing: "-0.015em",
+              color: "var(--heading)",
+            }}
           >
-            {LOOP_COPY.newTile.titleAvailable}
-          </div>
-          <div className="text-[12.5px] mt-1">
-            {LOOP_COPY.newTile.bodyAvailable}
-          </div>
+            {LOOP_COPY.newTile.titleAtCap}
+          </h3>
+          <p
+            style={{
+              margin: "8px 0 0",
+              fontSize: 13.5,
+              color: "var(--ink-3)",
+              lineHeight: 1.5,
+              maxWidth: 260,
+            }}
+          >
+            {LOOP_COPY.newTile.bodyAtCap(limits.cap)}
+          </p>
         </div>
-      </button>
+        <Link
+          to="/pricing"
+          className="inline-flex items-center gap-1 rounded-md border bg-white px-3 py-1.5"
+          style={{
+            fontSize: 12.5,
+            fontWeight: 600,
+            borderColor: "var(--line)",
+            color: "var(--ink)",
+          }}
+        >
+          {LOOP_COPY.newTile.upgradeCta}
+          <ArrowUpRight className="h-3.5 w-3.5" />
+        </Link>
+      </div>
     );
   }
 
+  const handlePrimary = () => {
+    onCreate?.();
+    navigate(SETUP_ROUTE);
+  };
+
   return (
-    <div
-      className="relative flex flex-col items-center justify-center gap-3 rounded-2xl border p-5"
+    <button
+      onClick={handlePrimary}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      className="flex flex-col items-center justify-center text-center w-full"
       style={{
-        borderColor: "var(--line)",
-        background: "var(--paper-2)",
-        color: "var(--ink-3)",
+        borderRadius: 20,
+        border: "1.5px dashed " + (hov ? "var(--primary-200)" : "var(--line)"),
+        // Solid white so the card stays legible over the mountain backdrop.
+        // Hover lifts to the soft primary tint.
+        background: hov ? "var(--primary-50)" : "#ffffff",
+        boxShadow: hov
+          ? "0 6px 24px rgba(74,96,168,0.16)"
+          : "0 1px 2px rgba(15,37,69,0.05), 0 6px 16px rgba(15,37,69,0.06)",
+        padding: 26,
         minHeight: 200,
+        cursor: "pointer",
+        transition: `background .25s ${EASE}, border-color .25s, box-shadow .25s`,
       }}
     >
       <span
-        className="inline-flex items-center justify-center rounded-full w-10 h-10"
-        style={{ background: "white", color: "var(--ink-3)" }}
+        className="inline-flex items-center justify-center rounded-full"
+        style={{
+          width: 52,
+          height: 52,
+          background: "#fff",
+          border: "1px solid var(--primary-200)",
+          color: "var(--accent)",
+          boxShadow: "var(--shadow-sm)",
+          transform: hov ? "scale(1.06)" : "none",
+          transition: `transform .25s ${EASE}`,
+        }}
       >
-        <Lock className="h-4 w-4" />
+        <Plus className="h-[22px] w-[22px]" strokeWidth={1.7} />
       </span>
-      <div className="text-center px-2">
-        <div
-          className="text-[14px] font-semibold tracking-[-0.01em]"
-          style={{ color: "var(--ink)" }}
-        >
-          {LOOP_COPY.newTile.titleAtCap}
-        </div>
-        <div className="text-[12.5px] mt-1 leading-snug">
-          {LOOP_COPY.newTile.bodyAtCap(limits.cap)}
-        </div>
-      </div>
-      <Link
-        to="/pricing"
-        className="inline-flex items-center gap-1 mt-1 rounded-md border bg-white px-3 py-1.5 text-[12px] font-medium transition-colors hover:bg-[var(--paper-2)]"
-        style={{ borderColor: "var(--line)", color: "var(--ink)" }}
+      <h3
+        className="font-serif"
+        style={{
+          margin: "18px 0 0",
+          fontWeight: 500,
+          fontSize: 23,
+          lineHeight: 1.15,
+          letterSpacing: "-0.015em",
+          color: "var(--heading)",
+        }}
       >
-        {LOOP_COPY.newTile.upgradeCta}
-        <ArrowUpRight className="h-3.5 w-3.5" />
-      </Link>
-    </div>
+        Start another{" "}
+        <em
+          className="italic"
+          style={{ color: "var(--accent)", fontWeight: 500 }}
+        >
+          Loop.
+        </em>
+      </h3>
+      <p
+        style={{
+          margin: "8px 0 0",
+          fontSize: 13.5,
+          color: "var(--ink-3)",
+          lineHeight: 1.5,
+          maxWidth: 260,
+        }}
+      >
+        Tell it who to chase — takes about a minute.
+      </p>
+    </button>
   );
 }

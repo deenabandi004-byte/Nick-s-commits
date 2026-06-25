@@ -21,6 +21,7 @@ from app.services.resume_parser import extract_text_from_pdf_bytes
 from app.utils.url_validator import validate_fetch_url, UnsafeURLError
 from app.utils.seniority import classify_seniority
 from app.utils.warmth_scoring import score_contacts_for_email
+from app.utils.users import get_outreach_email
 from ..extensions import get_db
 from email_templates import get_template_instructions
 
@@ -173,6 +174,12 @@ def generate_and_draft():
     # Load email template: prefer request body override, fall back to Firestore stored default
     user_doc = db.collection("users").document(uid).get()
     user_data = user_doc.to_dict() or {}
+    # Prefer the user's .edu for the outreach identity (signature + mailto). This
+    # flows into both this endpoint's signature builder and the LLM body via
+    # batch_generate_emails(user_profile). Falls back to the primary email.
+    _outreach_email = get_outreach_email(user_data)
+    if _outreach_email:
+        user_profile = {**(user_profile or {}), "email": _outreach_email}
     request_template = payload.get("emailTemplate") or {}
     stored_template = user_data.get("emailTemplate") or {}
     # Use request template if it has any meaningful values, otherwise use stored

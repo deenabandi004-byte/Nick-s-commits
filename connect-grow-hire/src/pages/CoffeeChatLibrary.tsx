@@ -17,6 +17,7 @@ import {
   FileText,
 } from "lucide-react";
 import { CreditPill } from "@/components/credits";
+import { CompanyLogo } from "@/components/CompanyLogo";
 import { apiService } from "@/services/api";
 import type { CoffeeChatPrep } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
@@ -118,71 +119,81 @@ const CoffeeChatLibrary: React.FC = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-[#0F172A] text-white">
+      <div className="flex min-h-screen w-full font-sans" style={{ background: 'var(--paper)', color: 'var(--ink)' }}>
         <AppSidebar />
 
         <div className="flex-1">
           <AppHeader title="Coffee Chat Library" />
 
-          <main className="p-8">
-            <div className="max-w-6xl mx-auto space-y-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-semibold text-white flex items-center gap-2">
-                    <Coffee className="h-5 w-5 text-[#3B82F6]" />
+          <main style={{ background: 'var(--paper)', padding: '24px 40px 44px' }}>
+            <div style={{ maxWidth: 800, margin: '0 auto' }}>
+
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 16 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 style={{ fontSize: 20, fontWeight: 600, color: 'var(--ink)', fontFamily: "'Instrument Serif', Georgia, serif", display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Coffee className="h-5 w-5" style={{ color: 'var(--brand-blue, #3B82F6)' }} />
                     Saved Coffee Chat Preps
                   </h2>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Review, download, or delete the one-pagers you’ve generated.
+                  <p style={{ fontSize: 13, color: 'var(--ink-3)', marginTop: 4 }}>
+                    Review, download, or delete the one-pagers you've generated.
                   </p>
                 </div>
-                <Button onClick={() => navigate("/home?tab=coffee-chat")} className="text-white hover:opacity-90" style={{ background: '#0F172A' }}>
+                <Button
+                  onClick={() => navigate('/coffee-chat-prep')}
+                  style={{ background: 'var(--brand-blue, #3B82F6)', color: '#fff', borderRadius: 3 }}
+                  className="hover:opacity-90"
+                >
                   <FileText className="h-4 w-4 mr-2" />
                   Create New Prep
                 </Button>
               </div>
 
               {loading ? (
-                <div className="flex items-center justify-center h-48 rounded-[3px] border border-[#E2E8F0] bg-[#0F172A]/80">
-                  <div className="flex items-center gap-3 text-gray-300">
-                    <Loader2 className="h-5 w-5 animate-spin text-[#3B82F6]" />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 192, borderRadius: 3, border: '1px solid var(--line)', background: 'var(--paper-2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, color: 'var(--ink-2)' }}>
+                    <Loader2 className="h-5 w-5 animate-spin" style={{ color: 'var(--brand-blue, #3B82F6)' }} />
                     Loading your library...
                   </div>
                 </div>
               ) : preps.length === 0 ? (
-                <div className="rounded-[3px] border border-[#E2E8F0] bg-[#0F172A]/80 p-10 text-center space-y-4">
-                  <Coffee className="h-10 w-10 mx-auto text-[#3B82F6]" />
-                  <h3 className="text-lg font-semibold text-white">No preps yet</h3>
-                  <p className="text-sm text-gray-400">
+                <div style={{ borderRadius: 3, border: '1px solid var(--line)', background: 'var(--paper-2)', padding: 32, textAlign: 'center' }}>
+                  <Coffee className="h-10 w-10 mx-auto" style={{ color: 'var(--brand-blue, #3B82F6)', marginBottom: 12 }} />
+                  <h3 style={{ fontSize: 16, fontWeight: 600, color: 'var(--ink)', fontFamily: "'Instrument Serif', Georgia, serif", marginBottom: 6 }}>No preps yet</h3>
+                  <p style={{ fontSize: 13, color: 'var(--ink-3)', marginBottom: 16 }}>
                     Generate your first coffee chat prep to see it appear here.
                   </p>
-                  <Button onClick={() => navigate("/home?tab=coffee-chat")} className="text-white hover:opacity-90" style={{ background: '#0F172A' }}>
+                  <Button
+                    onClick={() => navigate('/coffee-chat-prep')}
+                    style={{ background: 'var(--brand-blue, #3B82F6)', color: '#fff', borderRadius: 3 }}
+                    className="hover:opacity-90"
+                  >
                     Create Coffee Chat Prep
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-6">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {groupedPreps.inProgress.length > 0 && (
                     <section>
-                      <h3 className="text-sm font-semibold text-gray-400 uppercase mb-3">
+                      <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-3)', marginBottom: 10 }}>
                         In Progress
                       </h3>
-                      <div className="grid gap-4">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {groupedPreps.inProgress.map((prep) => (
                           <div
                             key={prep.id}
-                            className="rounded-[3px] border border-yellow-500/40 bg-yellow-500/10 px-5 py-4 flex items-center justify-between"
+                            style={{ padding: '12px 14px', borderRadius: 3, border: '1px solid var(--line)', background: 'var(--paper-2)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
                           >
                             <div>
-                              <p className="text-sm text-gray-200 font-medium">{prep.contactName}</p>
-                              <p className="text-xs text-gray-400">
+                              <p style={{ fontSize: 13, fontWeight: 500, color: 'var(--ink)' }}>{prep.contactName}</p>
+                              <p style={{ fontSize: 12, color: 'var(--ink-2)' }}>
                                 {prep.jobTitle} @ {prep.company}
                               </p>
-                              <p className="text-xs text-gray-500 mt-1">
-                                Requested {prep.createdAt ? new Date(prep.createdAt).toLocaleString() : ""}
+                              <p style={{ fontSize: 11, color: 'var(--ink-3)', marginTop: 4 }}>
+                                Requested {prep.createdAt ? new Date(prep.createdAt).toLocaleString() : ''}
                               </p>
                             </div>
-                            <div className="text-xs uppercase text-yellow-300">Processing...</div>
+                            <div style={{ fontSize: 11, fontWeight: 500, textTransform: 'uppercase', color: 'var(--signal-wait, #ca8a04)' }}>Processing...</div>
                           </div>
                         ))}
                       </div>
@@ -190,49 +201,54 @@ const CoffeeChatLibrary: React.FC = () => {
                   )}
 
                   {groupedPreps.completed.length > 0 && (
-                    <section className="space-y-3">
-                      <h3 className="text-sm font-semibold text-gray-400 uppercase">
+                    <section>
+                      <h3 style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--ink-3)', marginBottom: 10 }}>
                         Completed ({groupedPreps.completed.length})
                       </h3>
-                      <div className="grid gap-4">
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {groupedPreps.completed.map((prep) => (
                           <div
                             key={prep.id}
-                            className="rounded-[3px] border border-[#E2E8F0] bg-[#0F172A]/80 p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
+                            className="md:flex-row md:items-center md:justify-between"
+                            style={{ padding: '14px 16px', borderRadius: 3, border: '1px solid var(--line)', background: '#FFFFFF', display: 'flex', flexDirection: 'column', gap: 12 }}
                           >
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-sm text-white font-medium">
-                                <BadgeCheck className="h-4 w-4 text-[#3B82F6]" />
-                                {prep.contactName}
-                              </div>
-                              <div className="text-sm text-gray-300">
-                                {prep.jobTitle} @ {prep.company}
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
-                                <span className="flex items-center gap-1">
-                                  <Calendar className="h-3 w-3" />
-                                  {prep.createdAt ? new Date(prep.createdAt).toLocaleDateString() : "—"}
-                                </span>
-                                {prep.hometown && (
-                                  <span className="flex items-center gap-1">
-                                    <MapPin className="h-3 w-3" />
-                                    {prep.hometown}
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                              <CompanyLogo company={prep.company} size={36} rounded={9} />
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--ink)', fontWeight: 500 }}>
+                                  <BadgeCheck className="h-4 w-4" style={{ color: 'var(--signal-pos, #16a34a)' }} />
+                                  {prep.contactName}
+                                </div>
+                                <div style={{ fontSize: 13, color: 'var(--ink-2)' }}>
+                                  {prep.jobTitle} @ {prep.company}
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, fontSize: 11, color: 'var(--ink-3)' }}>
+                                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <Calendar className="h-3 w-3" />
+                                    {prep.createdAt ? new Date(prep.createdAt).toLocaleDateString() : '-'}
                                   </span>
+                                  {prep.hometown && (
+                                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                      <MapPin className="h-3 w-3" />
+                                      {prep.hometown}
+                                    </span>
+                                  )}
+                                </div>
+                                {prep.industrySummary && (
+                                  <p style={{ fontSize: 12, color: 'var(--ink-3)' }}>
+                                    {prep.industrySummary}
+                                  </p>
                                 )}
                               </div>
-                              {prep.industrySummary && (
-                                <p className="text-xs text-gray-400">
-                                  {prep.industrySummary}
-                                </p>
-                              )}
                             </div>
 
-                            <div className="flex items-center gap-3">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="border-[#3B82F6]/60 text-[#3B82F6] hover:bg-[#3B82F6]/10"
                                 onClick={() => handleDownload(prep)}
+                                style={{ borderColor: 'rgba(59,130,246,0.4)', color: 'var(--brand-blue, #3B82F6)', borderRadius: 3 }}
+                                className="hover:bg-[#3B82F6]/10"
                               >
                                 <Download className="h-4 w-4 mr-2" />
                                 PDF
@@ -240,9 +256,10 @@ const CoffeeChatLibrary: React.FC = () => {
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                className="text-red-300 hover:text-red-200"
                                 disabled={deletingId === prep.id}
                                 onClick={() => handleDelete(prep.id)}
+                                style={{ color: 'var(--signal-neg, #dc2626)', borderRadius: 3 }}
+                                className="hover:bg-red-50"
                               >
                                 {deletingId === prep.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />

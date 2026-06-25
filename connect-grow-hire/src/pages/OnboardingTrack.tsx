@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronDown, Check } from "lucide-react";
+import { ChevronDown, Check, X } from "lucide-react";
 import { CAREER_TRACK_OPTIONS } from "@/utils/careerTrackMapping";
 import {
   DreamCompanyAutocomplete,
@@ -10,7 +10,8 @@ import {
 } from "@/components/DreamCompanyAutocomplete";
 
 export interface TrackData {
-  careerTrackLabel: string;
+  // First entry is the primary track (drives the single `careerTrack` value downstream).
+  careerTrackLabels: string[];
   jobTypes: string[];
   dreamCompanies: string[];
 }
@@ -23,8 +24,8 @@ interface OnboardingTrackProps {
 }
 
 export const OnboardingTrack = ({ onNext, initial }: OnboardingTrackProps) => {
-  const [query, setQuery] = useState(initial?.careerTrackLabel || "");
-  const [selected, setSelected] = useState(initial?.careerTrackLabel || "");
+  const [query, setQuery] = useState("");
+  const [selected, setSelected] = useState<string[]>(initial?.careerTrackLabels || []);
   const [open, setOpen] = useState(false);
   const [jobTypes, setJobTypes] = useState<string[]>(initial?.jobTypes || []);
   const [dreamCompanies, setDreamCompanies] = useState<string[]>(initial?.dreamCompanies || []);
@@ -35,23 +36,27 @@ export const OnboardingTrack = ({ onNext, initial }: OnboardingTrackProps) => {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q || query === selected) return CAREER_TRACK_OPTIONS;
+    if (!q) return CAREER_TRACK_OPTIONS;
     return CAREER_TRACK_OPTIONS.filter((o) => o.label.toLowerCase().includes(q));
-  }, [query, selected]);
+  }, [query]);
 
-  // Career track is required.
-  const valid = !!selected && CAREER_TRACK_OPTIONS.some((o) => o.label === selected);
+  // At least one career track is required.
+  const valid = selected.length > 0;
 
-  const choose = (label: string) => {
-    setSelected(label);
-    setQuery(label);
-    setOpen(false);
+  const toggleTrack = (label: string) => {
+    setSelected((prev) => (prev.includes(label) ? prev.filter((x) => x !== label) : [...prev, label]));
+    setQuery("");
   };
+
+  const removeTrack = (label: string) => setSelected((prev) => prev.filter((x) => x !== label));
+
+  // The first selected track is the primary one (passed to Dream-company common picks).
+  const primaryTrack = selected[0] || "";
 
   const handleContinue = () => {
     if (!valid) return;
     const finalCompanies = dcRef.current?.flushPending() ?? dreamCompanies;
-    onNext({ careerTrackLabel: selected, jobTypes, dreamCompanies: finalCompanies });
+    onNext({ careerTrackLabels: selected, jobTypes, dreamCompanies: finalCompanies });
   };
 
   return (
@@ -60,44 +65,68 @@ export const OnboardingTrack = ({ onNext, initial }: OnboardingTrackProps) => {
         className="text-2xl font-semibold tracking-tight text-[#0F172A] mb-1.5 text-center"
         style={{ fontFamily: "'Lora', Georgia, serif" }}
       >
-        Primary career track
+        Career tracks
       </h1>
       <p className="text-sm text-[#475569] leading-relaxed mb-6 text-center">
-        Pick the track you're recruiting for — it personalizes your contacts, job feed, and outreach.
+        Pick the tracks you're recruiting for — choose as many as you like. They personalize your contacts, job feed, and outreach.
       </p>
 
       <div className="space-y-5">
         <div className="relative">
           <Label htmlFor="track">Career track</Label>
+          {selected.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mb-2 mt-1.5">
+              {selected.map((label) => (
+                <span
+                  key={label}
+                  className="inline-flex items-center gap-1 rounded-full bg-[#EFF6FF] border border-[#1E3A8A] px-2.5 py-1 text-xs font-medium text-[#1E3A8A]"
+                >
+                  {label}
+                  <button
+                    type="button"
+                    onClick={() => removeTrack(label)}
+                    className="text-[#1E3A8A] hover:text-[#172554]"
+                    aria-label={`Remove ${label}`}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
           <div className="relative">
             <Input className="focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]"
               id="track"
               value={query}
               onChange={(e) => {
                 setQuery(e.target.value);
-                setSelected("");
                 setOpen(true);
               }}
               onFocus={() => setOpen(true)}
               onBlur={() => setTimeout(() => setOpen(false), 150)}
-              placeholder="Type or select your track"
+              placeholder={selected.length ? "Add another track" : "Type or select your tracks"}
               autoComplete="off"
             />
             <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#94A3B8] pointer-events-none" />
           </div>
           {open && filtered.length > 0 && (
             <div className="absolute z-10 mt-1 w-full rounded-md border border-[#E2E8F0] bg-white shadow-lg max-h-60 overflow-auto">
-              {filtered.map((o) => (
-                <button
-                  key={o.label}
-                  type="button"
-                  onClick={() => choose(o.label)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-[#F1F5F9] flex items-center justify-between"
-                >
-                  {o.label}
-                  {selected === o.label && <Check className="h-4 w-4 text-[#1E3A8A]" />}
-                </button>
-              ))}
+              {filtered.map((o) => {
+                const checked = selected.includes(o.label);
+                return (
+                  <button
+                    key={o.label}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => toggleTrack(o.label)}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-[#F1F5F9] flex items-center justify-between"
+                    style={{ color: checked ? "#1E3A8A" : "#0F172A", fontWeight: checked ? 500 : 400 }}
+                  >
+                    {o.label}
+                    {checked && <Check className="h-4 w-4 text-[#1E3A8A]" />}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -140,7 +169,7 @@ export const OnboardingTrack = ({ onNext, initial }: OnboardingTrackProps) => {
             ref={dcRef}
             value={dreamCompanies}
             onChange={setDreamCompanies}
-            careerTrack={selected}
+            careerTrack={primaryTrack}
           />
         </div>
       </div>

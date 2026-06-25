@@ -228,15 +228,34 @@ def _build_location_clause(location_values: List[str], strict: bool) -> Dict[str
 
 
 def _build_company_clause(companies: List[str]) -> Dict[str, Any]:
-    """Build company clause with match_phrase. Cleans company name via PDL API for better matching."""
+    """
+    Build a company filter for PDL Person Search.
+
+    PDL stores job_company_name under unpredictable canonicals — BCG is
+    "boston consulting group (bcg)", JPMorgan is "jpmorgan chase & co.", etc.
+    Plain match_phrase on common short-names/acronyms either returns zero or
+    matches low-quality lookalike records. Searching by job_company_website is
+    far more reliable when we know the domain, so we prefer the website clause
+    and fall back to a name match only for firms not in the curated map (which
+    lives in pdl_client.COMPANY_DOMAIN_MAP, the single source of truth).
+
+    We do NOT call PDL's Company Cleaner here: it returns unrelated firms for
+    common acronyms (e.g. /v5/company/enrich?name=BCG → NZ IT consultancy).
+    """
+    from app.services.pdl_client import _domain_for_company
     if not companies:
         return {}
     primary = companies[0].strip()
     if not primary:
         return {}
-    # P1 FIX: Clean company name before querying (e.g. "JP Morgan" → "JPMorgan Chase & Co.")
-    cleaned = clean_company_name(primary)
-    return {"match_phrase": {"job_company_name": cleaned}}
+
+    domain = _domain_for_company(primary)
+    if domain:
+        logger.info("[PROMPT_PDL] company=%r → website=%s (mapped)", primary, domain)
+        return {"match_phrase": {"job_company_website": domain}}
+
+    logger.info("[PROMPT_PDL] company=%r not in domain map, using name match_phrase", primary)
+    return {"match_phrase": {"job_company_name": primary.lower()}}
 
 
 def _build_query(
@@ -714,10 +733,17 @@ def run_prompt_search(filters: Dict[str, Any]) -> Dict[str, Any]:
     if companies:
         target_company = (companies[0] or "").strip() or None
 
+    # When the target company is in our domain map, PDL has already filtered
+    # by exact job_company_website — the name-based post-filter would only
+    # produce false negatives (e.g. "MS" vs "morgan stanley" fails the
+    # substring check). Skip name comparison in that case.
+    from app.services.pdl_client import _domain_for_company
+    target_domain = _domain_for_company(target_company) if target_company else None
+
     post_filtered = []
     for contact in results:
         # Company check: if user specified company, contact's current job must match
-        if target_company:
+        if target_company and not target_domain:
             actual = (contact.get("Company") or "").strip()
             if not actual:
                 name = f"{contact.get('FirstName', '')} {contact.get('LastName', '')}".strip()

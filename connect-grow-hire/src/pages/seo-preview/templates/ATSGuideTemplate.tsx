@@ -8,7 +8,7 @@
  *   - by-role: ATS keywords for [role] resume
  */
 import { Helmet } from 'react-helmet-async';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import {
   Upload, Target, BadgeCheck, Lightbulb, Download,
   AlertTriangle, Check, TrendingUp, Bot,
@@ -133,6 +133,7 @@ const scoreColor = (s: number) => s >= 80 ? '#16A34A' : s >= 60 ? '#CA8A04' : '#
 
 const ATSGuideTemplate = () => {
   const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
   const row = slug ? getATSRow(slug) : undefined;
   if (!row) return (
     <div className="min-h-screen w-full" style={{ background: '#FFF', padding: '64px 24px' }}>
@@ -216,7 +217,8 @@ const ATSGuideTemplate = () => {
             ? `${firm.name}'s ${firm.ats} ATS: How to Beat It (2026 Guide) | Offerloop`
             : `ATS Keywords for ${role?.name} Resumes (2026) | Offerloop`}
         </title>
-        <meta name="robots" content="noindex" />
+        <meta name="robots" content={row.published && location.pathname.startsWith('/ats/') ? 'index,follow' : 'noindex'} />
+        <link rel="canonical" href={`https://www.offerloop.ai/${row.published && location.pathname.startsWith('/ats/') ? 'ats' : 'seo-preview/ats'}/${row.slug}`} />
         <meta name="description" content={row.metaDescription} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

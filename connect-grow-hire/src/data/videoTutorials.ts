@@ -76,7 +76,7 @@ const chromeExtensionRaw = [
   },
   {
     title: "Find People — Instantly email anyone from their LinkedIn",
-    description: "On someone's LinkedIn profile, click Find and Send Email to instantly find their email, draft a personalized message in your Gmail, and save their info to your networking tracker.",
+    description: "On someone's LinkedIn profile, click Find and Send Email to instantly find their email, draft a personalized message in your Gmail, and save their info to your inbox.",
     youtubeUrl: "https://youtu.be/TpXA4x8Cq0I",
   },
 ];

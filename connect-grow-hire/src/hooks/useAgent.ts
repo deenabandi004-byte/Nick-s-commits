@@ -229,7 +229,7 @@ export function useCycleRunner() {
           title: parts.length > 0 ? `Found ${parts.join(", ")}` : "Cycle complete",
           description:
             r?.emailsDrafted > 0
-              ? `Generated ${r.emailsDrafted} email drafts. Check your Tracker.`
+              ? `Generated ${r.emailsDrafted} email drafts. Check your Inbox.`
               : "No new items this cycle.",
         });
       }

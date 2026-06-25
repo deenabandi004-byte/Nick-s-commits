@@ -8,7 +8,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import useDebounce from '@/hooks/use-debounce';
 import { analyzeQuery } from '@/lib/specificity';
 
@@ -126,13 +126,6 @@ export const RoleVariations: React.FC<RoleVariationsProps> = ({
                 color: 'var(--brand-blue, #2563EB)',
               }}
             >
-              <Sparkles
-                style={{
-                  width: 11,
-                  height: 11,
-                  color: 'var(--brand-blue, #2563EB)',
-                }}
-              />
               Try
             </span>
             <button

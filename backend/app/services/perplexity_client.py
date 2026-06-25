@@ -214,8 +214,12 @@ def pro_search(query: str, recency: str | None = None, timeout: float = 45.0) ->
 
 
 def deep_research(query: str) -> dict:
-    """Sonar Deep Research — comprehensive multi-source report.
-    Replaces 4x SerpAPI calls in coffee_chat.py.
+    """Sonar-pro comprehensive research. Replaces 4x SerpAPI calls in coffee_chat.py.
+
+    Originally used `sonar-deep-research`, but that model is a multi-step
+    research agent that routinely runs 2-5+ minutes per call and hung the
+    coffee-chat-prep flow at Step 2. `sonar-pro` returns the same shape in
+    ~5-15s with citations and is sufficient for the 4 short prep sections.
 
     Returns:
         {"content": str, "citations": list[str]}
@@ -231,8 +235,11 @@ def deep_research(query: str) -> dict:
         return cached
 
     try:
-        response = client.chat.completions.create(
-            model="sonar-deep-research",
+        # Hard 30s cap, zero SDK retries: this runs in the user-facing
+        # coffee-chat-prep flow, so a slow Perplexity response should fall
+        # through to empty results rather than block the UI for minutes.
+        response = client.with_options(timeout=30.0, max_retries=0).chat.completions.create(
+            model="sonar-pro",
             messages=[{"role": "user", "content": query}],
         )
         result = {
@@ -269,25 +276,47 @@ def search_jobs_live(
     if cached and isinstance(cached, list):
         return cached
 
-    domains = domain_filter or [
-        "linkedin.com", "greenhouse.io", "lever.co",
-        "workday.com", "indeed.com",
-    ]
-    domain_str = ", ".join(domains)
-
+    # Three things matter for quality here:
+    # 1. NO domain whitelist in the prompt. The old list excluded every FAANG
+    #    careers system (jobs.apple.com, careers.google.com, etc.) so niche
+    #    queries at big-tech targets came back empty — and Sonar would then
+    #    hallucinate a placeholder to satisfy the "find N" instruction.
+    # 2. Empty-on-miss instruction. Without "return [] if nothing matches",
+    #    the LLM invents a generic "Job Posting" row pointing at the company's
+    #    careers landing page rather than admitting zero results.
+    # 3. URL-shape instruction. A real posting has a job ID; a careers search
+    #    page does not. Telling the model to skip landing/search pages weeds
+    #    out the most common placeholder pattern at source.
+    # Caller-supplied domain_filter is still honored if explicitly passed —
+    # via Perplexity's actual API param, not as a soft prompt hint.
     prompt = (
-        f"Find {limit} current job openings matching: {query} in {location}. "
-        f"Only include postings from these domains: {domain_str}. "
-        f"For each job return: title, company name, location, URL to the posting, "
-        f"and a brief summary. Return as a JSON array of objects with keys: "
-        f"title, company, location, url, summary."
+        f"Find up to {limit} SPECIFIC current job postings matching: {query} "
+        f"in {location}. Each result MUST be a concrete posting with its own "
+        f"unique URL (a job ID in the path). Do NOT return careers landing "
+        f"pages, search-result pages, or generic placeholders. If you cannot "
+        f"find any real specific postings, return an empty JSON array. "
+        f"For each job return: title (the actual role title — never "
+        f"'Job Posting' or similar generic text), company name, location, "
+        f"URL to the specific posting, and a brief summary. Return as a JSON "
+        f"array of objects with keys: title, company, location, url, summary."
     )
+
+    # `year` recency, not `month`. Diagnostic runs (scratch_diag_perplexity_jobs.py
+    # on 2026-06-11) showed Sonar returns a literal empty array on ~half of
+    # niche-role calls under `month`, but consistently returns 3-5 real
+    # postings under `year`. FAANG/big-co job postings sit open for weeks to
+    # months, so a 30-day window was buying nothing real and was doubling our
+    # flake rate. The placeholder validator + URL-shape prompt still filter
+    # out stale/closed postings at the boundary.
+    extra: dict = {"search_recency_filter": "year"}
+    if domain_filter:
+        extra["search_domain_filter"] = list(domain_filter)
 
     try:
         response = client.chat.completions.create(
             model="sonar",
             messages=[{"role": "user", "content": prompt}],
-            extra_body={"search_recency_filter": "month"},
+            extra_body=extra,
         )
         content = response.choices[0].message.content
         parsed = _parse_json_response(content)

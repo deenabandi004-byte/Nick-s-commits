@@ -14,11 +14,18 @@ from threading import Lock
 
 from app.config import (
     PEOPLE_DATA_LABS_API_KEY, PDL_BASE_URL, PDL_METRO_AREAS,
-    pdl_cache, CACHE_DURATION
+    pdl_cache, CACHE_DURATION,
+    ENABLE_INDUSTRY_EXPANSION,
 )
 from app.services.openai_client import get_openai_client
 from app.services.metering import meter_call
 from app.utils.retry import retry_with_backoff
+from app.utils.role_taxonomy import (
+    _TITLE_FAMILY_EXPANSIONS,
+    _SENIORITY_ADJACENT_TITLES,
+    _expand_titles_for_broadening,
+    _expand_titles_seniority_adjacent,
+)
 
 # Create a session with connection pooling for better performance.
 # Accept-Encoding: gzip is a free ~5× response-size reduction per PDL docs.
@@ -90,9 +97,12 @@ def _school_aliases(raw: str) -> list[str]:
     """
     if not raw:
         return []
-    
-    # Clean and normalize input
-    s = " ".join(str(raw).lower().split())
+
+    # Clean and normalize input. Strip commas because PDL listings often
+    # write "University of California, Berkeley" but the school_map keys
+    # are stored without commas — without this normalization, both the
+    # exact-key lookup and the substring check below miss.
+    s = " ".join(str(raw).lower().replace(",", " ").split())
     aliases = {s}
     
     # Remove common words to get core name
@@ -121,15 +131,54 @@ def _school_aliases(raw: str) -> list[str]:
         "university of southern california": ["usc", "usc viterbi", "viterbi school of engineering", "southern california"],
         "southern california": ["usc", "university of southern california", "usc viterbi"],
         
-        "ucla": ["university of california los angeles", "university of california, los angeles", "uc los angeles"],
+        # UC system. Every campus has both a "uc <campus>" key AND a
+        # "university of california <campus>" key so a free-typed input
+        # like "UC Davis" or a website-dropdown selection like "University
+        # of California, Davis" both hit a school_map entry directly (not
+        # just via substring fallback). Without these, the alias set
+        # collapses to the literal input + the generic "the X" / "university
+        # of X" expansions, missing variants like "UC Davis" → "Cal", which
+        # leaves most PDL profiles unmatched.
+        "ucla": ["university of california los angeles", "uc los angeles", "cal los angeles"],
+        "uc los angeles": ["ucla", "university of california los angeles", "cal los angeles"],
         "university of california los angeles": ["ucla", "uc los angeles", "cal los angeles"],
-        
+
         "berkeley": ["uc berkeley", "university of california berkeley", "cal", "california berkeley"],
-        "university of california berkeley": ["berkeley", "uc berkeley", "cal"],
-        
+        "uc berkeley": ["berkeley", "university of california berkeley", "cal", "california berkeley"],
+        "university of california berkeley": ["berkeley", "uc berkeley", "cal", "california berkeley"],
+
         "ucsd": ["uc san diego", "university of california san diego", "california san diego"],
-        "ucsi": ["uc irvine", "university of california irvine", "california irvine"],
+        "uc san diego": ["ucsd", "university of california san diego", "california san diego"],
+        "university of california san diego": ["ucsd", "uc san diego", "california san diego"],
+
+        "uci": ["uc irvine", "university of california irvine", "california irvine"],
+        "uc irvine": ["uci", "university of california irvine", "california irvine"],
+        "university of california irvine": ["uci", "uc irvine", "california irvine"],
+
         "ucsb": ["uc santa barbara", "university of california santa barbara", "california santa barbara"],
+        "uc santa barbara": ["ucsb", "university of california santa barbara", "california santa barbara"],
+        "university of california santa barbara": ["ucsb", "uc santa barbara", "california santa barbara"],
+
+        "ucd": ["uc davis", "university of california davis", "california davis"],
+        "uc davis": ["ucd", "university of california davis", "california davis"],
+        "university of california davis": ["ucd", "uc davis", "california davis"],
+        "davis": ["uc davis", "university of california davis", "ucd"],
+
+        "ucsc": ["uc santa cruz", "university of california santa cruz", "california santa cruz"],
+        "uc santa cruz": ["ucsc", "university of california santa cruz", "california santa cruz"],
+        "university of california santa cruz": ["ucsc", "uc santa cruz", "california santa cruz"],
+
+        "ucr": ["uc riverside", "university of california riverside", "california riverside"],
+        "uc riverside": ["ucr", "university of california riverside", "california riverside"],
+        "university of california riverside": ["ucr", "uc riverside", "california riverside"],
+
+        "ucm": ["uc merced", "university of california merced", "california merced"],
+        "uc merced": ["ucm", "university of california merced", "california merced"],
+        "university of california merced": ["ucm", "uc merced", "california merced"],
+
+        "ucsf": ["uc san francisco", "university of california san francisco"],
+        "uc san francisco": ["ucsf", "university of california san francisco"],
+        "university of california san francisco": ["ucsf", "uc san francisco"],
         
         "stanford": ["stanford university", "leland stanford junior university"],
         "stanford university": ["stanford", "leland stanford junior university"],
@@ -212,7 +261,24 @@ def _school_aliases(raw: str) -> list[str]:
         if key in s or any(key in alias for alias in list(aliases)):
             aliases.update(expansions)
             aliases.add(key)  # Also add the short form
-    
+
+    # PDL stores most UC campuses as "University of California, <Campus>"
+    # WITH a comma. Empirical counts from PDL person/search:
+    #   "university of california, berkeley" -> 576,014 records
+    #   "university of california berkeley"  -> 0 records
+    #   "university of california, davis"    -> 294,670 records
+    # Our normalization above strips commas so the school_map lookup hits;
+    # here we re-emit the comma variant so PDL's exact-match school filter
+    # actually finds the records. Without this, Berkeley + Google returned
+    # 0 across the entire retry ladder while Stanford + Google worked fine.
+    extra_comma_forms = set()
+    uc_prefix = "university of california "
+    for a in aliases:
+        if a.startswith(uc_prefix) and len(a) > len(uc_prefix):
+            campus = a[len(uc_prefix):]
+            extra_comma_forms.add(f"university of california, {campus}")
+    aliases.update(extra_comma_forms)
+
     # Clean up and return sorted
     cleaned = {" ".join(a.split()).strip() for a in aliases if a and len(a.strip()) > 1}
     return sorted(cleaned)
@@ -756,6 +822,138 @@ def cached_clean_location(location):
 _clean_company_cache: dict[str, str] = {}
 _clean_company_cache_lock = Lock()
 
+# Curated map of user-supplied company short-names/acronyms → primary domain.
+# PRIMARY hook for PDL Person Search: match_phrase on job_company_website is
+# orders of magnitude more reliable than match_phrase on job_company_name,
+# because PDL stores job_company_name under unguessable canonicals
+# (e.g. BCG is "boston consulting group (bcg)" — parens and all — and the
+# plain string "bcg" matches 776 unrelated low-quality records).
+#
+# Probed empirically 2026-06-23. PDL's Company Cleaner / Enrichment can NOT
+# be trusted for acronym resolution: /v5/company/enrich?name=BCG returns an
+# unrelated 35-person NZ IT consultancy. /v5/company/clean?name=BCG returns
+# name=None.
+#
+# Keys are lowercased; only unambiguous keys included. "MS" is intentionally
+# Morgan Stanley (Microsoft users type "microsoft" or "msft"). Ambiguous keys
+# like "CS" and "DB" are deliberately omitted — better to miss than wrong.
+COMPANY_DOMAIN_MAP = {
+    # Consulting
+    "bcg": "bcg.com",
+    "boston consulting group": "bcg.com",
+    "mckinsey": "mckinsey.com",
+    "mckinsey & company": "mckinsey.com",
+    "bain": "bain.com",
+    "bain & company": "bain.com",
+    "bain and company": "bain.com",
+    "deloitte": "deloitte.com",
+    "pwc": "pwc.com",
+    "ey": "ey.com",
+    "ernst & young": "ey.com",
+    "kpmg": "kpmg.com",
+    "accenture": "accenture.com",
+    "oliver wyman": "oliverwyman.com",
+    "l.e.k.": "lek.com",
+    "lek": "lek.com",
+    "alvarez & marsal": "alvarezandmarsal.com",
+    # Banking — bulge bracket + boutiques
+    "jpm": "jpmorgan.com",
+    "jp morgan": "jpmorgan.com",
+    "jpmorgan": "jpmorgan.com",
+    "jpmorgan chase": "jpmorgan.com",
+    "gs": "goldmansachs.com",
+    "goldman": "goldmansachs.com",
+    "goldman sachs": "goldmansachs.com",
+    "ms": "morganstanley.com",
+    "morgan stanley": "morganstanley.com",
+    "bofa": "bofa.com",
+    "baml": "bofa.com",
+    "bank of america": "bofa.com",
+    "citi": "citi.com",
+    "citigroup": "citi.com",
+    "barclays": "barclays.com",
+    "ubs": "ubs.com",
+    "deutsche bank": "db.com",
+    "jefferies": "jefferies.com",
+    "houlihan lokey": "hl.com",
+    "lazard": "lazard.com",
+    "evercore": "evercore.com",
+    "moelis": "moelis.com",
+    "rothschild": "rothschild.com",
+    "guggenheim": "guggenheimpartners.com",
+    "centerview": "centerview.com",
+    "piper sandler": "psc.com",
+    "raymond james": "raymondjames.com",
+    "pjt": "pjtpartners.com",
+    "pjt partners": "pjtpartners.com",
+    "perella weinberg": "pwpartners.com",
+    "wells fargo": "wellsfargo.com",
+    "rbc": "rbc.com",
+    "nomura": "nomura.com",
+    # Private equity / hedge funds
+    "kkr": "kkr.com",
+    "bx": "blackstone.com",
+    "blackstone": "blackstone.com",
+    "apollo": "apollo.com",
+    "carlyle": "carlyle.com",
+    "tpg": "tpg.com",
+    "bain capital": "baincapital.com",
+    "brookfield": "brookfield.com",
+    "de shaw": "deshaw.com",
+    "d.e. shaw": "deshaw.com",
+    "citadel": "citadel.com",
+    "point72": "point72.com",
+    "p72": "point72.com",
+    "millennium": "mlp.com",
+    "two sigma": "twosigma.com",
+    "bridgewater": "bridgewater.com",
+    "jane street": "janestreet.com",
+    "jump trading": "jumptrading.com",
+    # Tech
+    "google": "google.com",
+    "alphabet": "google.com",
+    "meta": "meta.com",
+    "facebook": "meta.com",
+    "fb": "meta.com",
+    "amazon": "amazon.com",
+    "aws": "amazon.com",
+    "microsoft": "microsoft.com",
+    "msft": "microsoft.com",
+    "apple": "apple.com",
+    "netflix": "netflix.com",
+    "tesla": "tesla.com",
+    "nvidia": "nvidia.com",
+    "openai": "openai.com",
+    "anthropic": "anthropic.com",
+    "stripe": "stripe.com",
+    "palantir": "palantir.com",
+    "databricks": "databricks.com",
+    "snowflake": "snowflake.com",
+    "airbnb": "airbnb.com",
+    "uber": "uber.com",
+    "lyft": "lyft.com",
+    "doordash": "doordash.com",
+    "robinhood": "robinhood.com",
+    "coinbase": "coinbase.com",
+    "shopify": "shopify.com",
+    "figma": "figma.com",
+    "notion": "notion.so",
+    "canva": "canva.com",
+    "ibm": "ibm.com",
+    "oracle": "oracle.com",
+    "salesforce": "salesforce.com",
+    "adobe": "adobe.com",
+}
+
+
+def _domain_for_company(name):
+    """Map a user-supplied company name/acronym to its primary domain, if known."""
+    if not name:
+        return None
+    key = str(name).strip().lower()
+    return COMPANY_DOMAIN_MAP.get(key) if key else None
+
+
 def clean_company_name(company):
     """Clean company name using PDL Cleaner API for better matching.
     Results are cached in-process to avoid redundant API calls.
@@ -1214,6 +1412,78 @@ def determine_job_level(job_title):
         return 'mid'  # Default to mid-level
 
 
+def _parse_pdl_date(s):
+    """Parse a PDL date string. Returns timezone-aware UTC datetime or None.
+
+    Per docs.peopledatalabs.com, PDL uses ISO-8601 UTC for top-level
+    timestamps (`job_last_updated`, `job_last_changed`,
+    `experience[].last_updated`), e.g. ``2024-03-15T21:32:10Z``. Experience
+    start/end dates can be partial (``YYYY-MM`` or ``YYYY-MM-DD``).
+    """
+    if not s or not isinstance(s, str):
+        return None
+    from datetime import datetime, timezone
+    s = s.strip()
+    # ISO-8601 with optional Z. Python 3.11+ parses 'Z' natively; older
+    # versions need it swapped for '+00:00'.
+    try:
+        normalized = s[:-1] + "+00:00" if s.endswith("Z") else s
+        dt = datetime.fromisoformat(normalized)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc)
+    except (ValueError, TypeError):
+        pass
+    # Partial-date fallback for experience start_date / end_date.
+    for fmt in ("%Y-%m-%d", "%Y-%m"):
+        try:
+            return datetime.strptime(s, fmt).replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            continue
+    return None
+
+
+# Phase 2.1: PDL emails older than this fall back to Hunter/NeverBounce instead
+# of being trusted blindly. People change jobs without PDL noticing; stale
+# `emails[]` entries are the #1 source of Loop bounces.
+_PDL_EMAIL_MAX_AGE_DAYS = 180
+
+
+def _pdl_email_is_fresh(person: dict, chosen_email: str = None, max_age_days: int = _PDL_EMAIL_MAX_AGE_DAYS) -> bool:
+    """Return True only when PDL has recent evidence the person is still at the
+    job the email belongs to.
+
+    Uses only documented PDL fields (per peopledatalabs.com schema):
+      - `person.job_last_updated` — primary signal, ISO-8601 UTC.
+      - `experience[].last_updated` on a current job (`is_current=True`) — fallback.
+
+    Per-email `first_seen` / `last_seen` are NOT in the public schema, so we
+    don't depend on them even when the response happens to include them.
+
+    Defaults to False on missing/unparseable dates — re-verifying via Hunter
+    is cheaper than sending to a dead address and burning a contact slot.
+    """
+    from datetime import datetime, timezone, timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(days=max_age_days)
+
+    when = _parse_pdl_date(person.get("job_last_updated"))
+    if when and when >= cutoff:
+        return True
+
+    for job in person.get("experience") or []:
+        if not isinstance(job, dict):
+            continue
+        if not job.get("is_current"):
+            continue
+        when = _parse_pdl_date(job.get("last_updated"))
+        if when and when >= cutoff:
+            return True
+        # Only the first current-job entry matters; PDL puts it at experience[0].
+        break
+
+    return False
+
+
 def _choose_best_email(emails: list[dict], recommended: str | None = None) -> str | None:
     """Choose the best email from a list of emails"""
     def is_valid(addr: str) -> bool:
@@ -1515,26 +1785,36 @@ def extract_contact_from_pdl_person_enhanced(person, target_company=None, pre_ve
                 first_job_company = first_job.get('company', {})
                 if isinstance(first_job_company, dict):
                     first_job_company_name = first_job_company.get('name', '')
-                    # Clean both company names for accurate comparison
-                    cleaned_target = clean_company_name(target_company).lower().strip()
-                    cleaned_first_job = clean_company_name(first_job_company_name).lower().strip() if first_job_company_name else ''
-                    
-                    # Check if company matches (exact match after cleaning) AND job has no end_date (indicating current employment)
+                    first_job_company_website = (first_job_company.get('website') or '').lower().strip()
                     first_job_end_date = first_job.get('end_date')
-                    if cleaned_first_job and cleaned_target:
-                        # Use exact match or check if cleaned names are very similar (to handle variations like "ASML" vs "ASML Holding")
-                        # But be strict - require the core company name to match
-                        if (cleaned_first_job == cleaned_target
-                                or (cleaned_target in cleaned_first_job and len(cleaned_target) >= 3)
-                                or (cleaned_first_job in cleaned_target and len(cleaned_first_job) >= 3)):
-                            # If no end_date or end_date is empty, assume current employment
-                            if not first_job_end_date or (isinstance(first_job_end_date, dict) and not first_job_end_date.get('year')):
-                                is_currently_at_target = True
-                                print(f"[ContactExtraction] ✅ Currently at target company ({target_company}) - first job: {first_job_company_name}")
-                            else:
-                                print(f"[ContactExtraction] ⚠️ Previously at target company ({target_company}), but left (end_date: {first_job_end_date})")
+                    target_domain = _domain_for_company(target_company)
+
+                    is_current_job = (not first_job_end_date
+                                      or (isinstance(first_job_end_date, dict) and not first_job_end_date.get('year')))
+
+                    # Domain-based match is authoritative for mapped firms — PDL stores
+                    # names under unguessable canonicals, but website is normalized.
+                    if target_domain and first_job_company_website == target_domain:
+                        if is_current_job:
+                            is_currently_at_target = True
+                            print(f"[ContactExtraction] ✅ Currently at target company ({target_company}) via website={first_job_company_website}")
                         else:
-                            print(f"[ContactExtraction] ⚠️ Not at target company - first job: {first_job_company_name} (cleaned: {cleaned_first_job}), target: {target_company} (cleaned: {cleaned_target})")
+                            print(f"[ContactExtraction] ⚠️ Previously at target ({target_company}), end_date: {first_job_end_date}")
+                    else:
+                        # Fall back to name comparison for unmapped firms.
+                        cleaned_target = clean_company_name(target_company).lower().strip()
+                        cleaned_first_job = clean_company_name(first_job_company_name).lower().strip() if first_job_company_name else ''
+                        if cleaned_first_job and cleaned_target:
+                            if (cleaned_first_job == cleaned_target
+                                    or (cleaned_target in cleaned_first_job and len(cleaned_target) >= 3)
+                                    or (cleaned_first_job in cleaned_target and len(cleaned_first_job) >= 3)):
+                                if is_current_job:
+                                    is_currently_at_target = True
+                                    print(f"[ContactExtraction] ✅ Currently at target company ({target_company}) - first job: {first_job_company_name}")
+                                else:
+                                    print(f"[ContactExtraction] ⚠️ Previously at target company ({target_company}), but left (end_date: {first_job_end_date})")
+                            else:
+                                print(f"[ContactExtraction] ⚠️ Not at target company - first job: {first_job_company_name} (cleaned: {cleaned_first_job}), target: {target_company} (cleaned: {cleaned_target})")
 
         # Store minimal experience data for anchor detection (first 2 jobs with dates)
         experience_for_anchors = []
@@ -1803,9 +2083,11 @@ def execute_pdl_search(headers, url, query_obj, desired_limit, search_type, page
 
         # ⚡ Short-circuit: skip batch verification if all contacts already have valid PDL work emails
         # BUT: never short-circuit when there's a target company — PDL emails may be from old jobs
+        # AND: require recent PDL evidence (Phase 2.1) — stale work emails point at the previous job.
         _PERSONAL_DOMAINS = {'gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'protonmail.com', 'me.com', 'live.com', 'msn.com', 'aol.com'}
         _all_have_pdl_email = True
         _pdl_emails_by_idx = {}
+        _stale_count = 0
         if not target_company:
             for _sc_idx, _sc_person in enumerate(unique_persons):
                 _sc_emails = _sc_person.get('emails') or []
@@ -1815,7 +2097,13 @@ def execute_pdl_search(headers, url, query_obj, desired_limit, search_type, page
                         or _sc_email.split('@')[1].lower().strip() in _PERSONAL_DOMAINS):
                     _all_have_pdl_email = False
                     break
+                if not _pdl_email_is_fresh(_sc_person, _sc_email):
+                    _stale_count += 1
+                    _all_have_pdl_email = False
+                    break
                 _pdl_emails_by_idx[_sc_idx] = _sc_email
+            if _stale_count:
+                print(f"[BatchEmailVerification] PDL email staleness detected — falling back to Hunter verification (max_age={_PDL_EMAIL_MAX_AGE_DAYS}d)")
         else:
             _all_have_pdl_email = False  # Force batch verification for target company searches
 
@@ -2735,125 +3023,14 @@ def search_contacts_with_pdl(job_title, company, location, max_contacts=8):
     return search_contacts_with_pdl_optimized(job_title, company, location, max_contacts)
 
 
-# Role-family expansion for the title-broadening retry rung (retry_level=1).
-# Each key is a canonical role; the value is a list of adjacent titles that often
-# overlap with the user's intent when the strict match_phrase query returns too few
-# results. Used by `_expand_titles_for_broadening`.
-#
-# WHY: PDL's strict match_phrase on "data scientist" at Google+USC returns 6 hits.
-# Expanding to {data scientist, data analyst, data engineer, data science manager}
-# lifts that to 8 — a meaningful gain when the initial query has 0 new contacts
-# after dedup. See /tmp/pdl_diagnostic.py for the raw counts.
-_TITLE_FAMILY_EXPANSIONS = {
-    # Data family
-    "data scientist":   ["data scientist", "data analyst", "data engineer", "data science manager", "machine learning engineer"],
-    "data analyst":     ["data analyst", "data scientist", "business analyst", "analytics manager"],
-    "data engineer":    ["data engineer", "data scientist", "software engineer", "machine learning engineer"],
-    # Software family
-    "software engineer":        ["software engineer", "software developer", "backend engineer", "frontend engineer", "full stack engineer"],
-    "software developer":       ["software developer", "software engineer", "backend developer", "frontend developer"],
-    "machine learning engineer":["machine learning engineer", "ml engineer", "data scientist", "ai engineer"],
-    # Product family
-    "product manager":  ["product manager", "product owner", "technical program manager", "program manager", "associate product manager"],
-    # Finance family
-    "investment banking analyst":   ["investment banking analyst", "analyst", "financial analyst", "banking analyst"],
-    "investment banking associate": ["investment banking associate", "associate", "banking associate"],
-    "financial analyst":            ["financial analyst", "investment analyst", "analyst"],
-    # Consulting family
-    "consultant":           ["consultant", "management consultant", "associate consultant", "business analyst"],
-    "management consultant":["management consultant", "consultant", "associate consultant", "strategy consultant"],
-    # Recruiting family
-    "recruiter":    ["recruiter", "technical recruiter", "talent acquisition specialist", "sourcer"],
-}
+# Role-family + seniority-adjacent title expansions used by retry_level=1
+# and retry_level=2 live in `app.utils.role_taxonomy` so the Perplexity
+# job-search broadening flow can reuse the same dicts. Imported at the top
+# of this module; behavior is byte-identical to the prior inline copy.
 
 
-def _expand_titles_for_broadening(title_variations):
-    """
-    Given the prompt parser's `title_variations` list, return a broadened list that
-    adds role-family cousins from _TITLE_FAMILY_EXPANSIONS. Used by retry_level=1.
-
-    - Preserves the original titles as the first entries (priority for scoring).
-    - Adds family cousins only for titles that have a family entry; others pass
-      through unchanged.
-    - Deduplicates case-insensitively while preserving first-seen order.
-    """
-    if not title_variations:
-        return []
-    seen = set()
-    expanded = []
-    for t in title_variations:
-        tl = (t or "").strip().lower()
-        if not tl or tl in seen:
-            continue
-        expanded.append(tl)
-        seen.add(tl)
-    # Second pass: for each original title, pull in matching family variants
-    for tl in list(expanded):
-        for family_key, family_variants in _TITLE_FAMILY_EXPANSIONS.items():
-            if tl == family_key or (family_key in tl) or (tl in family_key and len(tl) >= 5):
-                for v in family_variants:
-                    vl = v.strip().lower()
-                    if vl and vl not in seen:
-                        expanded.append(vl)
-                        seen.add(vl)
-    return expanded
-
-
-_SENIORITY_ADJACENT_TITLES = {
-    "analyst": ["analyst", "associate", "research associate", "junior associate", "senior analyst"],
-    "associate": ["associate", "analyst", "senior analyst", "consultant", "senior associate"],
-    "manager": ["manager", "director", "senior manager", "team lead", "associate director"],
-    "engineer": ["engineer", "developer", "software engineer", "senior engineer", "staff engineer"],
-    "consultant": ["consultant", "associate", "analyst", "advisor", "senior consultant"],
-    "intern": ["intern", "co-op", "fellow", "trainee", "analyst"],
-    "director": ["director", "senior director", "vice president", "manager", "head"],
-    "vice president": ["vice president", "director", "senior vice president", "managing director"],
-}
-
-
-def _expand_titles_seniority_adjacent(title_variations):
-    """
-    Given title variations, expand to adjacent seniority levels.
-    E.g. "analyst" → ["analyst", "associate", "research associate", "junior associate", "senior analyst"]
-    Used by retry_level=2 to maintain role intent while broadening seniority.
-    """
-    if not title_variations:
-        return []
-    seen = set()
-    expanded = []
-
-    # First pass: include originals
-    for t in title_variations:
-        tl = (t or "").strip().lower()
-        if not tl or tl in seen:
-            continue
-        expanded.append(tl)
-        seen.add(tl)
-
-    # Second pass: for each original, find matching seniority family
-    for tl in list(expanded):
-        for seniority_key, adjacent in _SENIORITY_ADJACENT_TITLES.items():
-            # Match if the seniority key appears in the title or vice versa
-            if seniority_key in tl or tl in seniority_key:
-                for adj in adjacent:
-                    adj_lower = adj.strip().lower()
-                    if adj_lower and adj_lower not in seen:
-                        expanded.append(adj_lower)
-                        seen.add(adj_lower)
-                break  # Only match one seniority family per title
-
-    # Also include the role-family expansions from level 1
-    family_expanded = _expand_titles_for_broadening(title_variations)
-    for t in family_expanded:
-        tl = t.strip().lower()
-        if tl and tl not in seen:
-            expanded.append(tl)
-            seen.add(tl)
-
-    return expanded
-
-
-def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
+def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0,
+                             exclude_pdl_ids: list | None = None) -> dict:
     """
     Build PDL Elasticsearch bool query from structured prompt parser output.
     Uses same patterns as es_title_block, try_metro_search_optimized (location, company, schools).
@@ -2872,6 +3049,11 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
     Company is dropped at level 4+; school filter is the only thing that survives
     to level 5. The user's intent is "find someone from my network" — at the floor
     we ensure they at least see SOMEONE from the school they care about.
+
+    exclude_pdl_ids: optional list of PDL person ids to filter OUT via a must_not
+    clause. Used by lazy-topup in search_contacts_from_prompt so broader retry
+    attempts return NEW people instead of re-fetching the same names a stricter
+    rung already returned.
     """
     must = []
 
@@ -2985,23 +3167,32 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
     # The "international school × US firm" PDL coverage gap is the main motivator —
     # at level 4 we try to find ANY alum of the school in the role family (no firm
     # constraint) so users get someone reachable instead of zero results.
-    # P1 FIX: Clean company names via PDL cleaner API before querying (e.g. "JP Morgan" → "JPMorgan Chase & Co.")
+    #
+    # PDL stores job_company_name under unguessable canonicals (e.g. BCG is
+    # "boston consulting group (bcg)", not "bcg"; plain "bcg" matches 776
+    # unrelated low-quality records). When we know the firm's domain we route
+    # via job_company_website — orders of magnitude more reliable. We do NOT
+    # call clean_company_name here: it relies on PDL's Company Enrichment,
+    # which returns garbage for acronyms (BCG → NZ IT consultancy).
     companies = parsed_prompt.get("companies") or []
     company_names = [c.get("name", "").strip() for c in companies if isinstance(c, dict) and c.get("name")]
     if retry_level < 4 and company_names:
         company_clauses = []
         for name in company_names:
-            # Clean company name for better PDL matching
-            cleaned = clean_company_name(name)
-            n = cleaned.lower().strip()
-            if n:
-                words = n.split()
-                if len(words) == 1:
-                    # Single-word company: phrase match only to avoid false positives
-                    # (e.g. "meta" as a plain match could hit "Metaverse Corp")
+            n = name.lower().strip()
+            if not n:
+                continue
+            domain = _domain_for_company(name)
+            if domain:
+                print(f"[build_query_from_prompt] company={name!r} → website={domain} (mapped)")
+                company_clauses.append({"match_phrase": {"job_company_website": domain}})
+            else:
+                print(f"[build_query_from_prompt] company={name!r} not in domain map, name match_phrase")
+                # Unmapped: fall back to job_company_name. Multi-word phrases also
+                # accept a relaxed match as fallback (catches "Goldman Sachs Group").
+                if len(n.split()) == 1:
                     company_clauses.append({"match_phrase": {"job_company_name": n}})
                 else:
-                    # Multi-word: phrase match preferred, tokenized match as fallback
                     company_clauses.append({
                         "bool": {
                             "should": [
@@ -3015,7 +3206,6 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
                 must.append(company_clauses[0])
             else:
                 must.append({"bool": {"should": company_clauses}})
-            # Note: job_company_name already refers to the current/primary position in PDL
 
     # Schools: flat match_phrase on education.school.name. PDL's ES dialect
     # does NOT support `nested` clauses (returns 400 "Query clause [path] not
@@ -3052,7 +3242,18 @@ def build_query_from_prompt(parsed_prompt: dict, retry_level: int = 0) -> dict:
     # P0 FIX: Only return contacts that have email addresses
     must.append({"exists": {"field": "emails"}})
 
-    query_obj = {"bool": {"must": must}}
+    bool_clause = {"must": must}
+
+    # Lazy-topup support: exclude PDL ids already returned by an earlier (stricter)
+    # retry rung so this rung surfaces NEW people instead of paging through the
+    # same set. PDL caps `terms` clauses at ~1024 values — well above our use case
+    # of <= PDL_BUDGET_CAP per search.
+    if exclude_pdl_ids:
+        clean_ids = [i for i in exclude_pdl_ids if i]
+        if clean_ids:
+            bool_clause["must_not"] = [{"terms": {"id": clean_ids}}]
+
+    query_obj = {"bool": bool_clause}
     if retry_level > 0:
         print(f"[build_query_from_prompt] Retry level {retry_level} query:\n{json.dumps(query_obj, indent=2)}")
     else:
@@ -3082,22 +3283,28 @@ def _contact_matches_prompt_criteria(contact, parsed_prompt, target_company):
     print(f"[PostFilter] Target companies: {companies!r}, Contact company: {contact_company!r}, IsCurrentlyAtTarget: {is_current}, first_job_company: {first_job_company!r}")
     print(f"[PostFilter] Target schools: {schools!r}, Contact College: {college!r}, EducationTop: {education_top!r}")
 
-    # Company check: if user specified a company, contact must be currently at target company
+    # Company check: if user specified a company, contact must be currently at target company.
+    # For mapped firms the upstream PDL query already filtered by exact job_company_website,
+    # so the name-based comparison would only produce false negatives (e.g. "MS" vs
+    # "morgan stanley" fails the substring check). Skip name comparison for mapped firms.
     if companies and target_company:
         if not is_current:
             print(f"[PostFilter] Result for {name}: FAIL — not currently at target company (expected={target_company})")
             return False, "not_currently_at_target"
-        actual = contact_company
-        if not actual:
-            print(f"[PostFilter] Result for {name}: FAIL — company mismatch (expected={target_company}, got=no company)")
-            return False, "company_mismatch"
-        cleaned_expected = clean_company_name(target_company).lower().strip()
-        cleaned_actual = clean_company_name(actual).lower().strip()
-        if (cleaned_expected != cleaned_actual
-                and not (cleaned_expected in cleaned_actual and len(cleaned_expected) >= 3)
-                and not (cleaned_actual in cleaned_expected and len(cleaned_actual) >= 3)):
-            print(f"[PostFilter] Result for {name}: FAIL — company mismatch (expected={target_company}, got={actual})")
-            return False, "company_mismatch"
+        if _domain_for_company(target_company):
+            print(f"[PostFilter] Result for {name}: company check via website domain (mapped firm)")
+        else:
+            actual = contact_company
+            if not actual:
+                print(f"[PostFilter] Result for {name}: FAIL — company mismatch (expected={target_company}, got=no company)")
+                return False, "company_mismatch"
+            cleaned_expected = clean_company_name(target_company).lower().strip()
+            cleaned_actual = clean_company_name(actual).lower().strip()
+            if (cleaned_expected != cleaned_actual
+                    and not (cleaned_expected in cleaned_actual and len(cleaned_expected) >= 3)
+                    and not (cleaned_actual in cleaned_expected and len(cleaned_actual) >= 3)):
+                print(f"[PostFilter] Result for {name}: FAIL — company mismatch (expected={target_company}, got={actual})")
+                return False, "company_mismatch"
 
     # School check: if user specified schools, contact must have at least one matching school.
     # Delegate to contact_matches_school (strictness="loose") which uses word-boundary matching
@@ -3256,6 +3463,21 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
     print(f"[PostFilter] search_contacts_from_prompt called (max_contacts={max_contacts}, parsed keys={list(parsed_prompt.keys())})")
     exclude_keys = exclude_keys or set()
 
+    # Industry-aware semantic expansion: broaden `industries` to related PDL
+    # taxonomy entries and add aligned title_variations. Runs BEFORE cache
+    # lookup so expanded queries get their own cache entries. Skipped when:
+    #   - parsed_prompt has no industries, OR
+    #   - a specific company was named (e.g. "USC Data Scientist IBM"): the
+    #     company filter already constrains the search to that firm, so
+    #     broadening industry would only add noise. Expansion exists for
+    #     school+industry prompts WITHOUT a company target.
+    if (
+        ENABLE_INDUSTRY_EXPANSION
+        and parsed_prompt.get("industries")
+        and not parsed_prompt.get("companies")
+    ):
+        parsed_prompt = expand_industries_and_titles(parsed_prompt)
+
     # ---- Cache check (Firestore, 30-day TTL) -------------------------------
     # Same query within 30 days = 0 PDL credits. Per-user exclude_keys is
     # applied AFTER read so one cache entry serves many users.
@@ -3313,6 +3535,21 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
     post_filter_dropped = 0
     drop_reason_counts = {}  # Track why contacts were dropped across all attempts
 
+    # Lazy-topup state (Phase 3 of email deliverability plan). Accumulate
+    # filtered contacts ACROSS retry attempts instead of replacing the set
+    # each rung. Break only when verified count meets the requested max OR
+    # the PDL budget cap is reached, whichever comes first. Pre-topup
+    # behavior was: any new contacts at a rung → stop. That silently dropped
+    # 3 of 5 PDL records on hard searches (paid for, filtered out, not
+    # returned). See docs/EMAIL_DELIVERABILITY_PLAN.md.
+    cumulative_filtered: list = []
+    cumulative_seen_keys: set = set()
+    cumulative_seen_pdl_ids: list = []  # ordered for stable must_not clauses
+    records_fetched_total = 0
+    PDL_BUDGET_CAP_MULTIPLIER = 2.0
+    pdl_budget_cap = int(max_contacts * PDL_BUDGET_CAP_MULTIPLIER) + buffer
+    topup_triggered = False
+
     companies_from_prompt = parsed_prompt.get("companies") or []
     schools_from_prompt = parsed_prompt.get("schools") or []
 
@@ -3343,7 +3580,29 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
                 print(f"[PDL Retry] Attempt 2: drop title + industry filters (keep company + school + location)")
             elif attempt == 3:
                 print(f"[PDL Retry] Attempt 3: drop title + industry + location (keep company + school only)")
-        query_obj = build_query_from_prompt(parsed_prompt, retry_level=attempt)
+
+            # Lazy-topup telemetry: mark only ONCE, on the first re-entry past
+            # level 0. Tracks "did we have to broaden to top up verified count?"
+            if not topup_triggered:
+                topup_triggered = True
+                try:
+                    from app.utils.metrics_events import log_event
+                    log_event(None, "pdl_topup_triggered", {
+                        "max_contacts": max_contacts,
+                        "verified_at_level_0": sum(
+                            1 for c in cumulative_filtered
+                            if c.get("EmailSource") in HIGH_CONFIDENCE_EMAIL_SOURCES
+                        ),
+                        "cumulative_at_level_0": len(cumulative_filtered),
+                    })
+                except Exception:
+                    pass
+
+        query_obj = build_query_from_prompt(
+            parsed_prompt,
+            retry_level=attempt,
+            exclude_pdl_ids=cumulative_seen_pdl_ids,
+        )
         raw_contacts, status_code = execute_pdl_search(
             headers=headers,
             url=PDL_URL,
@@ -3354,6 +3613,8 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
             verbose=False,
             target_company=target_company,
         )
+        records_fetched_total += len(raw_contacts or [])
+
         if not raw_contacts:
             continue
 
@@ -3385,18 +3646,69 @@ def search_contacts_from_prompt(parsed_prompt: dict, max_contacts: int, exclude_
                 continue
             attempt_filtered.append(contact)
 
+        # Merge into cumulative (dedup by identity key), update pdlId exclusion list.
+        for c in attempt_filtered:
+            key = get_contact_identity(c)
+            if key in cumulative_seen_keys:
+                continue
+            cumulative_seen_keys.add(key)
+            cumulative_filtered.append(c)
+            pid = c.get("pdlId")
+            if pid:
+                cumulative_seen_pdl_ids.append(pid)
+
         if attempt_filtered:
-            filtered = attempt_filtered
             retry_level_used = attempt
-            post_filter_dropped = attempt_dropped
+            post_filter_dropped += attempt_dropped
             if already_saved:
-                print(f"🔍 Prompt search filtering: raw={len(raw_contacts)}, already_saved={len(already_saved)}, new={len(filtered)} (attempt {attempt})")
-            if post_filter_dropped > 0:
-                print(f"[PostFilter] Kept {len(filtered)} contacts after post-validation (dropped {post_filter_dropped} non-matching)")
+                print(f"🔍 Prompt search filtering: raw={len(raw_contacts)}, already_saved={len(already_saved)}, new_this_rung={len(attempt_filtered)}, cumulative={len(cumulative_filtered)} (attempt {attempt})")
+            if attempt_dropped > 0:
+                print(f"[PostFilter] Kept {len(attempt_filtered)} contacts at attempt {attempt} (dropped {attempt_dropped} non-matching)")
+
+        # Break condition: enough verified contacts cumulated.
+        verified_count = sum(
+            1 for c in cumulative_filtered
+            if c.get("EmailSource") in HIGH_CONFIDENCE_EMAIL_SOURCES
+        )
+        if verified_count >= max_contacts:
+            print(f"[PDL Retry] Verified target met at attempt {attempt}: verified={verified_count} >= max_contacts={max_contacts} (records_fetched={records_fetched_total})")
             break
-        # No NEW contacts on this rung (all hits were already saved or post-filter dropped).
-        # Try the next broader rung. Aggregated `already_saved` carries across attempts.
-        print(f"[PDL Retry] Attempt {attempt}: raw={len(raw_contacts)}, already_saved_cumulative={len(already_saved)}, new=0 — trying next rung")
+
+        # Budget cap: stop spending PDL credits past the configured ceiling.
+        if records_fetched_total >= pdl_budget_cap:
+            print(f"[PDL Retry] Budget cap hit at attempt {attempt}: records_fetched={records_fetched_total} >= cap={pdl_budget_cap}")
+            try:
+                from app.utils.metrics_events import log_event
+                log_event(None, "pdl_budget_cap_hit", {
+                    "records_fetched": records_fetched_total,
+                    "budget_cap": pdl_budget_cap,
+                    "verified_count": verified_count,
+                    "max_contacts": max_contacts,
+                })
+            except Exception:
+                pass
+            break
+
+        if not attempt_filtered:
+            # No NEW contacts on this rung — broaden further.
+            print(f"[PDL Retry] Attempt {attempt}: raw={len(raw_contacts)}, already_saved_cumulative={len(already_saved)}, new=0 — trying next rung")
+
+    filtered = cumulative_filtered
+
+    if topup_triggered:
+        try:
+            from app.utils.metrics_events import log_event
+            log_event(None, "pdl_topup_records_fetched", {
+                "records_fetched_total": records_fetched_total,
+                "retry_level_reached": retry_level_used,
+                "verified_count_final": sum(
+                    1 for c in cumulative_filtered
+                    if c.get("EmailSource") in HIGH_CONFIDENCE_EMAIL_SOURCES
+                ),
+                "cumulative_count_final": len(cumulative_filtered),
+            })
+        except Exception:
+            pass
 
     # Build adjacency metadata to explain what happened
     adjacency_metadata = None
@@ -3648,6 +3960,162 @@ def build_coffee_chat_data(pdl_person: dict, best_email: str) -> dict:
     }
 
 
+def _apify_date_to_str(value) -> str:
+    """Apify profile actors return dates as either ISO strings or {month, year}
+    objects. Normalize to a YYYY-MM (or YYYY) string so the rest of the prep
+    pipeline can treat PDL and Apify-derived dates the same way.
+    """
+    if not value:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        year = value.get("year")
+        month = value.get("month")
+        if year and month:
+            return f"{year}-{int(month):02d}"
+        if year:
+            return str(year)
+    return ""
+
+
+def build_coffee_chat_data_from_apify(apify_item: dict) -> dict:
+    """Convert a `harvestapi/linkedin-profile-scraper` dataset item into the
+    same coffee_chat_data shape produced by build_coffee_chat_data(). Used as
+    a PDL fallback when PDL has no record of the profile (common for student
+    / private accounts).
+
+    Apify field names vary slightly by actor revision, so we try a few common
+    variants per field and let unknowns fall through to empty rather than
+    failing the whole prep.
+    """
+    item = apify_item or {}
+
+    first = item.get("firstName") or ""
+    last = item.get("lastName") or ""
+    if not (first or last) and item.get("name"):
+        parts = str(item["name"]).strip().split(" ", 1)
+        first = parts[0]
+        last = parts[1] if len(parts) > 1 else ""
+
+    location_obj = item.get("location") or {}
+    if isinstance(location_obj, str):
+        city = ""
+        country = ""
+        location_display = location_obj
+    else:
+        city = location_obj.get("city") or location_obj.get("locality") or ""
+        country = location_obj.get("country") or ""
+        location_display = (
+            location_obj.get("full")
+            or location_obj.get("name")
+            or ", ".join(filter(None, [city, location_obj.get("region", ""), country]))
+        )
+
+    current = item.get("currentPosition") or {}
+    current_title = current.get("title") or item.get("headline") or ""
+    current_company = current.get("companyName") or current.get("company") or ""
+
+    experience_array = []
+    for exp in item.get("experience", []) or []:
+        if not isinstance(exp, dict):
+            continue
+        title = exp.get("title") or ""
+        company = (
+            exp.get("companyName")
+            or exp.get("company")
+            or (exp.get("companyObject") or {}).get("name")
+            or ""
+        )
+        start = _apify_date_to_str(exp.get("startDate") or exp.get("start_date"))
+        end = _apify_date_to_str(exp.get("endDate") or exp.get("end_date"))
+        loc = exp.get("location") or ""
+        experience_array.append({
+            "title": title,
+            "company": company,
+            "start_date": start,
+            "end_date": end,
+            "is_current": not end,
+            "location_names": [loc] if loc else [],
+            "summary": exp.get("description") or exp.get("summary") or "",
+        })
+
+    if not current_title and experience_array:
+        current_title = experience_array[0]["title"]
+    if not current_company and experience_array:
+        current_company = experience_array[0]["company"]
+
+    education_array = []
+    for edu in item.get("education", []) or []:
+        if not isinstance(edu, dict):
+            continue
+        education_array.append({
+            "school": edu.get("schoolName") or edu.get("school") or "",
+            "degree": edu.get("degreeName") or edu.get("degree") or "",
+            "major": edu.get("fieldOfStudy") or edu.get("major") or "",
+            "start_date": _apify_date_to_str(edu.get("startDate") or edu.get("start_date")),
+            "end_date": _apify_date_to_str(edu.get("endDate") or edu.get("end_date")),
+            "gpa": edu.get("gpa"),
+        })
+
+    skills_obj = item.get("skills")
+    if isinstance(skills_obj, dict):
+        skills = skills_obj.get("allSkills") or skills_obj.get("topSkills") or []
+    elif isinstance(skills_obj, list):
+        skills = [s if isinstance(s, str) else (s.get("name") if isinstance(s, dict) else "") for s in skills_obj]
+    else:
+        skills = []
+    skills = [s for s in skills if s]
+
+    emails = item.get("emails") or []
+    best_email = emails[0] if emails and isinstance(emails[0], str) else (item.get("email") or "")
+
+    linkedin_url = item.get("profileUrl") or item.get("linkedinUrl") or ""
+
+    return {
+        "firstName": first,
+        "lastName": last,
+        "fullName": (item.get("name") or f"{first} {last}").strip(),
+        "email": best_email,
+        "linkedinUrl": linkedin_url,
+        "githubUrl": "",
+        "twitterUrl": "",
+
+        "jobTitle": current_title,
+        "company": current_company,
+        "industry": item.get("industry") or "",
+        "jobCompanySize": "",
+        "jobCompanyFounded": "",
+        "jobCompanyLinkedinUrl": current.get("companyUrl") or "",
+
+        "city": city,
+        "state": location_obj.get("region", "") if isinstance(location_obj, dict) else "",
+        "country": country,
+        "location": location_display,
+
+        "experienceArray": experience_array,
+        "educationArray": education_array,
+
+        "skills": skills,
+        "interests": [],
+        "certifications": item.get("certifications") or [],
+        "languages": item.get("languages") or [],
+
+        "summary": item.get("summary") or item.get("about") or item.get("headline") or "",
+        "yearsExperience": None,
+        "linkedinConnections": item.get("connectionsCount") or item.get("followersCount"),
+
+        "workExperience": [
+            f"{experience_array[0]['title']} at {experience_array[0]['company']}"
+            if experience_array else ""
+        ],
+        "education": (
+            f"{education_array[0]['degree']} at {education_array[0]['school']}"
+            if education_array else ""
+        ),
+    }
+
+
 @meter_call("pdl", "person_enrich")
 def enrich_by_name(first_name: str, last_name: str, company: str, min_likelihood: int = 4):
     """Look up a single person via /v5/person/enrich by name + company.
@@ -3684,8 +4152,33 @@ def enrich_by_name(first_name: str, last_name: str, company: str, min_likelihood
 
 
 @meter_call("pdl", "person_enrich")
+def _apify_fallback_enrich(linkedin_url: str):
+    """Try the Apify HarvestAPI profile scraper when PDL has no record.
+    Returns a coffee_chat_data dict on success or None on any failure.
+
+    PDL's index lags ~6 months and misses many student / private accounts —
+    Apify scrapes the live LinkedIn page so it catches what PDL can't.
+    """
+    try:
+        from app.services.apify_client import enrich_user_linkedin_profile_via_apify
+        envelope = enrich_user_linkedin_profile_via_apify(linkedin_url)
+        if not envelope or not envelope.get("ok") or not envelope.get("data"):
+            print(f"[Enrichment] Apify fallback returned no data (source={envelope.get('source') if envelope else 'none'})")
+            return None
+        coffee_chat_data = build_coffee_chat_data_from_apify(envelope["data"])
+        print(f"[Enrichment] Apify fallback succeeded for {linkedin_url}")
+        print(f"[CoffeeChat] skills={len(coffee_chat_data['skills'])}, interests={len(coffee_chat_data['interests'])}, industry={coffee_chat_data['industry']}")
+        set_pdl_cache(linkedin_url, coffee_chat_data)
+        return coffee_chat_data
+    except Exception as e:
+        print(f"[Enrichment] Apify fallback raised: {e}")
+        return None
+
+
 def enrich_linkedin_profile(linkedin_url):
-    """Use PDL to enrich LinkedIn profile"""
+    """Use PDL to enrich LinkedIn profile, with Apify as a fallback when PDL
+    has no record of the profile (common for students / smaller accounts).
+    """
     try:
         # Check cache first
         cached = get_cached_pdl_data(linkedin_url)
@@ -3747,28 +4240,30 @@ def enrich_linkedin_profile(linkedin_url):
                 set_pdl_cache(linkedin_url, coffee_chat_data)
                 return coffee_chat_data
             else:
-                print(f"PDL returned status {person_data.get('status')} - no data found")
+                print(f"PDL returned status {person_data.get('status')} - no data found, trying Apify fallback")
                 if person_data.get('error'):
                     print(f"PDL error: {person_data.get('error')}")
-                return None
+                return _apify_fallback_enrich(linkedin_url)
 
         elif response.status_code == 404:
-            print(f"LinkedIn profile not found in PDL database")
-            return None
+            print(f"LinkedIn profile not found in PDL database, trying Apify fallback")
+            return _apify_fallback_enrich(linkedin_url)
         elif response.status_code == 402:
-            print(f"PDL API: Payment required (out of credits)")
-            return None
+            print(f"PDL API: Payment required (out of credits), trying Apify fallback")
+            return _apify_fallback_enrich(linkedin_url)
         elif response.status_code == 401:
+            # Auth misconfiguration is an operator problem, not a coverage gap —
+            # don't burn an Apify call covering for it.
             print(f"PDL API: Invalid API key")
             return None
         else:
-            print(f"PDL enrichment failed with status {response.status_code}")
+            print(f"PDL enrichment failed with status {response.status_code}, trying Apify fallback")
             print(f"Response: {response.text[:500]}")
-            return None
+            return _apify_fallback_enrich(linkedin_url)
 
     except requests.exceptions.Timeout:
-        print(f"PDL API timeout for {linkedin_url}")
-        return None
+        print(f"PDL API timeout for {linkedin_url}, trying Apify fallback")
+        return _apify_fallback_enrich(linkedin_url)
     except Exception as e:
         print(f"LinkedIn enrichment error: {e}")
         import traceback

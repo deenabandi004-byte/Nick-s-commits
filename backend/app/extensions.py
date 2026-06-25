@@ -314,6 +314,16 @@ def require_tier(allowed_tiers):
                 # Check if user's tier is allowed
                 if tier not in allowed_tiers:
                     tier_names = ', '.join([t.capitalize() for t in allowed_tiers])
+                    try:
+                        from app.utils.posthog_client import track_event
+                        track_event(user_id, 'feature_gated', {
+                            'feature': request.endpoint,
+                            'path': request.path,
+                            'required_tier': allowed_tiers,
+                            'current_tier': tier,
+                        })
+                    except Exception:
+                        pass
                     return jsonify({
                         'error': 'Upgrade required',
                         'message': f'This feature requires {tier_names} subscription',
@@ -358,6 +368,16 @@ def get_rate_limit_key():
     # Exempt coffee chat prep status polling (GET /api/coffee-chat-prep/<id>)
     if (request.method == 'GET' and
         _re.match(r'^/api/coffee-chat-prep/[^/]+$', request.path)):
+        return None
+
+    # Exempt MCP server routes: they enforce their own per-IP limits
+    # via app.mcp_server.rate_limit.MCPRateLimit, and double-throttling
+    # via Flask-Limiter would silently block legitimate MCP traffic.
+    # /claim is the post-paywall signup landing; we never want to
+    # rate-limit a conversion event.
+    if (request.path == '/mcp'
+            or request.path == '/api/mcp/health'
+            or request.path == '/claim'):
         return None
     
     # For authenticated requests, use user ID instead of IP address

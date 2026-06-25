@@ -5,7 +5,7 @@ import concurrent.futures
 import logging
 import threading
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone
 
 from firebase_admin import firestore, storage
 from flask import Blueprint, jsonify, request
@@ -253,7 +253,7 @@ def process_coffee_chat_prep_background(
                 "stage": "completed",
                 "stageLabel": "Complete!",
                 "progressPct": 100,
-                "completedAt": datetime.now().isoformat(),
+                "completedAt": datetime.now(timezone.utc).isoformat(),
                 "similaritySummary": similarity,
                 "coffeeQuestions": questions,
                 "companyCheatSheet": cheatsheet,
@@ -272,7 +272,7 @@ def process_coffee_chat_prep_background(
             user_ref = db.collection("users").document(user_id)
             user_ref.update({
                 "coffeeChatPrepsUsed": firestore.Increment(1),
-                "updatedAt": datetime.now().isoformat()
+                "updatedAt": datetime.now(timezone.utc).isoformat()
             })
         except Exception as usage_error:
             logger.error(f"Failed to increment usage counter: {usage_error}")
@@ -416,7 +416,7 @@ def create_coffee_chat_prep():
             "stage": "processing",
             "stageLabel": "Starting...",
             "progressPct": 0,
-            "createdAt": datetime.now().isoformat(),
+            "createdAt": datetime.now(timezone.utc).isoformat(),
             "userId": user_id,
             "userEmail": user_email,
         }

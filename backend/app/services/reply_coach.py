@@ -11,6 +11,7 @@ import threading
 from datetime import datetime, timezone
 
 from app.extensions import get_db
+from app.services.gmail_client import _gmail_service, _load_user_gmail_creds, get_full_thread_chain
 from app.services.reply_generation import generate_reply_to_message
 
 logger = logging.getLogger(__name__)
@@ -26,11 +27,55 @@ def _fetch_user_context(db, uid):
     return user_data, resume_text
 
 
-def _generate_and_store_draft(db, uid, contact_id, contact_data, message_snippet):
-    """Generate a reply draft and store it in Firestore. Returns the draft dict."""
+def _fetch_thread_chain(uid, contact_data):
+    """Fetch the full Gmail thread chain for thread-aware drafting.
+
+    Returns [] when no thread id, no creds, or Gmail errors. The caller can
+    still generate from the latest snippet alone — the chain is additive
+    context, not a hard requirement.
+    """
+    thread_id = contact_data.get("gmailThreadId")
+    if not thread_id:
+        return []
+    try:
+        creds = _load_user_gmail_creds(uid)
+    except Exception as e:
+        logger.warning(f"[reply_coach] uid={uid} creds load failed: {e}")
+        return []
+    if not creds:
+        return []
+    try:
+        service = _gmail_service(creds)
+    except Exception as e:
+        logger.warning(f"[reply_coach] uid={uid} gmail service init failed: {e}")
+        return []
+
+    contact_email = contact_data.get("draftToEmail") or contact_data.get("email")
+    user_email = None
+    try:
+        user_doc = get_db().collection("users").document(uid).get()
+        if user_doc.exists:
+            user_email = (user_doc.to_dict() or {}).get("email")
+    except Exception:
+        pass
+
+    try:
+        return get_full_thread_chain(service, thread_id, contact_email, user_email)
+    except Exception as e:
+        logger.warning(f"[reply_coach] uid={uid} thread fetch failed for {thread_id}: {e}")
+        return []
+
+
+def _generate_and_store_draft(db, uid, contact_id, contact_data, message_snippet, is_followup=False):
+    """Generate a reply draft (or follow-up nudge) and store it in Firestore.
+    Returns the draft dict. is_followup is set by the on-demand path when
+    there is no inbound reply yet — the contact has been emailed but hasn't
+    responded, so Generate flips into nudge mode instead of 404'ing.
+    """
     user_data, resume_text = _fetch_user_context(db, uid)
 
     original_subject = contact_data.get("emailSubject") or contact_data.get("draftSubject", "")
+    prior_messages = _fetch_thread_chain(uid, contact_data)
 
     result = generate_reply_to_message(
         message_content=message_snippet,
@@ -38,15 +83,20 @@ def _generate_and_store_draft(db, uid, contact_id, contact_data, message_snippet
         resume_text=resume_text or None,
         user_profile=user_data or None,
         original_email_subject=original_subject or None,
+        prior_messages=prior_messages,
+        is_followup=is_followup,
     )
 
     now_iso = datetime.now(timezone.utc).isoformat()
     draft_doc = {
         "body": result.get("body", ""),
         "replyType": result.get("replyType", ""),
+        "warmthTier": result.get("warmthTier", ""),
+        "leadType": result.get("leadType", ""),
         "contactId": contact_id,
         "createdAt": now_iso,
         "status": "ready",
+        "isFollowup": is_followup,
     }
 
     db.collection("users").document(uid).collection("replyDrafts").document(contact_id).set(draft_doc)
@@ -118,45 +168,53 @@ def spawn_reply_coach(uid, contact_id, contact_data, message_snippet):
         logger.error(f"[reply_coach] uid={uid} contact={contact_id} spawn failed: {exc}")
 
 
-def get_reply_draft(uid, contact_id):
+def get_reply_draft(uid, contact_id, refresh=False):
     """Get a reply draft for a contact, with on-demand fallback.
 
     If a ready draft exists, return it. If a pending doc is stale (>10min)
     or failed, regenerate synchronously. If no draft and no pending doc,
     generate on-demand.
+
+    When refresh=True, the cached draft is bypassed and a fresh thread-aware
+    generation runs. The inbox "Generate" button always passes this so that
+    cached drafts written by the webhook path (which were latest-snippet-only)
+    don't surface stale, non-thread-aware text on the first click.
     """
     db = get_db()
 
-    # Check for existing ready draft
+    # Check for existing ready draft (skip when caller forces refresh)
     draft_ref = db.collection("users").document(uid).collection("replyDrafts").document(contact_id)
-    draft_doc = draft_ref.get()
-    if draft_doc.exists:
-        return draft_doc.to_dict()
+    if not refresh:
+        draft_doc = draft_ref.get()
+        if draft_doc.exists:
+            return draft_doc.to_dict()
 
-    # Check pending doc
+    # Check pending doc — also bypassed on refresh so a click during a
+    # pending background job still returns a fresh sync result.
     pending_ref = db.collection("users").document(uid).collection("pending_reply_drafts").document(contact_id)
-    pending_doc = pending_ref.get()
-    if pending_doc.exists:
-        pending_data = pending_doc.to_dict() or {}
-        status = pending_data.get("status")
+    if not refresh:
+        pending_doc = pending_ref.get()
+        if pending_doc.exists:
+            pending_data = pending_doc.to_dict() or {}
+            status = pending_data.get("status")
 
-        if status == "pending":
-            # Check staleness
-            created_str = pending_data.get("createdAt", "")
-            if created_str:
-                try:
-                    created_dt = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
-                    age_minutes = (datetime.now(timezone.utc) - created_dt).total_seconds() / 60
-                    if age_minutes < REPLY_DRAFT_STALE_MINUTES:
-                        return {"status": "generating", "createdAt": created_str}
-                except Exception:
-                    pass
-            # Stale — fall through to regenerate
+            if status == "pending":
+                # Check staleness
+                created_str = pending_data.get("createdAt", "")
+                if created_str:
+                    try:
+                        created_dt = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+                        age_minutes = (datetime.now(timezone.utc) - created_dt).total_seconds() / 60
+                        if age_minutes < REPLY_DRAFT_STALE_MINUTES:
+                            return {"status": "generating", "createdAt": created_str}
+                    except Exception:
+                        pass
+                # Stale — fall through to regenerate
 
-        elif status == "failed":
-            pass  # Fall through to regenerate
-        else:
-            pass  # Unknown status — regenerate
+            elif status == "failed":
+                pass  # Fall through to regenerate
+            else:
+                pass  # Unknown status — regenerate
 
     # On-demand generation: fetch contact data and last message snippet
     contact_ref = db.collection("users").document(uid).collection("contacts").document(contact_id)
@@ -166,11 +224,31 @@ def get_reply_draft(uid, contact_id):
 
     contact_data = contact_doc.to_dict() or {}
     message_snippet = contact_data.get("lastMessageSnippet", "")
+
+    # No inbound reply yet — flip into follow-up mode if the user has sent
+    # something to nudge on (a thread id, a sent timestamp, or a stored email
+    # body). When none of those exist, the contact is truly empty and we 404.
+    is_followup = False
     if not message_snippet:
-        return None
+        has_sent_state = bool(
+            contact_data.get("gmailThreadId")
+            or contact_data.get("emailSentAt")
+            or contact_data.get("emailBody")
+        )
+        if not has_sent_state:
+            return None
+        is_followup = True
+        # For follow-ups we pass the user's own most recent outgoing note as
+        # message_content so the model knows what's being nudged. Falls back
+        # to the email subject when no body is stored.
+        message_snippet = (
+            contact_data.get("emailBody")
+            or contact_data.get("emailSubject")
+            or ""
+        )
 
     # Generate synchronously
-    draft = _generate_and_store_draft(db, uid, contact_id, contact_data, message_snippet)
+    draft = _generate_and_store_draft(db, uid, contact_id, contact_data, message_snippet, is_followup=is_followup)
 
     # Clean up pending doc if it existed
     try:

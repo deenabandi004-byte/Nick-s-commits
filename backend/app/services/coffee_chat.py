@@ -16,6 +16,7 @@ from serpapi import GoogleSearch
 
 from app.config import SERPAPI_KEY
 from app.services.openai_client import get_openai_client
+from app.utils.contact import strip_dashes
 
 logger = logging.getLogger(__name__)
 
@@ -259,7 +260,8 @@ def _summarise_article(
         "- Summaries must be factual, neutral, and 30-40 words\n"
         "- Briefly explain why the item could be worth mentioning in conversation\n"
         "- Avoid sensational, unrelated, or general-interest news\n"
-        "- Do not mention job postings, hiring, or recruitment\n\n"
+        "- Do not mention job postings, hiring, or recruitment\n"
+        "- Never use em dashes or en dashes; use a comma or a period instead\n\n"
         f"TITLE: {item.get('title', '')}\n"
         f"SNIPPET: {item.get('snippet', '')}\n"
         f"DIVISION: {division}\n"
@@ -280,8 +282,8 @@ def _summarise_article(
         # Return empty string if model indicates item should be skipped
         if summary.upper() == "SKIP" or len(summary) < 10:
             return ""
-        
-        return summary
+
+        return strip_dashes(summary)
     except Exception as exc:  # pragma: no cover - defensive
         print(f"[CoffeeChat] Summary generation failed: {exc}")
         # Return empty string instead of snippet to maintain quality standards
@@ -340,7 +342,8 @@ def _generate_industry_overview(
         "- Briefly explain why these developments matter for the division or office\n"
         "- Focus on concrete trends or events, not speculation\n"
         "- Avoid marketing language, opinions, or value judgments\n"
-        "- Use simple, conversational language\n\n"
+        "- Use simple, conversational language\n"
+        "- Never use em dashes or en dashes; use a comma or a period instead\n\n"
         f"Industry: {industry}\n"
         f"Relevant Highlights:\n{notes}\n\n"
         "Industry Summary (30-40 words, or 'SKIP' if not clearly relevant):"
@@ -357,8 +360,8 @@ def _generate_industry_overview(
         # Return empty string if model indicates content should be skipped
         if result.upper() == "SKIP" or len(result) < 10:
             return ""
-        
-        return result
+
+        return strip_dashes(result)
     except Exception as exc:  # pragma: no cover - defensive
         print(f"[CoffeeChat] Industry summary failed: {exc}")
         # Return empty string to maintain quality standards (no generic fallback)

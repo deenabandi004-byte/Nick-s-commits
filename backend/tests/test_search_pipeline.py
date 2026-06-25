@@ -75,9 +75,9 @@ class TestQueryBuilding:
         """No roles but with company — no job_title exists fallback needed."""
         q = _build_query(self._filters(company=["Google"]), self.STRICT)
         s = qs(q)
-        assert "google" in s
-        # Should have company clause, emails exists, and job_company_is_current
-        assert "job_company_is_current" in s
+        # Google is in COMPANY_DOMAIN_MAP → query uses job_company_website
+        assert "google.com" in s
+        assert "job_company_website" in s
 
     def test_05_loose_title_tokenizes(self):
         """Loose title strategy tokenizes the primary title."""
@@ -125,18 +125,19 @@ class TestQueryBuilding:
 
     # --- 11-15: Company queries ---
 
-    def test_11_single_company(self):
-        """Single company generates match_phrase and is_current filter."""
+    def test_11_single_company_mapped_uses_website(self):
+        """Mapped firms generate match_phrase on job_company_website (not name)."""
         q = _build_query(self._filters(company=["Goldman Sachs"]), self.STRICT)
         s = qs(q)
-        assert "job_company_name" in s
-        assert "job_company_is_current" in s
+        assert "job_company_website" in s
+        assert "goldmansachs.com" in s
 
     def test_12_company_with_role(self):
         """Company + role both present in query."""
         q = _build_query(self._filters(roles=["Analyst"], company=["McKinsey"]), self.STRICT)
         s = qs(q)
-        assert "job_company_name" in s
+        # McKinsey is mapped → website-based clause
+        assert "mckinsey.com" in s
         assert "analyst" in s
 
     def test_13_no_company_strategy(self):
@@ -146,12 +147,13 @@ class TestQueryBuilding:
         assert "google" not in s  # Company should be dropped
         assert "swe" in s  # Role should remain
 
-    def test_14_company_is_current_only_with_company(self):
-        """job_company_is_current only appears when company is specified."""
+    def test_14_company_clause_only_with_company(self):
+        """Company clause only appears when company is specified."""
         q_with = _build_query(self._filters(company=["Meta"]), self.STRICT)
         q_without = _build_query(self._filters(roles=["SWE"]), self.STRICT)
-        assert "job_company_is_current" in qs(q_with)
-        assert "job_company_is_current" not in qs(q_without)
+        # Meta is mapped → uses website
+        assert "meta.com" in qs(q_with)
+        assert "meta.com" not in qs(q_without)
 
     def test_15_industry_filter(self):
         """Industry filter generates match clause."""
@@ -186,6 +188,48 @@ class TestQueryBuilding:
         """Max results capped at 50."""
         q = _build_query(self._filters(roles=["PM"], max_results=200), self.STRICT)
         assert q["size"] <= 50
+
+
+class TestCompanyDomainMap:
+    """
+    Verifies the empirically-derived fix: PDL stores job_company_name under
+    unguessable canonicals (e.g. BCG is "boston consulting group (bcg)"),
+    so we route mapped firms through job_company_website instead. The map
+    itself lives in pdl_client (single source of truth).
+    """
+
+    def test_bcg_routes_to_website(self):
+        """The original failing case: USC alumni at BCG → bcg.com domain filter."""
+        clause = _build_company_clause(["BCG"])
+        assert clause == {"match_phrase": {"job_company_website": "bcg.com"}}
+
+    def test_acronym_resolves_case_insensitively(self):
+        """User-typed casing doesn't matter."""
+        assert _build_company_clause(["bcg"]) == {"match_phrase": {"job_company_website": "bcg.com"}}
+        assert _build_company_clause(["BCG"]) == {"match_phrase": {"job_company_website": "bcg.com"}}
+        assert _build_company_clause(["Bcg"]) == {"match_phrase": {"job_company_website": "bcg.com"}}
+
+    def test_full_name_resolves_to_same_domain(self):
+        """'Boston Consulting Group' and 'BCG' route to the same domain."""
+        a = _build_company_clause(["BCG"])
+        b = _build_company_clause(["Boston Consulting Group"])
+        assert a == b
+
+    def test_finance_acronyms_route_correctly(self):
+        """JPM, GS, MS resolve to the expected bank domains."""
+        assert _build_company_clause(["JPM"]) == {"match_phrase": {"job_company_website": "jpmorgan.com"}}
+        assert _build_company_clause(["GS"]) == {"match_phrase": {"job_company_website": "goldmansachs.com"}}
+        assert _build_company_clause(["MS"]) == {"match_phrase": {"job_company_website": "morganstanley.com"}}
+
+    def test_unmapped_firm_falls_back_to_name_match(self):
+        """A firm not in the map gets a job_company_name match_phrase (lowercased)."""
+        clause = _build_company_clause(["Acme Holdings"])
+        assert clause == {"match_phrase": {"job_company_name": "acme holdings"}}
+
+    def test_empty_input_returns_empty_clause(self):
+        assert _build_company_clause([]) == {}
+        assert _build_company_clause([""]) == {}
+        assert _build_company_clause(["   "]) == {}
 
 
 # ============================================================
@@ -348,6 +392,90 @@ class TestSchoolMatching:
         aliases = _school_aliases("MIT")
         result = contact_matches_school(pdl_person, aliases, strictness="normal")
         assert result
+
+
+# ============================================================
+# UC SYSTEM ALIASES (regression for the Roblox/Berkeley zero-result dogfood)
+# ============================================================
+
+class TestUcSystemAliases:
+    """The UC system has many ways a single campus gets written across PDL
+    profiles, website dropdowns, and free-text MCP inputs. Every campus
+    must produce the same full alias set regardless of which form the
+    caller types — otherwise PDL match_phrase only matches the literal
+    string and we lose most alumni.
+    """
+
+    # (input, expected_aliases_that_must_be_present)
+    # Every case must include the "university of california, <campus>"
+    # comma form — that's the canonical PDL stored form for most UC
+    # campuses (576k records for Berkeley vs 0 without comma).
+    _CASES = [
+        ("UC Berkeley",  {"berkeley", "uc berkeley", "university of california berkeley", "university of california, berkeley", "cal"}),
+        ("Berkeley",     {"berkeley", "uc berkeley", "university of california berkeley", "university of california, berkeley", "cal"}),
+        ("University of California, Berkeley",
+                         {"berkeley", "uc berkeley", "university of california berkeley", "university of california, berkeley", "cal"}),
+        ("UC Los Angeles", {"ucla", "uc los angeles", "university of california los angeles", "university of california, los angeles"}),
+        ("UCLA",           {"ucla", "uc los angeles", "university of california los angeles", "university of california, los angeles"}),
+        ("University of California, Los Angeles",
+                           {"ucla", "uc los angeles", "university of california los angeles", "university of california, los angeles"}),
+        ("UC San Diego",   {"ucsd", "uc san diego", "university of california san diego", "university of california, san diego"}),
+        ("UC Santa Barbara", {"ucsb", "uc santa barbara", "university of california santa barbara", "university of california, santa barbara"}),
+        ("UC Irvine",      {"uci", "uc irvine", "university of california irvine", "university of california, irvine"}),
+        ("UCI",            {"uci", "uc irvine", "university of california irvine", "university of california, irvine"}),
+        ("UC Davis",       {"ucd", "uc davis", "university of california davis", "university of california, davis"}),
+        ("UC Santa Cruz",  {"ucsc", "uc santa cruz", "university of california santa cruz", "university of california, santa cruz"}),
+        ("UC Riverside",   {"ucr", "uc riverside", "university of california riverside", "university of california, riverside"}),
+        ("UC Merced",      {"ucm", "uc merced", "university of california merced", "university of california, merced"}),
+        ("UC San Francisco", {"ucsf", "uc san francisco", "university of california san francisco", "university of california, san francisco"}),
+    ]
+
+    def test_uc_inputs_all_produce_full_alias_set(self):
+        """Each input form must produce every expected alias, so PDL
+        match_phrase fans out to all the variants in profile data."""
+        for raw, must_contain in self._CASES:
+            aliases = _school_aliases(raw)
+            alias_set = {a.lower() for a in aliases}
+            missing = must_contain - alias_set
+            assert not missing, (
+                f"_school_aliases({raw!r}) missing {missing}; got {sorted(alias_set)}"
+            )
+
+    def test_comma_stripped_input_does_not_lose_aliases(self):
+        """Website dropdowns send 'University of California, Berkeley' with
+        a comma. Pre-fix, the comma blocked the school_map exact-key lookup
+        AND the substring scan (since 'berkeley' is not literally inside
+        'university of california, berkeley' due to the comma sitting next
+        to it in some scan logic). After comma stripping, both succeed.
+        """
+        aliases = _school_aliases("University of California, Berkeley")
+        alias_set = {a.lower() for a in aliases}
+        assert "cal" in alias_set
+        assert "berkeley" in alias_set
+
+    def test_uc_inputs_emit_comma_form_for_pdl(self):
+        """Regression: PDL's education.school.name is keyword-indexed, and
+        most UC campuses are stored canonically WITH a comma between
+        'California' and the campus name. Direct probes:
+            'university of california, berkeley' -> 576,014 records
+            'university of california berkeley'  -> 0 records
+        Pre-fix, _school_aliases stripped commas during normalization but
+        never re-emitted them on output, so the PDL school filter returned
+        0 records for every UC query. The query body included multiple
+        no-comma forms (berkeley / uc berkeley / university of california
+        berkeley) and none of them matched PDL's stored data.
+
+        Every UC input — whether typed as 'UC Berkeley', 'Berkeley', or the
+        comma form from the website dropdown — must produce the
+        comma-canonical alias so PDL's match_phrase actually hits.
+        """
+        for raw in ("UC Berkeley", "Berkeley", "University of California, Berkeley"):
+            aliases = _school_aliases(raw)
+            alias_set = {a.lower() for a in aliases}
+            assert "university of california, berkeley" in alias_set, (
+                f"_school_aliases({raw!r}) must emit the PDL-canonical comma form; "
+                f"got {sorted(alias_set)}"
+            )
 
 
 # ============================================================

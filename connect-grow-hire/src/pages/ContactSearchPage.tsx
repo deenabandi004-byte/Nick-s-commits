@@ -3,11 +3,13 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/AppHeader";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
+import { useCreditsView } from "@/hooks/useCreditsView";
 import { useScout } from "@/contexts/ScoutContext";
+import { useTour } from "@/contexts/TourContext";
 import {
-  Linkedin, Loader2, Sparkles, ArrowRight, ArrowUp,
+  Linkedin, Loader2, ArrowRight, ArrowUp,
   User, Check, CheckCircle,
-  FileText, Upload, Mail, Inbox, AlertCircle, X, ExternalLink, ChevronRight, Lock
+  FileText, Upload, Mail, Inbox, AlertCircle, X, ExternalLink, ChevronRight, Lock, Send
 } from "lucide-react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,7 +18,7 @@ import { apiService, BACKEND_URL, isErrorResponse, type EmailTemplate, getEmailT
 import { firebaseApi } from "../services/firebaseApi";
 import type { Contact as ContactApi } from '../services/firebaseApi';
 import { toast } from "@/hooks/use-toast";
-import { TIER_CONFIGS } from "@/lib/constants";
+import { TIER_CONFIGS, CREDIT_COSTS } from "@/lib/constants";
 import { logActivity, generateContactSearchSummary } from "@/utils/activityLogger";
 import { EliteGateModal } from "@/components/EliteGateModal";
 import { MainContentWrapper } from "@/components/MainContentWrapper";
@@ -47,23 +49,70 @@ import { getUniversityShortName } from "@/lib/universityUtils";
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
 
 function getPeopleFallbackPlaceholders(schoolShort: string | null): string[] {
-  const base = [
-    'Alumni at Goldman Sachs',
-    'Engineers at Sequoia-backed startups',
-    'Hiring managers at Disney',
-  ];
-  if (schoolShort) {
-    return [
-      `${schoolShort} data scientists at Google`,
-      `Product managers who went to ${schoolShort}`,
-      ...base,
-    ];
-  }
+  // Each prompt uses a different shape (alum-to-company, role+season, hiring-manager,
+  // location, sector) so cycling them nudges the user toward thinking about WHICH
+  // angle of search they care about, rather than copying a single template.
+  const school = schoolShort || 'USC';
   return [
-    'Data scientists at Google',
-    'Product managers in tech',
-    ...base,
+    `${school} alumni at Goldman Sachs`,
+    `Stripe engineers hiring for summer 2026 SWE interns`,
+    `Hiring managers for product roles at Sequoia-backed startups`,
+    `${school} grads now working at Google in product`,
+    `Investment bankers in NYC who went to ${school}`,
+    `McKinsey consultants who studied at ${school}`,
+    `Founders of YC startups who went to ${school}`,
+    `Recruiters at Meta hiring for new-grad SWE`,
   ];
+}
+
+// Typewriter cycler: types one phrase, holds, erases, advances to the next.
+// Returns the currently visible substring. Pause when `paused` is true so we
+// don't waste cycles while the user is typing into the textarea.
+function useTypewriterCycle(
+  phrases: string[],
+  opts?: { typeMs?: number; eraseMs?: number; holdMs?: number; paused?: boolean }
+): string {
+  const { typeMs = 45, eraseMs = 22, holdMs = 1600, paused = false } = opts ?? {};
+  const [idx, setIdx] = useState(0);
+  const [display, setDisplay] = useState('');
+  const [phase, setPhase] = useState<'typing' | 'erasing'>('typing');
+
+  // Reset when the source phrases change (e.g. user's school loads in async).
+  useEffect(() => {
+    setIdx(0);
+    setDisplay('');
+    setPhase('typing');
+  }, [phrases]);
+
+  useEffect(() => {
+    if (paused || phrases.length === 0) return;
+    const current = phrases[idx % phrases.length];
+
+    if (phase === 'typing') {
+      if (display.length < current.length) {
+        const t = setTimeout(
+          () => setDisplay(current.slice(0, display.length + 1)),
+          typeMs,
+        );
+        return () => clearTimeout(t);
+      }
+      const t = setTimeout(() => setPhase('erasing'), holdMs);
+      return () => clearTimeout(t);
+    }
+
+    // erasing
+    if (display.length > 0) {
+      const t = setTimeout(
+        () => setDisplay(display.slice(0, -1)),
+        eraseMs,
+      );
+      return () => clearTimeout(t);
+    }
+    setIdx((i) => (i + 1) % phrases.length);
+    setPhase('typing');
+  }, [phase, display, idx, phrases, paused, typeMs, eraseMs, holdMs]);
+
+  return display;
 }
 
 // Title case formatter for display (does not mutate Firestore data)
@@ -176,13 +225,15 @@ const StripeTabs: React.FC<StripeTabsProps> = ({ activeTab, onTabChange, tabs })
 };
 
 // Find People default batch size per tier (where the slider initially sits).
-// Free's default equals its max (5), so the Free slider sits at its maximum.
-const PEOPLE_BATCH_DEFAULTS: Record<"free" | "pro" | "elite", number> = { free: 5, pro: 10, elite: 20 };
+// Defaults sit at each tier's max so users get the full batch by default.
+const PEOPLE_BATCH_DEFAULTS: Record<"free" | "pro" | "elite", number> = { free: 3, pro: 8, elite: 15 };
 
 const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; parentEmailTemplate?: EmailTemplate | null; isDevPreview?: boolean }> = ({ embedded = false, hideSubTabs = false, parentEmailTemplate, isDevPreview = false }) => {
   const { user: authUser, checkCredits, updateCredits } = useFirebaseAuth();
   const user = isDevPreview ? DEV_MOCK_USER as any : authUser;
   const { openPanelWithSearchHelp } = useScout();
+  const { demoSurface } = useTour();
+  const peopleDemoActive = demoSurface === 'people';
   const navigate = useNavigate();
   const routerLocation = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -193,6 +244,8 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     email: "user@example.com",
     tier: "free" as "free" | "pro" | "elite",
   };
+  // Trial-aware credit balance for display (daily pool during a trial).
+  const creditsView = useCreditsView();
 
   const userTier: "free" | "pro" | "elite" = useMemo(() => {
     // Use the actual tier from the user object, default to "free"
@@ -213,6 +266,39 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
 
   // Hard confirm gate shown before any send (send is irreversible).
   const [showSendConfirm, setShowSendConfirm] = useState(false);
+
+  // Per-draft send state for the inline Send button on reviewed drafts.
+  // confirmSendDraftIdx: index in lastResults for which the confirm dialog is open.
+  // sendingDraftIdx: index currently in-flight (drives loading state on the button).
+  const [confirmSendDraftIdx, setConfirmSendDraftIdx] = useState<number | null>(null);
+  const [sendingDraftIdx, setSendingDraftIdx] = useState<number | null>(null);
+
+  async function handleSendReviewedDraft(idx: number) {
+    const c = lastResults[idx];
+    const draftId = c?.gmailDraftId;
+    if (!draftId) {
+      toast({ description: 'No draft ID on this contact.' });
+      return;
+    }
+    setSendingDraftIdx(idx);
+    try {
+      const result = await apiService.sendDraft(draftId);
+      // 410 (draft_not_found) means the draft was already sent — treat as success.
+      const sent = result?.success || result?.error === 'draft_not_found';
+      if (sent) {
+        setLastResults((prev) => prev.map((row, i) => (i === idx ? { ...row, emailSent: true } : row)));
+        toast({ description: 'Email sent.' });
+      } else {
+        toast({ description: result?.message || 'Send failed. Try Open in Gmail.' });
+      }
+    } catch (err: any) {
+      console.error('[SendDraft] failed', err);
+      toast({ description: err?.message || 'Send failed. Try Open in Gmail.' });
+    } finally {
+      setSendingDraftIdx(null);
+      setConfirmSendDraftIdx(null);
+    }
+  }
 
   function isSearchResult(x: any): x is { contacts: any[]; successful_drafts?: number } {
     return x && Array.isArray(x.contacts);
@@ -277,6 +363,121 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     successful_drafts: number;
     total_contacts: number;
   } | null>(null);
+
+  // ── Tour demo state ──────────────────────────────────────────────────────
+  // When the product tour reaches the Find People step it sets `demoSurface`
+  // to 'people'. This effect runs a fully local demo: types the example query
+  // into the prompt state, flashes a short "Searching…" hold, then seeds a
+  // single inert card. Every state write here is to the same setters the real
+  // search uses, so the visual matches a real result exactly — but no API
+  // call is ever made. The cleanup return wipes every piece of demo residue
+  // (query, results, searching flags, the landing-page handoff localStorage
+  // key) so the page is bone-clean the moment the tour advances or aborts.
+  const PEOPLE_DEMO_QUERY = 'founder of offerloop';
+  // Three inert demo cards — the Offerloop founding team. Each carries
+  // `demo: true`, which the per-card action handlers in the results map
+  // (Copy email, etc.) already guard against, so all three render fully
+  // styled but every action no-ops uniformly.
+  const PEOPLE_DEMO_CARDS = [
+    {
+      demo: true as const,
+      FirstName: 'Nick',
+      LastName: 'Wittig',
+      JobTitle: 'Cofounder',
+      Company: 'Offerloop',
+      Email: 'nickwittig@offerloop.ai',
+      emailSubject: 'Coffee chat about Offerloop',
+      emailBody:
+        "Hi Nick,\n\nI came across Offerloop and love the take on AI-driven networking for students. I'd love to learn how you've thought about positioning the product for the college-recruiting use case.\n\nWould you be open to a 20-minute call next week?\n\nBest,\n[Your name]",
+    },
+    {
+      demo: true as const,
+      FirstName: 'Rylan',
+      LastName: 'Bohnett',
+      JobTitle: 'CMO',
+      Company: 'Offerloop',
+      Email: 'rylan@offerloop.ai',
+      emailSubject: 'Quick question about Offerloop',
+      emailBody:
+        "Hi Rylan,\n\nI've been following Offerloop's launch and the storytelling stands out. I'd love to hear how you've thought about reaching college students at scale.\n\nWould you be open to a 20-minute call next week?\n\nBest,\n[Your name]",
+    },
+    {
+      demo: true as const,
+      FirstName: 'Deena',
+      LastName: 'Bandi',
+      JobTitle: 'CTO',
+      Company: 'Offerloop',
+      Email: 'deena@offerloop.ai',
+      emailSubject: 'A quick chat about Offerloop',
+      emailBody:
+        "Hi Deena,\n\nOfferloop's product caught my eye — the agent layer over the contact graph feels novel. I'd love to learn how you've architected it for the scale you're seeing.\n\nWould you be open to a 20-minute call next week?\n\nBest,\n[Your name]",
+    },
+  ];
+
+  useEffect(() => {
+    if (!peopleDemoActive) return;
+    let cancelled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    const TYPE_DELAY_MS = 32;
+    const SEARCHING_HOLD_MS = 1500;
+    const POST_TYPE_PAUSE_MS = 250;
+
+    // Reset to a clean slate before the animation begins.
+    setSearchPrompt('');
+    setLastResults([]);
+    setSearchComplete(false);
+    setIsSearching(false);
+    setProgressValue(0);
+
+    // Type one character per tick into the real `searchPrompt` state. Safe
+    // because nothing watches `searchPrompt` to fire a search.
+    for (let i = 1; i <= PEOPLE_DEMO_QUERY.length; i++) {
+      timers.push(
+        setTimeout(() => {
+          if (cancelled) return;
+          setSearchPrompt(PEOPLE_DEMO_QUERY.slice(0, i));
+        }, i * TYPE_DELAY_MS),
+      );
+    }
+
+    const typingDoneAt = PEOPLE_DEMO_QUERY.length * TYPE_DELAY_MS + POST_TYPE_PAUSE_MS;
+    timers.push(
+      setTimeout(() => {
+        if (cancelled) return;
+        setIsSearching(true);
+        setProgressValue(45);
+      }, typingDoneAt),
+    );
+    timers.push(
+      setTimeout(() => {
+        if (cancelled) return;
+        setIsSearching(false);
+        setProgressValue(100);
+        setLastResults(PEOPLE_DEMO_CARDS);
+        setSearchComplete(true);
+      }, typingDoneAt + SEARCHING_HOLD_MS),
+    );
+
+    return () => {
+      cancelled = true;
+      timers.forEach(clearTimeout);
+      setSearchPrompt('');
+      setLastResults([]);
+      setIsSearching(false);
+      setSearchComplete(false);
+      setProgressValue(0);
+      try {
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('offerloop_pending_query');
+        }
+      } catch {
+        // ignore — private mode / disabled storage
+      }
+    };
+    // PEOPLE_DEMO_QUERY and PEOPLE_DEMO_CARDS are stable literals; only the
+    // active flag drives this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peopleDemoActive]);
   const hasResults = lastResults.length > 0 || alreadySavedResults.length > 0;
 
   // Auto-scroll to success state after search completes
@@ -291,6 +492,20 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   // its maximum. The clamp effect below keeps it within maxBatchSize.
   const userAdjustedBatchSize = useRef(false);
   const [batchSize, setBatchSize] = useState<number>(() => PEOPLE_BATCH_DEFAULTS[userTier]);
+
+  // Flash effect on the quantity slider — vibrant blue while the user is
+  // actively dragging, fades back to slate ~700ms after they stop. Each
+  // onChange resets the timer so the bright state persists during a drag.
+  const [sliderFlashing, setSliderFlashing] = useState(false);
+  const sliderFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashSlider = () => {
+    setSliderFlashing(true);
+    if (sliderFlashTimer.current) clearTimeout(sliderFlashTimer.current);
+    sliderFlashTimer.current = setTimeout(() => setSliderFlashing(false), 700);
+  };
+  useEffect(() => () => {
+    if (sliderFlashTimer.current) clearTimeout(sliderFlashTimer.current);
+  }, []);
 
   // When the tier becomes known or changes and the user has not moved the
   // slider yet, snap the default to that tier's value.
@@ -328,6 +543,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   // the user is NOT actively in the input. No manual override or outside-click handler.
   const [userSchoolShort, setUserSchoolShort] = useState<string | null>(null);
   const peopleFallbackPlaceholders = useMemo(() => getPeopleFallbackPlaceholders(userSchoolShort), [userSchoolShort]);
+  const typedPlaceholder = useTypewriterCycle(peopleFallbackPlaceholders);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -467,11 +683,10 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   }, [previewSwap, searchPrompt]);
 
   const maxBatchSize = useMemo(() => {
-    // Get tier-specific max contacts: free=5, pro=20, elite=40
-    const tierMax = userTier === 'free' ? 5 : userTier === 'pro' ? 20 : 40;
-    const creditMax = Math.floor((effectiveUser.credits ?? 0) / 5);
+    const tierMax = userTier === 'free' ? 3 : userTier === 'pro' ? 8 : 15;
+    const creditMax = Math.floor(creditsView.balance / 5);
     return Math.min(tierMax, creditMax);
-  }, [userTier, effectiveUser.credits]);
+  }, [userTier, creditsView.balance]);
 
   useEffect(() => {
     if (batchSize > maxBatchSize) {
@@ -1099,11 +1314,42 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       }
 
       if (data.status === 'ok') {
-        // Use the message from backend, or construct one based on the response
-        const successMessage = data.message || `Successfully imported ${data.contact.full_name}!`;
-        setLinkedInSuccess(successMessage);
-        setLinkedInUrl(''); // Clear the input field
-        setLinkedInLastDraftUrl(data.gmail_draft_url || null);
+        const c = data.contact || {};
+        // Build a card in the same shape the Find People results render, then
+        // route it through the unified results display (lastResults) so the
+        // imported person gets the same card + action buttons (Open Gmail
+        // drafts / Tracker / View in Spreadsheet) as a normal search.
+        const cardContact = {
+          firstName: c.firstName || '',
+          lastName: c.lastName || '',
+          FirstName: c.firstName || '',
+          LastName: c.lastName || '',
+          Title: c.jobTitle || '',
+          jobTitle: c.jobTitle || '',
+          Company: c.company || '',
+          company: c.company || '',
+          Email: c.email || '',
+          email: c.email || '',
+          LinkedIn: c.linkedinUrl || c.linkedin_url || normalizedUrl,
+          linkedinUrl: c.linkedinUrl || c.linkedin_url || normalizedUrl,
+          emailSubject: c.emailSubject || '',
+          emailBody: c.emailBody || '',
+          gmailDraftUrl: c.gmailDraftUrl || data.gmail_draft_url || '',
+          warmth_label: c.warmth_label || '',
+          warmth_tier: c.warmth_tier || '',
+          warmth_signals: c.warmth_signals || [],
+        };
+
+        setLinkedInSuccess(null);        // don't show the old success banner
+        setLinkedInLastDraftUrl(null);
+        setLastResults([cardContact]);
+        setAlreadySavedResults([]);
+        setResultMessage('');
+        setSearchSuggestions([]);
+        setSearchBroadened(false);
+        setSearchComplete(true);
+        setLinkedInUrl('');               // clear the input field
+        setSearchPrompt('');
 
         // Update credits if provided
         if (data.credits_remaining !== undefined && updateCredits) {
@@ -1114,7 +1360,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         const emailFound = data.email_found !== false; // Default to true if not specified
         const draftCreated = data.draft_created === true;
 
-        let toastDescription = `${data.contact.full_name} added to your contacts`;
+        let toastDescription = `${c.full_name || 'Contact'} added to your contacts`;
         if (draftCreated) {
           toastDescription += ' with a draft email.';
         } else if (!emailFound) {
@@ -1126,7 +1372,6 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         toast({
           title: "Contact Imported!",
           description: toastDescription,
-          variant: emailFound && draftCreated ? "default" : "default",
         });
       } else {
         setLinkedInError(data.message || 'Failed to import contact');
@@ -1141,6 +1386,11 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
 
   // Search handler (prompt-based, single flow for all tiers)
   const handleSearch = async (confirmedSend = false) => {
+    // Hard short-circuit while the tour's demo is active on this surface.
+    // Catches every trigger path — form submit, button click, the
+    // pendingAutoSearch chip path — with a single guard. No API call fires.
+    if (peopleDemoActive) return;
+
     if (!searchPrompt.trim()) {
       toast({
         title: "Enter a search",
@@ -1205,7 +1455,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         setProgressValue(0);
         toast({
           title: "Insufficient Credits",
-          description: `You have ${currentCredits} credits. You need at least 5 credits to search.`,
+          description: `You have ${currentCredits} credits. You need at least 10 credits to search.`,
           variant: "destructive",
         });
         return;
@@ -1373,14 +1623,10 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         setSearchComplete(true);
       }
 
-      // TODO(#13): PostHog was reset and never re-configured. This event fired
-      // into a void. Rewire through /api/metrics/events or replacement analytics
-      // system per https://github.com/deenabandi004-byte/Final_offerloop/issues/13
-      // <ORIGINAL CALL COMMENTED BELOW>
-      // trackFeatureActionCompleted('contact_search', 'search', true, {
-      //   results_count: result.contacts.length,
-      //   credits_spent: creditsUsed,
-      // });
+      trackFeatureActionCompleted('contact_search', 'search', true, {
+        results_count: result.contacts.length,
+        credits_spent: creditsUsed,
+      });
 
       if (user?.uid && result.contacts.length > 0) {
         try {
@@ -1423,28 +1669,49 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         // copy matches what the API contract promises (and gives the user a
         // specific next step: open them in the network or broaden the search).
         toast({
-          title: "Already in your tracker",
+          title: "Already in your inbox",
           description: backendMessage
-            || `All ${savedCount} matching contact(s) are already in your tracker. Open them in your network, or broaden your search to find new people.`,
+            || `All ${savedCount} matching contact(s) are already in your inbox. Open them in your network, or broaden your search to find new people.`,
           duration: 7000,
         });
       } else if ((result as any)?.mode === "send") {
-        // Send mode: confirm the emails actually went out, using the backend's
-        // sent count (the source of truth for how many sends succeeded).
+        // Send mode: confirm what went out and what got routed to drafts by
+        // the backend guardrails (quality gate + daily cap).
         const sentCount = Number((result as any)?.successful_sends ?? 0);
+        const draftedFallback = Number((result as any)?.successful_drafts ?? 0);
+        const qualityBlocked = Number((result as any)?.send_blocked_by_quality ?? 0);
+        const capBlocked = Number((result as any)?.send_blocked_by_daily_cap ?? 0);
+        const fallbackBits: string[] = [];
+        if (qualityBlocked > 0) {
+          fallbackBits.push(
+            `${qualityBlocked} needed your eyes (now in Gmail drafts)`
+          );
+        }
+        if (capBlocked > 0) {
+          fallbackBits.push(
+            `${capBlocked} hit your daily send cap (now in Gmail drafts)`
+          );
+        }
+        const fallbackLine = fallbackBits.length > 0
+          ? ` ${fallbackBits.join(", ")}.`
+          : draftedFallback > 0
+            ? ` ${draftedFallback} routed to Gmail drafts.`
+            : "";
         toast({
-          title: sentCount > 0 ? "Emails sent" : "Contacts Found!",
+          title: sentCount > 0 ? "Emails sent" : draftedFallback > 0 ? "Routed to drafts" : "Contacts Found!",
           description: sentCount > 0
-            ? `Sent ${sentCount} ${sentCount === 1 ? "email" : "emails"}. Track replies in your Outbox.`
-            : `Found ${newCount} contacts, but no emails could be sent. Check your Gmail connection.`,
-          duration: 5000,
+            ? `Sent ${sentCount} ${sentCount === 1 ? "email" : "emails"}.${fallbackLine} Track replies in your Inbox.`
+            : draftedFallback > 0
+              ? `No sends went out.${fallbackLine} Review and send from Gmail.`
+              : `Found ${newCount} contacts, but no emails could be sent. Check your Gmail connection.`,
+          duration: 7000,
         });
       } else {
         toast({
           title: "Contacts Found!",
           description: savedCount > 0
-            ? `Found ${newCount + savedCount} contacts (${newCount} new, ${savedCount} already saved) — view in your Outbox.`
-            : `Found ${newCount} contacts — view them in your Outbox to start outreach.`,
+            ? `Found ${newCount + savedCount} contacts (${newCount} new, ${savedCount} already saved) — view in your Inbox.`
+            : `Found ${newCount} contacts — view them in your Inbox to start outreach.`,
           duration: 5000,
         });
       }
@@ -1669,7 +1936,6 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             }}
           >
             <div className="flex items-center gap-3">
-              <Sparkles className="w-4 h-4 text-[var(--accent, #4A60A8)]" />
               <span className="text-sm text-[#6B7280]">
                 Targeting <span className="font-medium text-[#0F172A]">{currentFitContext.job_title}</span> at {currentFitContext.company || 'target companies'}
               </span>
@@ -1710,6 +1976,31 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           }}
         />
 
+        {/* Single-draft confirm. Fires when the inline Send button on a reviewed
+            draft is clicked. Same hard-confirm pattern as the batch dialog
+            because send is irreversible. */}
+        <SendConfirmDialog
+          open={confirmSendDraftIdx !== null}
+          count={1}
+          loading={sendingDraftIdx !== null}
+          title={
+            confirmSendDraftIdx !== null
+              ? `Send this email to ${
+                  ((lastResults[confirmSendDraftIdx]?.FirstName || lastResults[confirmSendDraftIdx]?.firstName || '') as string).trim() ||
+                  'this contact'
+                }?`
+              : undefined
+          }
+          description="This sends the reviewed draft from your Gmail account. This cannot be undone."
+          confirmLabel={sendingDraftIdx !== null ? 'Sending...' : 'Send now'}
+          onCancel={() => setConfirmSendDraftIdx(null)}
+          onConfirm={() => {
+            if (confirmSendDraftIdx !== null) {
+              handleSendReviewedDraft(confirmSendDraftIdx);
+            }
+          }}
+        />
+
         {/* Hero search bar — full-width prompt. Company Alternatives sidebar is
             absolutely positioned in the empty space to the right of the form (outside
             the prompt bubble) so the prompt keeps its full width for typing. */}
@@ -1717,6 +2008,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             <SearchPromptBox
               onSubmit={handleSubmit}
               submitDisabled={isSearching || linkedInLoading || !user}
+              inputValue={searchPrompt}
               submitAriaLabel={isLinkedInUrl(searchPrompt) ? "Import from LinkedIn" : "Search"}
               helper={
                 outreachMode === 'send'
@@ -1853,7 +2145,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                   // Native placeholder is intentionally empty — the typewriter overlay below
                   // owns ALL placeholder rendering (focused or not), so we don't double-show.
                   placeholder={undefined}
-                  disabled={isSearching || linkedInLoading}
+                  disabled={isSearching || linkedInLoading || peopleDemoActive}
                   style={{
                     width: '100%',
                     border: 'none',
@@ -1889,7 +2181,21 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                       wordBreak: 'break-word',
                     }}
                   >
-                    e.g. Stripe engineers who studied at Michigan, hiring for summer 2026 SWE interns
+                    e.g. {typedPlaceholder}
+                    <span
+                      aria-hidden
+                      style={{
+                        display: 'inline-block',
+                        width: 1,
+                        marginLeft: 2,
+                        background: 'currentColor',
+                        // Match the line-height so the caret tracks the text baseline.
+                        height: '1em',
+                        verticalAlign: 'text-bottom',
+                        animation: 'cgh-typewriter-caret 1s steps(2) infinite',
+                      }}
+                    />
+                    <style>{`@keyframes cgh-typewriter-caret { 50% { opacity: 0; } }`}</style>
                   </div>
                 )}
                 {/* Combined text overlay — typed text in primary ink + optional ghost suffix
@@ -2036,7 +2342,9 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 <div style={{
                   position: 'absolute', left: 0, top: 0, height: 4,
                   width: maxBatchSize > 1 ? `${((batchSize - 1) / (maxBatchSize - 1)) * 100}%` : '0%',
-                  background: 'var(--accent, #1B2A44)', borderRadius: 2,
+                  background: sliderFlashing ? 'var(--brand-blue, #3B82F6)' : 'var(--accent, #1B2A44)',
+                  borderRadius: 2,
+                  transition: 'background .35s ease',
                 }} />
                 <input
                   type="range"
@@ -2044,7 +2352,11 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                   max={maxBatchSize}
                   step={1}
                   value={batchSize}
-                  onChange={(e) => { userAdjustedBatchSize.current = true; setBatchSize(Math.min(Number(e.target.value), maxBatchSize)); }}
+                  onChange={(e) => {
+                    userAdjustedBatchSize.current = true;
+                    setBatchSize(Math.min(Number(e.target.value), maxBatchSize));
+                    flashSlider();
+                  }}
                   disabled={isSearching}
                   className="slider-custom"
                   aria-label="Number of contacts to find"
@@ -2057,9 +2369,12 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                   position: 'absolute',
                   left: `calc(${maxBatchSize > 1 ? ((batchSize - 1) / (maxBatchSize - 1)) * 100 : 0}% - 7px)`,
                   top: -5, width: 14, height: 14, borderRadius: '50%',
-                  background: 'var(--accent, #1B2A44)',
-                  boxShadow: '0 1px 4px rgba(27,42,68,0.4)',
+                  background: sliderFlashing ? 'var(--brand-blue, #3B82F6)' : 'var(--accent, #1B2A44)',
+                  boxShadow: sliderFlashing
+                    ? '0 1px 6px rgba(59,130,246,0.55)'
+                    : '0 1px 4px rgba(27,42,68,0.4)',
                   pointerEvents: 'none',
+                  transition: 'background .35s ease, box-shadow .35s ease',
                 }} />
               </div>
               <span style={{ fontSize: 11, color: '#8A8F97', minWidth: 16, textAlign: 'right' }}>{maxBatchSize}</span>
@@ -2077,9 +2392,11 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                   background: '#FAFAF8', border: '1px solid #E5E3DE', borderRadius: 4,
                   fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#111418',
                 }}>
-                  {batchSize * 5} credits
+                  {batchSize * CREDIT_COSTS.find_contact} credits
                 </span>
-                <span style={{ color: '#8A8F97' }}>of {effectiveUser.credits ?? 0}</span>
+                <span style={{ color: '#8A8F97' }}>
+                  of {creditsView.balance.toLocaleString()}
+                </span>
               </div>
             </div>
           </div>
@@ -2262,9 +2579,9 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 {lastResults.length + alreadySavedResults.length} {(lastResults.length + alreadySavedResults.length) === 1 ? 'result' : 'results'} found
               </div>
               <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                {lastResults.length > 0 ? `${lastResults.length} new: saved to your tracker automatically` : ''}
+                {lastResults.length > 0 ? `${lastResults.length} new: saved to your inbox automatically` : ''}
                 {lastResults.length > 0 && alreadySavedResults.length > 0 ? ' · ' : ''}
-                {alreadySavedResults.length > 0 ? `${alreadySavedResults.length} already in your tracker` : ''}
+                {alreadySavedResults.length > 0 ? `${alreadySavedResults.length} already in your inbox` : ''}
               </span>
             </div>
 
@@ -2534,6 +2851,28 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                             <Mail style={{ width: 13, height: 13 }} /> Open in Gmail
                           </ResultActionButton>
                         )}
+                        {!isSent && c.gmailDraftId && (
+                          <ResultActionButton
+                            variant="primary"
+                            size="sm"
+                            disabled={sendingDraftIdx === i}
+                            onClick={(e: React.MouseEvent) => {
+                              e.stopPropagation();
+                              setConfirmSendDraftIdx(i);
+                            }}
+                            style={{ background: '#16A34A' }}
+                          >
+                            {sendingDraftIdx === i ? (
+                              <>
+                                <Loader2 style={{ width: 13, height: 13 }} className="animate-spin" /> Sending...
+                              </>
+                            ) : (
+                              <>
+                                <Send style={{ width: 13, height: 13 }} /> Send
+                              </>
+                            )}
+                          </ResultActionButton>
+                        )}
                         {isSent && (
                           <a
                             href="https://mail.google.com/mail/u/0/#sent"
@@ -2553,6 +2892,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
+                            if (c.demo) return;
                             const text = `Subject: ${c.emailSubject || ''}\n\n${c.emailBody || ''}`;
                             navigator.clipboard.writeText(text);
                             toast({ description: 'Email copied to clipboard' });
@@ -2579,7 +2919,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                 }}>
                   <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
                   <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                    Already in your tracker
+                    Already in your inbox
                   </span>
                   <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
                 </div>
@@ -2678,11 +3018,25 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               )}
               <ResultActionButton
                 variant="secondary"
-                onClick={() => navigate('/tracker')}
+                onClick={() => {
+                  // Deep-link the just-drafted contact so the tracker expands
+                  // its (collapsed-by-default) group, selects it, and refetches
+                  // fresh. Navigate straight to /outbox: routing via /tracker
+                  // hits a <Navigate replace> that would drop the route state.
+                  const drafted = lastResults.find(
+                    (c: any) => (c.gmailDraftUrl || c.emailSubject || c.emailBody) && (c.Email || c.email)
+                  );
+                  const anyWithEmail = lastResults.find((c: any) => c.Email || c.email);
+                  const focusEmail =
+                    (drafted && (drafted.Email || drafted.email)) ||
+                    (anyWithEmail && (anyWithEmail.Email || anyWithEmail.email)) ||
+                    undefined;
+                  navigate('/outbox', { state: { focusEmail, segment: 'people' } });
+                }}
                 className="flex-1"
               >
                 <Inbox className="w-3.5 h-3.5" />
-                Tracker
+                Inbox
               </ResultActionButton>
               <ResultActionButton
                 variant="secondary"

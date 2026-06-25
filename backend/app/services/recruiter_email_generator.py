@@ -22,6 +22,7 @@ import random
 import html
 import re
 from app.services.openai_client import get_openai_client
+from app.utils.contact import strip_dashes
 
 
 def _normalize_name(name: str) -> str:
@@ -141,7 +142,10 @@ def generate_recruiter_emails(
     role_type: str = "recruiter"
 ) -> List[Dict]:
     """
-    Generate personalized outreach emails for each recruiter.
+    Generate personalized outreach emails for each recruiter via the canonical
+    batch_generate_emails engine (resume + enrichment-aware + warmth-tier +
+    quality-gate-eligible). The lighter single-email engine remains available
+    as generate_single_email() for tests and as a fallback.
 
     Args:
         recruiters: List of recruiter contacts from PDL
@@ -158,37 +162,94 @@ def generate_recruiter_emails(
         List of email dictionaries with:
         - recruiter: Original recruiter data
         - to_email: Recruiter's email
+        - to_name: Recruiter's full name
         - subject: Email subject line
         - body: Email body (HTML)
         - plain_body: Email body (plain text)
+        - approach_used: legacy tag — "batch_engine" for the new path
     """
-    emails = []
-    used_approaches = []  # Track which template styles we've used
+    # Pre-filter recipients with no usable email (legacy contract)
+    eligible = []
+    for r in recruiters:
+        addr = r.get("Email") or r.get("WorkEmail")
+        if addr and addr != "Not available":
+            eligible.append(r)
+    if not eligible:
+        return []
 
-    for i, recruiter in enumerate(recruiters):
-        # Skip if no email
-        recruiter_email = recruiter.get("Email") or recruiter.get("WorkEmail")
-        if not recruiter_email or recruiter_email == "Not available":
-            continue
+    # Build user_profile from contact + resume-derived fields
+    user_profile = {
+        "name": user_contact.get("name", ""),
+        "email": user_contact.get("email", ""),
+        "phone": user_contact.get("phone", ""),
+        "linkedin": user_contact.get("linkedin", ""),
+    }
+    if isinstance(user_resume, dict):
+        for k in ("university", "major", "year", "graduationYear", "academics",
+                  "hometown", "skills", "experiences", "career_interests"):
+            if k in user_resume and k not in user_profile:
+                user_profile[k] = user_resume[k]
 
-        # Generate unique email for this recruiter
-        email_data = generate_single_email(
-            recruiter=recruiter,
-            job_title=job_title,
-            company=company,
-            job_description=job_description,
-            user_resume=user_resume,
-            user_contact=user_contact,
-            variation_index=i,
-            used_approaches=used_approaches,
-            resume_text=resume_text,
-            template_instructions=template_instructions,
-            role_type=role_type
+    # Build fit_context — the job is the anchor for a recruiter/HM email.
+    fit_context = {"job_title": job_title or "", "company": company or ""}
+    if job_description and len(job_description.strip()) > 30:
+        fit_context["pitch"] = job_description[:500]
+
+    # Both recruiter and hiring_manager use 'referral' purpose: a job-application
+    # ask is referral-shaped (resume included via PURPOSES_INCLUDE_RESUME).
+    # role_type is left as a docstring signal; the engine doesn't currently
+    # branch on it.
+    from .reply_generation import batch_generate_emails  # lazy import: avoids circular at module load
+    from .email_request_builder import build_email_gen_request
+
+    # Synthesize a minimal user_data dict so build_email_gen_request can fetch
+    # template / resumeParsed / careerInterests. The recruiter caller doesn't
+    # have the full Firestore doc; we pass user_resume in the resumeParsed slot
+    # and the explicit template_instructions in the request body override.
+    user_data_synthetic = {
+        "resumeParsed": user_resume if isinstance(user_resume, dict) else None,
+        "careerInterests": (user_resume or {}).get("career_interests", []) if isinstance(user_resume, dict) else [],
+    }
+    # Pre-resolved instructions from the caller win — pass through as a custom
+    # template override so resolve_email_template uses them verbatim.
+    template_override = {"customInstructions": template_instructions} if template_instructions else None
+
+    try:
+        email_request = build_email_gen_request(
+            contacts=eligible,
+            user_id=None,
+            user_profile=user_profile,
+            user_data=user_data_synthetic,
+            auth_display_name=user_contact.get("name", "") if isinstance(user_contact, dict) else "",
+            fit_context=fit_context,
+            template_override=template_override,
+            forced_purpose="referral",
+            resume_text=resume_text or None,
+            resume_filename=user_contact.get("resumeFileName") if isinstance(user_contact, dict) else None,
         )
+        results = batch_generate_emails(**email_request)
+    except Exception as e:
+        print(f"[RecruiterEmailGen] batch_generate_emails failed, returning []: {e}")
+        return []
 
-        if email_data:
-            emails.append(email_data)
-
+    emails = []
+    for i, recruiter in enumerate(eligible):
+        data = (results or {}).get(i) or (results or {}).get(str(i))
+        if not data:
+            continue
+        plain = data.get("plain_body") or data.get("body") or ""
+        subject = data.get("subject") or ""
+        if not (plain and subject):
+            continue
+        emails.append({
+            "recruiter": recruiter,
+            "to_email": recruiter.get("Email") or recruiter.get("WorkEmail"),
+            "to_name": f"{_normalize_name(recruiter.get('FirstName', ''))} {_normalize_name(recruiter.get('LastName', ''))}".strip(),
+            "subject": subject,
+            "body": plain_to_html(plain),
+            "plain_body": plain,
+            "approach_used": "batch_engine",
+        })
     return emails
 
 
@@ -242,6 +303,9 @@ def generate_single_email(
     if role_type == "hiring_manager":
         role_label = "hiring manager"
         tone_note = "This person is a hiring manager (not a recruiter). Focus on how the candidate can contribute to their team and solve problems they face. Be more technical and specific about relevant skills."
+    elif role_type == "employee":
+        role_label = "team member"
+        tone_note = "This person is a peer or teammate on the team this role sits on (not a recruiter or the hiring manager). Write a brief, genuine coffee-chat request: the candidate wants to learn about their team, their day-to-day, and their experience, NOT to ask for a job or pitch themselves for the opening. Be warm, curious, and low-pressure. Do not mention applying, attaching a resume, or being a strong fit."
     else:
         role_label = "recruiter"
         tone_note = "This person is a recruiter/talent acquisition professional. Focus on enthusiasm for the role and why the candidate is a strong fit. Be professional but personable."
@@ -306,6 +370,7 @@ REQUIREMENTS:
 10. DO NOT include "Dear" - start with "Hi {recruiter_first_name},"
 11. DO NOT include attachments mentions - I'll handle that
 12. Vary sentence structure and length for natural flow
+13. Never use em dashes (—) or en dashes (–); use a comma, a period, or rewrite the sentence instead
 
 OUTPUT FORMAT:
 Return ONLY the email body text. No subject line, no signature block.
@@ -330,7 +395,7 @@ Start directly with "Hi {recruiter_first_name},"
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are an expert at writing compelling, personalized job application outreach emails. Your emails feel human, genuine, and eager without being desperate. You never use clichés or generic phrases. Every email you write feels like it was written by a real person who genuinely wants the job."
+                        "content": "You are an expert at writing compelling, personalized job application outreach emails. Your emails feel human, genuine, and eager without being desperate. You never use clichés or generic phrases. Every email you write feels like it was written by a real person who genuinely wants the job. Never use em dashes (—) or en dashes (–); use a comma, a period, or rewrite the sentence instead."
                     },
                     {
                         "role": "user",
@@ -380,6 +445,10 @@ Start directly with "Hi {recruiter_first_name},"
 
     # Combine full email
     full_body = f"{email_body}{attachment_note}\n\n{sign_off}\n{signature}"
+
+    # Dash chokepoint: strip any em / en dashes the model slipped in before we
+    # branch into HTML and plain text, so body and plain_body are both clean.
+    full_body = strip_dashes(full_body)
 
     # Create HTML version
     html_body = plain_to_html(full_body)
@@ -523,6 +592,16 @@ def generate_fallback_email(
                 exp_company = exp.get("company", exp.get("Company", ""))
                 if exp_title and exp_company:
                     personal_detail = f" With my experience as {exp_title} at {exp_company},"
+
+    if role_type == "employee":
+        # Peer coffee-chat ask, not an applicant pitch.
+        return f"""{greeting}
+
+I came across the {position} opening at {org} and wanted to reach out to learn more about your team and what your experience there has been like, rather than about the role itself.
+
+Would you be open to a quick 15-minute coffee chat? No agenda on my end, I'm just hoping to learn.
+
+Thanks so much for your time!"""
 
     if role_type == "hiring_manager":
         action = "I'd welcome the opportunity to discuss how my skills could contribute to your team"

@@ -1,0 +1,28 @@
+{
+  "summary": "USC senior majoring in Data Science and Economics. Co-founder/CTO of Offerloop, an AI-powered networking platform for college students.",
+  "skills": ["Python", "JavaScript", "TypeScript", "React", "Flask", "Firebase", "OpenAI API"],
+  "experience": [
+    {
+      "title": "Co-founder/CTO",
+      "company": "Offerloop",
+      "description": "Lead engineering for a Flask + React + Firebase platform serving 300+ college students. Built contact discovery pipeline, Gmail integration, AI email generation. About 2 years."
+    },
+    {
+      "title": "Software Engineering Intern",
+      "company": "Boutique tech consultancy",
+      "description": "Shipped React features and Python data pipelines. About 6 months."
+    }
+  ],
+  "education": [
+    {
+      "school": "University of Southern California",
+      "degree": "Bachelor's",
+      "field": "Data Science and Economics"
+    },
+    {
+      "school": "Palomar College",
+      "degree": "Transfer",
+      "field": "General studies"
+    }
+  ]
+}

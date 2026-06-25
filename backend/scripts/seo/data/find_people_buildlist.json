@@ -1,0 +1,1008 @@
+{
+  "floor": 10,
+  "threshold": 12,
+  "per_firm_cap": 8,
+  "count": 100,
+  "cells": [
+    {
+      "slug": "berkeley-alumni-at-google",
+      "school": "berkeley",
+      "firm": "google",
+      "alumni_count": 4621,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-google",
+      "school": "usc",
+      "firm": "google",
+      "alumni_count": 2764,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-apple",
+      "school": "berkeley",
+      "firm": "apple",
+      "alumni_count": 2643,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-amazon",
+      "school": "usc",
+      "firm": "amazon",
+      "alumni_count": 2525,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-meta",
+      "school": "berkeley",
+      "firm": "meta",
+      "alumni_count": 2407,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-google",
+      "school": "columbia",
+      "firm": "google",
+      "alumni_count": 2076,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-google",
+      "school": "michigan",
+      "firm": "google",
+      "alumni_count": 2027,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-google",
+      "school": "cornell",
+      "firm": "google",
+      "alumni_count": 2025,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-google",
+      "school": "nyu",
+      "firm": "google",
+      "alumni_count": 1960,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-apple",
+      "school": "usc",
+      "firm": "apple",
+      "alumni_count": 1878,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-amazon",
+      "school": "berkeley",
+      "firm": "amazon",
+      "alumni_count": 1860,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-google",
+      "school": "harvard",
+      "firm": "google",
+      "alumni_count": 1763,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-amazon",
+      "school": "nyu",
+      "firm": "amazon",
+      "alumni_count": 1713,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-amazon",
+      "school": "michigan",
+      "firm": "amazon",
+      "alumni_count": 1582,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-meta",
+      "school": "usc",
+      "firm": "meta",
+      "alumni_count": 1577,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-microsoft",
+      "school": "usc",
+      "firm": "microsoft",
+      "alumni_count": 1561,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-amazon",
+      "school": "cornell",
+      "firm": "amazon",
+      "alumni_count": 1453,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-microsoft",
+      "school": "berkeley",
+      "firm": "microsoft",
+      "alumni_count": 1450,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-microsoft",
+      "school": "harvard",
+      "firm": "microsoft",
+      "alumni_count": 1328,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-google",
+      "school": "upenn",
+      "firm": "google",
+      "alumni_count": 1326,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-jpmorgan",
+      "school": "nyu",
+      "firm": "jpmorgan",
+      "alumni_count": 1314,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-amazon",
+      "school": "columbia",
+      "firm": "amazon",
+      "alumni_count": 1239,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-apple",
+      "school": "michigan",
+      "firm": "apple",
+      "alumni_count": 1160,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-meta",
+      "school": "columbia",
+      "firm": "meta",
+      "alumni_count": 1159,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-microsoft",
+      "school": "cornell",
+      "firm": "microsoft",
+      "alumni_count": 1122,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-meta",
+      "school": "nyu",
+      "firm": "meta",
+      "alumni_count": 1085,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-meta",
+      "school": "michigan",
+      "firm": "meta",
+      "alumni_count": 1078,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-amazon",
+      "school": "harvard",
+      "firm": "amazon",
+      "alumni_count": 1064,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-microsoft",
+      "school": "michigan",
+      "firm": "microsoft",
+      "alumni_count": 1064,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-morgan-stanley",
+      "school": "nyu",
+      "firm": "morgan-stanley",
+      "alumni_count": 1035,
+      "demand": 9,
+      "density": 4,
+      "score": 36,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-meta",
+      "school": "cornell",
+      "firm": "meta",
+      "alumni_count": 980,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-apple",
+      "school": "cornell",
+      "firm": "apple",
+      "alumni_count": 949,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-microsoft",
+      "school": "nyu",
+      "firm": "microsoft",
+      "alumni_count": 929,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-goldman-sachs",
+      "school": "columbia",
+      "firm": "goldman-sachs",
+      "alumni_count": 923,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-jpmorgan",
+      "school": "cornell",
+      "firm": "jpmorgan",
+      "alumni_count": 908,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-apple",
+      "school": "nyu",
+      "firm": "apple",
+      "alumni_count": 898,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-morgan-stanley",
+      "school": "columbia",
+      "firm": "morgan-stanley",
+      "alumni_count": 887,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-apple",
+      "school": "harvard",
+      "firm": "apple",
+      "alumni_count": 855,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-jpmorgan",
+      "school": "columbia",
+      "firm": "jpmorgan",
+      "alumni_count": 841,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-amazon",
+      "school": "upenn",
+      "firm": "amazon",
+      "alumni_count": 803,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-microsoft",
+      "school": "columbia",
+      "firm": "microsoft",
+      "alumni_count": 800,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-meta",
+      "school": "upenn",
+      "firm": "meta",
+      "alumni_count": 764,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-goldman-sachs",
+      "school": "nyu",
+      "firm": "goldman-sachs",
+      "alumni_count": 726,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-meta",
+      "school": "harvard",
+      "firm": "meta",
+      "alumni_count": 692,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-goldman-sachs",
+      "school": "harvard",
+      "firm": "goldman-sachs",
+      "alumni_count": 665,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-apple",
+      "school": "columbia",
+      "firm": "apple",
+      "alumni_count": 662,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-mckinsey",
+      "school": "harvard",
+      "firm": "mckinsey",
+      "alumni_count": 657,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-morgan-stanley",
+      "school": "cornell",
+      "firm": "morgan-stanley",
+      "alumni_count": 611,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-microsoft",
+      "school": "upenn",
+      "firm": "microsoft",
+      "alumni_count": 593,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-goldman-sachs",
+      "school": "cornell",
+      "firm": "goldman-sachs",
+      "alumni_count": 584,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-jpmorgan",
+      "school": "michigan",
+      "firm": "jpmorgan",
+      "alumni_count": 583,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-mckinsey",
+      "school": "columbia",
+      "firm": "mckinsey",
+      "alumni_count": 547,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-goldman-sachs",
+      "school": "upenn",
+      "firm": "goldman-sachs",
+      "alumni_count": 486,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-mckinsey",
+      "school": "berkeley",
+      "firm": "mckinsey",
+      "alumni_count": 479,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-morgan-stanley",
+      "school": "upenn",
+      "firm": "morgan-stanley",
+      "alumni_count": 476,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-bcg",
+      "school": "harvard",
+      "firm": "bcg",
+      "alumni_count": 474,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-morgan-stanley",
+      "school": "berkeley",
+      "firm": "morgan-stanley",
+      "alumni_count": 470,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "northwestern-alumni-at-apple",
+      "school": "northwestern",
+      "firm": "apple",
+      "alumni_count": 469,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-jpmorgan",
+      "school": "upenn",
+      "firm": "jpmorgan",
+      "alumni_count": 458,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-mckinsey",
+      "school": "upenn",
+      "firm": "mckinsey",
+      "alumni_count": 457,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-openai",
+      "school": "berkeley",
+      "firm": "openai",
+      "alumni_count": 449,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-jpmorgan",
+      "school": "berkeley",
+      "firm": "jpmorgan",
+      "alumni_count": 442,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-morgan-stanley",
+      "school": "harvard",
+      "firm": "morgan-stanley",
+      "alumni_count": 424,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-goldman-sachs",
+      "school": "berkeley",
+      "firm": "goldman-sachs",
+      "alumni_count": 409,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-jpmorgan",
+      "school": "harvard",
+      "firm": "jpmorgan",
+      "alumni_count": 391,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-bcg",
+      "school": "upenn",
+      "firm": "bcg",
+      "alumni_count": 378,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-morgan-stanley",
+      "school": "michigan",
+      "firm": "morgan-stanley",
+      "alumni_count": 375,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "northwestern-alumni-at-jpmorgan",
+      "school": "northwestern",
+      "firm": "jpmorgan",
+      "alumni_count": 370,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-bcg",
+      "school": "columbia",
+      "firm": "bcg",
+      "alumni_count": 369,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-morgan-stanley",
+      "school": "usc",
+      "firm": "morgan-stanley",
+      "alumni_count": 352,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "uchicago-alumni-at-goldman-sachs",
+      "school": "uchicago",
+      "firm": "goldman-sachs",
+      "alumni_count": 345,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-goldman-sachs",
+      "school": "michigan",
+      "firm": "goldman-sachs",
+      "alumni_count": 322,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-mckinsey",
+      "school": "cornell",
+      "firm": "mckinsey",
+      "alumni_count": 311,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-bcg",
+      "school": "berkeley",
+      "firm": "bcg",
+      "alumni_count": 298,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-mckinsey",
+      "school": "michigan",
+      "firm": "mckinsey",
+      "alumni_count": 276,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "northwestern-alumni-at-mckinsey",
+      "school": "northwestern",
+      "firm": "mckinsey",
+      "alumni_count": 276,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "duke-alumni-at-mckinsey",
+      "school": "duke",
+      "firm": "mckinsey",
+      "alumni_count": 269,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-bain",
+      "school": "harvard",
+      "firm": "bain",
+      "alumni_count": 269,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "northwestern-alumni-at-bcg",
+      "school": "northwestern",
+      "firm": "bcg",
+      "alumni_count": 243,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-bcg",
+      "school": "michigan",
+      "firm": "bcg",
+      "alumni_count": 234,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-bcg",
+      "school": "cornell",
+      "firm": "bcg",
+      "alumni_count": 221,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-bain",
+      "school": "upenn",
+      "firm": "bain",
+      "alumni_count": 217,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "uchicago-alumni-at-bcg",
+      "school": "uchicago",
+      "firm": "bcg",
+      "alumni_count": 214,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-bain",
+      "school": "berkeley",
+      "firm": "bain",
+      "alumni_count": 207,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-bain",
+      "school": "columbia",
+      "firm": "bain",
+      "alumni_count": 203,
+      "demand": 9,
+      "density": 3,
+      "score": 27,
+      "build": true
+    },
+    {
+      "slug": "berkeley-alumni-at-anthropic",
+      "school": "berkeley",
+      "firm": "anthropic",
+      "alumni_count": 197,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "northwestern-alumni-at-bain",
+      "school": "northwestern",
+      "firm": "bain",
+      "alumni_count": 179,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-openai",
+      "school": "harvard",
+      "firm": "openai",
+      "alumni_count": 169,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "duke-alumni-at-bain",
+      "school": "duke",
+      "firm": "bain",
+      "alumni_count": 160,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-openai",
+      "school": "usc",
+      "firm": "openai",
+      "alumni_count": 151,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-bain",
+      "school": "cornell",
+      "firm": "bain",
+      "alumni_count": 134,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "nyu-alumni-at-openai",
+      "school": "nyu",
+      "firm": "openai",
+      "alumni_count": 133,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-openai",
+      "school": "cornell",
+      "firm": "openai",
+      "alumni_count": 124,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-openai",
+      "school": "columbia",
+      "firm": "openai",
+      "alumni_count": 123,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "usc-alumni-at-bain",
+      "school": "usc",
+      "firm": "bain",
+      "alumni_count": 114,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "michigan-alumni-at-openai",
+      "school": "michigan",
+      "firm": "openai",
+      "alumni_count": 99,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "upenn-alumni-at-openai",
+      "school": "upenn",
+      "firm": "openai",
+      "alumni_count": 97,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "harvard-alumni-at-anthropic",
+      "school": "harvard",
+      "firm": "anthropic",
+      "alumni_count": 83,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "cornell-alumni-at-evercore",
+      "school": "cornell",
+      "firm": "evercore",
+      "alumni_count": 76,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    },
+    {
+      "slug": "columbia-alumni-at-evercore",
+      "school": "columbia",
+      "firm": "evercore",
+      "alumni_count": 64,
+      "demand": 9,
+      "density": 2,
+      "score": 18,
+      "build": true
+    }
+  ]
+}

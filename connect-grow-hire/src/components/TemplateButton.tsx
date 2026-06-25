@@ -1,5 +1,6 @@
 import React from "react";
-import { Mail } from "lucide-react";
+import { Mail, ChevronDown } from "lucide-react";
+import { getEmailTemplateLabel } from "@/services/api";
 import type { EmailTemplate } from "@/services/api";
 
 interface TemplateButtonProps {
@@ -8,8 +9,11 @@ interface TemplateButtonProps {
 }
 
 export const TemplateButton: React.FC<TemplateButtonProps> = ({ template, onClick }) => {
-  const purpose = template?.purpose || "Networking";
-  const style = template?.stylePreset || "Professional";
+  // Show the template's display name (a named custom template like "Quick
+  // Interview") when present, otherwise the human-readable purpose label.
+  // stylePreset is always null now, so the old "purpose . style" pair only
+  // ever rendered a misleading "custom . Professional".
+  const label = getEmailTemplateLabel(template);
 
   return (
     <button
@@ -19,22 +23,20 @@ export const TemplateButton: React.FC<TemplateButtonProps> = ({ template, onClic
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: 9,
+        gap: 0,
         padding: "12px 20px",
         border: "1px solid var(--line, #E5E5E0)",
-        borderRadius: 12,
-        background: "var(--paper, #FFFFFF)",
+        borderRadius: 10,
+        background: "var(--paper)",
         cursor: "pointer",
         fontFamily: "inherit",
-        fontSize: 14,
-        fontWeight: 500,
-        color: "var(--ink, #111318)",
         transition: "all .15s",
+        color: "var(--ink, #111318)",
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = "var(--accent, #4A60A8)";
-        e.currentTarget.style.color = "var(--accent, #4A60A8)";
-        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(74,96,168,0.08)";
+        e.currentTarget.style.borderColor = "var(--brand-blue, #3B82F6)";
+        e.currentTarget.style.color = "var(--brand-blue, #3B82F6)";
+        e.currentTarget.style.boxShadow = "0 0 0 3px rgba(59,130,246,0.08)";
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.borderColor = "var(--line, #E5E5E0)";
@@ -42,11 +44,17 @@ export const TemplateButton: React.FC<TemplateButtonProps> = ({ template, onClic
         e.currentTarget.style.boxShadow = "none";
       }}
     >
-      <Mail style={{ width: 18, height: 18, color: "currentColor", opacity: 0.7 }} />
-      <span style={{ color: "currentColor", opacity: 0.7 }}>Email Template:</span>
-      <span style={{ color: "currentColor" }}>{purpose}</span>
-      <span style={{ color: "currentColor", opacity: 0.55 }}>&middot;</span>
-      <span style={{ color: "currentColor" }}>{style}</span>
+      <Mail style={{ width: 13, height: 13, color: "currentColor", opacity: 0.7, marginRight: 8 }} />
+      <span style={{ fontSize: 14, color: "currentColor", opacity: 0.6, marginRight: 6 }}>
+        Email template
+      </span>
+      <span style={{ margin: "0 4px 0 0", fontSize: 13, color: "currentColor", opacity: 0.55 }}>
+        &middot;
+      </span>
+      <span style={{ fontSize: 14, color: "currentColor", fontWeight: 500 }}>
+        {label}
+      </span>
+      <ChevronDown style={{ width: 12, height: 12, color: "currentColor", opacity: 0.6, marginLeft: 8 }} />
     </button>
   );
 };

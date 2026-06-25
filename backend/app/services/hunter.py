@@ -27,28 +27,6 @@ CACHE_TTL = 3600  # 1 hour TTL
 _email_verification_cache = {}  # type: Dict[str, Tuple[dict, float]]
 _verification_cache_lock = threading.Lock()
 
-# ✅ Circuit breaker: when Hunter returns 429 (rate limit), it's an account-wide
-# condition — every subsequent call in the batch/search will also 429. Retrying
-# each one (get_domain_pattern alone burns 1s+2s+4s=7s on a fully limited key)
-# adds massive latency for zero benefit. Trip a process-wide cooldown on the
-# first 429 so the rest of the search skips Hunter and falls back to pattern
-# synthesis instantly. Self-heals when the cooldown elapses.
-_hunter_circuit_lock = threading.Lock()
-_hunter_ratelimited_until = 0.0  # epoch seconds; skip Hunter calls until this time
-HUNTER_RATELIMIT_COOLDOWN = 60.0  # back off for 60s after a 429
-
-
-def _hunter_is_ratelimited() -> bool:
-    with _hunter_circuit_lock:
-        return time.time() < _hunter_ratelimited_until
-
-
-def _hunter_trip_ratelimit():
-    global _hunter_ratelimited_until
-    with _hunter_circuit_lock:
-        _hunter_ratelimited_until = time.time() + HUNTER_RATELIMIT_COOLDOWN
-    print(f"[Hunter] ⛔ Circuit breaker tripped — skipping Hunter calls for {HUNTER_RATELIMIT_COOLDOWN:.0f}s after 429")
-
 # Company domain mapping for common companies
 COMPANY_DOMAINS = {
     # Consulting
@@ -604,9 +582,14 @@ def find_email_with_hunter(first_name: str, last_name: str, domain: str, api_key
                      fallback after a single miss.
 
     Returns:
-        Tuple of (email, score) or (None, 0) if not found
-        email: Found email address or None
-        score: Confidence score (0-100) or 0
+        Tuple of (email, score)
+          - (email, score) on a confident hit (score >= 70)
+          - (None, score)  on a low-confidence hit (Hunter has data but score < 70)
+          - (None, 0)      on a real "no data" miss
+          - (None, -1)     when Hunter rate-limited us (Phase 2.5 sentinel).
+                           Callers MUST NOT fall through to pattern synthesis
+                           on this case — pattern guesses on a rate-limit are
+                           the #2 source of bounces.
     """
     import time
     finder_start = time.time()
@@ -621,11 +604,6 @@ def find_email_with_hunter(first_name: str, last_name: str, domain: str, api_key
 
     if not (first_name and last_name and domain):
         print(f"[Hunter Email Finder] ⚠️ Missing required parameters: first={bool(first_name)}, last={bool(last_name)}, domain={bool(domain)}")
-        return None, 0
-
-    # Circuit breaker: skip immediately if Hunter recently 429'd (account-wide)
-    if _hunter_is_ratelimited():
-        print(f"[Hunter Email Finder] ⏭️  Skipping (rate-limit cooldown active) for {first_name} {last_name} @ {domain}")
         return None, 0
 
     url = "https://api.hunter.io/v2/email-finder"
@@ -646,12 +624,27 @@ def find_email_with_hunter(first_name: str, last_name: str, domain: str, api_key
             
             print(f"[Hunter Email Finder] ⏱️  Response status: {response.status_code} (total: {total_time:.2f}s, API: {api_time:.2f}s)")
             
-            # Handle rate limit (429): trip the circuit breaker so the rest of
-            # the batch/search skips Hunter instead of each call re-hitting 429.
+            # Handle rate limit (429) with exponential backoff - only sleep when actually rate limited
             if response.status_code == 429:
-                _hunter_trip_ratelimit()
-                print(f"[Hunter Email Finder] ❌ Rate limited (429) — backing off")
-                return None, 0
+                wait_time = min((2 ** attempt) * 1, 8)  # 1s, 2s, 4s, max 8s
+                print(f"[Hunter Email Finder] ⚠️ Rate limited (429), waiting {wait_time}s before retry {attempt + 1}/{max_retries}...")
+                if attempt < max_retries - 1:
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    print(f"[Hunter Email Finder] ❌ Rate limited after {max_retries} attempts")
+                    # Phase 2.5: -1 sentinel tells the caller we were rate
+                    # limited, so it skips pattern synthesis instead of
+                    # shipping an invented address.
+                    try:
+                        from app.utils.metrics_events import log_event
+                        log_event(None, "hunter_rate_limited", {
+                            "endpoint": "email_finder",
+                            "domain": domain,
+                        })
+                    except Exception:
+                        pass
+                    return None, -1
             
             if response.status_code != 200:
                 print(f"[Hunter Email Finder] ⚠️ Error response: {response.status_code}")
@@ -794,32 +787,26 @@ def get_domain_pattern(domain: str, api_key: str = None) -> str:
                 # Cache expired, remove it
                 del _email_pattern_cache[domain]
     
-    # Circuit breaker: skip immediately if Hunter recently 429'd (account-wide).
-    # Avoids burning 1s+2s+4s of retry sleeps per domain on a rate-limited key.
-    if _hunter_is_ratelimited():
-        print(f"📦 ⏭️  Skipping Hunter domain-search (rate-limit cooldown active) for {domain}")
-        return None
-
     # Fetch pattern from Hunter with retry logic (only sleeps on actual 429 rate limits)
     url = "https://api.hunter.io/v2/domain-search"
     params = {
         'domain': domain,
         'api_key': api_key
     }
-
+    
     max_retries = 3
     for attempt in range(max_retries):
         try:
             api_start = time.time()
             response = requests.get(url, params=params, timeout=10)
             api_time = time.time() - api_start
-
-            # Handle rate limit (429): trip the circuit breaker and bail. Don't
-            # sleep-retry — it's account-wide, the retries will just 429 too.
+            
+            # Handle rate limit (429) with exponential backoff
             if response.status_code == 429:
-                _hunter_trip_ratelimit()
-                print(f"⚠️ Hunter.io Domain Search rate limited (429) for {domain} — backing off")
-                return None
+                wait_time = (2 ** attempt) * 1  # 1s, 2s, 4s
+                print(f"⚠️ Hunter.io Domain Search rate limited (429), waiting {wait_time}s before retry {attempt + 1}/{max_retries}...")
+                time.sleep(wait_time)
+                continue
             
             if response.status_code == 200:
                 data = response.json()
@@ -1197,33 +1184,29 @@ def verify_email_hunter(email: str, api_key: str = None, use_cache: bool = True)
                     # Cache expired, remove it
                     del _email_verification_cache[email]
     
-    # Circuit breaker: skip immediately if Hunter recently 429'd (account-wide).
-    if _hunter_is_ratelimited():
-        print(f"📦 ⏭️  Skipping Hunter verify (rate-limit cooldown active) for {email}")
-        return None
-
     # Only sleep when actually rate limited (429), not preemptively
     url = "https://api.hunter.io/v2/email-verifier"
     params = {
         'email': email,
         'api_key': api_key
     }
-
+    
     max_retries = 3
     last_was_rate_limit = False
-
+    
     for attempt in range(max_retries):
         try:
             api_start = time.time()
             response = requests.get(url, params=params, timeout=10)
             api_time = time.time() - api_start
-
-            # Handle rate limit (429): trip the breaker and bail — retrying an
-            # account-wide rate limit just burns wall-clock time.
+        
+            # Handle rate limit (429) - actual rate limit, wait and retry
             if response.status_code == 429:
-                _hunter_trip_ratelimit()
-                print(f"⚠️ Hunter.io rate limited (429) for {email} — backing off")
-                return None
+                last_was_rate_limit = True
+                wait_time = (2 ** attempt) * 1  # 1s, 2s, 4s
+                print(f"⚠️ Hunter.io rate limited (429), waiting {wait_time}s before retry {attempt + 1}/{max_retries}...")
+                time.sleep(wait_time)
+                continue
             
             last_was_rate_limit = False
             
@@ -1684,6 +1667,8 @@ def batch_verify_emails_for_contacts(contacts: list, target_company: str = None)
 
         # T2: Hunter Email Finder. Returns (email, score) where email is None
         # if score < 70 OR no match. Hunter does NOT charge on no-match.
+        # score == -1 sentinel means Hunter rate-limited us (Phase 2.5).
+        finder_rate_limited = False
         if domain and first_name and last_name:
             try:
                 finder_email, finder_score = find_email_with_hunter(first_name, last_name, domain)
@@ -1692,8 +1677,16 @@ def batch_verify_emails_for_contacts(contacts: list, target_company: str = None)
                 if finder_email and finder_score >= RISKY_FINDER_SCORE:
                     # Usable but flag as not-verified so caller can decide
                     return i, {'email': finder_email, 'verified': False, 'source': 'hunter_finder_risky', 'score': finder_score}
+                if finder_score == -1:
+                    finder_rate_limited = True
             except Exception as e:
                 print(f"[BatchEmailVerification] Hunter Email Finder failed for contact {i}: {e}")
+
+        # Phase 2.5: if Hunter was rate-limited, stop here — do NOT synthesize a
+        # pattern guess. Pattern guesses on a 429 silently inflate the bounce
+        # rate because the user thinks Hunter cleared the address.
+        if finder_rate_limited:
+            return i, {'email': None, 'verified': False, 'source': None, 'score': 0, 'reason': 'hunter_rate_limited'}
 
         # T3: Pattern synthesis from cached domain pattern (unverified)
         if domain and domain in domain_patterns:
@@ -1744,7 +1737,12 @@ def batch_verify_emails_for_contacts(contacts: list, target_company: str = None)
                     if nb_result == neverbounce_client.RESULT_VALID:
                         return idx, {**r, "source": "neverbounce_verified", "verified": True, "score": max(int(r.get("score") or 0), 90)}
                     if nb_result in (neverbounce_client.RESULT_ACCEPT_ALL, neverbounce_client.RESULT_CATCHALL):
-                        return idx, {**r, "source": "neverbounce_acceptall", "verified": False, "score": max(int(r.get("score") or 0), 60)}
+                        # Phase 2.3: catch-all domains accept everything at SMTP
+                        # but silently drop or bounce later. Treat them as
+                        # invalid for draft purposes — better to surface the
+                        # contact with no email than to ship a guess that
+                        # routes to /dev/null.
+                        return idx, {"email": None, "verified": False, "source": None, "score": 0}
                     if nb_result == neverbounce_client.RESULT_INVALID:
                         # Drop invalid emails entirely — don't draft to a dead inbox
                         return idx, {"email": None, "verified": False, "source": None, "score": 0}

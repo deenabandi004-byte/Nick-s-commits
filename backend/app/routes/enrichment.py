@@ -2,6 +2,7 @@
 Enrichment routes - autocomplete, job title enrichment, and LinkedIn profile enrichment
 """
 import logging
+import os
 from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 import traceback
@@ -190,11 +191,9 @@ def enrich_linkedin_for_onboarding():
                 },
             })
 
-        # Loop through scrape-first tiers (Jina → Bright Data → PDL), running LLM
-        # structuring on each tier's output and falling through if the structured
-        # result lacks a usable name (e.g. Jina was served a LinkedIn login wall).
-        # Self-enrichment for college students: direct scrapes win when they work,
-        # PDL is the floor.
+        # Loop through scrape-first tiers, running LLM structuring on each
+        # tier's output and falling through if the structured result lacks a
+        # usable name. Chain is [Apify -> PDL] for user-LinkedIn onboarding.
         raw_data = None
         source = ""
         linkedin_parsed = None
@@ -221,6 +220,13 @@ def enrich_linkedin_for_onboarding():
                 f"[LinkedIn Enrich] {tier_source} returned data but LLM extracted no name "
                 f"(likely login wall / blocked); trying next tier"
             )
+
+        # D9: Apify is always the intended first tier. If a later tier won,
+        # tag the stored source so the frontend can show the fallback toast
+        # and observability can count fallbacks.
+        fallback_used = bool(source and source != "apify")
+        if fallback_used:
+            source = f"{source}-fallback"
 
         if not raw_data or not linkedin_parsed:
             tried = ', '.join(attempted_sources) if attempted_sources else 'no sources'
@@ -278,6 +284,10 @@ def enrich_linkedin_for_onboarding():
             'enriched': True,
             'cached': False,
             'source': source,
+            # D9: surfaced so the frontend can show the "LinkedIn enrichment
+            # using fallback - we'll refresh later" toast when Apify failed
+            # but PDL caught us. Quiet UX, no user action required.
+            'fallback_used': fallback_used,
             'profile': {
                 'firstName': name_parts[0] if name_parts else '',
                 'lastName': name_parts[1] if len(name_parts) > 1 else '',
@@ -296,6 +306,184 @@ def enrich_linkedin_for_onboarding():
         print(f"[LinkedIn Enrich] Unhandled error for uid={request.firebase_user.get('uid', '?')}: {e}")
         traceback.print_exc()
         return jsonify({'success': False, 'enriched': False, 'error': 'Internal error'}), 200
+
+
+# ── D11: Lazy-on-login Apify backfill ─────────────────────────────────────────
+
+# Minimum gap between attempted backfills for the same user. Prevents the
+# client (which calls the endpoint on every app boot) from thundering on
+# Apify when an attempt has just failed. 24h is long enough to ride out most
+# transient Apify outages and short enough to recover within one user-day.
+_BACKFILL_RETRY_COOLDOWN_S = 24 * 60 * 60
+
+
+def _user_needs_apify_backfill(user_data: dict, now_ts: float) -> tuple[bool, str]:
+    """Decide whether a user should be backfilled to Apify-sourced LinkedIn.
+
+    Returns (should_backfill, reason_when_skipped). Pure function so the
+    decision logic is testable without Firestore.
+
+    Skip reasons:
+      "already_apify"    - source is already 'apify' or backfill flag is set
+      "no_url"           - user has no LinkedIn URL on file to scrape
+      "recent_attempt"   - last backfill attempt within cooldown window
+    """
+    # Source-of-truth: explicit flag wins.
+    if user_data.get("apifyBackfilled") is True:
+        return False, "already_apify"
+
+    # If the user was just onboarded post-Apify-flip, the source is already
+    # right and no backfill is needed. We don't set the flag in onboarding
+    # itself - we set it here on first observation - to keep the onboarding
+    # write path narrow.
+    if user_data.get("linkedinEnrichmentSource") == "apify":
+        return False, "already_apify"
+
+    if not user_data.get("linkedinUrl"):
+        return False, "no_url"
+
+    last_attempt_iso = user_data.get("apifyBackfillLastAttempt")
+    if isinstance(last_attempt_iso, str) and last_attempt_iso:
+        try:
+            last_dt = datetime.fromisoformat(last_attempt_iso.replace("Z", "+00:00"))
+            if (now_ts - last_dt.timestamp()) < _BACKFILL_RETRY_COOLDOWN_S:
+                return False, "recent_attempt"
+        except (ValueError, TypeError):
+            # Malformed timestamp - treat as no prior attempt.
+            pass
+
+    return True, ""
+
+
+def _run_apify_backfill(uid: str, linkedin_url: str) -> None:
+    """Background worker: re-scrape one user's LinkedIn via Apify and write.
+
+    Always writes the last-attempt timestamp so a failure does not get
+    retried immediately. On success, sets apifyBackfilled and overwrites
+    linkedinResumeParsed + linkedinEnrichmentSource. The user's existing
+    resumeParsed is left untouched unless they have no resume at all - we
+    are upgrading the LinkedIn data source, not blowing away an uploaded
+    resume.
+    """
+    db = get_db()
+    user_ref = db.collection("users").document(uid)
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    try:
+        # Lazy import keeps the test isolation simple.
+        try:
+            from app.services.apify_client import enrich_user_linkedin_profile_via_apify
+        except ImportError:
+            from backend.app.services.apify_client import enrich_user_linkedin_profile_via_apify
+
+        envelope = enrich_user_linkedin_profile_via_apify(linkedin_url)
+        if not envelope.get("ok") or not envelope.get("data"):
+            logger.info(
+                f"[Apify Backfill] {uid}: Apify did not return usable data "
+                f"(error={envelope.get('error')}); marking attempt and stopping"
+            )
+            user_ref.set(
+                {"apifyBackfillLastAttempt": now_iso},
+                merge=True,
+            )
+            return
+
+        structured = llm_enrich_profile(envelope["data"], "apify")
+        if not structured or not structured.get("name"):
+            logger.info(
+                f"[Apify Backfill] {uid}: LLM extracted no name from Apify data; "
+                "marking attempt and stopping"
+            )
+            user_ref.set(
+                {"apifyBackfillLastAttempt": now_iso},
+                merge=True,
+            )
+            return
+
+        # Build the update. linkedinResumeParsed is fully owned by enrichment;
+        # resumeParsed is merged only when the user has none of their own.
+        updates = {
+            "linkedinEnrichmentData": envelope["data"],
+            "linkedinEnrichmentSource": "apify",
+            "linkedinEnrichedAt": now_iso,
+            "linkedinResumeParsed": structured,
+            "apifyBackfilled": True,
+            "apifyBackfilledAt": now_iso,
+            "apifyBackfillLastAttempt": now_iso,
+        }
+        try:
+            snap = user_ref.get(timeout=8.0)
+            existing = snap.to_dict() if snap.exists else {}
+        except Exception:
+            existing = {}
+        existing_parsed = existing.get("resumeParsed")
+        if not (
+            existing_parsed
+            and isinstance(existing_parsed, dict)
+            and existing_parsed.get("name")
+        ):
+            updates["resumeParsed"] = structured
+
+        user_ref.set(updates, merge=True)
+        logger.info(f"[Apify Backfill] {uid}: backfill complete (source=apify)")
+    except Exception as e:
+        logger.error(f"[Apify Backfill] {uid}: unexpected error: {e}", exc_info=True)
+        try:
+            user_ref.set(
+                {"apifyBackfillLastAttempt": now_iso},
+                merge=True,
+            )
+        except Exception:
+            pass
+
+
+@enrichment_bp.route('/users/me/sync-linkedin', methods=['POST'])
+@require_firebase_auth
+def sync_linkedin_via_apify():
+    """D11 lazy-on-login backfill: kick the Apify scrape off the critical path.
+
+    Frontend calls this on app boot after Firebase auth resolves. The endpoint
+    decides whether a backfill is needed (flag on, not already Apify, has URL,
+    not in cooldown) and if so, returns 202 with status='scheduled' immediately
+    while a background thread does the actual Apify call + Firestore write.
+
+    Idempotent: re-calling after backfill completes returns status='skipped'
+    with reason='already_apify' and no work happens. The endpoint never fails
+    user-visible — onboarding and login must keep working even if Apify is
+    down.
+    """
+    try:
+        uid = request.firebase_user['uid']
+        db = get_db()
+        user_ref = db.collection('users').document(uid)
+        try:
+            snap = user_ref.get(timeout=8.0)
+            user_data = snap.to_dict() if snap.exists else {}
+        except Exception as read_err:
+            logger.warning(
+                f"[Apify Backfill] {uid}: Firestore read failed: {read_err}; skipping"
+            )
+            return jsonify({"status": "skipped", "reason": "read_error"}), 200
+
+        now_ts = datetime.now(timezone.utc).timestamp()
+        should_backfill, skip_reason = _user_needs_apify_backfill(user_data, now_ts)
+        if not should_backfill:
+            return jsonify({"status": "skipped", "reason": skip_reason}), 200
+
+        # Fire-and-forget background thread. We do NOT block the response on
+        # the Apify call (60s timeout would tank app-boot latency).
+        import threading
+        threading.Thread(
+            target=_run_apify_backfill,
+            args=(uid, user_data["linkedinUrl"]),
+            daemon=True,
+            name=f"apify-backfill-{uid[:8]}",
+        ).start()
+        return jsonify({"status": "scheduled"}), 202
+    except Exception as e:
+        logger.error(f"[Apify Backfill] Unhandled error: {e}", exc_info=True)
+        # Never user-visible: sync is best-effort.
+        return jsonify({"status": "skipped", "reason": "internal_error"}), 200
 
 
 def _handle_merge_only(user_ref):

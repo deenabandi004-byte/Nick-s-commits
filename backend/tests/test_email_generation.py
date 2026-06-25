@@ -518,3 +518,85 @@ class TestAnchorPrioritySelection:
                 has_resume_mention = any(mention in body.lower() for mention in resume_mentions)
                 assert has_resume_mention, "Should include resume line for targeted outreach"
 
+
+class TestLoopBriefInjection:
+    """Regression: the Loop's briefText (and parsed chips) must reach the
+    LLM prompt. Without these checks the brief silently gets dropped and
+    every Loop generates generic networking copy regardless of the student's
+    stated goal — exactly the bug we just fixed in agent_actions.execute_find_and_draft.
+    """
+
+    def _captured_prompt(self, **batch_kwargs):
+        """Run batch_generate_emails with the brief kwargs and return the
+        full prompt string the GPT fallback path would have seen."""
+        contacts = [{
+            "FirstName": "Maya",
+            "LastName": "Reyes",
+            "Company": "JPMorgan",
+            "Title": "VP, Investment Banking",
+        }]
+        resume_text = "Deena Sid\nUSC, Computer Science"
+        user_profile = {"name": "Deena Sid", "email": "deena@example.com"}
+        career_interests = "Networking"
+
+        mock_response = MagicMock()
+        mock_response.choices = [MagicMock()]
+        mock_response.choices[0].message.content = json.dumps({
+            "0": {"subject": "Hi", "body": "Hi Maya,\n\nbody\n\nBest,\nDeena"}
+        })
+
+        captured = {}
+        def fake_create(**kwargs):
+            captured.update(kwargs)
+            return mock_response
+
+        with patch("app.services.reply_generation.get_anthropic_client", return_value=None):
+            with patch("app.services.reply_generation.get_openai_client") as mock_client:
+                mock_client.return_value.with_options.return_value.chat.completions.create.side_effect = fake_create
+                # Also wire the .chat.completions.create path on the raw
+                # client (some code paths skip .with_options).
+                mock_client.return_value.chat.completions.create.side_effect = fake_create
+                batch_generate_emails(
+                    contacts=contacts,
+                    resume_text=resume_text,
+                    user_profile=user_profile,
+                    career_interests=career_interests,
+                    **batch_kwargs,
+                )
+        # Extract the user message — that's where the brief block lives.
+        messages = captured.get("messages") or []
+        for m in messages:
+            if m.get("role") == "user":
+                return m.get("content", "")
+        return ""
+
+    def test_brief_text_lands_verbatim_in_prompt(self):
+        brief = "I want to chat with PMs at Stripe, Ramp, and Notion about breaking into fintech."
+        prompt = self._captured_prompt(loop_brief_text=brief)
+        assert "LOOP GOAL" in prompt, "expected the brief section header in the prompt"
+        assert brief in prompt, "expected the student's brief text verbatim in the prompt"
+
+    def test_brief_parsed_chips_land_in_prompt(self):
+        prompt = self._captured_prompt(
+            loop_brief_text="",
+            loop_brief_parsed={
+                "companies": ["JPMorgan", "Goldman"],
+                "roles": ["Investment Banking Analyst"],
+                "industries": ["Finance"],
+                "locations": ["New York"],
+                "emailPurpose": "summer internship recruiting",
+            },
+        )
+        assert "LOOP GOAL" in prompt
+        assert "JPMorgan" in prompt
+        assert "Investment Banking Analyst" in prompt
+        assert "summer internship recruiting" in prompt
+
+    def test_no_brief_section_when_brief_empty(self):
+        """Non-Loop callers (Find page, demo) must not get the brief block."""
+        prompt = self._captured_prompt()  # no brief kwargs
+        assert "LOOP GOAL" not in prompt, (
+            "the brief section should be absent when no brief was supplied — "
+            "otherwise standalone Find/demo flows pay for an irrelevant block"
+        )
+

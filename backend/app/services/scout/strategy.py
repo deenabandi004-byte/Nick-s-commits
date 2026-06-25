@@ -111,9 +111,17 @@ def clean_goal(goal: Any) -> str:
 def clean_steps(raw_steps: Any) -> List[Dict[str, Any]]:
     """Normalize the model-supplied steps into stored step dicts.
 
-    Each stored step is {title, detail, done, route?}. Steps with no title are
-    dropped, an unknown route is dropped (the step is kept), and the list is
-    capped at MAX_STEPS. Every step from this function starts not done.
+    Each stored step is {title, detail, done, route?, rationale?, feature?,
+    prefill_payload?, completed_at?, created_artifact_id?}. Steps with no
+    title are dropped, an unknown route is dropped (the step is kept), and
+    the list is capped at MAX_STEPS. Every step from this function starts
+    not done.
+
+    The five extra fields (rationale, feature, prefill_payload, completed_at,
+    created_artifact_id) are additive per the D2 schema audit. They support
+    the E2 recommendation-memory narrative ("you completed the Loop targeting
+    Stripe on Tuesday") without breaking existing strategies that were saved
+    before this migration shipped: they all default to empty/None.
     """
     steps: List[Dict[str, Any]] = []
     if not isinstance(raw_steps, list):
@@ -128,6 +136,17 @@ def clean_steps(raw_steps: Any) -> List[Dict[str, Any]]:
             "title": title,
             "detail": _trim(item.get("detail"), MAX_STEP_DETAIL_LEN),
             "done": False,
+            # E2 fields. All optional. completed_at is set in
+            # update_strategy_progress when a step transitions to done.
+            "rationale": _trim(item.get("rationale"), MAX_STEP_DETAIL_LEN),
+            "feature": _trim(item.get("feature"), 40),
+            "prefill_payload": (
+                item.get("prefill_payload")
+                if isinstance(item.get("prefill_payload"), dict)
+                else {}
+            ),
+            "completed_at": None,
+            "created_artifact_id": _trim(item.get("created_artifact_id"), 64),
         }
         route = str(item.get("route") or "").strip()
         if route and is_valid_route(route):
@@ -409,11 +428,15 @@ def update_strategy_progress(uid: str, tier: Optional[str],
                 wanted.add(int(n))
             except (TypeError, ValueError):
                 continue
-    for i, step in enumerate(steps, start=1):
-        if i in wanted:
-            step["done"] = True
-
     now = datetime.now(timezone.utc)
+    for i, step in enumerate(steps, start=1):
+        if i in wanted and not step.get("done"):
+            step["done"] = True
+            # E2: timestamp the transition so the next briefing can say
+            # "you completed step X on Tuesday" instead of "you completed X".
+            # Only set on the done-edge; re-marking an already-done step
+            # leaves the original timestamp alone.
+            step["completed_at"] = now
     all_done = bool(steps) and all(s.get("done") for s in steps)
     sid = strategy["id"]
 

@@ -12,7 +12,7 @@ class ContactSearchRequest(BaseModel):
     company: Optional[str] = Field(None, max_length=200, description="Company name (optional)")
     location: str = Field(..., min_length=1, max_length=200, description="Location (city, state)")
     collegeAlumni: Optional[str] = Field(None, max_length=200, description="College name for alumni filter")
-    batchSize: Optional[int] = Field(None, ge=1, le=40, description="Number of contacts to return (max 40 for elite tier)")
+    batchSize: Optional[int] = Field(None, ge=1, le=15, description="Number of contacts to return (max 15 for elite tier)")
     careerInterests: Optional[List[str]] = Field(None, max_length=10, description="Career interests")
     userProfile: Optional[dict] = Field(None, description="User profile data")
     
@@ -37,15 +37,18 @@ class ContactSearchRequest(BaseModel):
             return None
         if v < 1:
             raise ValueError('Batch size must be at least 1')
-        if v > 40:
-            raise ValueError('Batch size cannot exceed 40 (elite tier maximum)')
+        if v > 15:
+            raise ValueError('Batch size cannot exceed 15 (elite tier maximum)')
         return v
 
 
 class FirmSearchRequest(BaseModel):
     """Validation schema for firm search requests"""
     query: str = Field(..., min_length=1, max_length=500, description="Search query")
-    batchSize: Optional[int] = Field(None, ge=1, le=40, description="Number of firms to return")
+    # Upper bound matches the highest Find Companies slider cap (Elite = 50).
+    # Per-tier caps (free 10 / pro 25 / elite 50) are enforced in the route after
+    # the tier is resolved, so this only needs to allow the largest valid request.
+    batchSize: Optional[int] = Field(None, ge=1, le=50, description="Number of firms to return")
     
     @field_validator('query')
     @classmethod
@@ -126,8 +129,20 @@ class AgentConfigUpdate(BaseModel):
     targetRoles: Optional[List[str]] = Field(None, max_length=20)
     targetLocations: Optional[List[str]] = Field(None, max_length=20)
     preferAlumni: Optional[bool] = None
-    weeklyContactTarget: Optional[int] = Field(None, ge=1, le=15)
-    creditBudgetPerWeek: Optional[int] = Field(None, ge=10, le=150)
+    # Cadence targets are optional. Cadence-off Loops, and Loops whose mode
+    # excludes contacts (roles-only), legitimately omit these fields. The
+    # field-level floor (ge=1 / ge=10) was rejecting those payloads with
+    # 400. Upper caps stay as a typo guard; the floor is enforced by the
+    # field_validator below (0 or negative is coerced to None, i.e. treated
+    # as "not provided"). When a value IS provided as None or omitted, the
+    # service layer (agent_service.update_agent_config) leaves the stored
+    # value untouched.
+    # Upper bounds match agent_service.MAX_CONTACTS_PER_WEEK / MAX_CREDITS_PER_WEEK,
+    # which are sized for the daily-cadence ceiling (contacts: 15/day × 7;
+    # credits: per-cycle both-mode max × 7). Per-tier caps in config.py
+    # clamp below these for non-elite users.
+    weeklyContactTarget: Optional[int] = Field(None, le=105)
+    creditBudgetPerWeek: Optional[int] = Field(None, le=700)
     approvalMode: Optional[str] = Field(None, pattern=r"^(review_first|autopilot)$")
     autoSendUnlocked: Optional[bool] = None
     emailTemplatePurpose: Optional[str] = Field(None, max_length=500)
@@ -143,6 +158,26 @@ class AgentConfigUpdate(BaseModel):
     enableHiringManagers: Optional[bool] = None
     enableCompanyDiscovery: Optional[bool] = None
     digestEnabled: Optional[bool] = None
+
+    # Cadence-off semantics: a client that legitimately has no target (cadence
+    # disabled, or roles-only mode in which contacts are not chased) sends 0
+    # or omits the field. Coerce 0 (and any non-positive int) to None so the
+    # service layer treats it as "not provided" rather than 400ing on the
+    # old ge=1 floor. Applied to both target and budget so neither field
+    # trips when the other does. Note: only weeklyContactTarget exists today
+    # as a cadence target on this schema; if dailyContactTarget, weekly/daily
+    # RoleTarget are added later, give them the same validator.
+    @field_validator("weeklyContactTarget", "creditBudgetPerWeek", mode="before")
+    @classmethod
+    def _zero_or_negative_is_none(cls, v):
+        if v is None:
+            return None
+        try:
+            n = int(v)
+        except (TypeError, ValueError):
+            # Let the int type check below produce a clean error.
+            return v
+        return n if n > 0 else None
 
 
 class AgentBriefRequest(BaseModel):

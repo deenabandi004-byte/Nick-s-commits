@@ -27,6 +27,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Zap, Search, CornerDownLeft } from 'lucide-react';
+import RedSquiggleArrow from '@/assets/for-students/red-squiggle-arrow.png';
+import HeroProductVideo from '@/assets/for-students/hero-product.mp4';
+import HeroProductPoster from '@/assets/for-students/hero-product.png';
 
 export const PENDING_QUERY_KEY = 'offerloop_pending_query';
 
@@ -387,6 +390,21 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
         }
         .hsc-popup-enter { animation: hsc-popup-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
+        /* "Try it out" arrow — gentle right-leaning bounce toward the
+           search box so the eye is pulled to the CTA. The translation is
+           applied to a wrapper so the inner img keeps its rotate+flip. */
+        @keyframes hsc-arrow-nudge {
+          0%, 100% { transform: translateX(0); }
+          50%      { transform: translateX(7px); }
+        }
+        .hsc-arrow-nudge {
+          animation: hsc-arrow-nudge 1.3s ease-in-out infinite;
+          will-change: transform;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .hsc-arrow-nudge { animation: none; }
+        }
+
         /* Dot grid background for the right side */
         .hsc-dot-grid {
           background-image: radial-gradient(rgba(15, 37, 69, 0.14) 1px, transparent 1px);
@@ -466,28 +484,66 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
               margin: 0,
             }}
           >
-            Reach anyone.
+            Reach{' '}
+            <span style={{ fontStyle: 'italic', color: '#4D619F' }}>anyone</span>
             <br />
-            Track every conversation.
+            Track every <span style={{ fontStyle: 'italic', color: '#4D619F' }}>conversation</span>
           </h1>
 
-          {/* Subheadline - names mechanisms */}
-          <p
-            style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 17,
-              lineHeight: 1.6,
-              color: '#475569',
-              maxWidth: 540,
-              margin: '24px 0 32px',
-            }}
-          >
-            Tell us who you want to meet. We find them, draft the message, and
-            manage every reply, follow-up, and meeting prep.
-          </p>
-
-          {/* Prompt input - larger, with a typewriter placeholder */}
-          <form onSubmit={handleSubmit} style={{ maxWidth: 580, marginBottom: 0 }}>
+          {/* Prompt input - larger, with a typewriter placeholder. Wrapped
+              in a relative container so the "Try it out" doodle hint can
+              be anchored to the left margin of the search box. */}
+          <div style={{ position: 'relative', maxWidth: 580, marginTop: 32 }}>
+            {/* Handwritten "Try it out" hint + red squiggle arrow nudging
+                toward the search box. Hidden under lg because there's no
+                margin space to render it without crashing into other UI. */}
+            <div
+              aria-hidden
+              className="hidden lg:block"
+              style={{
+                position: 'absolute',
+                left: -84,
+                top: 18,
+                width: 84,
+                pointerEvents: 'none',
+                zIndex: 1,
+              }}
+            >
+              <p
+                style={{
+                  fontFamily: "'Libre Baskerville', Georgia, serif",
+                  fontStyle: 'italic',
+                  fontSize: 12,
+                  lineHeight: 1.1,
+                  color: '#C2410C',
+                  margin: '0 0 2px',
+                  letterSpacing: '0.01em',
+                  whiteSpace: 'nowrap',
+                  transform: 'rotate(-22deg)',
+                  transformOrigin: '50% 100%',
+                  textAlign: 'center',
+                }}
+              >
+                Try it out
+              </p>
+              <div
+                className="hsc-arrow-nudge"
+                style={{ width: 32, margin: '5px auto 0' }}
+              >
+                <img
+                  src={RedSquiggleArrow}
+                  alt=""
+                  style={{
+                    display: 'block',
+                    width: 32,
+                    height: 'auto',
+                    transform: 'scaleX(-1) rotate(115deg)',
+                    transformOrigin: '50% 50%',
+                  }}
+                />
+              </div>
+            </div>
+            <form onSubmit={handleSubmit} style={{ marginBottom: 0 }}>
             <div
               style={{
                 position: 'relative',
@@ -595,6 +651,22 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
               </div>
             </div>
           </form>
+          </div>
+
+          {/* Subheadline - names mechanisms (sits below the search box) */}
+          <p
+            style={{
+              fontFamily: "'Inter', sans-serif",
+              fontSize: 17,
+              lineHeight: 1.6,
+              color: '#475569',
+              maxWidth: 540,
+              margin: '24px 0 0',
+            }}
+          >
+            Tell us who you want to meet. We find them, draft the message, and
+            manage every reply, follow-up, and meeting prep.
+          </p>
 
           {/* Chip buttons removed - example queries now type into the
               search bar via the typewriter placeholder above. */}
@@ -602,765 +674,30 @@ const HeroSearchCTA: React.FC<HeroSearchCTAProps> = ({ onSubmit }) => {
 
         {/* ═════════════ RIGHT: animated Gmail mockup ═════════════ */}
         <div className="hsc-right-wrap">
-          {/* Dotted grid backdrop */}
-          <div
-            className="hsc-dot-grid"
-            aria-hidden
-            style={{
-              position: 'absolute',
-              inset: '-80px -200px -80px -40px',
-              opacity: 0.45,
-              zIndex: 0,
-              maskImage:
-                'radial-gradient(ellipse at 40% 50%, black 40%, transparent 90%)',
-              WebkitMaskImage:
-                'radial-gradient(ellipse at 40% 50%, black 40%, transparent 90%)',
-            }}
-          />
-
-          {/* Gmail-style panel */}
+          {/* Hero product video — same looping MP4 used on /for-students.
+              Replaces the animated Gmail mockup as a quick visual swap. */}
           <div
             className="hsc-right-panel"
             style={{
-              background: '#ffffff',
-              borderRadius: 12,
-              border: '1px solid rgba(15, 37, 69, 0.10)',
-              boxShadow:
-                '0 2px 8px rgba(15, 37, 69, 0.04), 0 24px 60px rgba(15, 37, 69, 0.12)',
+              borderRadius: 14,
               overflow: 'hidden',
-              zIndex: 1,
+              border: '1px solid rgba(15, 37, 69, 0.08)',
+              boxShadow:
+                '0 1px 2px rgba(15, 37, 69, 0.04), 0 18px 36px rgba(15, 37, 69, 0.10), 0 38px 70px rgba(15, 37, 69, 0.12)',
+              background: '#ffffff',
             }}
           >
-            {/* ─── Gmail top chrome ─── */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 14,
-                padding: '10px 16px',
-                borderBottom: '1px solid #E8EAED',
-                background: '#F6F8FC',
-              }}
-            >
-              {/* Hamburger */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }} aria-hidden>
-                {[0, 1, 2].map((i) => (
-                  <span
-                    key={i}
-                    style={{
-                      display: 'block',
-                      width: 16,
-                      height: 2,
-                      background: '#5F6368',
-                      borderRadius: 2,
-                    }}
-                  />
-                ))}
-              </div>
-
-              {/* Official Gmail logo - canonical 2020 refresh
-                  Color mapping (matching Google's brand):
-                  - Blue   #4285F4: bottom-left (left stroke of M)
-                  - Green  #34A853: bottom-right (right stroke of M)
-                  - Red    #EA4335: center V (the prominent middle dip)
-                  - Yellow #FBBC04: top-right triangle (right peak)
-                  - Dark red #C5221F: top-left triangle (left peak) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg
-                  width="30"
-                  height="22"
-                  viewBox="0 0 256 193"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-label="Gmail"
-                >
-                  <path
-                    d="M58.182 192.05V93.14L27.507 65.077 0 49.504v125.091c0 9.659 7.825 17.455 17.455 17.455h40.727Z"
-                    fill="#4285F4"
-                  />
-                  <path
-                    d="M197.818 192.05h40.727c9.659 0 17.455-7.826 17.455-17.455V49.504l-31.156 17.837-27.026 25.799v98.91Z"
-                    fill="#34A853"
-                  />
-                  <path
-                    d="M58.182 93.14V17.455l69.818 52.364 69.818-52.364V93.14L128 145.504Z"
-                    fill="#EA4335"
-                  />
-                  <path
-                    d="M197.818 17.455V93.14L256 49.504V26.231c0-21.585-24.64-33.89-41.89-20.945Z"
-                    fill="#FBBC04"
-                  />
-                  <path
-                    d="M0 49.504 26.759 69.45 58.182 93.14V17.455L41.89 5.286C24.61-7.659 0 4.646 0 26.231Z"
-                    fill="#C5221F"
-                  />
-                </svg>
-                <span
-                  style={{
-                    fontFamily: "'Inter', 'Google Sans', sans-serif",
-                    fontSize: 20,
-                    color: '#5F6368',
-                    fontWeight: 400,
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  Gmail
-                </span>
-              </div>
-
-              {/* Search bar - this is where the Offerloop query types in */}
-              <div
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  background: '#EAF1FB',
-                  borderRadius: 8,
-                  padding: '8px 14px',
-                  minWidth: 0,
-                }}
-              >
-                <Search size={16} strokeWidth={2.2} style={{ color: '#5F6368', flexShrink: 0 }} />
-                <div
-                  style={{
-                    flex: 1,
-                    fontFamily: "'Inter', sans-serif",
-                    fontSize: 13,
-                    color: '#202124',
-                    fontWeight: 400,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    minWidth: 0,
-                  }}
-                >
-                  {typedQuery || (
-                    <span style={{ color: '#80868B' }}>Search mail</span>
-                  )}
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      width: 1.5,
-                      height: 13,
-                      background: '#202124',
-                      marginLeft: 2,
-                      verticalAlign: 'middle',
-                      opacity: caretOn && !showFindBtn ? 1 : 0,
-                      transition: 'opacity 0.08s',
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Account circle */}
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                  color: '#ffffff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontFamily: "'Inter', sans-serif",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  flexShrink: 0,
-                }}
-              >
-                A
-              </div>
-            </div>
-
-            {/* ─── Gmail body: sidebar + list ─── */}
-            <div style={{ display: 'flex', minHeight: 360 }}>
-              {/* Sidebar */}
-              <div
-                style={{
-                  width: 128,
-                  borderRight: '1px solid #E8EAED',
-                  padding: '14px 0 14px 10px',
-                  background: '#ffffff',
-                  flexShrink: 0,
-                }}
-              >
-                {/* Compose button */}
-                <div
-                  style={{
-                    opacity: showFindBtn ? 1 : 0,
-                    transform: showFindBtn ? 'translateX(0)' : 'translateX(-4px)',
-                    transition: 'all 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
-                    marginBottom: 14,
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      background: '#C2E7FF',
-                      color: '#001D35',
-                      fontFamily: "'Inter', 'Google Sans', sans-serif",
-                      fontSize: 12.5,
-                      fontWeight: 500,
-                      padding: '10px 18px 10px 14px',
-                      borderRadius: 16,
-                      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.08)',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 000-1.41l-2.34-2.34a1 1 0 00-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" fill="#001D35"/>
-                    </svg>
-                    Compose
-                  </div>
-                </div>
-
-                {/* Labels */}
-                {[
-                  { label: 'Inbox', icon: 'inbox', selected: false, count: 0 },
-                  { label: 'Starred', icon: 'star', selected: false, count: 0 },
-                  { label: 'Sent', icon: 'send', selected: false, count: 0 },
-                  { label: 'Drafts', icon: 'draft', selected: true, count: visibleRows.length },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '7px 16px 7px 18px',
-                      borderTopLeftRadius: 16,
-                      borderBottomLeftRadius: 16,
-                      background: item.selected ? '#D3E3FD' : 'transparent',
-                      marginRight: 0,
-                      marginBottom: 1,
-                      position: 'relative',
-                    }}
-                  >
-                    <GmailIcon kind={item.icon as 'inbox' | 'star' | 'send' | 'draft'} active={item.selected} />
-                    <span
-                      style={{
-                        fontFamily: "'Inter', 'Google Sans', sans-serif",
-                        fontSize: 12,
-                        color: item.selected ? '#001D35' : '#44474A',
-                        fontWeight: item.selected ? 700 : 400,
-                        flex: 1,
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                    {item.label === 'Drafts' && item.count > 0 && (
-                      <span
-                        className="hsc-fade-enter"
-                        key={item.count}
-                        style={{
-                          fontFamily: "'Inter', 'Google Sans', sans-serif",
-                          fontSize: 11,
-                          color: '#001D35',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {item.count}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Email list */}
-              <div style={{ flex: 1, background: '#ffffff', minWidth: 0 }}>
-                {/* Sub-header with phase label + Offerloop badge */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '9px 18px',
-                    borderBottom: '1px solid #E8EAED',
-                    background: '#FAFBFF',
-                    minHeight: 42,
-                  }}
-                >
-                  {/* Offerloop sync badge - signals the drafts are auto-generated */}
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      background: '#2563EB',
-                      color: '#ffffff',
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      padding: '4px 10px',
-                      borderRadius: 100,
-                      letterSpacing: '0.04em',
-                      textTransform: 'uppercase',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 2px 8px rgba(37, 99, 235, 0.28)',
-                    }}
-                  >
-                    <Zap size={11} strokeWidth={2.8} />
-                    Offerloop
-                  </div>
-
-                  {/* Phase pips */}
-                  <div style={{ display: 'flex', gap: 4 }}>
-                    {[1, 2, 3, 4].map((i) => (
-                      <span
-                        key={i}
-                        style={{
-                          display: 'inline-block',
-                          width: 5,
-                          height: 5,
-                          borderRadius: '50%',
-                          background:
-                            i <= PHASE_LABELS[phase].pips ? '#2563EB' : '#DADCE0',
-                          transition: 'background 0.3s ease',
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  {/* Phase title - mentions "6 drafts" explicitly to sell the batch */}
-                  <span
-                    key={phase}
-                    className="hsc-fade-enter"
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 11.5,
-                      fontWeight: 700,
-                      color: '#202124',
-                      letterSpacing: '0.02em',
-                    }}
-                  >
-                    {PHASE_LABELS[phase].title}
-                  </span>
-
-                  {/* Success chip - pops when drafts are ready */}
-                  <div
-                    style={{
-                      marginLeft: 'auto',
-                      opacity: showChips ? 1 : 0,
-                      transform: showChips ? 'translateY(0) scale(1)' : 'translateY(-4px) scale(0.92)',
-                      transition: 'all 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
-                    }}
-                  >
-                    <Chip
-                      color="#0B6B2B"
-                      bg="#E6F4EA"
-                      label={`✓ ${DEMO_ROWS.length} in Gmail`}
-                    />
-                  </div>
-                </div>
-
-                {/* Empty state shown in search phase */}
-                {phase === 'search' && visibleRows.length === 0 && (
-                  <div
-                    style={{
-                      padding: '56px 24px',
-                      textAlign: 'center',
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 13,
-                      color: '#9AA0A6',
-                    }}
-                  >
-                    No drafts yet
-                  </div>
-                )}
-
-                {/* ─── Gmail draft rows ─── */}
-                {DEMO_ROWS.map((row, idx) => {
-                  const isVisible = visibleRows.includes(idx);
-                  if (!isVisible) return null;
-                  const status = rowStatuses[idx];
-                  const highlighted = row.highlight && status === 'followup';
-                  const expanded = row.expanded;
-                  return (
-                    <div
-                      key={row.sender}
-                      className="hsc-row-enter"
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        padding: 0,
-                        borderBottom: '1px solid #F1F3F4',
-                        background: highlighted
-                          ? '#FFF8E1'
-                          : expanded
-                            ? '#F4F8FE'
-                            : '#ffffff',
-                        position: 'relative',
-                        borderLeft: expanded ? '3px solid #2563EB' : 'none',
-                      }}
-                    >
-                      {/* Highlighted row gets a red left edge indicator */}
-                      {highlighted && (
-                        <div
-                          aria-hidden
-                          style={{
-                            position: 'absolute',
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            width: 3,
-                            background: '#EA4335',
-                          }}
-                        />
-                      )}
-
-                      {/* ─── Row header (always rendered) ─── */}
-                      <div
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 12,
-                          padding: expanded ? '11px 18px 6px 14px' : '9px 18px 9px 14px',
-                          minHeight: 40,
-                        }}
-                      >
-                        {/* Checkbox + star */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                          <div
-                            style={{
-                              width: 14,
-                              height: 14,
-                              border: '1.5px solid #DADCE0',
-                              borderRadius: 2,
-                              flexShrink: 0,
-                            }}
-                          />
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
-                            <path
-                              d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                              stroke="#DADCE0"
-                              strokeWidth="1.4"
-                              fill="none"
-                            />
-                          </svg>
-                        </div>
-
-                        {/* Avatar */}
-                        <div
-                          style={{
-                            width: 24,
-                            height: 24,
-                            borderRadius: '50%',
-                            background: row.avatarBg,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontFamily: "'Inter', sans-serif",
-                            fontSize: 10,
-                            fontWeight: 700,
-                            color: '#0f2545',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {row.initials}
-                        </div>
-
-                        {/* Sender name */}
-                        <div
-                          style={{
-                            width: 118,
-                            fontFamily: "'Inter', 'Google Sans', sans-serif",
-                            fontSize: 13,
-                            fontWeight: 700,
-                            color: '#202124',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            flexShrink: 0,
-                          }}
-                        >
-                          {row.sender}
-                        </div>
-
-                        {/* Label chip: "Draft" in red like Gmail */}
-                        {status === 'drafted' && (
-                          <span
-                            className="hsc-pill-enter"
-                            style={{
-                              display: 'inline-block',
-                              fontFamily: "'Inter', sans-serif",
-                              fontSize: 10,
-                              fontWeight: 600,
-                              color: '#D93025',
-                              flexShrink: 0,
-                            }}
-                          >
-                            Draft
-                          </span>
-                        )}
-
-                        {/* Subject + preview */}
-                        <div
-                          style={{
-                            flex: 1,
-                            display: 'flex',
-                            alignItems: 'baseline',
-                            gap: 6,
-                            minWidth: 0,
-                            fontFamily: "'Inter', 'Google Sans', sans-serif",
-                            fontSize: 13,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontWeight: highlighted || expanded ? 700 : 500,
-                              color: '#202124',
-                              flexShrink: 0,
-                            }}
-                          >
-                            {row.subject}
-                          </span>
-                          {!expanded && (
-                            <span
-                              style={{
-                                color: '#5F6368',
-                                fontWeight: 400,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                              }}
-                            >
-                              · {row.preview}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Status pill (Offerloop overlay) */}
-                        {status && status !== 'drafted' && (
-                          <div style={{ flexShrink: 0 }}>
-                            <StatusPill status={status} />
-                          </div>
-                        )}
-
-                        {/* Timestamp */}
-                        <div
-                          style={{
-                            fontFamily: "'Inter', sans-serif",
-                            fontSize: 11,
-                            color: highlighted ? '#202124' : '#5F6368',
-                            fontWeight: highlighted ? 700 : 400,
-                            flexShrink: 0,
-                            minWidth: 24,
-                            textAlign: 'right',
-                          }}
-                        >
-                          {row.time}
-                        </div>
-                      </div>
-
-                      {/* ─── Expanded email body - only for the "opened" row ─── */}
-                      {expanded && (
-                        <div
-                          style={{
-                            padding: '0 20px 14px 56px',
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontFamily: "'Inter', 'Google Sans', sans-serif",
-                              fontSize: 11.5,
-                              color: '#202124',
-                              fontWeight: 500,
-                              marginBottom: 4,
-                            }}
-                          >
-                            <span style={{ color: '#5F6368', fontWeight: 400 }}>to </span>
-                            {row.email}
-                          </div>
-                          <div
-                            style={{
-                              fontFamily: "'Inter', 'Google Sans', sans-serif",
-                              fontSize: 12.5,
-                              lineHeight: 1.55,
-                              color: '#3C4043',
-                            }}
-                          >
-                            Hi Maya, I came across your profile and noticed your path from{' '}
-                            <mark style={{ background: '#FEF3C7', color: '#92400E', padding: '0 3px', borderRadius: 2, fontWeight: 600 }}>
-                              USC Marshall
-                            </mark>
-                            {' '}to{' '}
-                            <mark style={{ background: '#FEF3C7', color: '#92400E', padding: '0 3px', borderRadius: 2, fontWeight: 600 }}>
-                              Goldman TMT
-                            </mark>
-                            . Would love to hear how you broke in. Open to a quick 15-min chat?
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* ─── Footer banner: Offerloop sync status ─── */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 18px',
-                background: '#F6F8FC',
-                borderTop: '1px solid #E8EAED',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 11.5,
-                color: '#5F6368',
-              }}
-            >
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <Zap size={12} strokeWidth={2.4} style={{ color: '#2563EB' }} />
-                Drafts auto-written into <strong style={{ color: '#202124', fontWeight: 700 }}>your Gmail</strong>
-              </span>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  color: '#2563EB',
-                  fontWeight: 500,
-                }}
-              >
-                <span
-                  style={{
-                    display: 'inline-block',
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#2563EB',
-                    animation: 'hsc-live-pulse 1.8s ease-out infinite',
-                  }}
-                />
-                Synced
-              </span>
-            </div>
-          </div>
-
-          {/* Both popups removed - the personalization story is now told
-              inline via Maya's expanded row, and the tracker story via the
-              reply notifications below. Less crowding, less distraction. */}
-
-          {/* ─── Floating reply notifications - positioned bottom-right
-              of the panel, overlapping rows 5-6 ─── */}
-          <div
-            aria-hidden
-            style={{
-              position: 'absolute',
-              right: 24,
-              bottom: 44,
-              display: 'flex',
-              flexDirection: 'column-reverse',
-              gap: 8,
-              zIndex: 10,
-              pointerEvents: 'none',
-              maxWidth: 240,
-            }}
-          >
-            {NOTIFICATIONS.map((n, i) => {
-              const isVisible = visibleNotifs.includes(i);
-              const copy = NOTIFICATION_COPY[n.kind];
-              if (!isVisible) return null;
-              return (
-                <div
-                  key={n.name + n.kind}
-                  className="hsc-notif-enter"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    background: '#ffffff',
-                    border: '1px solid rgba(15, 37, 69, 0.08)',
-                    borderRadius: 12,
-                    padding: '9px 13px 9px 9px',
-                    minWidth: 232,
-                    boxShadow:
-                      '0 2px 8px rgba(15, 37, 69, 0.10), 0 18px 40px rgba(15, 37, 69, 0.22)',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: 28,
-                      height: 28,
-                      borderRadius: '50%',
-                      background: n.bg,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 10.5,
-                      fontWeight: 700,
-                      color: '#0f2545',
-                      flexShrink: 0,
-                      position: 'relative',
-                    }}
-                  >
-                    {n.initials}
-                    <span
-                      style={{
-                        position: 'absolute',
-                        right: -1,
-                        bottom: -1,
-                        width: 9,
-                        height: 9,
-                        borderRadius: '50%',
-                        background: copy.accent,
-                        border: '2px solid #ffffff',
-                      }}
-                    />
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div
-                      style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: '#0f2545',
-                        lineHeight: 1.25,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      }}
-                    >
-                      <span>{n.name}</span>{' '}
-                      <span style={{ color: '#64748B', fontWeight: 500 }}>
-                        {copy.title}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 5,
-                        marginTop: 2,
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 9.5,
-                        fontWeight: 700,
-                        color: copy.accent,
-                        letterSpacing: '0.04em',
-                        textTransform: 'uppercase',
-                      }}
-                    >
-                      <span
-                        style={{
-                          display: 'inline-block',
-                          width: 4,
-                          height: 4,
-                          borderRadius: '50%',
-                          background: copy.accent,
-                        }}
-                      />
-                      {copy.subtitle}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            <video
+              src={HeroProductVideo}
+              poster={HeroProductPoster}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-label="Offerloop product preview"
+              style={{ display: 'block', width: '100%', height: 'auto' }}
+            />
           </div>
         </div>
       </div>

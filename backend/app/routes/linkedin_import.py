@@ -8,12 +8,47 @@ from datetime import datetime
 
 from ..extensions import require_firebase_auth, get_db
 from ..config import PDL_BASE_URL, PEOPLE_DATA_LABS_API_KEY
-from ..services.reply_generation import batch_generate_emails
+from ..services.reply_generation import batch_generate_emails, PURPOSES_INCLUDE_RESUME, email_body_mentions_resume, regenerate_with_feedback
 from ..utils.warmth_scoring import score_contacts_for_email
+from ..utils.users import get_outreach_email
 from ..services.gmail_client import create_gmail_draft_for_user, download_resume_from_url
 from ..services.hunter import get_verified_email, get_smart_company_domain
+from ..services.pdl_client import _choose_best_email
+from ..services.resume_parser import extract_text_from_pdf_bytes
+from ..utils.email_quality import check_email_quality
+from ..services.email_request_builder import (
+    resolve_email_template as _resolve_email_template,
+    build_email_gen_request,
+)
 
 linkedin_import_bp = Blueprint('linkedin_import', __name__, url_prefix='/api/contacts')
+
+
+def _names_from_linkedin_slug(linkedin_url: str) -> tuple[str, str]:
+    """Best-effort (first, last) name parsed from a LinkedIn profile slug.
+
+    PDL occasionally returns a partial name (first name only). The vanity slug
+    usually carries both names (e.g. .../in/dakota-fillet), so we parse it to
+    backfill whatever PDL left blank. Without this, Hunter's email finder and
+    pattern generation — both gated on first AND last name — get skipped
+    entirely, and a perfectly findable email comes back "Not found".
+
+    Trailing LinkedIn disambiguation hashes (tokens containing a digit, e.g.
+    michael-lo-6b89b022) are dropped before picking the last-name token.
+    """
+    try:
+        slug = (linkedin_url or '').rstrip('/').split('/in/')[-1]
+        slug = slug.split('/')[0].split('?')[0]
+        parts = [p for p in slug.split('-') if p]
+        while len(parts) > 1 and any(ch.isdigit() for ch in parts[-1]):
+            parts.pop()
+        if not parts:
+            return '', ''
+        first = parts[0].capitalize()
+        last = parts[-1].capitalize() if len(parts) > 1 else ''
+        return first, last
+    except Exception:
+        return '', ''
 
 
 def resolve_email_for_linkedin_import(pdl_contact: dict, person_data: dict) -> dict:
@@ -31,70 +66,26 @@ def resolve_email_for_linkedin_import(pdl_contact: dict, person_data: dict) -> d
         }
     """
     print(f"\n[LinkedInImport] ========== Email Resolution Started ==========")
-    
+
     first_name = pdl_contact.get('FirstName', '')
     last_name = pdl_contact.get('LastName', '')
     company = pdl_contact.get('Company', '')
-    
+
     print(f"[LinkedInImport] Contact Info: {first_name} {last_name} at {company}")
-    
-    # Extract PDL email from raw person_data (same pattern as extract_contact_from_pdl_person_enhanced)
-    # Use same logic as _choose_best_email from pdl_client.py
-    emails = person_data.get('emails') or []
-    if not isinstance(emails, list):
-        emails = []
-    recommended = person_data.get('recommended_personal_email') or ''
-    if not isinstance(recommended, str):
-        recommended = ''
-    
-    print(f"[LinkedInImport] PDL Email Data: {len(emails)} email(s) found")
-    
-    def is_valid_email(addr: str) -> bool:
-        if not isinstance(addr, str):
-            return False
-        if not addr or '@' not in addr:
-            return False
-        bad = ["example.com", "test.com", "domain.com", "noreply@"]
-        return not any(b in addr.lower() for b in bad)
-    
-    # Extract valid emails with types
-    email_items = []
-    for e in emails:
-        if isinstance(e, dict):
-            addr = (e.get("address") or "").strip()
-            email_type = (e.get("type") or "").lower()
-            if is_valid_email(addr):
-                email_items.append((email_type, addr))
-                print(f"[LinkedInImport] Found valid {email_type or 'unknown'} email")
-    
-    # Prioritize work/professional emails
-    pdl_email = None
-    for email_type, addr in email_items:
-        if email_type in ("work", "professional"):
-            pdl_email = addr
-            print(f"[LinkedInImport] Selected PDL work email")
-            break
-    
-    # Fall back to personal email
-    if not pdl_email:
-        for email_type, addr in email_items:
-            if email_type == "personal":
-                pdl_email = addr
-                print(f"[LinkedInImport] Selected PDL personal email")
-                break
-    
-    # Fall back to recommended email
-    if not pdl_email and is_valid_email(recommended):
-        pdl_email = recommended
-        print(f"[LinkedInImport] Selected PDL recommended email")
-    
-    # Fall back to first valid email
-    if not pdl_email and email_items:
-        pdl_email = email_items[0][1]
-        print(f"[LinkedInImport] Selected first available PDL email")
-    
-    if not pdl_email:
-        print(f"[LinkedInImport] No PDL email found - will rely on Hunter.io")
+
+    # Use canonical PDL email picker + freshness gate from pdl_client.
+    # Stale PDL emails (>90 days since job_last_updated) are dropped so Hunter
+    # gets a chance to re-verify, matching the website's prompt-search behavior.
+    emails = person_data.get('emails') if isinstance(person_data.get('emails'), list) else []
+    recommended = person_data.get('recommended_personal_email')
+    pdl_email = _choose_best_email(emails, recommended)
+    if pdl_email and not _pdl_email_is_fresh(person_data, pdl_email):
+        print(f"[LinkedInImport] PDL email failed freshness gate (>90d), preferring Hunter")
+        pdl_email = None
+    elif pdl_email:
+        print(f"[LinkedInImport] PDL email passed freshness gate")
+    else:
+        print(f"[LinkedInImport] No PDL email — will rely on Hunter.io")
     
     # Resolve target company domain using existing domain helpers
     target_domain = None
@@ -479,7 +470,20 @@ def import_from_linkedin():
         if not pdl_contact:
             print(f"[LinkedInImport] ❌ ERROR: Failed to extract contact data")
             return jsonify({'status': 'error', 'message': 'Failed to extract contact data'}), 500
-        
+
+        # PDL sometimes returns a partial name (first name only). Backfill any
+        # missing first/last from the LinkedIn URL slug so the Hunter email
+        # finder + pattern steps (which require BOTH names) can run instead of
+        # being skipped — which otherwise yields a false "Not found".
+        if not (pdl_contact.get('FirstName') or '').strip() or not (pdl_contact.get('LastName') or '').strip():
+            slug_first, slug_last = _names_from_linkedin_slug(linkedin_url)
+            if not (pdl_contact.get('FirstName') or '').strip() and slug_first:
+                pdl_contact['FirstName'] = slug_first
+                print(f"[LinkedInImport]   - Backfilled FirstName from URL slug: {slug_first}")
+            if not (pdl_contact.get('LastName') or '').strip() and slug_last:
+                pdl_contact['LastName'] = slug_last
+                print(f"[LinkedInImport]   - Backfilled LastName from URL slug: {slug_last}")
+
         print(f"[LinkedInImport] ✅ Contact Extracted:")
         print(f"[LinkedInImport]   - Name: {pdl_contact.get('FirstName', '')} {pdl_contact.get('LastName', '')}")
         print(f"[LinkedInImport]   - Company: {pdl_contact.get('Company', 'None')}")
@@ -492,167 +496,259 @@ def import_from_linkedin():
         contact_email = email_result['email']
         email_source = email_result['email_source']
         has_email = contact_email is not None
-        
+
         print(f"[LinkedInImport] Email resolution: found={has_email}, source={email_source or 'None'}")
-        
+
         contact_for_email = pdl_contact.copy()
         contact_for_email['LinkedIn'] = linkedin_url
-        # Update email in contact_for_email for email generation
         if contact_email:
             contact_for_email['Email'] = contact_email
-        
-        # Step 4: Generate personalized email (only if email is available)
-        print(f"[LinkedInImport] Step 5: Preparing email generation...")
+
+        # Step 4: Load user data (template, resume, tier all need it)
+        print(f"[LinkedInImport] Step 5: Loading user data...")
         db = get_db()
         user_ref = db.collection('users').document(user_id)
         user_doc = user_ref.get()
         user_data = user_doc.to_dict() if user_doc.exists else {}
-        user_profile = {}
-        if user_doc.exists:
-            user_profile = {
-                'name': user_data.get('name', ''),
-                'university': user_data.get('university', ''),
-                'major': user_data.get('major', ''),
-                'year': user_data.get('year', ''),
-            }
-            print(f"[LinkedInImport] User profile loaded")
-        else:
-            print(f"[LinkedInImport]   - No user profile found in Firestore")
-        # Use request body resume if provided (e.g. from web app); otherwise use saved resume from Firestore (for extension)
+        user_profile = {
+            'name': user_data.get('name', ''),
+            'university': user_data.get('university', ''),
+            'major': user_data.get('major', ''),
+            'year': user_data.get('year', ''),
+            # Prefer the user's .edu as the outreach identity (body signature).
+            'email': get_outreach_email(user_data) or request.firebase_user.get('email', ''),
+        }
+        for key in ("resumeParsed", "academics", "goals", "careerTrack",
+                    "dreamCompanies", "hometown", "location", "pastCompanies"):
+            if key in user_data and key not in user_profile:
+                user_profile[key] = user_data[key]
+
+        user_tier = (user_data.get('subscriptionTier') or user_data.get('tier') or 'free').lower()
+        print(f"[LinkedInImport] User tier: {user_tier}")
+
+        # Step 4c: Resume text + PDF for attachment.
+        # Prefer the request-body resume (website's ContactSearchPage sends it pre-extracted).
+        # Fall back to Firestore resumeText, and finally to downloading the PDF and extracting.
         resume_text_for_email = (user_resume or '').strip() or (user_data.get('resumeText') or '')
-        if not (user_resume or '').strip() and resume_text_for_email:
-            print(f"[LinkedInImport] Using saved resume from Firestore ({len(resume_text_for_email)} chars)")
-        
+        resume_content = None
+        resume_filename = user_data.get('resumeFileName') if user_data else None
+        resume_url = (user_data.get('resumeUrl') or user_data.get('resumeURL')) if user_data else None
+        if resume_url:
+            try:
+                print(f"[LinkedInImport] Downloading resume from {resume_url[:80]}...")
+                _content, _fname = download_resume_from_url(resume_url)
+                if _content:
+                    resume_content = _content
+                    if not resume_filename:
+                        resume_filename = _fname or 'resume.pdf'
+                    if not resume_text_for_email or len(resume_text_for_email) < 50:
+                        try:
+                            extracted = extract_text_from_pdf_bytes(_content)
+                            if extracted and len(extracted.strip()) > 50:
+                                resume_text_for_email = extracted
+                                print(f"[LinkedInImport] Extracted {len(extracted)} chars from resume PDF")
+                        except Exception as _ee:
+                            print(f"[LinkedInImport] PDF text extraction failed: {_ee}")
+            except Exception as e:
+                print(f"[LinkedInImport] Resume download failed: {e}")
+        if resume_text_for_email:
+            print(f"[LinkedInImport] Resume text ready ({len(resume_text_for_email)} chars)")
+        else:
+            print(f"[LinkedInImport] No resume text available — email will skip resume context")
+
+        # Step 4d: Perplexity + Apify enrichment (same pipeline as website prompt-search)
+        contacts_for_enrich = [contact_for_email]
+        enrichment_data = {}
+        try:
+            from app.services.perplexity_client import batch_enrich_contacts
+            enrichment_data = batch_enrich_contacts(contacts_for_enrich) or {}
+            enrich = enrichment_data.get(0, {})
+            if enrich.get("talking_points"):
+                contact_for_email["enrichment_talking_points"] = enrich["talking_points"]
+            if enrich.get("recent_activity"):
+                contact_for_email["enrichment_recent_activity"] = enrich["recent_activity"]
+            if enrich.get("media_appearances"):
+                contact_for_email["perplexity_media_appearances"] = enrich["media_appearances"]
+            if enrich.get("published_writing"):
+                contact_for_email["perplexity_published_writing"] = enrich["published_writing"]
+            if enrich.get("news_mentions"):
+                contact_for_email["perplexity_news_mentions"] = enrich["news_mentions"]
+        except Exception as _pe:
+            print(f"[LinkedInImport] Perplexity contact enrichment failed (non-blocking): {_pe}")
+
+        try:
+            from app.services.apify_client import batch_enrich_linkedin_posts_via_apify
+            apify_results = batch_enrich_linkedin_posts_via_apify(contacts_for_enrich) or {}
+            payload = apify_results.get(0, {})
+            if payload.get("linkedin_recent_posts"):
+                contact_for_email["linkedin_recent_posts"] = payload["linkedin_recent_posts"]
+        except Exception as _ae:
+            print(f"[LinkedInImport] Apify enrichment failed (non-blocking): {_ae}")
+
+        try:
+            from app.services.perplexity_client import batch_enrich_company_news
+            company_enrichment = batch_enrich_company_news(contacts_for_enrich) or {}
+            co = company_enrichment.get(0, {})
+            if co.get("company_recent_news"):
+                contact_for_email["company_recent_news"] = co["company_recent_news"]
+            if co.get("company_description"):
+                contact_for_email["company_description"] = co["company_description"]
+        except Exception as _ce:
+            print(f"[LinkedInImport] Perplexity company enrichment failed (non-blocking): {_ce}")
+
         email_subject = None
         email_body = None
+        email_personalization = None
+        quality_regenerated = False
         draft_result = None
-        
+        warmth_data = {}  # only populated when an email is generated below; keep
+                          # bound so the warmth_entry read after this block is safe
+                          # even when no email is found (has_email == False)
+
         if has_email:
             print(f"[LinkedInImport] Step 6: Generating personalized email...")
-            # Generate personalized email (include resume line for networking; template_purpose=None => include resume)
             auth_display_name = (getattr(request, "firebase_user", None) or {}).get("name") or ""
             warmth_data = score_contacts_for_email(user_data or {}, [contact_for_email])
-            email_results = batch_generate_emails(
+
+            email_request = build_email_gen_request(
                 contacts=[contact_for_email],
-                resume_text=resume_text_for_email or None,
+                user_id=user_id,
                 user_profile=user_profile,
-                career_interests=[],
-                fit_context=None,
-                pre_parsed_user_info=(user_data or {}).get("resumeParsed"),
-                email_template_purpose='networking',
-                resume_filename=user_data.get('resumeFileName') if user_data else None,
-                signoff_config=None,
+                user_data=user_data,
                 auth_display_name=auth_display_name,
+                fit_context=None,
+                template_override=None,
+                resume_text=resume_text_for_email or None,
+                resume_filename=resume_filename,
                 warmth_data=warmth_data,
-                uid=user_id,
+                enrichment_data=enrichment_data,
+                db=db,
             )
+            email_results = batch_generate_emails(**email_request)
 
             print(f"[LinkedInImport] Email generation result: {bool(email_results)}")
-            
-            if email_results and len(email_results) > 0:
-                # batch_generate_emails returns a dict with integer keys (0, 1, 2, ...)
+
+            email_data = None
+            if email_results:
                 email_data = email_results.get(0) or email_results.get('0')
-                if not email_data:
-                    if isinstance(email_results, dict) and len(email_results) > 0:
-                        # Try to get the first value
-                        email_data = list(email_results.values())[0]
-                    elif isinstance(email_results, list) and len(email_results) > 0:
-                        email_data = email_results[0]
-                
-                if email_data:
-                    email_subject = email_data.get('subject', f"Connecting with you - {contact_for_email['FirstName']}")
-                    email_body = email_data.get('body', '')
-                    print(f"[LinkedInImport]   - Email Subject: {email_subject}")
-                    print(f"[LinkedInImport]   - Email Body Length: {len(email_body) if email_body else 0} characters")
-                    
-                    # Step 5: Create Gmail draft (only if email was generated)
-                    if email_body:
-                        print(f"[LinkedInImport] Step 7: Creating Gmail draft...")
-                        user_email = request.firebase_user.get('email')
-                        # Load user's resume from Firestore and download for attachment (extension does not send resume)
-                        resume_content = None
-                        resume_filename = None
-                        resume_url = user_data.get('resumeUrl') if user_data else None
-                        if resume_url:
-                            try:
-                                resume_content, resume_filename = download_resume_from_url(resume_url)
-                                if resume_content:
-                                    stored_filename = user_data.get('resumeFileName') if user_data else None
-                                    if stored_filename:
-                                        resume_filename = stored_filename
-                                    elif not resume_filename:
-                                        resume_filename = 'resume.pdf'
-                                    print(f"[LinkedInImport]   - Resume will be attached: {resume_filename}")
-                                else:
-                                    print(f"[LinkedInImport]   - Resume download failed - draft will be created without attachment")
-                            except Exception as e:
-                                print(f"[LinkedInImport]   - Resume fetch error: {e}")
-                        else:
-                            print(f"[LinkedInImport]   - No resumeUrl in account - draft without attachment")
-                        # Build user_info for draft signature (name, email, phone, linkedin)
-                        user_info = {
-                            'name': user_profile.get('name', '') or user_data.get('name', ''),
-                            'email': user_email or '',
-                            'phone': user_data.get('phone', '') if user_data else '',
-                            'linkedin': user_data.get('linkedin', '') if user_data else '',
-                        }
-                        try:
-                            draft_result = create_gmail_draft_for_user(
-                                contact=contact_for_email,
-                                email_subject=email_subject,
-                                email_body=email_body,
-                                tier='free',
-                                user_email=user_email,
-                                user_id=user_id,
-                                user_info=user_info,
-                                resume_content=resume_content,
-                                resume_filename=resume_filename,
+                if not email_data and isinstance(email_results, dict) and email_results:
+                    email_data = next(iter(email_results.values()))
+                elif not email_data and isinstance(email_results, list) and email_results:
+                    email_data = email_results[0]
+
+            if email_data:
+                email_subject = email_data.get('subject', f"Connecting with you - {contact_for_email['FirstName']}")
+                email_body = email_data.get('plain_body') or email_data.get('body', '')
+                email_personalization = email_data.get('personalization')
+                print(f"[LinkedInImport]   - Email Subject: {email_subject}")
+                print(f"[LinkedInImport]   - Email Body Length: {len(email_body) if email_body else 0} chars")
+
+                # Step 6b: Email Quality Gate — one regen pass on failure
+                if email_subject and email_body:
+                    try:
+                        qg_university = user_profile.get('university', '')
+                        qr = check_email_quality(email_subject, email_body, contact_for_email, qg_university)
+                        if not qr['passed']:
+                            print(f"[LinkedInImport] Quality gate failed ({qr['failures']}), regenerating...")
+                            improved = regenerate_with_feedback(
+                                contact_for_email,
+                                user_profile,
+                                {"subject": email_subject, "body": email_body},
+                                qr['failures'],
                             )
-                            if draft_result:
-                                print(f"[LinkedInImport]   - ✅ Gmail draft created successfully")
-                                if isinstance(draft_result, dict):
-                                    print(f"[LinkedInImport]   - Draft ID: {draft_result.get('draft_id', 'Unknown')}")
-                                    print(f"[LinkedInImport]   - Draft URL: {draft_result.get('draft_url', 'Unknown')}")
+                            improved_qr = check_email_quality(improved['subject'], improved['body'], contact_for_email, qg_university)
+                            if improved_qr['passed'] or len(improved_qr['failures']) < len(qr['failures']):
+                                email_subject = improved['subject']
+                                email_body = improved['body']
+                                quality_regenerated = True
+                                print(f"[LinkedInImport] Quality gate: regenerated email accepted")
                             else:
-                                print(f"[LinkedInImport]   - ⚠️ Gmail draft creation returned None")
-                        except Exception as draft_error:
-                            print(f"[LinkedInImport]   - ❌ Gmail draft creation error: {draft_error}")
-                            import traceback
-                            traceback.print_exc()
-                    else:
-                        print(f"[LinkedInImport]   - ⚠️ No email body generated, skipping draft creation")
-                else:
-                    print(f"[LinkedInImport]   - ⚠️ No email data extracted from generation results")
+                                print(f"[LinkedInImport] Quality gate: regen did not improve, keeping original")
+
+                        # Log to email_quality_logs
+                        try:
+                            final_qr = check_email_quality(email_subject, email_body, contact_for_email, qg_university)
+                            db.collection("email_quality_logs").add({
+                                "userId": user_id,
+                                "contactId": contact_for_email.get("pdlId", ""),
+                                "passed": final_qr["passed"],
+                                "failures": final_qr["failures"],
+                                "regenerated": quality_regenerated,
+                                "source": "linkedin_import",
+                                "timestamp": datetime.utcnow().isoformat() + "Z",
+                            })
+                        except Exception as _ql:
+                            print(f"[LinkedInImport] Quality log write failed: {_ql}")
+                    except Exception as qg_err:
+                        print(f"[LinkedInImport] Quality gate error (non-blocking): {qg_err}")
+
+                if email_body:
+                    print(f"[LinkedInImport] Step 7: Creating Gmail draft...")
+                    user_email = request.firebase_user.get('email')
+                    user_info = {
+                        'name': user_profile.get('name', '') or user_data.get('name', ''),
+                        # Prefer .edu for the draft signature identity.
+                        'email': get_outreach_email(user_data) or user_email or '',
+                        'phone': user_data.get('phone', '') if user_data else '',
+                        'linkedin': user_data.get('linkedin', '') if user_data else '',
+                    }
+                    try:
+                        draft_result = create_gmail_draft_for_user(
+                            contact=contact_for_email,
+                            email_subject=email_subject,
+                            email_body=email_body,
+                            tier=user_tier,
+                            user_email=user_email,
+                            user_id=user_id,
+                            user_info=user_info,
+                            resume_content=resume_content,
+                            resume_filename=resume_filename,
+                        )
+                        if draft_result:
+                            print(f"[LinkedInImport]   - ✅ Gmail draft created")
+                            if isinstance(draft_result, dict):
+                                print(f"[LinkedInImport]   - Draft ID: {draft_result.get('draft_id', 'Unknown')}")
+                                print(f"[LinkedInImport]   - Draft URL: {draft_result.get('draft_url', 'Unknown')}")
+                        else:
+                            print(f"[LinkedInImport]   - ⚠️ Gmail draft returned None")
+                    except Exception as draft_error:
+                        print(f"[LinkedInImport]   - ❌ Gmail draft error: {draft_error}")
+                        import traceback
+                        traceback.print_exc()
             else:
-                print(f"[LinkedInImport]   - ⚠️ Email generation returned no results")
+                print(f"[LinkedInImport]   - ⚠️ No email generated")
         else:
-            print(f"[LinkedInImport] Step 6: Skipping email generation (no email found)")
-        
+            print(f"[LinkedInImport]   - ⚠️ Email generation returned no results")
+
         # Step 6: Save to Firestore
         print(f"[LinkedInImport] Step 8: Saving contact to Firestore...")
+        now_iso = datetime.utcnow().isoformat() + "Z"
         contact_data = {
             'firstName': pdl_contact.get('FirstName', ''),
             'lastName': pdl_contact.get('LastName', ''),
-            'email': contact_email,  # None if not found (not empty string)
-            'emailSource': email_source,  # "pdl" or "hunter.io" or None
+            'email': contact_email,
+            'emailSource': email_source,
+            'emailVerified': bool(contact_for_email.get('EmailVerified')),
+            'emailConfidenceScore': int(contact_for_email.get('EmailConfidenceScore') or 0),
             'linkedinUrl': linkedin_url,
             'jobTitle': pdl_contact.get('Title', ''),
             'company': pdl_contact.get('Company', ''),
+            'college': pdl_contact.get('College', '') or pdl_contact.get('college', '') or '',
             'location': f"{pdl_contact.get('City', '')}, {pdl_contact.get('State', '')}".strip(', '),
+            'city': pdl_contact.get('City', ''),
+            'state': pdl_contact.get('State', ''),
             'source': 'linkedin_import',
             'status': 'drafted' if has_email and draft_result else 'not_contacted',
             'createdAt': datetime.utcnow(),
             'updatedAt': datetime.utcnow(),
-            # pdlId for agentic queue dedup (new in Phase 1).
             'pdlId': pdl_contact.get('pdlId', '') or '',
         }
-        
-        # Add email content and draft info if available
+
         if email_subject:
             contact_data['emailSubject'] = email_subject
         if email_body:
-            contact_data['emailBody'] = email_body  # Fixed: use emailBody (not emailContent) to match frontend expectations
-        
+            contact_data['emailBody'] = email_body
+
         if draft_result:
             if isinstance(draft_result, dict):
                 contact_data['gmailDraftId'] = draft_result.get('draft_id')
@@ -661,10 +757,60 @@ def import_from_linkedin():
                     contact_data['gmailMessageId'] = message_id
                 contact_data['gmailDraftUrl'] = draft_result.get('draft_url')
                 contact_data['gmailThreadId'] = draft_result.get('thread_id')
+                draft_recipient = draft_result.get('recipient_email')
             else:
                 contact_data['gmailDraftId'] = str(draft_result)
+                draft_recipient = None
             contact_data['pipelineStage'] = 'draft_created'
-            contact_data['emailGeneratedAt'] = datetime.utcnow().isoformat() + "Z"
+            contact_data['emailGeneratedAt'] = now_iso
+            contact_data['draftCreatedAt'] = now_iso
+            contact_data['draftStillExists'] = True
+            contact_data['draftToEmail'] = draft_recipient or contact_email
+            contact_data['inOutbox'] = True
+            contact_data['lastActivityAt'] = now_iso
+            contact_data['hasUnreadReply'] = False
+
+        # Personalization metadata (matches runs.py:818 contract for analytics)
+        if email_personalization:
+            contact_data['personalizationLabel'] = email_personalization.get('label', '')
+            contact_data['personalizationType'] = email_personalization.get('commonality_type', '')
+            if email_personalization.get('lead_type'):
+                contact_data['leadType'] = email_personalization['lead_type']
+            if email_personalization.get('commonality_types'):
+                contact_data['commonalityTypes'] = email_personalization['commonality_types']
+            if email_personalization.get('warmth_tier_final'):
+                contact_data['warmthTierFinal'] = email_personalization['warmth_tier_final']
+            if email_personalization.get('word_count_final') is not None:
+                contact_data['wordCountFinal'] = email_personalization['word_count_final']
+            if email_personalization.get('lead_hook_used_in_body') is not None:
+                contact_data['leadHookUsedInBody'] = email_personalization['lead_hook_used_in_body']
+        if quality_regenerated:
+            contact_data['qualityRegenerated'] = True
+
+        # Warmth metadata
+        if contact_for_email.get('warmth_score') is not None:
+            contact_data['warmthScore'] = contact_for_email['warmth_score']
+            contact_data['warmthTier'] = contact_for_email.get('warmth_tier', '')
+            contact_data['warmthLabel'] = contact_for_email.get('warmth_label', '')
+            contact_data['warmthSignals'] = contact_for_email.get('warmth_signals', [])
+
+        # Enrichment metadata (Perplexity + Apify) — bounded to mirror runs.py
+        if contact_for_email.get('enrichment_talking_points'):
+            contact_data['enrichmentTalkingPoints'] = contact_for_email['enrichment_talking_points'][:5]
+        if contact_for_email.get('enrichment_recent_activity'):
+            contact_data['enrichmentRecentActivity'] = contact_for_email['enrichment_recent_activity']
+        if contact_for_email.get('perplexity_media_appearances'):
+            contact_data['perplexityMediaAppearances'] = contact_for_email['perplexity_media_appearances'][:5]
+        if contact_for_email.get('perplexity_published_writing'):
+            contact_data['perplexityPublishedWriting'] = contact_for_email['perplexity_published_writing'][:5]
+        if contact_for_email.get('perplexity_news_mentions'):
+            contact_data['perplexityNewsMentions'] = contact_for_email['perplexity_news_mentions'][:5]
+        if contact_for_email.get('linkedin_recent_posts'):
+            contact_data['linkedinRecentPosts'] = contact_for_email['linkedin_recent_posts'][:5]
+        if contact_for_email.get('company_recent_news'):
+            contact_data['companyRecentNews'] = contact_for_email['company_recent_news'][:5]
+        if contact_for_email.get('company_description'):
+            contact_data['companyDescription'] = contact_for_email['company_description'][:1000]
 
         print(f"[LinkedInImport]   - Contact Data Prepared:")
         print(f"[LinkedInImport]     - Name: {contact_data['firstName']} {contact_data['lastName']}")
@@ -722,13 +868,28 @@ def import_from_linkedin():
         print(f"[LinkedInImport] ========== IMPORT COMPLETE ==========")
         print(f"{'='*80}\n")
         
+        warmth_entry = warmth_data.get(0) if isinstance(warmth_data, dict) else None
         response_payload = {
             'status': 'ok',
+            # Card-ready shape so the frontend can render this through the same
+            # result-card + action-button path as the Find People search.
             'contact': {
                 'full_name': full_name,
+                'firstName': pdl_contact.get('FirstName', ''),
+                'lastName': pdl_contact.get('LastName', ''),
                 'email': contact_email,  # None if not found
                 'email_source': email_source,  # "pdl" or "hunter.io" or None
                 'linkedin_url': linkedin_url,
+                'linkedinUrl': linkedin_url,
+                'jobTitle': pdl_contact.get('Title', ''),
+                'company': pdl_contact.get('Company', ''),
+                'location': f"{pdl_contact.get('City', '')}, {pdl_contact.get('State', '')}".strip(', '),
+                'emailSubject': email_subject,
+                'emailBody': email_body,
+                'gmailDraftUrl': draft_result.get('draft_url') if isinstance(draft_result, dict) else None,
+                'warmth_label': (warmth_entry or {}).get('label'),
+                'warmth_tier': (warmth_entry or {}).get('tier'),
+                'warmth_signals': (warmth_entry or {}).get('signals'),
             },
             'contact_id': contact_id,
             'draft_created': draft_result is not None,

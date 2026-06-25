@@ -1,24 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { 
-  Mail, 
-  Phone, 
-  Clock, 
+import {
+  Mail,
+  Phone,
+  Clock,
   Send,
   CheckCircle,
   X,
   ChevronDown,
   ChevronRight,
   MapPin,
-  Menu
+  ArrowLeft,
 } from "lucide-react";
-import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import OfferloopLogo from '@/assets/offerloop_logo2.png';
 
 const ContactUs = () => {
   const navigate = useNavigate();
-  const { user } = useFirebaseAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [navbarScrolled, setNavbarScrolled] = useState(false);
   
   // Form state
@@ -84,13 +81,6 @@ const ContactUs = () => {
     setMessage('');
   };
 
-  const scrollToFeatures = () => {
-    const element = document.getElementById('features');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  };
-
   return (
     <div className="min-h-screen w-full" style={{ fontFamily: 'var(--font-body)', background: 'var(--bg-white)' }}>
       {/* NAVBAR */}
@@ -114,169 +104,43 @@ const ContactUs = () => {
             onClick={() => navigate('/')}
           />
         </div>
-
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
-          <button
-            onClick={scrollToFeatures}
-            className="nav-link text-sm font-medium relative"
-            style={{
-              color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            Features
-          </button>
-          <button
-            onClick={() => {
-              const element = document.getElementById('testimonials');
-              if (element) element.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="nav-link text-sm font-medium relative"
-            style={{
-              color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            Reviews
-          </button>
-          <button
-            onClick={() => navigate('/signin?mode=signup')}
-            className="nav-link text-sm font-medium relative"
-            style={{
-              color: 'var(--text-secondary)',
-              fontFamily: 'var(--font-body)',
-            }}
-          >
-            Get started
-          </button>
-        </nav>
-
-        {/* Desktop Auth Buttons */}
-        <div className="hidden md:flex items-center gap-4">
-          {user ? (
-            <button
-              onClick={() => navigate('/find')}
-              className="btn-ghost"
-            >
-              Find people
-            </button>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate('/signin?mode=signin')}
-                className="btn-ghost"
-              >
-                Sign in
-              </button>
-              <button
-                onClick={() => navigate('/signin?mode=signup')}
-                className="btn-primary-lg"
-                style={{
-                  background: '#3B82F6',
-                }}
-              >
-                Create account
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Mobile Menu Button */}
-        <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-2"
-          style={{ color: 'var(--text-secondary)' }}
-        >
-          {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-        </button>
       </header>
-
-      {/* Mobile Menu */}
-      {mobileMenuOpen && (
-        <div
-          className="fixed top-16 left-0 right-0 md:hidden z-40"
-          style={{
-            background: 'var(--bg-white)',
-            borderBottom: '1px solid var(--border-light)',
-            backdropFilter: 'blur(16px)',
-          }}
-        >
-          <div className="flex flex-col p-6 gap-4">
-            <button
-              onClick={() => {
-                scrollToFeatures();
-                setMobileMenuOpen(false);
-              }}
-              className="text-left text-sm font-medium"
-              style={{
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              Features
-            </button>
-            <button
-              onClick={() => {
-                const element = document.getElementById('testimonials');
-                if (element) element.scrollIntoView({ behavior: 'smooth' });
-                setMobileMenuOpen(false);
-              }}
-              className="text-left text-sm font-medium"
-              style={{
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-body)',
-              }}
-            >
-              Reviews
-            </button>
-            <div className="flex flex-col gap-3 pt-4 border-t" style={{ borderColor: 'var(--border-light)' }}>
-              {user ? (
-                <button
-                  onClick={() => {
-                    navigate('/find');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="btn-ghost w-full text-left px-4 py-3"
-                >
-                  Find people
-                </button>
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      navigate('/signin?mode=signin');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="btn-ghost w-full text-left px-4 py-3"
-                  >
-                    Sign in
-                  </button>
-                  <button
-                    onClick={() => {
-                      navigate('/signin?mode=signup');
-                      setMobileMenuOpen(false);
-                    }}
-                    className="btn-primary-lg w-full"
-                    style={{
-                      background: '#3B82F6',
-                    }}
-                  >
-                    Create account
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Spacer after navbar */}
       <div className="h-16" />
 
+      {/* Back to home */}
+      <div className="px-6 md:px-12 pt-8">
+        <div className="max-w-7xl mx-auto">
+          <button
+            onClick={() => navigate('/')}
+            style={{
+              background: '#1E40AF',
+              color: '#FFFFFF',
+              fontSize: '14px',
+              fontWeight: 500,
+              fontFamily: 'var(--font-body)',
+              padding: '10px 18px',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              transition: 'background 0.15s ease',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = '#1E3A8A'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = '#1E40AF'; }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to home
+          </button>
+        </div>
+      </div>
+
       {/* Hero Section */}
       <section
-        className="relative py-[100px] px-6 md:px-12"
+        className="relative pt-[40px] pb-[32px] px-6 md:px-12"
         style={{ background: 'var(--bg-white)' }}
       >
         <div className="max-w-7xl mx-auto">
@@ -290,17 +154,17 @@ const ContactUs = () => {
               zIndex: 0,
             }}
           />
-          
-          <div className="relative z-10 text-center max-w-[640px] mx-auto reveal">
+
+          <div className="relative z-10 text-center max-w-[820px] mx-auto reveal">
             <h1
               style={{
                 fontFamily: "'Lora', Georgia, serif",
-                fontSize: '48px',
+                fontSize: 'clamp(52px, 7vw, 84px)',
                 fontWeight: 400,
-                letterSpacing: '-0.03em',
+                letterSpacing: '-0.02em',
                 color: 'var(--text-primary)',
-                marginBottom: '20px',
-                lineHeight: 1.1,
+                marginBottom: '16px',
+                lineHeight: 1.05,
               }}
             >
               Get in <span style={{ color: '#3B82F6' }}>touch</span>
@@ -323,7 +187,7 @@ const ContactUs = () => {
 
       {/* Main Content - Two Column Layout */}
       <section
-        className="py-[100px] px-6 md:px-12"
+        className="pt-[16px] pb-[64px] px-6 md:px-12"
         style={{ background: 'var(--bg-white)' }}
       >
         <div className="max-w-7xl mx-auto">
@@ -597,9 +461,15 @@ const ContactUs = () => {
                     disabled={isSubmitting || !canSubmit}
                     className="btn-primary-lg w-full"
                     style={{
-                      background: !canSubmit || isSubmitting ? 'var(--border-light)' : '#3B82F6',
+                      background: !canSubmit || isSubmitting ? 'var(--border-light)' : '#1E40AF',
                       color: !canSubmit || isSubmitting ? 'var(--text-tertiary)' : 'white',
                       cursor: !canSubmit || isSubmitting ? 'not-allowed' : 'pointer',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (canSubmit && !isSubmitting) e.currentTarget.style.background = '#1E3A8A';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (canSubmit && !isSubmitting) e.currentTarget.style.background = '#1E40AF';
                     }}
                   >
                     {isSubmitting ? (
@@ -669,7 +539,7 @@ const ContactUs = () => {
                         justifyContent: 'center',
                       }}
                     >
-                      <Mail className="w-5 h-5" style={{ color: '#3B82F6' }} />
+                      <Mail className="w-5 h-5" style={{ color: '#1E40AF' }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
@@ -722,7 +592,7 @@ const ContactUs = () => {
                         justifyContent: 'center',
                       }}
                     >
-                      <Phone className="w-5 h-5" style={{ color: '#3B82F6' }} />
+                      <Phone className="w-5 h-5" style={{ color: '#1E40AF' }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
@@ -761,7 +631,7 @@ const ContactUs = () => {
                         justifyContent: 'center',
                       }}
                     >
-                      <Clock className="w-5 h-5" style={{ color: '#3B82F6' }} />
+                      <Clock className="w-5 h-5" style={{ color: '#1E40AF' }} />
                     </div>
                     <div>
                       <p
@@ -1270,7 +1140,7 @@ const ContactUs = () => {
                 margin: '0 auto 20px',
               }}
             >
-              <CheckCircle className="w-10 h-10" style={{ color: '#3B82F6' }} />
+              <CheckCircle className="w-10 h-10" style={{ color: '#1E40AF' }} />
             </div>
             
             <h3

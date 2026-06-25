@@ -808,7 +808,8 @@ def find_recruiters(
     user_contact: Dict = None,
     resume_text: str = "",
     template_instructions: str = "",
-    role_type: str = "recruiter"
+    role_type: str = "recruiter",
+    titles_override: Optional[List[str]] = None
 ) -> Dict:
     """
     Main function to find recruiters at a company.
@@ -852,8 +853,15 @@ def find_recruiters(
     if not job_type:
         job_type = determine_job_type(job_title, job_description)
 
-    # Get recruiter titles to search for
-    recruiter_titles = get_recruiter_titles_for_job_type(job_type)
+    # Get titles to search for. An explicit titles_override (e.g. employee peer
+    # titles derived by the LLM for the Find People flow) bypasses the recruiter
+    # title mapping so the rest of this pipeline (current-employee filter,
+    # ranking, Hunter verification, email generation, receipts) is reused for a
+    # non-recruiter search.
+    if titles_override:
+        recruiter_titles = titles_override
+    else:
+        recruiter_titles = get_recruiter_titles_for_job_type(job_type)
 
     # Build query with alias expansion for better matching
     query_obj = build_recruiter_search_query(
@@ -872,14 +880,22 @@ def find_recruiters(
     }
     
     try:
-        # Use existing execute_pdl_search function for consistency
+        # CREDIT-EFFICIENCY FIX (2026-06): PDL Person Search bills 1 credit
+        # PER RECORD returned in `data`. The old desired_limit=20 burned 20
+        # credits for a 3-recruiter card (85% waste). We need SOME buffer
+        # because the post-fetch filter drops ex-employees (IsCurrentlyAtTarget)
+        # — without buffer a single historical contaminated batch returns 0
+        # current employees. max_results + 3 covers the typical historical
+        # rate (~30-50%) without over-fetching. For max_results=3 this is 6
+        # credits/call instead of 20.
+        recruiter_fetch_limit = max(max_results + 3, 6)
         raw_recruiters, _ = execute_pdl_search(
             headers=headers,
             url=PDL_URL,
             query_obj=query_obj,
-            desired_limit=20,  # Fetch more, then rank and filter
+            desired_limit=recruiter_fetch_limit,
             search_type="recruiter_search",
-            page_size=20,
+            page_size=recruiter_fetch_limit,
             verbose=False,
             target_company=cleaned_company  # Pass target company for correct domain extraction
         )
@@ -1540,16 +1556,24 @@ def find_hiring_manager(
         else:
             print(f"[HiringManagerFinder] Tight PDL returned 0 — full tier-loop fallback")
 
-    # Tier-loop sizing: when tight already gave us precise candidates, we
-    # shrink the loose fetch to just-enough. When tight didn't run (flag
-    # off, unmapped role, or empty result), preserve the original 20-per-tier
-    # behavior so non-tight users see no quality regression.
+    # Tier-loop sizing.
+    # - Tight path: tight PDL already supplied precise candidates, so the loose
+    #   tier loop just tops up to max_results.
+    # - Loose-only path: pre-Phase-1 this fetched 20 contacts per tier × 5
+    #   tiers = up to 100 PDL credits per request, even though we only return
+    #   max_results (typically 3-5) at the end. Phase 1 of the Job Board
+    #   Elevation Plan shrinks this so the buffer is sized to the actual
+    #   ranking + email-verification dropout rate, not to a fixed 20.
     if tight_pdl_used:
         pool_target = max_results               # tight already supplied best — just top up
         per_tier_size = max(3, max_results - len(candidate_pool))  # don't over-fetch
     else:
-        pool_target = CANDIDATE_POOL_SIZE       # unchanged: ranking buffer for loose-only
-        per_tier_size = 20                      # unchanged: ranking buffer for loose-only
+        # Keep enough buffer for ranking + Hunter dropouts (~50% verification
+        # rate, plus a couple slots for Perplexity "no longer here" drops).
+        # max_results=3 → pool_target=12, per_tier_size=8 (so we usually
+        # break after 1-2 tiers instead of running all 5).
+        pool_target = max(max_results * 4, 12)
+        per_tier_size = max(max_results * 2, 8)
 
     # Tiered search: Start with Tier 1, fallback to lower tiers if needed.
     for tier in range(1, 6):  # Tiers 1-5
@@ -1716,17 +1740,45 @@ def find_hiring_manager(
             if not manager.get('Company'):
                 manager['Company'] = cleaned_company
 
-        print(f"[HiringManagerFinder] Verifying emails for {len(candidate_pool)} candidates using Hunter.io...")
+        # Phase 1 (Job Board Elevation Plan): skip Hunter on contacts whose
+        # email is already flagged verified upstream (PDL high-confidence,
+        # Perplexity confirmation, etc.). Pre-Phase-1 we ran Hunter on every
+        # candidate including the ~30-40% with already-verified PDL emails,
+        # burning Hunter quota for no incremental signal.
+        # enrich_contacts_with_hunter mutates contact dicts in place, so we
+        # rely on those mutations rather than the function's returned (possibly
+        # reordered) list — keeps the original ranking intact.
+        def _already_verified(m: dict) -> bool:
+            email = m.get('Email')
+            if not email or email == "Not available":
+                return False
+            return bool(
+                m.get('EmailVerified') or
+                m.get('is_verified_email') or
+                m.get('email_verified')
+            )
+
+        needs_hunter = [m for m in candidate_pool if not _already_verified(m)]
+        already_verified_count = len(candidate_pool) - len(needs_hunter)
+
+        print(
+            f"[HiringManagerFinder] Hunter scope: {len(needs_hunter)} need verification, "
+            f"{already_verified_count} skipped (already verified)"
+        )
         verify_start = time.time()
         try:
-            candidate_pool = enrich_contacts_with_hunter(
-                contacts=candidate_pool,
-                max_enrichments=len(candidate_pool),  # Verify all candidates
-                target_company=cleaned_company,
-                skip_personal_emails=True
-            )
+            if needs_hunter:
+                enrich_contacts_with_hunter(
+                    contacts=needs_hunter,
+                    max_enrichments=len(needs_hunter),
+                    target_company=cleaned_company,
+                    skip_personal_emails=True,
+                )
             verify_time = time.time() - verify_start
-            print(f"[HiringManagerFinder] Email verification complete: {verify_time:.2f}s for {len(candidate_pool)} contacts")
+            print(
+                f"[HiringManagerFinder] Email verification complete: {verify_time:.2f}s "
+                f"for {len(needs_hunter)} contacts (skipped {already_verified_count})"
+            )
         except Exception as hunter_error:
             print(f"[HiringManagerFinder] Hunter.io verification failed: {hunter_error}")
             verify_time = time.time() - verify_start

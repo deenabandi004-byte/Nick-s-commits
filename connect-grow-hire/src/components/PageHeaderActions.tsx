@@ -23,7 +23,7 @@ export function PageHeaderActions({ onJobTitleSuggestion }: PageHeaderActionsPro
         size="icon"
         onClick={handleBellClick}
         className="h-9 w-9 hover:bg-[rgba(59,130,246,0.10)] hover:text-[#3B82F6] flex-shrink-0"
-        aria-label="View outbox"
+        aria-label="View inbox"
       >
         <Bell className="h-5 w-5" />
       </Button>

@@ -5,7 +5,7 @@ import { FirmSearchDemoPlaceholder } from './demo/FirmSearchDemoPlaceholder';
 import { CoffeeChatDemoPlaceholder } from './demo/CoffeeChatDemoPlaceholder';
 import { DashboardDemoPlaceholder } from './demo/DashboardDemoPlaceholder';
 import proSearchVideo from '@/assets/Offerloop Professional Search.mp4';
-import scoutWavingWhite from '@/assets/ScoutWavingWhite.mp4';
+import scoutYetiHead from '@/assets/scouts/scout-yeti-head.png';
 import dashboardVideo from '@/assets/Dashboard.mov';
 import contactSearchVideo from '@/assets/Contact Search.mov';
 import firmSearchVideo from '@/assets/FirmSearch.mov';
@@ -51,7 +51,7 @@ export const ProductTour: React.FC = () => {
             <div className="space-y-6">
               <h3 className="text-4xl font-bold text-section-heading mb-4">Dashboard</h3>
               <p className="text-xl text-section-body leading-relaxed">
-                Your recruiting command center. View all activity: firm searches, contact searches, prep history, and progress. Track outreach in the Outbox with follow-up suggestions and an integrated calendar.
+                Your recruiting command center. View all activity: firm searches, contact searches, prep history, and progress. Track outreach in the Inbox with follow-up suggestions and an integrated calendar.
               </p>
             </div>
             
@@ -298,18 +298,13 @@ export const ProductTour: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8 p-8">
             {/* Scout Video - Left side on desktop, top on mobile */}
             <div className="flex-shrink-0 w-[28rem] h-[32rem] md:w-[32rem] md:h-[36rem] relative overflow-hidden rounded-[3px]">
-              <video
-                src={scoutWavingWhite}
-                autoPlay
-                loop
-                muted
-                playsInline
+              <img
+                src={scoutYetiHead}
+                alt=""
                 className="w-full h-full"
                 style={{
-                  objectFit: 'cover',
+                  objectFit: 'contain',
                   objectPosition: 'center center',
-                  transform: 'scale(1.1)',
-                  transformOrigin: 'center center'
                 }}
                 aria-hidden="true"
               />

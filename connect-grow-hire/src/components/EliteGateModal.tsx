@@ -50,7 +50,7 @@ export function EliteGateModal({ open, onClose }: EliteGateModalProps) {
         </h2>
 
         <p className="text-sm text-muted-foreground text-center max-w-md">
-          Custom email templates are an Elite feature. Start your free trial to create personalized outreach templates tailored to your goals.
+          Custom email templates are an Elite feature. Upgrade to Elite to create personalized outreach templates tailored to your goals.
         </p>
 
         <button
@@ -65,12 +65,11 @@ export function EliteGateModal({ open, onClose }: EliteGateModalProps) {
           }}
         >
           <Unlock className="h-4 w-4" />
-          Start Free Trial
+          Upgrade to Elite
         </button>
 
         <div className="mt-3 flex flex-col items-center space-y-1">
-          <span className="text-sm font-medium text-foreground">14-day free trial</span>
-          <span className="text-xs text-muted-foreground">Then $34.99/mo · Cancel anytime</span>
+          <span className="text-xs text-muted-foreground">$34.99/mo · Cancel anytime</span>
         </div>
       </div>
     </div>,

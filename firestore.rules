@@ -48,10 +48,21 @@ service cloud.firestore {
         // (3) ranking + personalization caches
         && !('resumeEmbedding' in request.resource.data.diff(resource.data).affectedKeys())
         && !('resumeEmbeddingHash' in request.resource.data.diff(resource.data).affectedKeys())
-        && !('jobFeedCache' in request.resource.data.diff(resource.data).affectedKeys());
+        && !('jobFeedCache' in request.resource.data.diff(resource.data).affectedKeys())
+        // (4) referral system — written only by backend (admin SDK)
+        && !('referralCode' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('referredBy' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('referralQualifiedCount' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('referralRewardClaimed' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('referralRewardClaimedAt' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('referralRewardPendingAt' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('referralBannerDismissedAt' in request.resource.data.diff(resource.data).affectedKeys())
+        && !('referralLaunchModalSeenAt' in request.resource.data.diff(resource.data).affectedKeys());
       
-      // Users can create their own document on signup
-      allow create: if request.auth != null && request.auth.uid == userId;
+      // Users can create their own document on signup, but cannot preload referral
+      // bookkeeping fields (admin SDK bypasses rules, so attribution still works).
+      allow create: if request.auth != null && request.auth.uid == userId
+        && !request.resource.data.keys().hasAny(['referralCode', 'referredBy', 'referralQualifiedCount', 'referralRewardClaimed', 'referralRewardClaimedAt', 'referralRewardPendingAt', 'referralBannerDismissedAt', 'referralLaunchModalSeenAt']);
       
       // Subcollections under users
       match /contacts/{contactId} {
@@ -168,6 +179,11 @@ service cloud.firestore {
       match /agent_companies/{companyId} {
         allow read: if request.auth != null && request.auth.uid == userId;
       }
+
+      // Referral bookkeeping — backend (admin SDK) only; clients cannot read or write
+      match /referrals/{referredUid} {
+        allow read, write: if false;
+      }
     }
     
     // Feature flags: read-only for authenticated users, write-only via Admin SDK
@@ -186,6 +202,11 @@ service cloud.firestore {
     // PDL credit usage counter — server-only. Powers the budget circuit
     // breaker in pdl_title_cache.py; clients must not be able to reset it.
     match /pdl_usage/{docId} {
+      allow read, write: if false;
+    }
+
+    // Referral code lookup — backend (admin SDK) only.
+    match /referralCodes/{code} {
       allow read, write: if false;
     }
 

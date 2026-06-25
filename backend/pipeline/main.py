@@ -3,9 +3,12 @@
 Offerloop Job Pipeline — entry point.
 
 Usage:
-    python pipeline/main.py                          # Full pipeline: fetch → normalize → write
-    python pipeline/main.py --skip-fantastic          # Full pipeline, skip Fantastic.jobs
-    python pipeline/main.py --fantastic-only          # Fantastic.jobs only
+    python pipeline/main.py                          # Default: full pipeline EXCEPT the paid 7d Fantastic.jobs sweep
+    python pipeline/main.py --include-fantastic-7d    # Full pipeline INCLUDING the paid 7d FJ sweep (~500-1000 Jobs credits)
+    python pipeline/main.py --skip-fantastic          # (Alias for default — kept for backward compat)
+    python pipeline/main.py --fantastic-only          # Fantastic.jobs only (7d window) — gated by FJ_FULL_BACKFILL_ENABLED=true
+    python pipeline/main.py --fantastic-modified      # FJ daily delta via /modified-ats-24h (no Jobs credits)
+    python pipeline/main.py --sweep-expired           # FJ Expired Jobs sweep — mark Firestore docs expired=true
     python pipeline/main.py --cleanup                 # Delete expired jobs only
     python pipeline/main.py --fix-salaries            # Recalculate WEEK salaries
     python pipeline/main.py --enrich-only             # Firecrawl JD enrichment for pending jobs
@@ -99,6 +102,23 @@ def _write_run_log(mode: str, started_at: datetime, result: dict | None, error: 
         logger.warning("Failed to write pipeline_runs log: %s", e)
 
 
+def _gate(normalized: list[dict]) -> tuple[list[dict], dict]:
+    """Filter normalized docs through the quality gate before write.
+
+    Drops staffing-agency reposts, senior-only roles inappropriate for the
+    undergrad audience, and postings >60 days old. Returns (kept, drops_dict).
+    If the gate itself raises, log and pass everything through — better noisy
+    results than zero results."""
+    try:
+        from backend.pipeline.quality_gate import apply as gate_apply
+        kept, drops = gate_apply(normalized)
+        logger.info("Quality gate kept %d / %d jobs", len(kept), len(normalized))
+        return kept, drops
+    except Exception:
+        logger.warning("quality_gate failed — bypassing", exc_info=True)
+        return normalized, {}
+
+
 def run_pipeline(skip_fantastic: bool = False):
     from backend.pipeline.fetcher import fetch_jobs
     from backend.pipeline.normalizer import normalize_all
@@ -112,9 +132,12 @@ def run_pipeline(skip_fantastic: bool = False):
     logger.info("Normalizing %d raw results...", len(raw))
     normalized = normalize_all(raw)
 
-    logger.info("Writing %d normalized jobs to Firestore...", len(normalized))
-    result = write_jobs(normalized)
+    gated, drops = _gate(normalized)
+
+    logger.info("Writing %d normalized jobs to Firestore...", len(gated))
+    result = write_jobs(gated)
     result["source_breakdown"] = breakdown
+    result["quality_gate_drops"] = drops
 
     print()
     print("Pipeline complete.")
@@ -130,6 +153,18 @@ def run_fantastic_only():
     from backend.pipeline.normalizer import normalize_all
     from backend.pipeline.writer import write_jobs
 
+    # Guard: the 7d window hits /active-ats-7d which spends Jobs credits
+    # (~500-1000 per full run across the 10 student-cycle recipes). Require
+    # explicit opt-in via env so an accidental --fantastic-only doesn't burn
+    # the monthly quota.
+    if os.getenv("FJ_FULL_BACKFILL_ENABLED", "false").lower() != "true":
+        print(
+            "FJ_FULL_BACKFILL_ENABLED is not 'true' — refusing to run the 7d "
+            "Fantastic.jobs backfill (~500-1000 Jobs credits/run). "
+            "Set FJ_FULL_BACKFILL_ENABLED=true to override."
+        )
+        sys.exit(2)
+
     logger.info("Fetching jobs from Fantastic.jobs only...")
     raw = fetch_fantasticjobs()
     breakdown = _source_breakdown(raw)
@@ -137,9 +172,12 @@ def run_fantastic_only():
     logger.info("Normalizing %d raw results...", len(raw))
     normalized = normalize_all(raw)
 
-    logger.info("Writing %d normalized jobs to Firestore...", len(normalized))
-    result = write_jobs(normalized)
+    gated, drops = _gate(normalized)
+
+    logger.info("Writing %d normalized jobs to Firestore...", len(gated))
+    result = write_jobs(gated)
     result["source_breakdown"] = breakdown
+    result["quality_gate_drops"] = drops
 
     print()
     print("Fantastic.jobs pipeline complete.")
@@ -147,6 +185,60 @@ def run_fantastic_only():
     print(f"  Duplicates skipped:   {result['skipped_duplicates']}")
     print(f"  Total processed:      {result['total']}")
     print(f"  Source breakdown:     {breakdown}")
+    return result
+
+
+def run_fantastic_modified():
+    """Daily delta from FJ Modified Jobs (/modified-ats-24h).
+
+    Doesn't burn Jobs credits — only 1 Request credit per recipe call.
+    Recommended cron: once per day at a fixed UTC time.
+    """
+    from backend.pipeline.fetcher import fetch_fantasticjobs_modified
+    from backend.pipeline.normalizer import normalize_all
+    from backend.pipeline.writer import write_jobs
+
+    logger.info("Fetching modified jobs from Fantastic.jobs (last 24h)...")
+    raw = fetch_fantasticjobs_modified()
+    breakdown = _source_breakdown(raw)
+
+    logger.info("Normalizing %d raw results...", len(raw))
+    normalized = normalize_all(raw)
+
+    gated, drops = _gate(normalized)
+
+    logger.info("Writing %d normalized jobs to Firestore...", len(gated))
+    result = write_jobs(gated)
+    result["source_breakdown"] = breakdown
+    result["quality_gate_drops"] = drops
+
+    print()
+    print("Fantastic.jobs modified-delta pipeline complete.")
+    print(f"  New jobs written:     {result['written']}")
+    print(f"  Duplicates skipped:   {result['skipped_duplicates']}")
+    print(f"  Total processed:      {result['total']}")
+    print(f"  Source breakdown:     {breakdown}")
+    return result
+
+
+def run_sweep_expired():
+    """Pull FJ Expired Jobs ID list and mark matching Firestore docs.
+
+    Doesn't burn Jobs credits — only 1 Request credit. Recommended cron:
+    once per day, ideally right after the modified-delta run.
+    """
+    from backend.pipeline.fetcher import fetch_expired_job_ids
+    from backend.pipeline.writer import mark_expired_jobs
+
+    logger.info("Fetching expired job IDs from Fantastic.jobs...")
+    ids = fetch_expired_job_ids()
+    result = mark_expired_jobs(ids)
+
+    print()
+    print("Expired-jobs sweep complete.")
+    print(f"  IDs returned by FJ:   {result['total']}")
+    print(f"  Marked expired:       {result['marked']}")
+    print(f"  Not in our corpus:    {result['not_found']}")
     return result
 
 
@@ -236,6 +328,28 @@ def run_title_enrich(limit: int = 200, backfill: bool = False, since_days: int |
     return result
 
 
+def run_extract_deadlines(limit: int = 50):
+    """Perplexity-backed deadline extraction for consulting/IB/quant jobs.
+
+    Phase 4 of the Job Board Elevation Plan. Targets cycle-driven categories
+    where the deadline is rarely on the individual posting but is well-known
+    from the broader recruiting calendar.
+    """
+    from backend.pipeline.deadline_extractor import extract_deadlines
+
+    logger.info("Running deadline extractor (limit=%d)...", limit)
+    result = extract_deadlines(limit=limit)
+
+    print()
+    print("Deadline extraction complete.")
+    print(f"  Processed:           {result.get('processed', 0)}")
+    print(f"  Completed:           {result.get('completed', 0)}")
+    print(f"  Failed:              {result.get('failed', 0)}")
+    print(f"  Skipped:             {result.get('skipped', 0)}")
+    print(f"  Estimated cost:      ${result.get('cost_estimate_usd', 0.0):.4f}")
+    return result
+
+
 def _parse_limit(default: int = 200) -> int:
     for arg in sys.argv:
         if arg.startswith("--limit="):
@@ -284,12 +398,29 @@ if __name__ == "__main__":
             mode, runner = "backfill-title-enrich", (
                 lambda: run_title_enrich(limit=limit, backfill=True, since_days=since_days)
             )
+        elif "--extract-deadlines" in sys.argv:
+            limit = _parse_limit(50)
+            mode, runner = "extract-deadlines", (lambda: run_extract_deadlines(limit=limit))
         elif "--fantastic-only" in sys.argv:
             mode, runner = "fantastic-only", run_fantastic_only
+        elif "--fantastic-modified" in sys.argv:
+            mode, runner = "fantastic-modified", run_fantastic_modified
+        elif "--sweep-expired" in sys.argv:
+            mode, runner = "sweep-expired", run_sweep_expired
         elif "--skip-fantastic" in sys.argv:
             mode, runner = "skip-fantastic", (lambda: run_pipeline(skip_fantastic=True))
+        elif "--include-fantastic-7d" in sys.argv:
+            # Explicit opt-in for the paid 7d FJ sweep alongside the other sources.
+            # Still gated by FJ_FULL_BACKFILL_ENABLED inside run_fantastic_only-equivalent
+            # path; here we just flip the skip flag in run_pipeline.
+            mode, runner = "full-with-fantastic", (lambda: run_pipeline(skip_fantastic=False))
         else:
-            mode, runner = "full", run_pipeline
+            # Default now SKIPS the paid 7d Fantastic.jobs sweep. The daily
+            # `_fantastic_modified_loop` + `_fantastic_expired_loop` daemons
+            # (wsgi.py) already keep the index fresh via FREE endpoints
+            # (/modified-ats-24h, /active-ats-expired). Opt back in with
+            # --include-fantastic-7d when running an intentional backfill.
+            mode, runner = "full", (lambda: run_pipeline(skip_fantastic=True))
 
         started = datetime.now(timezone.utc)
         try:

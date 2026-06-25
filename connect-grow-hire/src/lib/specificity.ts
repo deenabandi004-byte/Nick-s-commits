@@ -1793,6 +1793,80 @@ const INDUSTRY_LABEL_TO_SLUG: Record<string, string> = {
   'Nonprofit': 'nonprofit',
 };
 
+// Slug → a display label (first label that maps to each slug).
+const SLUG_TO_INDUSTRY_LABEL: Record<string, string> = (() => {
+  const out: Record<string, string> = {};
+  for (const [label, slug] of Object.entries(INDUSTRY_LABEL_TO_SLUG)) {
+    if (!out[slug]) out[slug] = label;
+  }
+  return out;
+})();
+
+// All curated roles for an industry slug (flattened from the role-variations
+// map, deduped, junior-leaning).
+function rolesForIndustrySlug(slug: string): string[] {
+  const map = INDUSTRY_ROLE_VARIATIONS[slug];
+  if (!map) return [];
+  const out: string[] = [];
+  for (const arr of Object.values(map)) {
+    for (const r of arr) if (!out.includes(r)) out.push(r);
+  }
+  return out;
+}
+
+/**
+ * Cross-axis "harmony" suggestions. The four Loop dimensions inform each other:
+ * a chosen company implies an industry (and that industry's roles); a chosen
+ * industry implies roles + peer companies; a chosen role implies companies. So
+ * each list is biased by what the user has already specified (per `analysis`),
+ * then by their profile, so picks reinforce one another instead of pulling the
+ * Loop in conflicting directions.
+ *
+ * Returns ordered, deduped candidates (caller filters out anything already in
+ * the brief and slices to taste).
+ */
+export function harmonizedSuggestions(
+  analysis: QueryAnalysis,
+  profile: { roles: string[]; industries: string[]; firms: string[] },
+): { roles: string[]; industries: string[]; companies: string[] } {
+  const companyLabel = analysis.company?.value ?? null;
+  const industryLabel = analysis.industry?.value ?? null;
+
+  const companySlug = companyLabel ? getCompanyIndustry(companyLabel) : null;
+  const industrySlug = industryLabel ? INDUSTRY_LABEL_TO_SLUG[industryLabel] ?? null : null;
+  const contextSlug = companySlug ?? industrySlug;
+
+  const dedupePush = (arr: string[], v: string) => {
+    if (v && !arr.includes(v)) arr.push(v);
+  };
+
+  // ROLES — lead with the roles that fit the company's / industry's world,
+  // then the user's profile roles.
+  const roles: string[] = [];
+  if (contextSlug) for (const r of rolesForIndustrySlug(contextSlug)) dedupePush(roles, r);
+  for (const r of profile.roles) dedupePush(roles, r);
+
+  // INDUSTRIES — a chosen company's industry is AUTHORITATIVE: offer only that,
+  // so the user can't pair Goldman with a contradicting industry ("Sales / BD").
+  // Only fall back to profile industries when no company pins one down.
+  const industries: string[] = [];
+  if (companySlug && SLUG_TO_INDUSTRY_LABEL[companySlug]) {
+    dedupePush(industries, SLUG_TO_INDUSTRY_LABEL[companySlug]);
+  } else {
+    for (const i of profile.industries) dedupePush(industries, i);
+  }
+
+  // COMPANIES — context firms analyzeQuery derived from role/industry, peers of
+  // a chosen company, then profile firms.
+  const companies: string[] = [];
+  for (const f of analysis.roleLocationCompanies?.firms ?? []) dedupePush(companies, f);
+  for (const f of analysis.industryFirms?.firms ?? []) dedupePush(companies, f);
+  if (companyLabel) for (const f of getCompanyAlternatives(companyLabel)) dedupePush(companies, f);
+  for (const f of profile.firms) dedupePush(companies, f);
+
+  return { roles, industries, companies };
+}
+
 // ── Vague industry → specific entry-level roles ────────────────────────────
 //
 // When the user types a broad industry term ("tech", "finance", "marketing"),

@@ -16,7 +16,7 @@ const PrivacyPolicy = () => {
         <AppSidebar />
         <MainContentWrapper>
           <AppHeader title="" />
-          
+
           <main className="bg-white min-h-screen">
             <div className="max-w-3xl mx-auto px-8 pt-10 pb-8">
               {/* Back button - neutral styling */}
@@ -57,394 +57,310 @@ const PrivacyPolicy = () => {
                 Privacy Policy
               </h1>
               <p className="text-gray-500 text-sm mb-8">
-                <strong>Last Updated:</strong> 09.24.25
+                <strong>Last Updated:</strong> 06.22.26
               </p>
 
               {/* Content */}
               <div className="prose prose-gray max-w-none">
                 <p className="text-gray-600">
-                  Welcome to Offerloop.ai ("Offerloop.ai," "we," "us," or "our"). This Privacy Policy
-                  explains how we collect, use, disclose, and protect your information when you use our
-                  application and services (collectively, the "Services"). Please read this Privacy
-                  Policy carefully. If you do not agree with the terms, please do not use the Services.
+                  Offerloop.ai is operated by <strong>PipelinePath LLC</strong> ("Offerloop," "we," "us," or
+                  "our"). This Privacy Policy explains what information we collect, how we use it, who we share it
+                  with, and the choices and rights you have when you use our website, web application, and related
+                  services (collectively, the "Services"). It does not cover our Chrome extension, which has its
+                  own policy on the <Link to="/extension-privacy" className="text-[#3B82F6] hover:underline">Chrome Extension Privacy</Link> tab above.
                 </p>
                 <p className="text-gray-600">
-                  We may update this Privacy Policy at any time. If we do, we will update the "Last
-                  Updated" date at the top of this page. We encourage you to review this Privacy Policy
-                  periodically to remain informed.
-                </p>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">1. Information We Collect</h2>
-                <p className="text-gray-600">We may collect information about you in the following ways, depending on how you use the Services:</p>
-
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">a. Personal Data You Provide to Us</h3>
-                <p className="text-gray-600">
-                  <strong>Account Information:</strong> When you register for an account, we collect your name, email
-                  address, and authentication information from your chosen provider (e.g., Google ID or Microsoft ID,
-                  via Firebase).
-                </p>
-                <p className="text-gray-600">
-                  <strong>Profile Information:</strong> To enhance your networking and outreach experience, you may
-                  provide details such as your university, class year, major, work experience, organizations,
-                  extracurricular activities, personal interests, target job roles, target locations, and resumes. You
-                  may also choose to sync your LinkedIn profile.
-                </p>
-                <p className="text-gray-600">
-                  <strong>User-Generated Content:</strong> Email templates you create or customize, notes you take on
-                  contacts, and any content you generate within our performance-tracking modules.
+                  Please read this policy carefully. By using the Services you agree to it. If you do not agree, do
+                  not use the Services. We may update this policy from time to time; when we make material changes
+                  we will update the "Last Updated" date and, where required by law, provide additional notice.
                 </p>
 
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">b. Data Related to Your Use of the Services</h3>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">1. The two kinds of people this policy covers</h2>
                 <p className="text-gray-600">
-                  <strong>Contact and Professional Information:</strong> Information about professionals you connect
-                  with through Offerloop.ai, including names, positions, companies, contact details, and any notes or
-                  status updates you log. Some of this data may also be provided by trusted third-party data providers
-                  such as People Data Labs (PDL) to help you discover relevant professionals and enrich connections.
-                </p>
-                <p className="text-gray-600">
-                  <strong>Email Data (Content &amp; Metadata):</strong> If you connect your Gmail or Outlook account, we
-                  process:
+                  Offerloop is a networking tool. That means we handle information about two different groups, and
+                  your rights depend on which group you fall into:
                 </p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>Email drafts saved via Gmail API (when you use our service to prepare outreach emails).</li>
                   <li>
-                    Draft, sent, and received email data (subjects, bodies, recipients, timestamps, thread IDs,
-                    conversation IDs, Message-IDs) that you choose to manage through Offerloop.ai.
-                  </li>
-                </ul>
-                <p className="text-gray-600">
-                  <strong>Tracking Information:</strong> We may include tracking pixels and tracked links in emails to
-                  measure open rates, clicks, IP addresses, approximate locations, devices, and timestamps of activity.
-                </p>
-                <p className="text-gray-600">
-                  <strong>Performance Data:</strong> Outreach performance metrics, such as emails sent, open rates,
-                  response rates, meeting conversions, template effectiveness, and connection growth.
-                </p>
-
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">c. Information from Third-Party Services</h3>
-                <p className="text-gray-600">
-                  <strong>Authentication (Firebase with Google/Microsoft):</strong> When registering or logging in, we
-                  receive your name, email, profile picture, and authentication token. Encrypted access/refresh tokens
-                  are stored to connect to your email provider.
-                </p>
-                <p className="text-gray-600">
-                  <strong>AI Services (OpenAI/ChatGPT):</strong> When using AI-powered personalization or explanations,
-                  relevant data may be securely sent to AI providers to generate responses.
-                </p>
-                <p className="text-gray-600">
-                  <strong>Payment Processors (Stripe):</strong> Stripe processes all payments. We only receive
-                  subscription details and a Stripe Customer ID—not full payment card details.
-                </p>
-                <p className="text-gray-600">
-                  <strong>Hosting Providers (Render, Firebase Hosting):</strong> Used for backend infrastructure and
-                  secure data storage.
-                </p>
-                <p className="text-gray-600">
-                  <strong>Analytics Tools:</strong> Used to monitor performance and improve our Services.
-                </p>
-                <p className="text-gray-600">
-                  <strong>Data Partners:</strong> External data labs such as People Data Labs may provide professional
-                  contact information to supplement your searches and improve connection opportunities.
-                </p>
-
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">d. Technical &amp; Usage Data</h3>
-                <p className="text-gray-600">
-                  <strong>Device &amp; Connection Info:</strong> IP address, browser type, device type, OS, and related
-                  metadata.
-                </p>
-                <p className="text-gray-600">
-                  <strong>Usage Data:</strong> Features accessed, time spent, click paths, and other interactions within
-                  the Services.
-                </p>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">2. How We Use Your Information</h2>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>Create and manage your account.</li>
-                  <li>
-                    Provide, operate, and maintain the Services (e.g., connecting to email providers, saving drafts in
-                    Gmail, sending emails, managing contacts, generating analytics).
-                  </li>
-                  <li>Personalize emails and generate AI-powered content suggestions.</li>
-                  <li>Process subscriptions and payments securely through Stripe.</li>
-                  <li>Deliver analytics, dashboards, and outreach performance insights.</li>
-                  <li>Communicate updates, support responses, and account notices.</li>
-                  <li>Detect, investigate, and prevent fraud, misuse, or security issues.</li>
-                  <li>Comply with legal obligations.</li>
-                  <li>Ensure compliance with privacy and anti-spam laws such as GDPR, CCPA, and CAN-SPAM.</li>
-                </ul>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">3. Legal Bases for Processing (GDPR)</h2>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>
-                    <strong>Consent:</strong> When you provide explicit consent (e.g., connecting your Google account).
+                    <strong>Users</strong> — the people who create an Offerloop account (typically students and job
+                    seekers). Most of this policy is about you.
                   </li>
                   <li>
-                    <strong>Contract:</strong> When processing is necessary to provide the Services under our Terms of
-                    Service.
-                  </li>
-                  <li>
-                    <strong>Legal Obligation:</strong> When processing is required to comply with applicable laws or
-                    regulations.
-                  </li>
-                  <li>
-                    <strong>Legitimate Interests:</strong> When processing is necessary for our legitimate business
-                    interests, such as improving the Services, preventing abuse, or analyzing usage, provided those
-                    interests are not overridden by your rights.
+                    <strong>Professional contacts</strong> — the professionals our Users research and reach out to.
+                    We obtain limited professional information about these individuals from third-party data
+                    providers and public sources. If you are one of these contacts and want your information
+                    removed, see <strong>Section 10 (Rights of professional contacts)</strong> and contact{" "}
+                    <a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a>.
                   </li>
                 </ul>
 
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">4. Security Measures</h2>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>
-                    <strong>Encryption in Transit &amp; At Rest:</strong> TLS (HTTPS) for data in motion; AES-256 for
-                    sensitive data like OAuth tokens.
-                  </li>
-                  <li>
-                    <strong>Access Controls:</strong> Restricted to authorized personnel/systems.
-                  </li>
-                  <li>
-                    <strong>Monitoring &amp; Auditing:</strong> Logging and vulnerability audits.
-                  </li>
-                  <li>
-                    <strong>Compliance:</strong> Best practices aligned with the Google API Services User Data Policy.
-                  </li>
-                </ul>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">5. Disclosure of Your Information</h2>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>
-                    <strong>By Law / Protection of Rights:</strong> As required to comply with law, legal process, or
-                    enforce our rights.
-                  </li>
-                  <li>
-                    <strong>Third-Party Providers:</strong> For authentication (Firebase), email (Gmail API, Microsoft
-                    Graph API), AI processing (OpenAI), payments (Stripe), hosting (Render, Firebase Hosting), and
-                    analytics. All are bound by contractual obligations to protect your data.
-                  </li>
-                  <li>
-                    <strong>Third-Party Data Sources:</strong> Data from People Data Labs (PDL) and similar providers is
-                    used only for professional networking/recruiting functionality.
-                  </li>
-                  <li>
-                    <strong>Business Transfers:</strong> If we undergo a merger, acquisition, or sale.
-                  </li>
-                  <li>
-                    <strong>No Sale of Data:</strong> We do not sell, rent, or trade personal data.
-                  </li>
-                  <li>
-                    <strong>No Advertising Use:</strong> We do not use Google user data or third-party data for
-                    advertising or unrelated marketing.
-                  </li>
-                  <li>
-                    <strong>With Your Consent:</strong> We share data only for purposes you explicitly approve.
-                  </li>
-                </ul>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">6. Google API Services User Data Policy</h2>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">2. Information we collect from Users</h2>
                 <p className="text-gray-600">
-                  Offerloop.ai's use and transfer of information received from Google APIs strictly adheres to the
-                  Google API Services User Data Policy, including the Limited Use requirements. Specifically:
-                </p>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>We only access Gmail data with your explicit consent through Google OAuth.</li>
-                  <li>
-                    Requested scopes (e.g., gmail.readonly, gmail.compose, gmail.modify, gmail.metadata, gmail.insert, gmail.send, openid, userinfo.email, userinfo.profile)
-                    are used to:
-                    <ul className="list-disc pl-6 mt-1">
-                      <li>Save outreach emails into your Gmail Drafts folder at your request.</li>
-                      <li>Schedule and send emails on your behalf.</li>
-                      <li>Detect replies and update email status.</li>
-                    </ul>
-                  </li>
-                  <li>We never sell Gmail data or use it for advertising.</li>
-                  <li>
-                    Humans cannot access Gmail content except with your explicit consent, for abuse/security
-                    investigations, to comply with law, or after anonymization/aggregation for service operations.
-                  </li>
-                  <li>We do not use Gmail or Google Workspace data to train general AI/ML models.</li>
-                  <li>You may revoke access at any time via your Google Account Security Settings.</li>
-                  <li>
-                    Upon account deletion or revocation, associated Google data is promptly deleted from our systems,
-                    except where retention is legally required.
-                  </li>
-                </ul>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">7. Data Retention</h2>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>
-                    <strong>Account Data:</strong> Stored as long as your account is active.
-                  </li>
-                  <li>
-                    <strong>Drafts &amp; Emails:</strong> Retained only as long as needed to fulfill Service functions
-                    (draft storage, scheduling, reply detection).
-                  </li>
-                  <li>
-                    <strong>Analytics Data:</strong> May be anonymized/aggregated for long-term storage.
-                  </li>
-                  <li>
-                    <strong>Deletion Requests:</strong> Honored within 30 days, except where retention is legally
-                    required.
-                  </li>
-                  <li>
-                    <strong>Export Rights:</strong> Users may request an export of their personal data in a
-                    machine-readable format (e.g., CSV or JSON) before deletion.
-                  </li>
-                </ul>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">8. Your Rights &amp; Choices</h2>
-                <p className="text-gray-600">Depending on your jurisdiction, you may request:</p>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>Access to personal data we hold.</li>
-                  <li>Correction of inaccuracies.</li>
-                  <li>Deletion of personal data (with some legal/operational exceptions).</li>
-                  <li>Restriction or objection to processing.</li>
-                  <li>Data portability in machine-readable format.</li>
-                  <li>Revocation of consent (e.g., disconnecting Google/Microsoft accounts).</li>
-                  <li>Email tracking opt-out by disabling image loading in your client.</li>
-                  <li>
-                    The right to lodge a complaint with a supervisory authority if you believe our processing violates
-                    applicable law.
-                  </li>
-                </ul>
-                <p className="text-gray-600">
-                  Requests may be made via <a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a> or{" "}
-                  <a href="mailto:support@offerloop.ai" className="text-[#3B82F6] hover:underline">support@offerloop.ai</a>.
-                </p>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">9. Chrome Extension ("Offerloop for LinkedIn")</h2>
-                <p className="text-gray-600">
-                  Our Chrome browser extension ("Offerloop for LinkedIn") provides additional functionality on
-                  LinkedIn. This section explains what data the extension accesses, how it is used, and how it
-                  complies with Chrome Web Store policies.
-                </p>
-
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">a. Browser Permissions</h3>
-                <p className="text-gray-600">The extension requests the following Chrome permissions, each limited to what is necessary for its features:</p>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><strong>tabs</strong> — Detects when you are viewing a LinkedIn profile or job posting so the extension can activate relevant features.</li>
-                  <li><strong>activeTab</strong> — Reads publicly visible LinkedIn page content (name, headline, company, position) when you click the extension icon.</li>
-                  <li><strong>storage</strong> — Saves your authentication state and preferences locally in your browser.</li>
-                  <li><strong>identity</strong> — Authenticates you via Google OAuth through the Chrome Identity API.</li>
-                  <li><strong>contextMenus</strong> — Provides right-click menu options for quick access to extension features.</li>
-                  <li><strong>notifications</strong> — Displays browser notifications when actions complete (e.g., draft saved).</li>
-                  <li><strong>downloads</strong> — Enables downloading of generated PDFs (Coffee Chat Prep).</li>
-                </ul>
-                <p className="text-gray-600">
-                  Host permissions are limited to <code className="text-sm bg-gray-100 px-1 rounded">https://*.linkedin.com/*</code> (to read LinkedIn page content) and our backend server (to process requests).
-                </p>
-
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">b. Data the Extension Collects</h3>
-                <p className="text-gray-600">
-                  <strong>LinkedIn Profile &amp; Job Page Data:</strong> When you click the extension icon on a LinkedIn
-                  page, the extension reads publicly visible information from that page — such as the person's name,
-                  headline, current position, company, and profile URL, or job title, company, and description — and
-                  transmits it to our servers to power features like email lookup, outreach drafting, Coffee Chat Prep,
-                  and cover letter generation.
+                  <strong>Account information.</strong> When you sign in with Google, we receive your name, email
+                  address, profile picture, and a Google authentication token, via Firebase.
                 </p>
                 <p className="text-gray-600">
-                  <strong>Authentication Data:</strong> Your Google account email and profile information are collected
-                  during sign-in via Google OAuth (Chrome Identity API) and used solely for authentication.
+                  <strong>Profile and onboarding information.</strong> Information you provide to set up and use the
+                  Services, such as your first and last name, phone number, LinkedIn URL, university, degree, major,
+                  graduation year, whether you are a student, your school email, target industries, target
+                  companies and roles, preferred locations, and your networking goals.
                 </p>
                 <p className="text-gray-600">
-                  <strong>Local Preferences:</strong> Settings and authentication state are stored locally in your
-                  browser using Chrome's storage API. This data never leaves your device.
+                  <strong>Resume data.</strong> If you upload a resume, we store the file and extract its text and
+                  structured details (which may include your contact information, education, GPA, and work history)
+                  to power resume tools, email personalization, and job matching. Resume content is processed by our
+                  AI providers as described in Section 5.
+                </p>
+                <p className="text-gray-600">
+                  <strong>User-generated content.</strong> Email drafts and templates you create, notes and status
+                  updates you log on contacts, conversations with our Scout assistant, and other content you create
+                  in the Services.
+                </p>
+                <p className="text-gray-600">
+                  <strong>Gmail data (if you connect Gmail).</strong> Connecting Gmail is optional. If you do, we
+                  describe exactly what we access, store, and process in <strong>Section 6 (Google user data and
+                  Gmail)</strong>.
+                </p>
+                <p className="text-gray-600">
+                  <strong>Payment information.</strong> Subscriptions are processed by Stripe. We do not receive or
+                  store your full payment card details — only a Stripe customer ID and your subscription status.
+                </p>
+                <p className="text-gray-600">
+                  <strong>Technical and usage data.</strong> IP address, browser and device type, and how you
+                  interact with the Services. If you use our free, signed-out resume or cover-letter tools, we store
+                  the email address you provide along with your IP address and browser user-agent for that request.
                 </p>
 
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">c. How Extension Data Is Used</h3>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">3. Information we collect about professional contacts</h2>
+                <p className="text-gray-600">
+                  To help Users find and reach the right people, we obtain professional information about individuals
+                  from third-party data providers and publicly available sources. This may include a person's name,
+                  job title, employer, work and personal email addresses, phone number, city and state, LinkedIn URL,
+                  and education and employment history.
+                </p>
+                <p className="text-gray-600">
+                  <strong>Where this data comes from.</strong> Our sources include People Data Labs, Hunter.io,
+                  Coresignal, Bright Data, Apify, and publicly accessible web pages. We do not collect this
+                  information directly from the individuals it describes, and they generally have not interacted with
+                  Offerloop. We use it only to provide networking and recruiting features to our Users.
+                </p>
+                <p className="text-gray-600">
+                  If you are one of these individuals, you have rights over this information, including the right to
+                  have it deleted — see Section 10.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">4. How we use information</h2>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>Looking up professional email addresses via our backend (People Data Labs).</li>
-                  <li>Generating personalized outreach emails using AI (OpenAI).</li>
-                  <li>Saving email drafts to your connected Gmail account at your request.</li>
-                  <li>Generating Coffee Chat Prep documents.</li>
-                  <li>Generating cover letters based on job posting details.</li>
-                  <li>Tracking your credit usage and subscription status.</li>
+                  <li>Create, secure, and manage your account.</li>
+                  <li>Provide and operate the Services — contact search, email generation, meeting prep, job matching, network tracking, and (if connected) Gmail drafting and reply detection.</li>
+                  <li>Personalize content and generate AI-powered suggestions.</li>
+                  <li>Process subscriptions and payments through Stripe.</li>
+                  <li>Send you service-related and lifecycle emails (you can unsubscribe from non-essential email).</li>
+                  <li>Provide support and respond to your requests.</li>
+                  <li>Detect, investigate, and prevent fraud, abuse, and security incidents.</li>
+                  <li>Comply with legal obligations and enforce our Terms.</li>
                 </ul>
 
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">d. What the Extension Does NOT Do</h3>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>Does not track or store your general browsing history.</li>
-                  <li>Does not collect data from any website other than LinkedIn.</li>
-                  <li>Does not run in the background — it only activates when you click the extension icon or use the right-click menu.</li>
-                  <li>Does not sell, rent, or trade any data collected through the extension.</li>
-                  <li>Does not use any collected data for advertising, remarketing, or any purpose unrelated to Offerloop's core networking features.</li>
-                  <li>Does not use data to train general AI or machine learning models.</li>
-                </ul>
-
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">e. Chrome Web Store User Data Policy Compliance</h3>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">5. AI and automated processing</h2>
                 <p className="text-gray-600">
-                  Offerloop for LinkedIn's use of data complies with the{" "}
-                  <a href="https://developer.chrome.com/docs/webstore/program-policies" className="text-[#3B82F6] hover:underline" target="_blank" rel="noopener noreferrer">
-                    Chrome Web Store User Data Policy
-                  </a>
-                  , including the Limited Use requirements. Specifically:
+                  We use third-party AI providers — primarily OpenAI and Anthropic — to generate emails, prepare for
+                  meetings, score and match jobs, and power our Scout assistant. To do this, we send these providers
+                  the information needed for the task, which may include your resume content, the professional
+                  details of a contact you are reaching out to, and, for the reply-coaching feature, the content of
+                  an email thread you choose to work with.
                 </p>
-                <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li>Data is used only to provide or improve the extension's single purpose: professional networking and outreach on LinkedIn.</li>
-                  <li>Data is not transferred to third parties except as necessary to provide the service (e.g., our backend server, OpenAI for email generation, People Data Labs for email lookup).</li>
-                  <li>Data is not used for personalized advertising, retargeting, or interest-based ads.</li>
-                  <li>Humans do not read user data except (a) with your explicit consent for support purposes, (b) for security or abuse investigation, (c) to comply with applicable law, or (d) when aggregated and anonymized for internal operations.</li>
-                </ul>
-
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">f. Remote Code</h3>
                 <p className="text-gray-600">
-                  The extension loads the Firebase Authentication SDK from Google's official CDN
-                  (gstatic.com) to securely handle user authentication. No other remote code is loaded.
+                  Our AI providers process this data to return a result to you. They do not use data submitted
+                  through their business APIs to train their general models. We do not use Google user data to train
+                  any AI or machine-learning model (see Section 6).
                 </p>
 
-                <h3 className="text-base font-semibold text-[#0F172A] mt-6 mb-3">g. Revoking Extension Access</h3>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">6. Google user data and Gmail</h2>
                 <p className="text-gray-600">
-                  You may uninstall the extension at any time from <code className="text-sm bg-gray-100 px-1 rounded">chrome://extensions</code>. Upon
-                  uninstallation, all locally stored data is automatically removed. To request deletion of data
-                  stored on our servers, contact us at{" "}
+                  Connecting your Google account is optional and always requires your explicit consent through
+                  Google OAuth. When you connect Gmail, we request these scopes:
+                </p>
+                <ul className="text-gray-600 list-disc pl-6 space-y-1">
+                  <li><code className="text-sm bg-gray-100 px-1 rounded">gmail.compose</code> — create and save outreach drafts in your Gmail.</li>
+                  <li><code className="text-sm bg-gray-100 px-1 rounded">gmail.send</code> — send outreach emails on your behalf when you ask us to.</li>
+                  <li><code className="text-sm bg-gray-100 px-1 rounded">gmail.readonly</code> — detect replies to your outreach and power reply-coaching and thread features.</li>
+                  <li><code className="text-sm bg-gray-100 px-1 rounded">openid</code>, <code className="text-sm bg-gray-100 px-1 rounded">userinfo.email</code>, <code className="text-sm bg-gray-100 px-1 rounded">userinfo.profile</code> — identify your account.</li>
+                </ul>
+                <p className="text-gray-600">
+                  <strong>What we store.</strong> We store your OAuth access and refresh tokens so the integration
+                  keeps working, the drafts and emails you create through Offerloop, identifiers for the threads we
+                  track, and short snippets of replies we detect so we can show you that a contact responded. We do
+                  not maintain a full, ongoing copy of your mailbox.
+                </p>
+                <p className="text-gray-600">
+                  <strong>AI processing of Gmail content.</strong> For reply-coaching, when you choose to work with
+                  a thread, its contents are sent to our AI provider (OpenAI) solely to generate a suggested reply
+                  for you. This data is not used to train any model.
+                </p>
+                <p className="text-gray-600">
+                  <strong>Limited Use.</strong> Offerloop's use and transfer to any other app of information received
+                  from Google APIs will adhere to the{" "}
+                  <a href="https://developers.google.com/terms/api-services-user-data-policy" className="text-[#3B82F6] hover:underline" target="_blank" rel="noopener noreferrer">Google API Services User Data Policy</a>,
+                  including the Limited Use requirements. Specifically, we do not:
+                </p>
+                <ul className="text-gray-600 list-disc pl-6 space-y-1">
+                  <li>transfer or sell Google user data to advertising platforms, data brokers, or information resellers;</li>
+                  <li>use Google user data to serve advertisements;</li>
+                  <li>use Google user data for any credit, lending, or unrelated purpose; or</li>
+                  <li>use Google user data to develop, improve, or train generalized AI or machine-learning models.</li>
+                </ul>
+                <p className="text-gray-600">
+                  No human reads your Gmail content except: with your explicit consent (e.g., for support);
+                  for security or abuse investigations; to comply with applicable law; or in anonymized, aggregated
+                  form for internal operations.
+                </p>
+                <p className="text-gray-600">
+                  <strong>Revoking access.</strong> You can disconnect Gmail in your Offerloop account settings or at
+                  any time via your{" "}
+                  <a href="https://myaccount.google.com/permissions" className="text-[#3B82F6] hover:underline" target="_blank" rel="noopener noreferrer">Google Account permissions</a> page.
+                  On revocation or account deletion, we delete the associated Google data from our systems except
+                  where retention is legally required.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">7. Who we share information with</h2>
+                <p className="text-gray-600">
+                  We do not sell your personal information for money. We share information with service providers who
+                  process it on our behalf to operate the Services, each bound by contract to protect it and use it
+                  only for that purpose:
+                </p>
+                <ul className="text-gray-600 list-disc pl-6 space-y-1">
+                  <li><strong>Google / Firebase</strong> — authentication, database, file storage, and (if connected) Gmail.</li>
+                  <li><strong>OpenAI, Anthropic</strong> — AI content generation.</li>
+                  <li><strong>People Data Labs, Hunter.io, Coresignal, Bright Data, Apify</strong> — professional contact discovery and enrichment.</li>
+                  <li><strong>NeverBounce</strong> — email-address verification.</li>
+                  <li><strong>Perplexity, Firecrawl</strong> — live search and web extraction for jobs, companies, and verification.</li>
+                  <li><strong>Stripe</strong> — payment processing.</li>
+                  <li><strong>Resend</strong> — sending our service and lifecycle emails to you.</li>
+                  <li><strong>PostHog</strong> — product analytics (keyed to an anonymous user ID; we do not send your name or email).</li>
+                  <li><strong>beehiiv</strong> — our newsletter and related attribution.</li>
+                  <li><strong>Render</strong> — application hosting.</li>
+                </ul>
+                <p className="text-gray-600">
+                  We may also disclose information to comply with law or legal process, to protect our rights, users,
+                  or the public, and in connection with a merger, acquisition, or sale of assets.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">8. "Sale" and "sharing," and your privacy choices</h2>
+                <p className="text-gray-600">
+                  We do not sell personal information in exchange for money. Because Offerloop's purpose is to make
+                  professional-contact information available to its Users, some of this activity may be considered a
+                  "sale" or "sharing" of personal information under certain U.S. state privacy laws. You can exercise
+                  your choices, including opting out, by emailing{" "}
+                  <a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a>. We honor
+                  Global Privacy Control (GPC) browser signals where required. We do not use personal information for
+                  cross-context behavioral advertising.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">9. Your privacy rights (Users)</h2>
+                <p className="text-gray-600">
+                  Depending on where you live, you may have the right to:
+                </p>
+                <ul className="text-gray-600 list-disc pl-6 space-y-1">
+                  <li>know what personal information we hold and access a copy of it;</li>
+                  <li>correct inaccurate personal information;</li>
+                  <li>delete your account and personal information;</li>
+                  <li>opt out of any "sale" or "sharing" and limit the use of sensitive personal information;</li>
+                  <li>restrict or object to certain processing;</li>
+                  <li>receive your data in a portable, machine-readable format;</li>
+                  <li>withdraw consent (e.g., by disconnecting Google); and</li>
+                  <li>not be discriminated against for exercising these rights.</li>
+                </ul>
+                <p className="text-gray-600">
+                  To exercise any of these rights, email{" "}
+                  <a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a>. We will
+                  verify your request and respond within the time required by law (generally 30–45 days). You may use
+                  an authorized agent to submit a request on your behalf. If you are in the EEA or UK, you also have
+                  the right to lodge a complaint with your local supervisory authority.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">10. Rights of professional contacts (non-users)</h2>
+                <p className="text-gray-600">
+                  If you are a professional whose information appears in Offerloop because a User searched for you,
+                  you have rights over that information even though you do not have an account. You may request that
+                  we access, correct, or delete the information we hold about you, and that we stop making it
+                  available. Email{" "}
+                  <a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a> and we
+                  will process your request. We will also pass deletion requests we receive through state data-broker
+                  deletion mechanisms to our service providers where applicable.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">11. EEA and UK users (GDPR)</h2>
+                <p className="text-gray-600">
+                  <strong>Legal bases.</strong> We process personal data on the bases of: <em>contract</em> (to
+                  provide the Services you request), <em>consent</em> (e.g., connecting Google), <em>legal
+                  obligation</em>, and <em>legitimate interests</em> (e.g., operating, securing, and improving the
+                  Services, and enabling professional networking), balanced against individuals' rights.
+                </p>
+                <p className="text-gray-600">
+                  <strong>Information not collected from you.</strong> Where we obtain a professional contact's data
+                  from third-party providers or public sources rather than from the person directly, we rely on
+                  legitimate interests, and the categories and sources are described in Section 3. Individuals have
+                  the right to object to this processing — including an absolute right to object to direct marketing
+                  — and to request erasure, by contacting{" "}
                   <a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a>.
                 </p>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">10. Children's Privacy</h2>
                 <p className="text-gray-600">
-                  The Services are not intended for children under 13 (or 16 in certain regions). We do not knowingly
-                  collect data from children under these ages. If such data is discovered, it will be deleted promptly.
+                  <strong>Transfers.</strong> We are based in the United States, so personal data is processed there
+                  and in other countries where our service providers operate. Where required, we rely on appropriate
+                  safeguards such as Standard Contractual Clauses.
                 </p>
 
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">11. International Data Transfers</h2>
-                <p className="text-gray-600">
-                  Your information may be stored on servers located outside your home country (e.g., via Render and
-                  Firebase Hosting). By using the Services, you consent to international transfers as permitted by law.
-                </p>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">12. Third-Party Websites &amp; Services</h2>
-                <p className="text-gray-600">
-                  Our Services may link to third-party sites (LinkedIn, Stripe, AI providers, etc.). We are not
-                  responsible for their practices; please review their privacy policies separately.
-                </p>
-
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">13. Cookies &amp; Tracking Technologies</h2>
-                <p className="text-gray-600">We use:</p>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">12. Data retention</h2>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><strong>Session Cookies</strong> for secure navigation.</li>
-                  <li><strong>Preference Cookies</strong> for saved settings.</li>
-                  <li><strong>Analytics Cookies</strong> for performance insights.</li>
-                  <li><strong>Tracking Pixels &amp; Links</strong> for email activity monitoring.</li>
+                  <li><strong>Account and profile data</strong> — kept while your account is active and for a reasonable period afterward.</li>
+                  <li><strong>Resume, contacts, and outreach data</strong> — kept while your account is active or until you delete it.</li>
+                  <li><strong>Gmail tokens and related data</strong> — kept until you disconnect Gmail or delete your account, then removed except where retention is legally required.</li>
+                  <li><strong>Some assistant data</strong> — automatically expires on a set schedule.</li>
+                  <li><strong>Deletion requests</strong> — honored within 30 days, except where we must retain data to meet a legal obligation or resolve disputes.</li>
                 </ul>
-                <p className="text-gray-600">You may disable cookies in browser settings, though this may impact functionality.</p>
 
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">14. Service Availability Disclaimer</h2>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">13. Security</h2>
                 <p className="text-gray-600">
-                  The Services may rely on third-party infrastructure providers (e.g., Firebase, Render, OpenAI). While
-                  we use industry-standard practices to maintain availability, we cannot guarantee uninterrupted or
-                  error-free operation, and availability may depend on those providers.
+                  We use industry-standard measures to protect personal information, including encryption in transit
+                  (HTTPS/TLS), access controls, and authentication. No method of transmission or storage is
+                  completely secure, and we cannot guarantee absolute security.
                 </p>
 
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">15. Changes to This Policy</h2>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">14. Children and minors</h2>
                 <p className="text-gray-600">
-                  We may update this Privacy Policy periodically. Updates are effective immediately once posted with a
-                  new "Last Updated" date.
+                  The Services are intended for users who are 18 or older. We do not knowingly collect personal
+                  information from anyone under 13, and we do not knowingly sell or share the personal information of
+                  anyone under 16. If you believe a minor has provided us personal information, contact{" "}
+                  <a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a> and we
+                  will delete it.
                 </p>
 
-                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">16. Contact Us</h2>
-                <p className="text-gray-600">If you have questions or concerns about this Privacy Policy, please contact us:</p>
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">15. Cookies and analytics</h2>
+                <p className="text-gray-600">
+                  We use cookies and local storage to keep you signed in, remember preferences, and run product
+                  analytics (PostHog). We do not use third-party advertising or cross-site tracking cookies. You can
+                  control cookies in your browser settings, though some features may not work without them.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">16. Third-party links</h2>
+                <p className="text-gray-600">
+                  The Services may link to third-party sites (such as LinkedIn or Stripe). We are not responsible for
+                  their practices; please review their privacy policies separately.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">17. Changes to this policy</h2>
+                <p className="text-gray-600">
+                  We may update this Privacy Policy from time to time. When we do, we will update the "Last Updated"
+                  date above and, for material changes, provide additional notice where required.
+                </p>
+
+                <h2 className="text-lg font-semibold text-[#0F172A] mt-8 mb-4">18. Contact us</h2>
+                <p className="text-gray-600">
+                  Offerloop.ai is operated by PipelinePath LLC. For questions or to exercise your rights:
+                </p>
                 <ul className="text-gray-600 list-disc pl-6 space-y-1">
-                  <li><a href="mailto:support@offerloop.ai" className="text-[#3B82F6] hover:underline">support@offerloop.ai</a> (general inquiries)</li>
-                  <li><a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a> (privacy and data protection inquiries)</li>
+                  <li><a href="mailto:privacy@offerloop.ai" className="text-[#3B82F6] hover:underline">privacy@offerloop.ai</a> — privacy and data-protection requests</li>
+                  <li><a href="mailto:support@offerloop.ai" className="text-[#3B82F6] hover:underline">support@offerloop.ai</a> — general inquiries</li>
                 </ul>
               </div>
             </div>
