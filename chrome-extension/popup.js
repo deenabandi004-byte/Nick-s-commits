@@ -4,6 +4,16 @@ console.log('[Offerloop Popup] Loaded');
 // API Configuration
 const API_BASE_URL = 'https://www.offerloop.ai';
 
+// ⚠️ DEV ONLY — skips the sign-in gate so you can work on the UI/UX
+// without logging in. Set to false before shipping. API calls that need a
+// real Firebase token will still fail; this only unlocks the screens.
+const DEV_BYPASS_AUTH = false;
+
+// ⚠️ DEV ONLY — paste a fresh Firebase ID token here to authenticate without OAuth.
+// Grab it from www.offerloop.ai (Network tab → any /api request → Authorization: Bearer <token>).
+// Expires ~1 hour; replace it when API calls start returning 401. Set to '' to disable.
+const DEV_TOKEN = '';
+
 // Shared job URL patterns — used by detectMode() and isJobUrl()
 const JOB_URL_PATTERNS = [
   /linkedin\.com\/jobs\//,
@@ -308,7 +318,7 @@ async function handleFindRecruiters() {
 
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     showJobErrorWithSignin('Please sign in to use this feature.');
     return;
   }
@@ -416,7 +426,7 @@ async function handleGenerateCoverLetter() {
 
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     showJobErrorWithSignin('Please sign in to use this feature.');
     return;
   }
@@ -623,7 +633,7 @@ async function downloadCoverLetterAsPDF(coverLetterData, company, jobTitle) {
   
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     console.error('[Offerloop Popup] No auth token found');
     showJobError('Please log in to download cover letter');
     return;
@@ -829,7 +839,7 @@ async function handleCoffeeChatPrep() {
   
   // Get auth token
   const authData = await chrome.storage.local.get(['authToken']);
-  if (!authData.authToken) {
+  if (!DEV_BYPASS_AUTH && !authData.authToken) {
     showCoffeeChatError('Please sign in to use this feature');
     return;
   }
@@ -1596,6 +1606,35 @@ async function init() {
     updateCoffeeChatButtonState();
   }
   
+  // ⚠️ DEV bypass — skip the sign-in gate entirely and go straight to content
+  if (DEV_BYPASS_AUTH) {
+    console.log('[Offerloop Popup] DEV_BYPASS_AUTH on — skipping sign-in');
+    currentState.isLoggedIn = true;
+    currentState.authToken = currentState.authToken || 'dev-bypass-token';
+    currentState.user = currentState.user || { email: 'dev@offerloop.ai', name: 'Dev User' };
+    if (currentState.credits === null) updateCredits(9999);
+    await checkAndShowContent();
+    return;
+  }
+
+  // ⚠️ DEV token bypass — when a real Firebase ID token is manually injected via
+  // the popup's DevTools console (chrome.storage.local.set({ devBypassToken: '<token>' })),
+  // use it directly for all authenticated API calls and SKIP the OAuth refresh,
+  // which fails locally because the manifest oauth2 client id is invalid for this
+  // unpacked extension. Token expires ~1h — re-paste a fresh one when calls 401.
+  const devAuth = await chrome.storage.local.get(['devBypassToken']);
+  const devToken = devAuth.devBypassToken || DEV_TOKEN;
+  if (devToken) {
+    console.log('[Offerloop Popup] Using dev token — skipping OAuth refresh');
+    currentState.authToken = devToken;
+    currentState.isLoggedIn = true;
+    // Mirror it into authToken so the Job-tab handlers (which read authToken
+    // straight from storage) authenticate with the same token.
+    await chrome.storage.local.set({ authToken: devToken, isLoggedIn: true });
+    await checkAndShowContent();
+    return;
+  }
+
   // Check if already logged in
   if (currentState.isLoggedIn && currentState.authToken) {
     console.log('[Offerloop Popup] Already signed in:', currentState.userEmail);

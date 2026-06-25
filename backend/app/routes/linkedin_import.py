@@ -24,6 +24,33 @@ from ..services.email_request_builder import (
 linkedin_import_bp = Blueprint('linkedin_import', __name__, url_prefix='/api/contacts')
 
 
+def _names_from_linkedin_slug(linkedin_url: str) -> tuple[str, str]:
+    """Best-effort (first, last) name parsed from a LinkedIn profile slug.
+
+    PDL occasionally returns a partial name (first name only). The vanity slug
+    usually carries both names (e.g. .../in/dakota-fillet), so we parse it to
+    backfill whatever PDL left blank. Without this, Hunter's email finder and
+    pattern generation — both gated on first AND last name — get skipped
+    entirely, and a perfectly findable email comes back "Not found".
+
+    Trailing LinkedIn disambiguation hashes (tokens containing a digit, e.g.
+    michael-lo-6b89b022) are dropped before picking the last-name token.
+    """
+    try:
+        slug = (linkedin_url or '').rstrip('/').split('/in/')[-1]
+        slug = slug.split('/')[0].split('?')[0]
+        parts = [p for p in slug.split('-') if p]
+        while len(parts) > 1 and any(ch.isdigit() for ch in parts[-1]):
+            parts.pop()
+        if not parts:
+            return '', ''
+        first = parts[0].capitalize()
+        last = parts[-1].capitalize() if len(parts) > 1 else ''
+        return first, last
+    except Exception:
+        return '', ''
+
+
 def resolve_email_for_linkedin_import(pdl_contact: dict, person_data: dict) -> dict:
     """
     Resolve email using Hunter.io fallback pipeline (same as Coffee Chat Prep).
@@ -443,7 +470,20 @@ def import_from_linkedin():
         if not pdl_contact:
             print(f"[LinkedInImport] ❌ ERROR: Failed to extract contact data")
             return jsonify({'status': 'error', 'message': 'Failed to extract contact data'}), 500
-        
+
+        # PDL sometimes returns a partial name (first name only). Backfill any
+        # missing first/last from the LinkedIn URL slug so the Hunter email
+        # finder + pattern steps (which require BOTH names) can run instead of
+        # being skipped — which otherwise yields a false "Not found".
+        if not (pdl_contact.get('FirstName') or '').strip() or not (pdl_contact.get('LastName') or '').strip():
+            slug_first, slug_last = _names_from_linkedin_slug(linkedin_url)
+            if not (pdl_contact.get('FirstName') or '').strip() and slug_first:
+                pdl_contact['FirstName'] = slug_first
+                print(f"[LinkedInImport]   - Backfilled FirstName from URL slug: {slug_first}")
+            if not (pdl_contact.get('LastName') or '').strip() and slug_last:
+                pdl_contact['LastName'] = slug_last
+                print(f"[LinkedInImport]   - Backfilled LastName from URL slug: {slug_last}")
+
         print(f"[LinkedInImport] ✅ Contact Extracted:")
         print(f"[LinkedInImport]   - Name: {pdl_contact.get('FirstName', '')} {pdl_contact.get('LastName', '')}")
         print(f"[LinkedInImport]   - Company: {pdl_contact.get('Company', 'None')}")
@@ -561,6 +601,9 @@ def import_from_linkedin():
         email_personalization = None
         quality_regenerated = False
         draft_result = None
+        warmth_data = {}  # only populated when an email is generated below; keep
+                          # bound so the warmth_entry read after this block is safe
+                          # even when no email is found (has_email == False)
 
         if has_email:
             print(f"[LinkedInImport] Step 6: Generating personalized email...")
