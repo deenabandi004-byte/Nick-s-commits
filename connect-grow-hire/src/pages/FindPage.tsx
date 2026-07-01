@@ -11,7 +11,6 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { apiService, type EmailTemplate } from "@/services/api";
 import { firebaseApi } from "@/services/firebaseApi";
 import { EliteGateModal } from "@/components/EliteGateModal";
-import { NoSchoolEmptyState } from "@/components/NoSchoolEmptyState";
 import { GoalsPromptBanner } from "@/components/find/GoalsPromptBanner";
 import { IS_DEV_PREVIEW, DEV_MOCK_USER } from "@/lib/devPreview";
 import { getUniversityShortName } from "@/lib/universityUtils";
@@ -222,26 +221,6 @@ const FindPage: React.FC = () => {
   const [savedEmailTemplate, setSavedEmailTemplate] = useState<EmailTemplate | null>(null);
   const [sessionEmailTemplate, setSessionEmailTemplate] = useState<EmailTemplate | null>(null);
   const activeEmailTemplate = sessionEmailTemplate ?? savedEmailTemplate;
-  const [userUniversity, setUserUniversity] = useState<string | null>(null);
-  const [userFirstName, setUserFirstName] = useState<string | null>(null);
-  const [schoolLoaded, setSchoolLoaded] = useState(false);
-  const [forceRefresh, setForceRefresh] = useState(0);
-
-  // Load user university + first name
-  useEffect(() => {
-    if (!user?.uid) return;
-    if (IS_DEV_PREVIEW) {
-      setUserUniversity((user as any)?.university || "USC");
-      setUserFirstName("Demo");
-      setSchoolLoaded(true);
-      return;
-    }
-    firebaseApi.getUserOnboardingData(user.uid).then((data) => {
-      setUserUniversity(data.university || null);
-      setUserFirstName(data.firstName || null);
-      setSchoolLoaded(true);
-    }).catch(() => setSchoolLoaded(true));
-  }, [user?.uid, forceRefresh]);
 
   // Load saved email template on mount
   useEffect(() => {
@@ -283,24 +262,6 @@ const FindPage: React.FC = () => {
   };
 
   const isCompaniesTab = activeTab === "companies";
-
-  // No-school empty state
-  if (schoolLoaded && !userUniversity && user?.uid) {
-    return (
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full font-sans" style={{ color: "var(--ink)" }}>
-          <AppSidebar />
-          <MainContentWrapper>
-            <AppHeader title="" />
-            <NoSchoolEmptyState
-              uid={user.uid}
-              onSchoolSet={() => setForceRefresh((n) => n + 1)}
-            />
-          </MainContentWrapper>
-        </div>
-      </SidebarProvider>
-    );
-  }
 
   return (
     <>
