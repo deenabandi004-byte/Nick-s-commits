@@ -349,14 +349,18 @@ const FindPage: React.FC = () => {
 
           {/* Scrollable page body */}
           <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column", position: "relative" }}>
-            {/* Mountains as full-page backdrop. Same atmospheric treatment as
-                the Loops surface — anchored bottom-center, soft top fade so
-                the page bg stays readable above the fold. */}
+            {/* Mountains as a top-anchored backdrop behind the hero/search only.
+                Sits as an upper band that fades in at the top and fades out before
+                the results area, so a successful search renders on clean page bg
+                rather than over the mountain ridge. */}
             <div
               aria-hidden
               style={{
                 position: "absolute",
-                inset: 0,
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "88vh",
                 pointerEvents: "none",
                 zIndex: 0,
                 backgroundImage: `url(${MountainsLake})`,
@@ -365,9 +369,9 @@ const FindPage: React.FC = () => {
                 backgroundRepeat: "no-repeat",
                 opacity: 0.5,
                 maskImage:
-                  "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 18%, #000 55%, #000 100%)",
+                  "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 18%, #000 50%, rgba(0,0,0,0.45) 82%, transparent 100%)",
                 WebkitMaskImage:
-                  "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 18%, #000 55%, #000 100%)",
+                  "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 18%, #000 50%, rgba(0,0,0,0.45) 82%, transparent 100%)",
               }}
             />
             {/* Page title — wrapped in a z-index:1 layer so it sits above
@@ -412,63 +416,80 @@ const FindPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Tab bar — segmented control */}
-            <div style={{ flexShrink: 0, marginTop: 8, marginBottom: 18, position: "relative", zIndex: 1 }}>
-              <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 40px", display: "flex", justifyContent: "center" }}>
-                <div style={{ display: "inline-flex", background: "#fff", borderRadius: 12, border: "1px solid var(--line, #E5E5E5)", overflow: "hidden", boxShadow: "0 1px 3px rgba(15,18,25,0.06)" }}>
-                  {TABS.map((tab, i) => {
-                    const isActive = activeTab === tab.id;
-                    return (
-                      <button
-                        key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className="max-sm:!px-5"
-                        style={{
-                          padding: "12px 36px",
-                          fontSize: 10,
-                          fontWeight: 700,
-                          letterSpacing: "0.1em",
-                          textTransform: "uppercase",
-                          color: isActive ? "#fff" : "var(--ink, #111318)",
-                          background: isActive
-                            ? (tabFlashing ? "var(--brand-blue, #3B82F6)" : "var(--accent, #4A60A8)")
-                            : "transparent",
-                          border: "none",
-                          borderLeft: !isActive && i !== 0 ? "1px solid var(--line, #E5E5E5)" : "none",
-                          cursor: "pointer",
-                          fontFamily: "inherit",
-                          transition: "background .35s ease, color .15s",
-                        }}
-                      >
-                        <span className="hidden sm:inline">{tab.label}</span>
-                        <span className="sm:hidden">{tab.mobileLabel}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Tab body */}
+            {/* Body — left vertical toggle + tab content */}
             <div style={{ flex: 1, overflowY: "auto", borderTop: "none", position: "relative", zIndex: 1 }}>
-              <div style={{ maxWidth: 1000, margin: "0 auto", padding: "0 40px 44px" }}>
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center py-20">
-                    <LoadingSkeleton />
-                  </div>
-                }
+              <div
+                className="flex flex-col sm:flex-row"
+                style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px 44px", gap: 28 }}
               >
-                <div style={{ display: activeTab === "people" ? "block" : "none" }}>
-                  <ContactSearchPage embedded hideSubTabs parentEmailTemplate={activeEmailTemplate} isDevPreview={IS_DEV_PREVIEW} />
+                {/* Left toggle rail — switches People / Companies / Hiring Managers */}
+                <div className="flex-shrink-0 sm:w-[200px]">
+                  <div
+                    className="flex flex-row sm:flex-col"
+                    style={{ position: "sticky", top: 8, gap: 6 }}
+                  >
+                    {TABS.map((tab) => {
+                      const isActive = activeTab === tab.id;
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => setActiveTab(tab.id)}
+                          className="flex items-center transition-colors"
+                          style={{
+                            gap: 10,
+                            width: "100%",
+                            padding: "11px 14px",
+                            borderRadius: 10,
+                            fontSize: 13.5,
+                            fontWeight: isActive ? 600 : 500,
+                            fontFamily: "inherit",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            border: isActive ? "1px solid transparent" : "1px solid var(--line, #E5E5E5)",
+                            color: isActive ? "#fff" : "var(--ink, #111318)",
+                            background: isActive
+                              ? (tabFlashing ? "var(--brand-blue, #3B82F6)" : "var(--accent, #4A60A8)")
+                              : "#fff",
+                            boxShadow: isActive ? "0 1px 3px rgba(15,18,25,0.10)" : "none",
+                            transition: "background .35s ease, color .15s",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "var(--brand-blue-subtle, #F5F8FF)";
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff";
+                          }}
+                        >
+                          <Icon style={{ width: 15, height: 15, flexShrink: 0 }} />
+                          <span className="hidden sm:inline">{tab.label}</span>
+                          <span className="sm:hidden">{tab.mobileLabel}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-                <div data-tour="tour-find-companies" style={{ display: activeTab === "companies" ? "block" : "none" }}>
-                  <FirmSearchPage embedded isDevPreview={IS_DEV_PREVIEW} />
+
+                {/* Tab content */}
+                <div className="min-w-0 flex-1">
+                  <Suspense
+                    fallback={
+                      <div className="flex items-center justify-center py-20">
+                        <LoadingSkeleton />
+                      </div>
+                    }
+                  >
+                    <div style={{ display: activeTab === "people" ? "block" : "none" }}>
+                      <ContactSearchPage embedded hideSubTabs parentEmailTemplate={activeEmailTemplate} isDevPreview={IS_DEV_PREVIEW} />
+                    </div>
+                    <div data-tour="tour-find-companies" style={{ display: activeTab === "companies" ? "block" : "none" }}>
+                      <FirmSearchPage embedded isDevPreview={IS_DEV_PREVIEW} />
+                    </div>
+                    <div data-tour="tour-find-hiring-managers" style={{ display: activeTab === "hiring-managers" ? "block" : "none" }}>
+                      <RecruiterSpreadsheetPage embedded isDevPreview={IS_DEV_PREVIEW} />
+                    </div>
+                  </Suspense>
                 </div>
-                <div data-tour="tour-find-hiring-managers" style={{ display: activeTab === "hiring-managers" ? "block" : "none" }}>
-                  <RecruiterSpreadsheetPage embedded isDevPreview={IS_DEV_PREVIEW} />
-                </div>
-              </Suspense>
               </div>
             </div>
           </div>
