@@ -77,7 +77,6 @@ type NavItemDef = {
 };
 
 const baseNavItems: NavItemDef[] = [
-  { title: "Job Board",    url: "/job-board",        LucideIcon: Briefcase },
   { title: "Inbox",        url: "/outbox",           LucideIcon: Inbox,  dataTour: "tour-track-email" },
   { title: "Meeting Prep", url: "/coffee-chat-prep", LucideIcon: Coffee, dataTour: "tour-coffee-chat-prep" },
   { title: "My Network",   url: "/my-network",       LucideIcon: Users },
@@ -141,9 +140,10 @@ export function AppSidebar() {
 
   const agentStatus = useAgentSidebarStatus();
   const mainNavItems: NavItemDef[] = [
-    { title: "Home",  url: "/dashboard", LucideIcon: Home },
-    { title: "Find",  url: "/find",      LucideIcon: Search },
-    { title: "Loops", url: "/agent",     LucideIcon: Repeat },
+    { title: "Getting Started", url: "/dashboard", LucideIcon: Home },
+    { title: "Find",      url: "/find",       LucideIcon: Search },
+    { title: "Job Board", url: "/job-board",  LucideIcon: Briefcase },
+    { title: "Loops",     url: "/agent",      LucideIcon: Repeat },
     ...baseNavItems,
   ];
 
