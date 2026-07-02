@@ -265,9 +265,7 @@ def google_oauth_callback():
         # downstream step would silently misbehave.
         if not gmail_email:
             print("[gmail_oauth] getProfile returned no emailAddress; aborting OAuth")
-            redirect_url = get_frontend_redirect_uri()
-            sep = "&" if "?" in redirect_url else "?"
-            return redirect(f"{redirect_url}{sep}gmail_error=profile_missing_email")
+            return _frontend_redirect("gmail_error", "profile_missing_email")
 
         # 3) If we don't have UID from state, try to find user by Gmail email
         if not uid:
@@ -293,12 +291,6 @@ def google_oauth_callback():
             user_email = gmail_email
 
         # Allow any Gmail account to be connected (users may use different email for sending)
-        redirect_url = get_frontend_redirect_uri()
-
-        # Build helper to append query params safely
-        def add_param(url: str, key: str, value: str) -> str:
-            sep = "&" if "?" in url else "?"
-            return f"{url}{sep}{key}={value}"
 
         # 5) Save creds (only if we have a UID)
         if not uid:
