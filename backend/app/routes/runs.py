@@ -10,6 +10,7 @@ from typing import Dict, Tuple, Optional
 from app.services.pdl_client import get_contact_identity, search_contacts_from_prompt
 from app.services.prompt_parser import parse_search_prompt_structured
 from app.services import coresignal_client
+from app.services.filter_overrides import apply_people_filters
 from flask import Blueprint, request, jsonify
 
 from app.extensions import require_firebase_auth, get_db
@@ -229,6 +230,20 @@ def prompt_search():
                 "parsed_query": {k: parsed.get(k) for k in ("companies", "title_variations", "locations") if k in parsed},
             }), 400
 
+        # Filter-rail edits override the parse (spec: filter rail ⇄ prompt sync).
+        # A present key replaces the parsed dimension; empty list clears it.
+        filters_override = data.get("filters")
+        if filters_override:
+            parsed = apply_people_filters(parsed, filters_override)
+            if not any(
+                parsed.get(k)
+                for k in ("companies", "title_variations", "locations", "schools", "industries")
+            ):
+                return jsonify({
+                    "error": "Your search needs at least one filter. Add a job title, company, location, school, or industry.",
+                    "parsed_query": {k: parsed.get(k, []) for k in ("companies", "title_variations", "locations", "schools", "industries")},
+                }), 400
+
         # Provider routing: PDL is primary. The pdl_client cache check happens
         # FIRST inside search_contacts_from_prompt (Firestore, 30-day TTL) so
         # a repeat query returns 0-credit cached contacts. PDL supports the
@@ -295,6 +310,8 @@ def prompt_search():
             "companies": parsed.get("companies", []),
             "title_variations": parsed.get("title_variations", []),
             "locations": parsed.get("locations", []),
+            "schools": parsed.get("schools", []),
+            "industries": parsed.get("industries", []),
             "company_context": parsed.get("company_context", ""),
         }
 
@@ -382,72 +399,82 @@ def prompt_search():
         # Trim to the originally requested count (whether or not dedup ran)
         contacts = contacts[:max_contacts]
 
-        # Enrich contacts with non-LinkedIn web presence (Perplexity)
+        # Enrichment (Perplexity person web-presence + Apify LinkedIn posts +
+        # Perplexity company news) is the slow part of a search — multiple live
+        # external calls per contact. It feeds ONLY email generation; the preview
+        # cards show name/title/company/email/warmth/briefing and use none of it.
+        # So in preview mode we skip it entirely for a fast "surface the person"
+        # response. It runs later, on demand, when the user drafts outreach
+        # (see /emails/generate-and-draft, which enriches the contacts it drafts).
         enrichment_data = {}
-        try:
-            from app.services.perplexity_client import batch_enrich_contacts
-            enrichment_data = batch_enrich_contacts(contacts)
-            for idx, contact in enumerate(contacts):
-                enrich = enrichment_data.get(idx, {})
-                if enrich.get("talking_points"):
-                    contact["enrichment_talking_points"] = enrich["talking_points"]
-                if enrich.get("recent_activity"):
-                    contact["enrichment_recent_activity"] = enrich["recent_activity"]
-                if enrich.get("media_appearances"):
-                    contact["perplexity_media_appearances"] = enrich["media_appearances"]
-                if enrich.get("published_writing"):
-                    contact["perplexity_published_writing"] = enrich["published_writing"]
-                if enrich.get("news_mentions"):
-                    contact["perplexity_news_mentions"] = enrich["news_mentions"]
-        except Exception:
-            print("⚠️ Contact enrichment failed, continuing without", flush=True)
+        if outreach_mode != "preview":
+            # Enrich contacts with non-LinkedIn web presence (Perplexity)
+            try:
+                from app.services.perplexity_client import batch_enrich_contacts
+                enrichment_data = batch_enrich_contacts(contacts)
+                for idx, contact in enumerate(contacts):
+                    enrich = enrichment_data.get(idx, {})
+                    if enrich.get("talking_points"):
+                        contact["enrichment_talking_points"] = enrich["talking_points"]
+                    if enrich.get("recent_activity"):
+                        contact["enrichment_recent_activity"] = enrich["recent_activity"]
+                    if enrich.get("media_appearances"):
+                        contact["perplexity_media_appearances"] = enrich["media_appearances"]
+                    if enrich.get("published_writing"):
+                        contact["perplexity_published_writing"] = enrich["published_writing"]
+                    if enrich.get("news_mentions"):
+                        contact["perplexity_news_mentions"] = enrich["news_mentions"]
+            except Exception:
+                print("⚠️ Contact enrichment failed, continuing without", flush=True)
 
-        # Enrich contacts with LinkedIn recent posts (Apify)
-        try:
-            from app.services.apify_client import batch_enrich_linkedin_posts_via_apify
-            apify_results = batch_enrich_linkedin_posts_via_apify(contacts) or {}
-            for idx, contact in enumerate(contacts):
-                payload = apify_results.get(idx, {})
-                if payload.get("linkedin_recent_posts"):
-                    contact["linkedin_recent_posts"] = payload["linkedin_recent_posts"]
-        except Exception:
-            print("⚠️ Apify LinkedIn enrichment failed, continuing", flush=True)
+            # Enrich contacts with LinkedIn recent posts (Apify)
+            try:
+                from app.services.apify_client import batch_enrich_linkedin_posts_via_apify
+                apify_results = batch_enrich_linkedin_posts_via_apify(contacts) or {}
+                for idx, contact in enumerate(contacts):
+                    payload = apify_results.get(idx, {})
+                    if payload.get("linkedin_recent_posts"):
+                        contact["linkedin_recent_posts"] = payload["linkedin_recent_posts"]
+            except Exception:
+                print("⚠️ Apify LinkedIn enrichment failed, continuing", flush=True)
 
-        # Enrich contacts with company news (Perplexity, batched per company)
-        try:
-            from app.services.perplexity_client import batch_enrich_company_news
-            company_enrichment = batch_enrich_company_news(contacts) or {}
-            for idx, contact in enumerate(contacts):
-                co = company_enrichment.get(idx, {})
-                if co.get("company_recent_news"):
-                    contact["company_recent_news"] = co["company_recent_news"]
-                if co.get("company_description"):
-                    contact["company_description"] = co["company_description"]
-        except Exception:
-            print("⚠️ Perplexity company enrichment failed, continuing", flush=True)
+            # Enrich contacts with company news (Perplexity, batched per company)
+            try:
+                from app.services.perplexity_client import batch_enrich_company_news
+                company_enrichment = batch_enrich_company_news(contacts) or {}
+                for idx, contact in enumerate(contacts):
+                    co = company_enrichment.get(idx, {})
+                    if co.get("company_recent_news"):
+                        contact["company_recent_news"] = co["company_recent_news"]
+                    if co.get("company_description"):
+                        contact["company_description"] = co["company_description"]
+            except Exception:
+                print("⚠️ Perplexity company enrichment failed, continuing", flush=True)
 
-        # Cost telemetry — single line per search so spend impact is visible.
-        try:
-            _apify_post_count = sum(len(c.get("linkedin_recent_posts") or []) for c in contacts)
-            _pplx_person_hits = sum(
-                1 for c in contacts
-                if c.get("perplexity_media_appearances")
-                or c.get("perplexity_published_writing")
-                or c.get("perplexity_news_mentions")
-                or c.get("enrichment_talking_points")
-            )
-            _unique_companies = len({
-                (c.get("Company") or "").strip().lower()
-                for c in contacts if (c.get("Company") or "").strip()
-            })
-            print(
-                f"[Enrich] uid={user_id} contacts={len(contacts)} "
-                f"apify_posts={_apify_post_count} perplexity_person_hits={_pplx_person_hits} "
-                f"perplexity_company_unique={_unique_companies}",
-                flush=True,
-            )
-        except Exception:
-            pass
+            # Cost telemetry — single line per search so spend impact is visible.
+            try:
+                _apify_post_count = sum(len(c.get("linkedin_recent_posts") or []) for c in contacts)
+                _pplx_person_hits = sum(
+                    1 for c in contacts
+                    if c.get("perplexity_media_appearances")
+                    or c.get("perplexity_published_writing")
+                    or c.get("perplexity_news_mentions")
+                    or c.get("enrichment_talking_points")
+                )
+                _unique_companies = len({
+                    (c.get("Company") or "").strip().lower()
+                    for c in contacts if (c.get("Company") or "").strip()
+                })
+                print(
+                    f"[Enrich] uid={user_id} contacts={len(contacts)} "
+                    f"apify_posts={_apify_post_count} perplexity_person_hits={_pplx_person_hits} "
+                    f"perplexity_company_unique={_unique_companies}",
+                    flush=True,
+                )
+            except Exception:
+                pass
+        else:
+            print(f"[Runs] Preview mode: skipping enrichment for {len(contacts)} contacts (fast surface)", flush=True)
 
         # Same pipeline as free-run: template, emails, drafts, deduct, save
         # A4: Build rich user profile from root doc + professionalInfo subcollection
@@ -490,12 +517,14 @@ def prompt_search():
 
         auth_display_name = (getattr(request, "firebase_user", None) or {}).get("name") or ""
 
-        # Download resume PDF and extract text for email personalization
+        # Download resume PDF and extract text for email personalization.
+        # Only needed for email generation, so skip it in preview mode (it's a
+        # multi-second network download + PDF parse that the cards never use).
         resume_url = (user_data or {}).get("resumeUrl") or (user_data or {}).get("resumeURL")
         resume_text = None
         resume_content = None
         resume_filename = None
-        if resume_url:
+        if resume_url and outreach_mode != "preview":
             try:
                 print(f"[Runs] Downloading resume for text extraction: {resume_url[:80]}...")
                 _content, _fname = download_resume_from_url(resume_url)
