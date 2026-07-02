@@ -14,6 +14,7 @@ Make `/find` read like RocketReach's search page — persistent left filter rail
 - No changes to Companies or Hiring Managers tab *content* in this phase. They render unchanged inside the new shell.
 - No visual redesign of results cards (that's the phase-4 results-row spec).
 - No RocketReach-style "Get Contact Info" reveal mechanic — our credit model charges per contact found, not per reveal.
+- No "Save This Search" / saved-search pinning. Every contact a search finds is auto-saved into My Contacts, so a saved-search library solves a problem we don't have. Recent searches (existing localStorage recents) are enough. This is a deliberate divergence from RocketReach.
 
 ## Current state (what exists today)
 
@@ -90,6 +91,10 @@ Existing suggestion chips row is removed (superseded); the rotating placeholder 
 
 After a search, the big hero prompt bar collapses to a compact single-line "Keyword Search" bar pinned above the results (RR pattern), so the rail + results own the viewport. "New Search" affordance resets to hero state. This is CSS/state work inside `ContactSearchPage` — the search flow itself is untouched.
 
+### 6. Batch size selector stays front and center
+
+RocketReach owns its database, so result count is just pagination for them. We pay per PDL API call and charge credits per contact found — the batch-size selector (contacts per search, tier-capped at 3/8/15) is a **cost control the user must see before searching**. It keeps its current placement attached to the prompt bar / search action in both hero and compact modes. It does not move into the filter rail, where it would read as just another filter.
+
 ## Component plan
 
 | Piece | Where | New/Change |
@@ -125,4 +130,5 @@ Single PR to `main` via upstream (prod deploy flow). No flag needed — `/find` 
 
 1. Scope control naming: "My Contacts" as third segment vs. linking out to the My Contacts page — keep segment (current spec) or drop to two segments?
 2. Template categories: General / Consulting / Banking / Tech — right four?
-3. Should "Save This Search" (pin to Firestore `searchHistory`) ship in phase 1, or is the relocated Recent Searches dropdown enough? Spec currently ships recents only.
+
+**Resolved (Nick, 2026-07-02):** No "Save This Search" — auto-save to My Contacts makes it redundant. Batch-size selector must stay visible on the search action (§6) since every search is a metered PDL call.
