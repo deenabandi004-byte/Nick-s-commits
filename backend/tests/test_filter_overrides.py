@@ -1,5 +1,8 @@
 """Unit tests for the filter-override merge used by /prompt-search and firm search."""
+import json
+
 import pytest
+from unittest.mock import MagicMock, patch
 
 from app.services.filter_overrides import apply_people_filters, apply_firm_filters
 
@@ -113,3 +116,68 @@ class TestFirmOverrides:
     def test_unknown_keys_ignored(self):
         out = apply_firm_filters(_parsed_firm(), {"revenue": "huge"})
         assert "revenue" not in out
+
+
+# ---------------------------------------------------------------------------
+# Route-level guard: /api/prompt-search must 400 when filter-rail overrides
+# clear every search dimension (the guard fires BEFORE any provider call).
+# ---------------------------------------------------------------------------
+
+FAKE_USER = {"uid": "test-user-id", "email": "test@example.com", "name": "Test User"}
+
+FIVE_DIMS = ("companies", "title_variations", "locations", "schools", "industries")
+
+
+class TestPromptSearchFilterGuard:
+    @pytest.fixture(autouse=True)
+    def _bypass_firebase_auth(self):
+        """Bypass Firebase token verification at the firebase_admin layer."""
+        with patch("firebase_admin._apps", {"[DEFAULT]": MagicMock()}), \
+             patch("firebase_admin.auth.verify_id_token", return_value=FAKE_USER):
+            yield
+
+    def test_filters_clearing_all_dims_returns_400(self, client):
+        # LLM parse succeeds with high confidence and populated dims — the 400
+        # must come from the filter-override guard, not the confidence gate.
+        parsed = {
+            "confidence": "high",
+            "companies": ["Google"],
+            "title_variations": ["software engineer"],
+            "locations": ["San Francisco"],
+            "schools": [],
+            "industries": [],
+            "company_context": "",
+        }
+
+        # User doc does not exist → route falls back to free-tier defaults
+        # (credits >= 5), skipping credit-reset and exclusion-list Firestore
+        # reads. The guard fires before any provider call, so nothing beyond
+        # the parse and the user-doc lookup needs mocking.
+        mock_db = MagicMock()
+        user_doc = MagicMock()
+        user_doc.exists = False
+        mock_db.collection.return_value.document.return_value.get.return_value = user_doc
+
+        # Patch the registered route module (wsgi imports backend.app.routes.runs).
+        # search_contacts_from_prompt raises if reached: the guard must 400
+        # BEFORE any provider call.
+        with patch("backend.app.routes.runs.get_db", return_value=mock_db), \
+             patch("backend.app.routes.runs.parse_search_prompt_structured", return_value=parsed), \
+             patch("backend.app.routes.runs.search_contacts_from_prompt",
+                   side_effect=AssertionError("provider called before filter guard")):
+            resp = client.post(
+                "/api/prompt-search",
+                data=json.dumps({
+                    "prompt": "software engineers at Google in SF",
+                    "filters": {"titles": [], "companies": [], "locations": [],
+                                "schools": [], "industries": []},
+                }),
+                content_type="application/json",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert resp.status_code == 400
+        body = resp.get_json()
+        assert "needs at least one filter" in body["error"]
+        # parsed_query echoes all five (now cleared) dims so the rail can render.
+        assert body["parsed_query"] == {k: [] for k in FIVE_DIMS}
