@@ -200,9 +200,12 @@ def search_firms_route():
             error_msg = result.get('error', 'Firm search failed')
             print(f"⚠️ Firm search returned error: {error_msg}")
             
-            # Check if this is a validation/parsing error (missing fields)
+            # Check if this is a validation/parsing error (missing fields,
+            # or the filter-override guard clearing every dimension).
             # These should be 400 errors, not 502 errors
-            if 'Missing required fields' in error_msg or 'Failed to understand' in error_msg:
+            if ('Missing required fields' in error_msg
+                    or 'Failed to understand' in error_msg
+                    or 'needs at least one filter' in error_msg):
                 raise ValidationError(error_msg, field="query")
             else:
                 # Actual API/service errors
