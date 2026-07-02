@@ -1378,7 +1378,7 @@ class ApiService {
    * Prompt-based contact search (new endpoint). Same response shape as free-run plus parsed_query.
    * Works for all tiers; batchSize is capped by tier on backend.
    */
-  async runPromptSearch(data: { prompt: string; batchSize: number; emailTemplate?: EmailTemplate | null; mode?: OutreachMode }): Promise<SearchResult> {
+  async runPromptSearch(data: { prompt: string; batchSize: number; emailTemplate?: EmailTemplate | null; mode?: OutreachMode; filters?: import("@/types/findFilters").PeopleFilters }): Promise<SearchResult> {
     const headers = await this.getAuthHeaders();
     const payload: Record<string, unknown> = { prompt: data.prompt.trim(), batchSize: data.batchSize };
     if (data.emailTemplate && hasEmailTemplateValues(data.emailTemplate)) {
@@ -1389,6 +1389,10 @@ class ApiService {
       // The backend re-validates this against the user tier and is the source
       // of truth, so a tampered value cannot unlock a higher mode.
       payload.mode = data.mode;
+    }
+    if (data.filters) {
+      // Filter-rail overrides; backend merges these over its prompt parse.
+      payload.filters = data.filters;
     }
     return this.makeRequest<SearchResult>('/prompt-search', {
       method: 'POST',
@@ -1421,15 +1425,20 @@ class ApiService {
   // lowercased email.
   async generateAndDraftEmails(payload: {
     contacts: Array<{ Name?: string; Email: string; Company?: string; Title?: string; [k: string]: any }>;
+    emailTemplate?: EmailTemplate | null;
   }): Promise<
-    | { success: boolean; draft_count: number; drafts: Array<{ to: string; draftId: string; messageId?: string; threadId?: string; gmailUrl?: string }>; connected_email?: string; skipped_count?: number }
+    | { success: boolean; draft_count: number; drafts: Array<{ index?: number; to: string; draftId: string; messageId?: string; threadId?: string; gmailUrl?: string; subject?: string; body?: string }>; connected_email?: string; skipped_count?: number }
     | { error: string; message?: string }
   > {
     const headers = await this.getAuthHeaders();
+    const body: Record<string, unknown> = { contacts: payload.contacts };
+    if (payload.emailTemplate && hasEmailTemplateValues(payload.emailTemplate)) {
+      body.emailTemplate = payload.emailTemplate;
+    }
     return this.makeRequest('/emails/generate-and-draft', {
       method: 'POST',
       headers,
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
   }
 
@@ -1616,10 +1625,11 @@ class ApiService {
     // ================================
   // Gmail Integration Endpoints
   // ================================
-  async startGmailOAuth(): Promise<string> {
+  async startGmailOAuth(returnTo?: string): Promise<string> {
     const headers = await this.getAuthHeaders();
+    const qs = returnTo ? `?return_to=${encodeURIComponent(returnTo)}` : '';
     const { authUrl } = await this.makeRequest<{ authUrl: string }>(
-      '/google/oauth/start',
+      `/google/oauth/start${qs}`,
       { headers }
     );
     return authUrl;

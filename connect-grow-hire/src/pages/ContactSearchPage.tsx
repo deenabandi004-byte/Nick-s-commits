@@ -9,7 +9,8 @@ import { useTour } from "@/contexts/TourContext";
 import {
   Linkedin, Loader2, ArrowRight, ArrowUp,
   User, Check, CheckCircle,
-  FileText, Upload, Mail, Inbox, AlertCircle, X, ExternalLink, ChevronRight, Lock, Send
+  FileText, Upload, Mail, Inbox, AlertCircle, X, ExternalLink, ChevronRight, Lock, Send, Info,
+  Sparkles, Table2
 } from "lucide-react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -33,17 +34,18 @@ import DimensionChips from "@/components/find/DimensionChips";
 import CompanyAlternatives from "@/components/find/CompanyAlternatives";
 import RoleVariations from "@/components/find/RoleVariations";
 import QuickStarters from "@/components/find/QuickStarters";
-import { SearchPromptBox, PEOPLE_SEARCH_HELPER, PEOPLE_SEARCH_HELPER_SEND, PEOPLE_SEARCH_HELPER_PREVIEW } from "@/components/find/SearchPromptBox";
-import { SearchModeSelector } from "@/components/find/SearchModeSelector";
+import { SearchPromptBox, PEOPLE_SEARCH_HELPER_PREVIEW } from "@/components/find/SearchPromptBox";
 import { ResultActionButton } from "@/components/find/ResultActionButton";
 import { SendConfirmDialog } from "@/components/SendConfirmDialog";
-import { type OutreachMode, getDefaultOutreachMode, canUseOutreachMode } from "@/utils/featureAccess";
+import { canUseOutreachMode } from "@/utils/featureAccess";
+import { UpgradeModal } from "@/components/gates/UpgradeModal";
 import { findCompletion, expandQueryForBackend } from "@/lib/specificity";
 import SuggestionChips from "@/components/find/SuggestionChips";
 import { TemplateButton } from "@/components/TemplateButton";
 
 import { DEV_MOCK_USER } from "@/lib/devPreview";
 import { getUniversityShortName } from "@/lib/universityUtils";
+import { PeopleFilters, peopleFiltersActive } from "@/types/findFilters";
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
@@ -225,10 +227,32 @@ const StripeTabs: React.FC<StripeTabsProps> = ({ activeTab, onTabChange, tabs })
 };
 
 // Find People default batch size per tier (where the slider initially sits).
-// Defaults sit at each tier's max so users get the full batch by default.
-const PEOPLE_BATCH_DEFAULTS: Record<"free" | "pro" | "elite", number> = { free: 3, pro: 8, elite: 15 };
+// Free defaults to its max (3); Pro and Elite default to 5 (their max stays 8/15).
+const PEOPLE_BATCH_DEFAULTS: Record<"free" | "pro" | "elite", number> = { free: 3, pro: 5, elite: 5 };
 
-const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; parentEmailTemplate?: EmailTemplate | null; isDevPreview?: boolean }> = ({ embedded = false, hideSubTabs = false, parentEmailTemplate, isDevPreview = false }) => {
+// Rotating status lines shown under the action buttons while drafting/sending.
+// They narrate the real work (read profile → find commonality → write → place
+// in Gmail) so the wait feels alive. The last line holds until the call returns.
+const DRAFT_PROGRESS_STEPS = [
+  "Reading your profile",
+  "Finding what you have in common with each person",
+  "Writing personalized emails",
+  "Placing drafts in your Gmail",
+];
+const SEND_PROGRESS_STEPS = [
+  "Reading your profile",
+  "Finding what you have in common with each person",
+  "Writing personalized emails",
+  "Sending from your Gmail",
+];
+
+const ContactSearchPage: React.FC<{
+  embedded?: boolean; hideSubTabs?: boolean; parentEmailTemplate?: EmailTemplate | null;
+  isDevPreview?: boolean; initialQuery?: string;
+  railFilters?: PeopleFilters; railFiltersNonce?: number;
+  onParsedQuery?: (f: PeopleFilters) => void;
+}> = ({ embedded = false, hideSubTabs = false, parentEmailTemplate, isDevPreview = false, initialQuery,
+        railFilters, railFiltersNonce = 0, onParsedQuery }) => {
   const { user: authUser, checkCredits, updateCredits } = useFirebaseAuth();
   const user = isDevPreview ? DEV_MOCK_USER as any : authUser;
   const { openPanelWithSearchHelp } = useScout();
@@ -254,18 +278,31 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     return "free";
   }, [effectiveUser?.tier]);
 
-  // Outreach mode picked before running a search. Free lands on preview (its
-  // only option), Pro and Elite land on draft. If the tier changes and the
-  // current selection is no longer allowed, fall back to the tier default.
-  const [outreachMode, setOutreachMode] = useState<OutreachMode>(() => getDefaultOutreachMode(userTier));
+  // Outreach is now decoupled from search. Every search just returns contacts
+  // (preview). After results land, the user clicks Draft Outreach or Send Emails
+  // to act on ALL found contacts at once.
+  const [draftingAll, setDraftingAll] = useState(false);
+  const [sendingAll, setSendingAll] = useState(false);
+  // Hard confirm gate shown before a batch send (send is irreversible).
+  const [showSendAllConfirm, setShowSendAllConfirm] = useState(false);
+  // Upgrade prompt shown when a locked action button is clicked. Carries the
+  // props UpgradeModal needs to show the right tier + trial CTA.
+  const [upgradeGate, setUpgradeGate] = useState<
+    { feature: string; label: string; requiredTier: 'pro' | 'elite'; reason: string } | null
+  >(null);
+  // Hover state for the Draft Emails info tooltip.
+  const [showDraftInfo, setShowDraftInfo] = useState(false);
+  // Rotating progress step shown under the buttons while drafting/sending.
+  const [progressStep, setProgressStep] = useState(0);
   useEffect(() => {
-    if (!canUseOutreachMode(userTier, outreachMode)) {
-      setOutreachMode(getDefaultOutreachMode(userTier));
-    }
-  }, [userTier, outreachMode]);
-
-  // Hard confirm gate shown before any send (send is irreversible).
-  const [showSendConfirm, setShowSendConfirm] = useState(false);
+    if (!draftingAll && !sendingAll) { setProgressStep(0); return; }
+    const steps = sendingAll ? SEND_PROGRESS_STEPS : DRAFT_PROGRESS_STEPS;
+    setProgressStep(0);
+    const id = setInterval(() => {
+      setProgressStep((s) => Math.min(s + 1, steps.length - 1));
+    }, 2400);
+    return () => clearInterval(id);
+  }, [draftingAll, sendingAll]);
 
   // Per-draft send state for the inline Send button on reviewed drafts.
   // confirmSendDraftIdx: index in lastResults for which the confirm dialog is open.
@@ -304,8 +341,137 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     return x && Array.isArray(x.contacts);
   }
 
+  // Create Gmail drafts for any found contact that doesn't have one yet, merging
+  // the generated subject/body/draftId back onto lastResults. Returns the merged
+  // array, or null if drafting failed. Matches drafts to contacts by email so
+  // it's robust to the filtered subset we send.
+  async function ensureDraftsForAll(): Promise<any[] | null> {
+    const toDraft = lastResults.filter(
+      (c: any) => !(c.gmailDraftId || c.emailSubject || c.emailBody) && (c.Email || c.email)
+    );
+    if (toDraft.length === 0) return lastResults;
+
+    const res = await apiService.generateAndDraftEmails({ contacts: toDraft, emailTemplate: activeEmailTemplate });
+    if (!res || (res as any).error) {
+      toast({
+        title: 'Couldn’t create drafts',
+        description: (res as any)?.message || (res as any)?.error || 'Reconnect your Gmail account and try again.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
+    const byEmail = new Map<string, any>();
+    ((res as any).drafts || []).forEach((d: any) => {
+      if (d?.to) byEmail.set(String(d.to).toLowerCase(), d);
+    });
+    const merged = lastResults.map((c: any) => {
+      const key = String(c.Email || c.email || '').toLowerCase();
+      const d = key ? byEmail.get(key) : undefined;
+      if (!d) return c;
+      return {
+        ...c,
+        gmailDraftId: d.draftId ?? c.gmailDraftId,
+        gmailDraftUrl: d.gmailUrl ?? c.gmailDraftUrl,
+        emailSubject: d.subject ?? c.emailSubject,
+        emailBody: d.body ?? c.emailBody,
+      };
+    });
+    setLastResults(merged);
+    return merged;
+  }
+
+  // Draft Outreach button: draft personalized emails to every found contact.
+  async function handleDraftAll() {
+    if (!canUseOutreachMode(userTier, 'draft')) {
+      setUpgradeGate({
+        feature: 'bulkDrafting',
+        label: 'Draft Outreach',
+        requiredTier: 'pro',
+        reason: 'Draft a personalized email to every contact you find — in one click.',
+      });
+      return;
+    }
+    if (lastResults.length === 0) return;
+    setDraftingAll(true);
+    try {
+      const merged = await ensureDraftsForAll();
+      if (merged) {
+        const drafted = merged.filter((c: any) => c.gmailDraftId || c.emailSubject).length;
+        toast({ title: 'Drafts ready', description: `${drafted} draft${drafted === 1 ? '' : 's'} created in your Gmail.` });
+      }
+    } catch (err: any) {
+      console.error('[DraftAll] failed', err);
+      toast({ title: 'Couldn’t create drafts', description: err?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setDraftingAll(false);
+    }
+  }
+
+  // Send Emails button: draft (if needed) then send to every found contact.
+  // Irreversible, so it routes through the hard-confirm dialog first.
+  async function handleSendAll(confirmed = false) {
+    if (!canUseOutreachMode(userTier, 'send')) {
+      setUpgradeGate({
+        feature: 'prioritySend',
+        label: 'Send Emails',
+        requiredTier: 'elite',
+        reason: 'Send personalized emails to every contact you find — automatically.',
+      });
+      return;
+    }
+    if (lastResults.length === 0) return;
+    if (!confirmed) {
+      setShowSendAllConfirm(true);
+      return;
+    }
+    setSendingAll(true);
+    try {
+      const merged = await ensureDraftsForAll();
+      if (!merged) return;
+      const draftIds = merged.map((c: any) => c.gmailDraftId).filter(Boolean);
+      if (draftIds.length === 0) {
+        toast({ description: 'No drafts available to send.' });
+        return;
+      }
+      let sent = 0;
+      for (const id of draftIds) {
+        try {
+          const r = await apiService.sendDraft(id);
+          if (r?.success || r?.error === 'draft_not_found') sent++;
+        } catch (e) {
+          console.error('[SendAll] send failed', e);
+        }
+      }
+      setLastResults((prev) => prev.map((c: any) => (c.gmailDraftId ? { ...c, emailSent: true } : c)));
+      toast({
+        title: sent > 0 ? 'Emails sent' : 'Send failed',
+        description: `${sent} of ${draftIds.length} sent from your Gmail.`,
+        variant: sent > 0 ? undefined : 'destructive',
+      });
+    } catch (err: any) {
+      console.error('[SendAll] failed', err);
+      toast({ title: 'Send failed', description: err?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setSendingAll(false);
+    }
+  }
+
   const searchSuccessRef = useRef<HTMLDivElement>(null);
   const promptInputRef = useRef<HTMLTextAreaElement>(null);
+
+  // Overrides apply only after a rail edit (nonce > 0) AND only while the
+  // prompt text is unchanged — typing a new prompt hands control back to the
+  // parser and the rail repopulates from its output.
+  const lastSearchedPromptRef = useRef<string>("");
+  const lastRailNonceRef = useRef(0);
+
+  useEffect(() => {
+    if (railFiltersNonce === 0 || railFiltersNonce === lastRailNonceRef.current) return;
+    lastRailNonceRef.current = railFiltersNonce;
+    if (!isSearching) handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [railFiltersNonce]);
 
   // Form state (prompt-based search).
   // Initial value may come from the landing-page hero: HeroSearchCTA stashes
@@ -313,6 +479,9 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   // redirecting them into the sign-up flow. We consume it once on mount so
   // their first in-app experience is the exact search they asked for.
   const pendingAutoSearch = useRef(false);
+  // Tracks the last initialQuery we consumed from the Getting Started launcher,
+  // so a hand-off runs exactly once even though this page stays mounted.
+  const consumedInitialQuery = useRef<string | null>(null);
   const [searchPrompt, setSearchPrompt] = useState(() => {
     try {
       const pending = typeof window !== 'undefined'
@@ -753,6 +922,17 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       setSearchParams({}, { replace: true });
     }
   }, [searchParams]); // React to param changes from suggestion cards and other navigations
+
+  // Prefill + auto-run from the Getting Started launcher hand-off (initialQuery).
+  // Reuses the same pendingAutoSearch path as the URL-param intake below.
+  useEffect(() => {
+    const q = (initialQuery || '').trim();
+    if (q && consumedInitialQuery.current !== initialQuery) {
+      consumedInitialQuery.current = initialQuery ?? null;
+      setSearchPrompt(q);
+      pendingAutoSearch.current = true;
+    }
+  }, [initialQuery]);
 
   // Auto-trigger search when pre-filled from URL params (e.g. job board "Find Contact")
   useEffect(() => {
@@ -1304,6 +1484,9 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           linkedin_url: normalizedUrl, // Use normalized URL
           user_id: user.uid,
           user_resume: userResumeText,
+          // Preview only: find the contact + email, then let the user draft/send
+          // from the result card — exactly like a normal Find People search.
+          create_draft: false,
         }),
       });
 
@@ -1356,29 +1539,19 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           await updateCredits(data.credits_remaining);
         }
 
-        // Show appropriate toast based on what was accomplished
+        // Preview import: the card is found and ready. The toast just confirms
+        // the find; drafting happens from the result card's Draft/Send buttons,
+        // mirroring a normal search.
         const emailFound = data.email_found !== false; // Default to true if not specified
-        const draftCreated = data.draft_created === true;
 
-        let toastDescription = `${c.full_name || 'Contact'} added to your contacts`;
-        if (draftCreated) {
-          toastDescription += ' with a draft email.';
-        } else if (!emailFound) {
-          toastDescription += '. No email address was found - you can add one manually later.';
-        } else {
-          toastDescription += ', but the email draft could not be created.';
-        }
+        const toastDescription = emailFound
+          ? `${c.full_name || 'Contact'} found — draft or send when you're ready.`
+          : `${c.full_name || 'Contact'} found, but no email address was available — you can add one manually later.`;
 
         toast({
-          title: "Contact Imported!",
+          title: "Contact found",
           description: toastDescription,
         });
-
-        if (draftCreated) {
-          trackFeatureActionCompleted('email_generation', 'draft_created', true, {
-            results_count: 1,
-          });
-        }
       } else {
         setLinkedInError(data.message || 'Failed to import contact');
       }
@@ -1391,13 +1564,30 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
   };
 
   // Search handler (prompt-based, single flow for all tiers)
-  const handleSearch = async (confirmedSend = false) => {
+  const handleSearch = async () => {
     // Hard short-circuit while the tour's demo is active on this surface.
     // Catches every trigger path — form submit, button click, the
     // pendingAutoSearch chip path — with a single guard. No API call fires.
     if (peopleDemoActive) return;
 
-    if (!searchPrompt.trim()) {
+    // If the user typed nothing but the filter rail has active filters, synthesize
+    // a prompt from them so the search (and the validation below) still has text
+    // to work with — this is the rail-only search path (nonce-triggered re-search
+    // or a first search driven entirely by rail edits).
+    const railActive = railFilters && peopleFiltersActive(railFilters);
+    let effectivePrompt = searchPrompt.trim();
+    if (!effectivePrompt && railActive) {
+      const f = railFilters!;
+      effectivePrompt = [
+        f.titles[0] ? f.titles.join(" or ") : "People",
+        f.companies.length ? `at ${f.companies.join(" or ")}` : "",
+        f.locations.length ? `in ${f.locations.join(" or ")}` : "",
+        f.schools.length ? `who went to ${f.schools.join(" or ")}` : "",
+        f.industries.length ? `in ${f.industries.join(" / ")}` : "",
+      ].filter(Boolean).join(" ");
+    }
+
+    if (!effectivePrompt) {
       toast({
         title: "Enter a search",
         description: "Describe who you want to connect with (e.g. role, company, location).",
@@ -1416,12 +1606,12 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       return;
     }
 
-    // Send is irreversible: gate it behind the hard confirm dialog. The dialog's
-    // confirm handler re-invokes handleSearch(true) to actually run the send.
-    if (outreachMode === "send" && !confirmedSend) {
-      setShowSendConfirm(true);
-      return;
-    }
+    // Attach the rail's filters as explicit overrides only when this run was
+    // triggered by a rail edit (or a re-search of the exact same effective
+    // prompt) — a freshly typed/changed prompt hands control back to the
+    // parser instead.
+    const sendOverrides = !!railActive && railFiltersNonce > 0 && effectivePrompt === lastSearchedPromptRef.current;
+    lastSearchedPromptRef.current = effectivePrompt;
 
     setIsSearching(true);
     setProgressValue(10);
@@ -1471,10 +1661,13 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       // Expand school acronyms before sending to PDL so "USC" → "University of Southern
       // California". The frontend chip continues displaying the short label; only the
       // backend payload is rewritten so PDL's school matcher hits the right institution.
-      const expandedPrompt = expandQueryForBackend(searchPrompt.trim());
-      // Mode reached here is already authorized: preview/draft run directly, and
-      // send only arrives after the hard confirm dialog (confirmedSend=true).
-      const result = await apiService.runPromptSearch({ prompt: expandedPrompt, batchSize, emailTemplate: activeEmailTemplate, mode: outreachMode });
+      const expandedPrompt = expandQueryForBackend(effectivePrompt);
+      // Search always runs in preview mode now: it returns contacts only, fast.
+      // Drafting/sending happens afterward via the result action buttons.
+      const result = await apiService.runPromptSearch({
+        prompt: expandedPrompt, batchSize, emailTemplate: activeEmailTemplate, mode: 'preview',
+        ...(sendOverrides ? { filters: railFilters } : {}),
+      });
 
       if (!isSearchResult(result)) {
         if (progressInterval) clearInterval(progressInterval);
@@ -1557,6 +1750,16 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
         const retryLevel = Number((result as any)?.retry_level_used ?? 0);
         const newCountAfter = result.contacts?.length || 0;
         const parsedFromServer = (result as any)?.parsed_query || {};
+        // Report the server's parse back to the rail so it reflects what was
+        // actually searched. parsed_query.companies is a list of
+        // { name, matched_titles } objects, not plain strings — unwrap to names.
+        onParsedQuery?.({
+          titles: parsedFromServer.title_variations ?? [],
+          companies: (parsedFromServer.companies ?? []).map((c: any) => typeof c === "string" ? c : c?.name).filter(Boolean),
+          locations: parsedFromServer.locations ?? [],
+          schools: parsedFromServer.schools ?? [],
+          industries: parsedFromServer.industries ?? [],
+        });
         const companies: any[] = parsedFromServer?.companies || [];
         const firstCompanyName: string =
           (companies?.[0]?.name as string | undefined)?.trim().toLowerCase() || '';
@@ -1960,25 +2163,16 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           </div>
         )}
 
-        {/* Outreach mode picker. Chosen before running a search: Get emails
-            (preview), Draft emails (default), or Send emails (Elite). */}
-        <div style={{ maxWidth: 896, marginLeft: 'auto', marginRight: 'auto', marginBottom: 10, display: 'flex', justifyContent: 'flex-start' }}>
-          <SearchModeSelector
-            tier={userTier}
-            value={outreachMode}
-            onChange={setOutreachMode}
-            disabled={isSearching || linkedInLoading}
-          />
-        </div>
-
+        {/* Batch send confirm. Fires from the Send Emails result-action button.
+            Send is irreversible, so it routes through this hard confirm. */}
         <SendConfirmDialog
-          open={showSendConfirm}
-          count={batchSize}
-          loading={isSearching}
-          onCancel={() => setShowSendConfirm(false)}
+          open={showSendAllConfirm}
+          count={lastResults.length}
+          loading={sendingAll}
+          onCancel={() => setShowSendAllConfirm(false)}
           onConfirm={() => {
-            setShowSendConfirm(false);
-            handleSearch(true);
+            setShowSendAllConfirm(false);
+            handleSendAll(true);
           }}
         />
 
@@ -2016,13 +2210,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               submitDisabled={isSearching || linkedInLoading || !user}
               inputValue={searchPrompt}
               submitAriaLabel={isLinkedInUrl(searchPrompt) ? "Import from LinkedIn" : "Search"}
-              helper={
-                outreachMode === 'send'
-                  ? PEOPLE_SEARCH_HELPER_SEND
-                  : outreachMode === 'preview'
-                    ? PEOPLE_SEARCH_HELPER_PREVIEW
-                    : PEOPLE_SEARCH_HELPER
-              }
+              helper={PEOPLE_SEARCH_HELPER_PREVIEW}
               submitIcon={
                 isSearching || linkedInLoading ? <Loader2 className="w-4 h-4 animate-spin" />
                 : isLinkedInUrl(searchPrompt) ? <Linkedin className="w-4 h-4" />
@@ -2567,29 +2755,148 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               borderTop: '0.5px solid #EEF2F8',
             }}
           >
-            {/* Success pill */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-              <div style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '4px 10px',
-                background: '#DCFCE7',
-                color: '#15803D',
-                border: '0.5px solid #BBF7D0',
-                borderRadius: 100,
-                fontSize: 11,
-                fontWeight: 500,
-              }}>
-                <CheckCircle className="w-3 h-3" />
-                {lastResults.length + alreadySavedResults.length} {(lastResults.length + alreadySavedResults.length) === 1 ? 'result' : 'results'} found
-              </div>
-              <span style={{ fontSize: 11, color: '#94A3B8' }}>
-                {lastResults.length > 0 ? `${lastResults.length} new: saved to your inbox automatically` : ''}
-                {lastResults.length > 0 && alreadySavedResults.length > 0 ? ' · ' : ''}
-                {alreadySavedResults.length > 0 ? `${alreadySavedResults.length} already in your inbox` : ''}
-              </span>
-            </div>
+            {/* Success header — just the centered count pill. */}
+            {(() => {
+              const total = lastResults.length + alreadySavedResults.length;
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 18 }}>
+                  {/* Count pill */}
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5,
+                    padding: '5px 12px',
+                    background: '#DCFCE7', color: '#15803D',
+                    border: '0.5px solid #BBF7D0', borderRadius: 100,
+                    fontSize: 12, fontWeight: 600,
+                  }}>
+                    <CheckCircle style={{ width: 13, height: 13 }} />
+                    {total} {total === 1 ? 'person' : 'people'} found
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Outreach actions — act on ALL found contacts. Search just returns
+                contacts; the user chooses to draft or send here. Locked buttons
+                stay clickable so the click surfaces the upgrade/trial prompt. */}
+            {lastResults.length > 0 && (() => {
+              const canDraftTier = canUseOutreachMode(userTier, 'draft');
+              const canSendTier = canUseOutreachMode(userTier, 'send');
+              const busy = draftingAll || sendingAll;
+              const allSent = lastResults.every((c: any) => c.emailSent);
+              const draftShadow = '0 1px 2px rgba(74,96,168,0.18), 0 8px 20px rgba(74,96,168,0.26)';
+              const draftShadowHover = '0 2px 4px rgba(74,96,168,0.22), 0 12px 26px rgba(74,96,168,0.34)';
+              return (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 4, marginBottom: 20 }}>
+                  {/* Draft Emails — primary, dark-blue hero gradient */}
+                  <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={handleDraftAll}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 9,
+                        padding: '13px 28px', borderRadius: 10,
+                        background: 'var(--accent, #4A60A8)',
+                        color: '#fff', border: 'none', fontSize: 15, fontWeight: 600,
+                        cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.75 : 1,
+                        boxShadow: draftShadow,
+                        transition: 'transform .12s, box-shadow .12s, opacity .12s',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (busy) return;
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = draftShadowHover;
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'none';
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = draftShadow;
+                      }}
+                    >
+                      {draftingAll
+                        ? <Loader2 style={{ width: 17, height: 17 }} className="animate-spin" />
+                        : <Mail style={{ width: 17, height: 17 }} />}
+                      Draft {lastResults.length} {lastResults.length === 1 ? 'email' : 'emails'}
+                      {!canDraftTier && <Lock style={{ width: 13, height: 13 }} />}
+                    </button>
+
+                    {/* Info tooltip — explains what Draft Emails does */}
+                    <span
+                      style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+                      onMouseEnter={() => setShowDraftInfo(true)}
+                      onMouseLeave={() => setShowDraftInfo(false)}
+                    >
+                      <Info style={{ width: 18, height: 18, color: '#94A3B8', cursor: 'help' }} />
+                      {showDraftInfo && (
+                        <div style={{
+                          position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%', transform: 'translateX(-50%)',
+                          width: 244, padding: '10px 13px',
+                          background: '#0F172A', color: '#F8FAFC',
+                          fontSize: 12.5, lineHeight: 1.45, fontWeight: 400,
+                          borderRadius: 9, boxShadow: '0 10px 28px rgba(15,23,42,0.30)',
+                          zIndex: 60, textAlign: 'left', pointerEvents: 'none',
+                        }}>
+                          Writes a personalized email to each person using your selected email template — Networking by default.
+                          <span style={{
+                            position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+                            width: 0, height: 0,
+                            borderLeft: '6px solid transparent', borderRight: '6px solid transparent',
+                            borderTop: '6px solid #0F172A',
+                          }} />
+                        </div>
+                      )}
+                    </span>
+                  </div>
+
+                  {/* Send Emails — bigger, secondary */}
+                  <button
+                    type="button"
+                    disabled={busy || allSent}
+                    onClick={() => handleSendAll(false)}
+                    style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 9,
+                      padding: '13px 28px', borderRadius: 10,
+                      background: '#fff', color: '#0F172A',
+                      border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 600,
+                      cursor: (busy || allSent) ? 'default' : 'pointer',
+                      opacity: (busy || allSent) ? 0.6 : 1,
+                      boxShadow: '0 1px 2px rgba(15,37,69,0.05)',
+                      transition: 'all .12s',
+                    }}
+                  >
+                    {sendingAll
+                      ? <Loader2 style={{ width: 17, height: 17 }} className="animate-spin" />
+                      : <Send style={{ width: 17, height: 17 }} />}
+                    {allSent ? 'Emails sent' : 'Send emails'}
+                    {!canSendTier && <Lock style={{ width: 13, height: 13 }} />}
+                  </button>
+                </div>
+              );
+            })()}
+
+            {/* Live progress — sits between the buttons and the results while
+                drafting/sending, narrating the work with a rotating status line
+                and a thin progress bar. */}
+            {(draftingAll || sendingAll) && (() => {
+              const steps = sendingAll ? SEND_PROGRESS_STEPS : DRAFT_PROGRESS_STEPS;
+              const idx = Math.min(progressStep, steps.length - 1);
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, marginTop: -8, marginBottom: 20 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: '#334155' }}>
+                    <Loader2 className="animate-spin" style={{ width: 14, height: 14, color: '#102E5C' }} />
+                    <span>{steps[idx]}…</span>
+                  </div>
+                  <div style={{ width: 240, height: 3, background: '#E2E8F0', borderRadius: 100, overflow: 'hidden' }}>
+                    <div style={{
+                      width: `${((idx + 1) / steps.length) * 100}%`,
+                      height: '100%',
+                      background: 'linear-gradient(90deg, #102E5C, #2563EB)',
+                      borderRadius: 100,
+                      transition: 'width .7s ease',
+                    }} />
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Backend message — persistent inline callout for "all already saved" or adjacency explanation.
                 Shows when there are no new contacts to explain why and what to do next. */}
@@ -2643,8 +2950,19 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               </div>
             )}
 
+            {/* Section label — these are the fresh people, ready for outreach */}
+            {lastResults.length > 0 && (
+              <div style={{
+                fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+                color: 'var(--accent, #4A60A8)', textTransform: 'uppercase',
+                marginBottom: 12,
+              }}>
+                New · Ready for outreach
+              </div>
+            )}
+
             {/* Contact cards */}
-            {lastResults.length <= 8 && lastResults.map((c: any, i: number) => {
+            {lastResults.map((c: any, i: number) => {
               const name = toTitleCase([c.FirstName || c.firstName, c.LastName || c.lastName].filter(Boolean).join(' ') || (c.Email || c.email || '').split('@')[0] || 'Unknown');
               const title = toTitleCase(c.JobTitle || c.jobTitle || c.Title || '');
               const company = toTitleCase(c.Company || c.company || '');
@@ -2655,172 +2973,173 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
               // not a mode flag. hasDraft and isSent drive the right-side action.
               const hasDraft = !!(c.emailSubject || c.emailBody);
               const isSent = !!c.emailSent;
-              const canDraft = canUseOutreachMode(userTier, 'draft');
               const isExpanded = expandedEmailIdx === i;
               const linkedinHref = linkedin
                 ? (linkedin.startsWith('http') ? linkedin : `https://${linkedin}`)
                 : '';
+              // Each new person gets a saturated avatar so the list reads as a
+              // row of distinct people, not a grey ledger.
+              const avatarColors = ['#5965D8', '#8B5CF6', '#0D9488', '#D97706', '#DB2777', '#2563EB'];
+              const avatarBg = avatarColors[i % avatarColors.length];
+              const warmthLabel = c.warmth_label || (c.warmth_tier === 'warm' ? 'Strong match' : c.warmth_tier === 'neutral' ? 'Good fit' : '');
+              const isStrongFit = warmthLabel === 'Strong fit' || warmthLabel === 'Strong match';
+              const isRoleMismatch = warmthLabel === 'Right company, different role';
               return (
                 <div
                   key={i}
                   style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    padding: '11px 13px',
-                    background: '#fff',
-                    border: '0.5px solid #E2E8F0',
-                    borderRadius: 3,
-                    marginBottom: 6,
+                    padding: '16px 18px',
+                    background: '#FFFFFF',
+                    border: '1px solid #ECEEF3',
+                    borderRadius: 16,
+                    marginBottom: 10,
                     cursor: 'pointer',
+                    boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
                     transition: 'all .12s',
                   }}
                   onMouseEnter={(e) => {
                     (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--accent, #4A60A8)';
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 3px rgba(74,96,168,.08)';
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 14px rgba(74,96,168,.12)';
                   }}
                   onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.borderColor = '#E2E8F0';
-                    (e.currentTarget as HTMLDivElement).style.boxShadow = 'none';
+                    (e.currentTarget as HTMLDivElement).style.borderColor = '#ECEEF3';
+                    (e.currentTarget as HTMLDivElement).style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)';
                   }}
                 >
-                  {/* Top row: identity on the left, tidy action column on the right.
-                      Card stays compact, it only grows when the draft is expanded. */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                  {/* Top row: a coloured avatar, the identity stack (name + fit
+                      pill, a middot meta line, then a sparkle "why this person"
+                      line), and a right rail with LinkedIn + the draft action. */}
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
                     <div style={{
-                      width: 34,
-                      height: 34,
+                      width: 42,
+                      height: 42,
                       borderRadius: '50%',
-                      background: 'rgba(74,96,168,0.10)',
+                      background: avatarBg,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: 600,
-                      color: '#0F172A',
+                      color: '#FFFFFF',
                       flexShrink: 0,
                     }}>
                       {initials}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A' }}>{name}</span>
-                        {/* Warmth indicator */}
-                        {(() => {
-                          const label = c.warmth_label || (c.warmth_tier === 'warm' ? 'Strong match' : c.warmth_tier === 'neutral' ? 'Good fit' : '');
-                          if (!label) return null;
-                          const isRoleMismatch = label === 'Right company, different role';
-                          const isStrong = label === 'Strong fit' || label === 'Strong match';
-                          const tooltipText = (() => {
-                            const sigs = c.warmth_signals || [];
-                            return sigs.slice(0, 2).map((s: any) => s.detail || s.signal?.replace(/_/g, ' ')).filter(Boolean).join(', ');
-                          })();
-                          return (
-                            <span
-                              title={tooltipText}
-                              style={{
-                                padding: '1px 6px',
-                                borderRadius: 3,
-                                background: isStrong
-                                  ? 'rgba(34, 197, 94, 0.12)'
-                                  : isRoleMismatch
-                                    ? 'rgba(148, 163, 184, 0.18)'
-                                    : 'rgba(245, 158, 11, 0.14)',
-                                color: isStrong
-                                  ? '#15803D'
-                                  : isRoleMismatch
-                                    ? '#475569'
-                                    : '#B45309',
-                                fontSize: 10,
-                                fontWeight: 600,
-                                fontFamily: "'DM Sans', system-ui, sans-serif",
-                              }}
-                            >
-                              {label}
-                            </span>
-                          );
-                        })()}
+                      {/* Name + fit pill share the first line */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                        <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {name}
+                        </span>
+                        {warmthLabel && (
+                          <span style={{
+                            padding: '2px 9px',
+                            borderRadius: 100,
+                            background: isStrongFit ? 'rgba(34,197,94,0.12)' : isRoleMismatch ? 'rgba(148,163,184,0.18)' : 'rgba(245,158,11,0.14)',
+                            color: isStrongFit ? '#15803D' : isRoleMismatch ? '#475569' : '#B45309',
+                            fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0,
+                          }}>
+                            {warmthLabel}
+                          </span>
+                        )}
                       </div>
-                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>
-                        {[title, company].filter(Boolean).join(' at ')}
+                      {/* Meta line: role · company · email, middot-separated */}
+                      <div style={{ fontSize: 13, color: '#64748B', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {title}
+                        {title && company && <span style={{ color: '#CBD5E1' }}> · </span>}
+                        {company && <span style={{ color: '#334155', fontWeight: 600 }}>{company}</span>}
+                        {email && (title || company) && <span style={{ color: '#CBD5E1' }}> · </span>}
+                        {email && <span style={{ color: '#94A3B8' }}>{email}</span>}
                       </div>
-                      {/* Email address shows on every card, in every mode */}
-                      {email && (
-                        <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>
-                          {email}
-                        </div>
-                      )}
-                      {/* Briefing line — "Why this person" */}
+                      {/* Sparkle "why this person" line */}
                       {c.briefing && (
-                        <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3, lineHeight: 1.3 }}>
-                          {c.briefing}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, minWidth: 0 }}>
+                          <Sparkles style={{ width: 13, height: 13, color: 'var(--accent, #4A60A8)', flexShrink: 0 }} />
+                          <span style={{ fontSize: 13, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {c.briefing}
+                          </span>
                         </div>
                       )}
                     </div>
 
-                    {/* Right action column: the email action and the LinkedIn pill
-                        read as a tidy pair. Buttons are short, not full width. */}
-                    <div style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'flex-end',
-                      gap: 6,
-                      flexShrink: 0,
-                    }}>
-                      {/* Email action. Sent and draft states expand to read inline.
-                          In preview with a tier that cannot draft, this is the
-                          upgrade prompt (same locked treatment as the mode selector).
-                          A paid tier in preview sees no email button, just keeps
-                          email and LinkedIn. */}
-                      {isSent ? (
-                        <ResultActionButton
-                          variant="secondary"
-                          size="sm"
-                          className="text-green-700 hover:text-green-700 font-semibold"
-                          onClick={(e) => { e.stopPropagation(); setExpandedEmailIdx(isExpanded ? null : i); }}
-                        >
-                          <CheckCircle style={{ width: 13, height: 13 }} />
-                          {isExpanded ? 'Hide message' : 'Sent, view in Gmail'}
-                        </ResultActionButton>
-                      ) : hasDraft ? (
-                        <ResultActionButton
-                          variant="secondary"
-                          size="sm"
-                          className="text-st-accent hover:text-st-accent font-semibold"
-                          onClick={(e) => { e.stopPropagation(); setExpandedEmailIdx(isExpanded ? null : i); }}
-                        >
-                          {isExpanded ? 'Hide draft' : 'View draft'}
-                          <ChevronRight style={{
-                            width: 12, height: 12,
-                            transform: isExpanded ? 'rotate(90deg)' : 'none',
-                            transition: 'transform .15s',
-                          }} />
-                        </ResultActionButton>
-                      ) : !canDraft ? (
-                        <ResultActionButton
-                          variant="secondary"
-                          size="sm"
-                          title="Upgrade to Pro to draft emails automatically."
-                          style={{ color: '#94A3B8', cursor: 'not-allowed' }}
-                          onClick={(e) => { e.stopPropagation(); }}
-                        >
-                          <FileText style={{ width: 13, height: 13 }} /> Draft Email
-                          <Lock style={{ width: 11, height: 11 }} />
-                        </ResultActionButton>
-                      ) : null}
-
-                      {/* LinkedIn pill: lucide glyph plus label, secondary language.
-                          Not the brand-restricted LinkedIn logo. */}
+                    {/* Right rail: LinkedIn as a quiet icon button, then the one
+                        coloured action — Draft when nothing exists yet, otherwise
+                        View draft / View sent to open the message inline. */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, alignSelf: 'center' }}>
                       {linkedinHref && (
-                        <ResultActionButton
-                          variant="secondary"
-                          size="sm"
+                        <a
                           href={linkedinHref}
                           target="_blank"
                           rel="noopener noreferrer"
+                          title="View LinkedIn profile"
+                          aria-label="View LinkedIn profile"
                           onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                            width: 38, height: 38, borderRadius: 9,
+                            background: '#fff', border: '1px solid #E2E8F0', color: '#0A66C2',
+                            flexShrink: 0, transition: 'all .12s',
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#F1F5F9'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#fff'; }}
                         >
-                          <Linkedin style={{ width: 14, height: 14 }} /> LinkedIn
-                        </ResultActionButton>
+                          <Linkedin style={{ width: 16, height: 16 }} />
+                        </a>
+                      )}
+                      {isSent ? (
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); setExpandedEmailIdx(isExpanded ? null : i); }}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            height: 38, padding: '0 14px', borderRadius: 9,
+                            background: '#fff', border: '1px solid #BBF7D0', color: '#15803D',
+                            fontSize: 13.5, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                            whiteSpace: 'nowrap', flexShrink: 0,
+                          }}
+                        >
+                          <CheckCircle style={{ width: 15, height: 15 }} />
+                          {isExpanded ? 'Hide' : 'View sent'}
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (hasDraft) { setExpandedEmailIdx(isExpanded ? null : i); }
+                            else { handleDraftAll(); }
+                          }}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                            height: 38, padding: '0 16px', borderRadius: 9,
+                            background: '#fff', border: '1px solid #C7CCF0', color: 'var(--accent, #4A60A8)',
+                            fontSize: 13.5, fontWeight: 600,
+                            cursor: (draftingAll || sendingAll) ? 'default' : 'pointer',
+                            opacity: (draftingAll || sendingAll) && !hasDraft ? 0.6 : 1,
+                            fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0,
+                            transition: 'all .12s',
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#F2F3FC'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#fff'; }}
+                        >
+                          {hasDraft ? (
+                            <>
+                              {isExpanded ? 'Hide draft' : 'View draft'}
+                              <ChevronRight style={{
+                                width: 14, height: 14,
+                                transform: isExpanded ? 'rotate(90deg)' : 'none',
+                                transition: 'transform .15s',
+                              }} />
+                            </>
+                          ) : (
+                            <>
+                              <Mail style={{ width: 15, height: 15 }} />
+                              Draft
+                            </>
+                          )}
+                        </button>
                       )}
                     </div>
                   </div>
@@ -2916,18 +3235,14 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             {/* Already saved contacts */}
             {alreadySavedResults.length > 0 && (
               <>
+                {/* Section label — people the search re-surfaced that are
+                    already living in the inbox. Muted so the eye stays on New. */}
                 <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  marginTop: 10,
-                  marginBottom: 4,
+                  fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+                  color: '#94A3B8', textTransform: 'uppercase',
+                  marginTop: 22, marginBottom: 12,
                 }}>
-                  <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-                  <span style={{ fontSize: 10, color: '#94A3B8', fontWeight: 500, whiteSpace: 'nowrap' }}>
-                    Already in your inbox
-                  </span>
-                  <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+                  Already in your inbox · {alreadySavedResults.length}
                 </div>
                 {alreadySavedResults.map((c: any, i: number) => {
                   const name = toTitleCase([c.FirstName || c.firstName, c.LastName || c.lastName].filter(Boolean).join(' ') || (c.Email || c.email || '').split('@')[0] || 'Unknown');
@@ -2935,124 +3250,183 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
                   const company = toTitleCase(c.Company || c.company || '');
                   const linkedin = c.LinkedIn || c.linkedinUrl || '';
                   const initials = name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+                  const linkedinHref = linkedin ? (linkedin.startsWith('http') ? linkedin : `https://${linkedin}`) : '';
                   return (
                     <div
                       key={`saved-${i}`}
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 11,
-                        padding: '11px 13px',
-                        background: '#FAFAFA',
-                        border: '0.5px solid #E2E8F0',
-                        borderRadius: 3,
-                        marginBottom: 6,
-                        opacity: 0.7,
+                        gap: 14,
+                        padding: '13px 18px',
+                        background: '#F8FAFC',
+                        border: '1px solid #ECEEF3',
+                        borderRadius: 16,
+                        marginBottom: 8,
+                        opacity: 0.82,
                       }}
                     >
                       <div style={{
-                        width: 34,
-                        height: 34,
+                        width: 42,
+                        height: 42,
                         borderRadius: '50%',
-                        background: 'rgba(107,114,128,0.10)',
+                        background: 'rgba(148,163,184,0.18)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 11,
+                        fontSize: 13,
                         fontWeight: 600,
-                        color: '#6B7280',
+                        color: '#94A3B8',
                         flexShrink: 0,
                       }}>
                         {initials}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 13, fontWeight: 500, color: '#6B7280' }}>{name}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                          <span style={{ fontSize: 15, fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</span>
                           <span style={{
-                            padding: '1px 6px',
-                            borderRadius: 3,
-                            background: 'rgba(107,114,128,0.08)',
+                            padding: '2px 9px',
+                            borderRadius: 100,
+                            background: 'rgba(148,163,184,0.16)',
                             color: '#94A3B8',
-                            fontSize: 10,
-                            fontWeight: 500,
-                            fontFamily: "'DM Sans', system-ui, sans-serif",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0,
                           }}>
                             Already saved
                           </span>
                         </div>
-                        <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>
-                          {[title, company].filter(Boolean).join(' at ')}
+                        <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {title}
+                          {title && company && <span style={{ color: '#CBD5E1' }}> · </span>}
+                          {company}
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        {linkedin && (
-                          <ResultActionButton
-                            variant="secondary"
-                            size="sm"
-                            href={linkedin.startsWith('http') ? linkedin : `https://${linkedin}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                          >
-                            <Linkedin style={{ width: 14, height: 14 }} /> LinkedIn
-                          </ResultActionButton>
-                        )}
-                      </div>
+                      {linkedinHref && (
+                        <a
+                          href={linkedinHref}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 7,
+                            height: 38, padding: '0 14px', borderRadius: 9,
+                            background: '#fff', border: '1px solid #E2E8F0', color: '#334155',
+                            fontSize: 13.5, fontWeight: 600, textDecoration: 'none',
+                            whiteSpace: 'nowrap', flexShrink: 0, transition: 'all .12s',
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#F1F5F9'; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.background = '#fff'; }}
+                        >
+                          <Linkedin style={{ width: 16, height: 16, color: '#0A66C2' }} /> LinkedIn
+                        </a>
+                      )}
                     </div>
                   );
                 })}
               </>
             )}
 
-            {/* Action buttons. Batch path to Gmail and the tracker. The Gmail
-                drafts button shows only when drafts actually exist (derived from
-                per-contact state, not a mode flag). "View in Outbox" was dropped
-                because it redirected to the tracker, which the Tracker button now
-                covers directly. */}
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              {lastResults.some((c: any) => c.gmailDraftUrl && !c.emailSent) && (
-                <ResultActionButton
-                  variant="primary"
-                  href="https://mail.google.com/mail/u/0/#drafts"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1"
-                >
-                  <Mail className="w-3.5 h-3.5" />
-                  Open Gmail drafts
-                </ResultActionButton>
-              )}
-              <ResultActionButton
-                variant="secondary"
-                onClick={() => {
-                  // Deep-link the just-drafted contact so the tracker expands
-                  // its (collapsed-by-default) group, selects it, and refetches
-                  // fresh. Navigate straight to /outbox: routing via /tracker
-                  // hits a <Navigate replace> that would drop the route state.
-                  const drafted = lastResults.find(
-                    (c: any) => (c.gmailDraftUrl || c.emailSubject || c.emailBody) && (c.Email || c.email)
-                  );
-                  const anyWithEmail = lastResults.find((c: any) => c.Email || c.email);
-                  const focusEmail =
-                    (drafted && (drafted.Email || drafted.email)) ||
-                    (anyWithEmail && (anyWithEmail.Email || anyWithEmail.email)) ||
-                    undefined;
-                  navigate('/outbox', { state: { focusEmail, segment: 'people' } });
-                }}
-                className="flex-1"
-              >
-                <Inbox className="w-3.5 h-3.5" />
-                Inbox
-              </ResultActionButton>
-              <ResultActionButton
-                variant="secondary"
-                onClick={() => navigate('/contact-directory')}
-                className="flex-1"
-              >
-                <User className="w-3.5 h-3.5" />
-                View in Spreadsheet
-              </ResultActionButton>
-            </div>
+            {/* Where everything lives — two destination cards that close the
+                loop: the full sortable table of everyone found, and the inbox
+                where the drafted emails wait. Mirrors the mockup footer. */}
+            {(() => {
+              const cardBase: React.CSSProperties = {
+                flex: 1,
+                display: 'flex', alignItems: 'center', gap: 14,
+                padding: '18px 20px', borderRadius: 16,
+                cursor: 'pointer', textDecoration: 'none', textAlign: 'left',
+                fontFamily: 'inherit', border: 'none',
+                transition: 'transform .12s, box-shadow .12s, background .12s',
+              };
+              const iconBox = (bg: string, color: string): React.CSSProperties => ({
+                width: 44, height: 44, borderRadius: 12, flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: bg, color,
+              });
+              const totalContacts = lastResults.length + alreadySavedResults.length;
+              const goToInbox = () => {
+                // Deep-link the just-drafted contact so the tracker expands its
+                // (collapsed-by-default) group, selects it, and refetches fresh.
+                const drafted = lastResults.find(
+                  (c: any) => (c.gmailDraftUrl || c.emailSubject || c.emailBody) && (c.Email || c.email)
+                );
+                const anyWithEmail = lastResults.find((c: any) => c.Email || c.email);
+                const focusEmail =
+                  (drafted && (drafted.Email || drafted.email)) ||
+                  (anyWithEmail && (anyWithEmail.Email || anyWithEmail.email)) ||
+                  undefined;
+                navigate('/outbox', { state: { focusEmail, segment: 'people' } });
+              };
+              return (
+                <div style={{ marginTop: 26 }}>
+                  <div style={{
+                    fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+                    color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12,
+                  }}>
+                    Where everything lives
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    {/* View in spreadsheet — primary, filled indigo */}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/contact-directory')}
+                      style={{
+                        ...cardBase,
+                        background: 'var(--accent, #4A60A8)',
+                        color: '#fff',
+                        boxShadow: '0 1px 2px rgba(74,96,168,0.18), 0 8px 20px rgba(74,96,168,0.24)',
+                      }}
+                      onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'; }}
+                      onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}
+                    >
+                      <span style={iconBox('rgba(255,255,255,0.18)', '#fff')}>
+                        <Table2 style={{ width: 20, height: 20 }} />
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 16, fontWeight: 700 }}>View in spreadsheet</span>
+                        <span style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.82)', marginTop: 2 }}>
+                          All {totalContacts} {totalContacts === 1 ? 'contact' : 'contacts'} in a sortable table
+                        </span>
+                      </span>
+                      <ChevronRight style={{ width: 20, height: 20, color: 'rgba(255,255,255,0.85)', flexShrink: 0 }} />
+                    </button>
+
+                    {/* Open inbox — secondary, white */}
+                    <button
+                      type="button"
+                      onClick={goToInbox}
+                      style={{
+                        ...cardBase,
+                        background: '#fff', color: '#0F172A',
+                        border: '1px solid #ECEEF3',
+                        boxShadow: '0 1px 2px rgba(15,23,42,0.04)',
+                      }}
+                      onMouseEnter={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 14px rgba(15,23,42,0.08)';
+                      }}
+                      onMouseLeave={(e) => {
+                        (e.currentTarget as HTMLButtonElement).style.transform = 'none';
+                        (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)';
+                      }}
+                    >
+                      <span style={iconBox('rgba(74,96,168,0.10)', 'var(--accent, #4A60A8)')}>
+                        <Inbox style={{ width: 20, height: 20 }} />
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: 'block', fontSize: 16, fontWeight: 700 }}>Open inbox</span>
+                        <span style={{ display: 'block', fontSize: 13, color: '#64748B', marginTop: 2 }}>
+                          Read &amp; manage your drafted emails
+                        </span>
+                      </span>
+                      <ChevronRight style={{ width: 20, height: 20, color: '#CBD5E1', flexShrink: 0 }} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
@@ -3137,6 +3511,17 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       </div>
 
       <EliteGateModal open={showEliteGate} onClose={() => setShowEliteGate(false)} />
+
+      {/* Upgrade/trial prompt for locked outreach actions (Draft Outreach / Send Emails). */}
+      <UpgradeModal
+        open={upgradeGate !== null}
+        onOpenChange={(o) => { if (!o) setUpgradeGate(null); }}
+        feature={upgradeGate?.feature || ''}
+        featureLabel={upgradeGate?.label}
+        requiredTier={upgradeGate?.requiredTier}
+        reason={upgradeGate?.reason}
+        currentTier={userTier}
+      />
 
       {/* Import CSV dialog */}
       {showImportDialog && (
