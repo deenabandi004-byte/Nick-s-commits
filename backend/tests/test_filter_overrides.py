@@ -11,7 +11,7 @@ pytestmark = pytest.mark.unit
 
 def _parsed_people(**over):
     base = {
-        "companies": ["Google"],
+        "companies": [{"name": "Google", "matched_titles": ["Software Engineer"]}],
         "title_variations": ["Software Engineer"],
         "locations": ["New York"],
         "schools": ["USC"],
@@ -26,7 +26,7 @@ def _parsed_people(**over):
 class TestPeopleOverrides:
     def test_present_key_replaces_parsed_dimension(self):
         out = apply_people_filters(_parsed_people(), {"companies": ["Airbnb"]})
-        assert out["companies"] == ["Airbnb"]
+        assert out["companies"] == [{"name": "Airbnb", "matched_titles": []}]
         assert out["title_variations"] == ["Software Engineer"]  # untouched
 
     def test_titles_key_maps_to_title_variations(self):
@@ -39,7 +39,7 @@ class TestPeopleOverrides:
 
     def test_absent_key_keeps_parse(self):
         out = apply_people_filters(_parsed_people(), {"locations": ["Chicago"]})
-        assert out["companies"] == ["Google"]
+        assert out["companies"] == [{"name": "Google", "matched_titles": ["Software Engineer"]}]
         assert out["schools"] == ["USC"]
 
     def test_list_capped_at_five(self):
@@ -48,20 +48,20 @@ class TestPeopleOverrides:
 
     def test_strings_truncated_to_100_chars(self):
         out = apply_people_filters(_parsed_people(), {"companies": ["x" * 300]})
-        assert len(out["companies"][0]) == 100
+        assert len(out["companies"][0]["name"]) == 100
 
     def test_non_string_items_dropped(self):
         out = apply_people_filters(_parsed_people(), {"companies": [42, None, "Stripe", {"a": 1}]})
-        assert out["companies"] == ["Stripe"]
+        assert out["companies"] == [{"name": "Stripe", "matched_titles": []}]
 
     def test_blank_strings_dropped(self):
         out = apply_people_filters(_parsed_people(), {"companies": ["  ", "Stripe"]})
-        assert out["companies"] == ["Stripe"]
+        assert out["companies"] == [{"name": "Stripe", "matched_titles": []}]
 
     def test_unknown_keys_ignored(self):
         out = apply_people_filters(_parsed_people(), {"salary": ["1M"], "companies": ["Stripe"]})
         assert "salary" not in out
-        assert out["companies"] == ["Stripe"]
+        assert out["companies"] == [{"name": "Stripe", "matched_titles": []}]
 
     def test_non_dict_filters_is_noop(self):
         parsed = _parsed_people()
@@ -72,11 +72,19 @@ class TestPeopleOverrides:
     def test_does_not_mutate_input(self):
         parsed = _parsed_people()
         apply_people_filters(parsed, {"companies": ["Stripe"]})
-        assert parsed["companies"] == ["Google"]
+        assert parsed["companies"] == [{"name": "Google", "matched_titles": ["Software Engineer"]}]
 
     def test_non_list_value_for_list_key_ignored(self):
         out = apply_people_filters(_parsed_people(), {"companies": "Stripe"})
-        assert out["companies"] == ["Google"]  # invalid shape → keep parse
+        assert out["companies"] == [{"name": "Google", "matched_titles": ["Software Engineer"]}]  # invalid shape → keep parse
+
+    def test_companies_override_wraps_in_parser_object_shape(self):
+        out = apply_people_filters(_parsed_people(), {"companies": ["Airbnb"]})
+        assert out["companies"] == [{"name": "Airbnb", "matched_titles": []}]
+
+    def test_companies_override_mixed_junk_wraps_valid_entries(self):
+        out = apply_people_filters(_parsed_people(), {"companies": [42, "Stripe"]})
+        assert out["companies"] == [{"name": "Stripe", "matched_titles": []}]
 
 
 def _parsed_firm(**over):

@@ -54,6 +54,12 @@ def apply_people_filters(parsed: Dict[str, Any], filters: Any) -> Dict[str, Any]
         if rail_key in filters:
             cleaned = _clean_str_list(filters[rail_key])
             if cleaned is not None:
+                if rail_key == "companies":
+                    # Parser output shape for companies is
+                    # [{"name": str, "matched_titles": string[]}], consumed
+                    # that way by pdl_client.py (name extraction + first-company
+                    # lookup). The other four dims stay plain string lists.
+                    cleaned = [{"name": name, "matched_titles": []} for name in cleaned]
                 out[parsed_key] = cleaned
     return out
 
