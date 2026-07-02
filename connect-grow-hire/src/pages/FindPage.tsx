@@ -18,6 +18,11 @@ import { IS_DEV_PREVIEW, DEV_MOCK_USER } from "@/lib/devPreview";
 import { getUniversityShortName } from "@/lib/universityUtils";
 import { PersonalizationStrip } from "@/components/personalization/PersonalizationStrip";
 import { TrialBanner } from "@/components/TrialBanner";
+import { FindFilterRail } from "@/components/find/FindFilterRail";
+import {
+  FindTab, PeopleFilters, CompanyFilters, EMPTY_PEOPLE_FILTERS, EMPTY_COMPANY_FILTERS,
+  peopleFiltersActive, companyFiltersActive,
+} from "@/types/findFilters";
 
 const ContactSearchPage = React.lazy(() => import("./ContactSearchPage"));
 const FirmSearchPage = React.lazy(() => import("./FirmSearchPage"));
@@ -27,8 +32,6 @@ const TABS = [
   { id: "companies", label: "Companies", mobileLabel: "Companies", icon: Building2 },
   { id: "hiring-managers", label: "Hiring Managers", mobileLabel: "Hiring", icon: UserCheck },
 ] as const;
-
-type FindTab = (typeof TABS)[number]["id"];
 
 function resolveTab(raw: string | null): FindTab {
   if (raw === "people") return "people";
@@ -246,6 +249,25 @@ const FindPage: React.FC = () => {
   const [schoolLoaded, setSchoolLoaded] = useState(false);
   const [forceRefresh, setForceRefresh] = useState(0);
 
+  // Filter-rail state. Nonce bumps ONLY on user edits (not on parse-populate),
+  // signalling the embedded search page to re-run with overrides. An edit that
+  // clears every dimension resets instead of re-searching (backend would 400).
+  const [peopleFilters, setPeopleFilters] = useState<PeopleFilters>(EMPTY_PEOPLE_FILTERS);
+  const [peopleFiltersNonce, setPeopleFiltersNonce] = useState(0);
+  const [companyFilters, setCompanyFilters] = useState<CompanyFilters>(EMPTY_COMPANY_FILTERS);
+  const [companyFiltersNonce, setCompanyFiltersNonce] = useState(0);
+
+  const handlePeopleFiltersChange = (f: PeopleFilters) => {
+    setPeopleFilters(f);
+    if (peopleFiltersActive(f)) setPeopleFiltersNonce((n) => n + 1);
+    else setPeopleFiltersNonce(0); // cleared → fresh state, no re-search
+  };
+  const handleCompanyFiltersChange = (f: CompanyFilters) => {
+    setCompanyFilters(f);
+    if (companyFiltersActive(f)) setCompanyFiltersNonce((n) => n + 1);
+    else setCompanyFiltersNonce(0);
+  };
+
   // Load user university + first name
   useEffect(() => {
     if (!user?.uid) return;
@@ -315,6 +337,26 @@ const FindPage: React.FC = () => {
     setSearchParams({ tab }, { replace: true });
     flashTab();
   };
+
+  // Query handed off from the Getting Started launcher (/find?tab=..&q=..).
+  // Captured once, then stripped from the URL so it does not re-fire. Because
+  // both search pages stay mounted behind the toggle, we pass it only to the
+  // tab it targets so the hidden page never consumes it.
+  const [launchQuery, setLaunchQuery] = useState<{ tab: FindTab; q: string } | null>(null);
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && q.trim()) {
+      setLaunchQuery({ tab: resolveTab(searchParams.get("tab")), q });
+      const next = new URLSearchParams(searchParams);
+      next.delete("q");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const peopleInitialQuery =
+    launchQuery && launchQuery.tab === "people" ? launchQuery.q : undefined;
+  const companiesInitialQuery =
+    launchQuery && launchQuery.tab === "companies" ? launchQuery.q : undefined;
 
   const isCompaniesTab = activeTab === "companies";
 
@@ -422,52 +464,17 @@ const FindPage: React.FC = () => {
                 className="flex flex-col sm:flex-row"
                 style={{ maxWidth: 1120, margin: "0 auto", padding: "0 40px 44px", gap: 28 }}
               >
-                {/* Left toggle rail — switches People / Companies / Hiring Managers */}
-                <div className="flex-shrink-0 sm:w-[200px]">
-                  <div
-                    className="flex flex-row sm:flex-col"
-                    style={{ position: "sticky", top: 8, gap: 6 }}
-                  >
-                    {TABS.map((tab) => {
-                      const isActive = activeTab === tab.id;
-                      const Icon = tab.icon;
-                      return (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTab(tab.id)}
-                          className="flex items-center transition-colors"
-                          style={{
-                            gap: 10,
-                            width: "100%",
-                            padding: "11px 14px",
-                            borderRadius: 10,
-                            fontSize: 13.5,
-                            fontWeight: isActive ? 600 : 500,
-                            fontFamily: "inherit",
-                            textAlign: "left",
-                            cursor: "pointer",
-                            border: isActive ? "1px solid transparent" : "1px solid var(--line, #E5E5E5)",
-                            color: isActive ? "#fff" : "var(--ink, #111318)",
-                            background: isActive
-                              ? (tabFlashing ? "var(--brand-blue, #3B82F6)" : "var(--accent, #4A60A8)")
-                              : "#fff",
-                            boxShadow: isActive ? "0 1px 3px rgba(15,18,25,0.10)" : "none",
-                            transition: "background .35s ease, color .15s",
-                          }}
-                          onMouseEnter={(e) => {
-                            if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "var(--brand-blue-subtle, #F5F8FF)";
-                          }}
-                          onMouseLeave={(e) => {
-                            if (!isActive) (e.currentTarget as HTMLButtonElement).style.background = "#fff";
-                          }}
-                        >
-                          <Icon style={{ width: 15, height: 15, flexShrink: 0 }} />
-                          <span className="hidden sm:inline">{tab.label}</span>
-                          <span className="sm:hidden">{tab.mobileLabel}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+                {/* Left rail — tab toggle + filter panel (FindFilterRail) */}
+                <div className="flex-shrink-0 sm:w-[236px]">
+                  <FindFilterRail
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                    tabFlashing={tabFlashing}
+                    peopleFilters={peopleFilters}
+                    onPeopleFiltersChange={handlePeopleFiltersChange}
+                    companyFilters={companyFilters}
+                    onCompanyFiltersChange={handleCompanyFiltersChange}
+                  />
                 </div>
 
                 {/* Tab content */}
@@ -480,10 +487,12 @@ const FindPage: React.FC = () => {
                     }
                   >
                     <div style={{ display: activeTab === "people" ? "block" : "none" }}>
-                      <ContactSearchPage embedded hideSubTabs parentEmailTemplate={activeEmailTemplate} isDevPreview={IS_DEV_PREVIEW} />
+                      <ContactSearchPage embedded hideSubTabs parentEmailTemplate={activeEmailTemplate} isDevPreview={IS_DEV_PREVIEW} initialQuery={peopleInitialQuery}
+                        railFilters={peopleFilters} railFiltersNonce={peopleFiltersNonce} onParsedQuery={setPeopleFilters} />
                     </div>
                     <div data-tour="tour-find-companies" style={{ display: activeTab === "companies" ? "block" : "none" }}>
-                      <FirmSearchPage embedded isDevPreview={IS_DEV_PREVIEW} />
+                      <FirmSearchPage embedded isDevPreview={IS_DEV_PREVIEW} initialQuery={companiesInitialQuery}
+                        railFilters={companyFilters} railFiltersNonce={companyFiltersNonce} onParsedFilters={setCompanyFilters} />
                     </div>
                     <div data-tour="tour-find-hiring-managers" style={{ display: activeTab === "hiring-managers" ? "block" : "none" }}>
                       <RecruiterSpreadsheetPage embedded isDevPreview={IS_DEV_PREVIEW} />
