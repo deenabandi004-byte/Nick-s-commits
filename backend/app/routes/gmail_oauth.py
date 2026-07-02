@@ -8,6 +8,12 @@ from flask import Blueprint, request, jsonify, redirect
 from urllib.parse import urlencode
 from google_auth_oauthlib.flow import Flow
 
+# Google legitimately returns fewer scopes than requested when the user leaves
+# consent checkboxes unticked. Without this, oauthlib raises
+# "Warning: Scope has changed" inside fetch_token and the user is stranded on
+# the raw JSON error page. We do our own scope check after the exchange.
+os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
+
 from app.config import GMAIL_SCOPES, OAUTH_REDIRECT_URI, get_frontend_redirect_uri
 from ..extensions import require_firebase_auth
 from app.services.gmail_client import _gmail_client_config, _save_user_gmail_creds, _load_user_gmail_creds, _gmail_service
@@ -219,6 +225,18 @@ def google_oauth_callback():
         flow.fetch_token(code=code)
         creds = flow.credentials
 
+        # If the user unchecked the Gmail boxes on the consent screen, Google
+        # grants only openid/profile/email. Don't save creds — send them back
+        # into the app; drafting surfaces will prompt to connect from
+        # /integrations instead.
+        granted = set(creds.scopes or [])
+        required_gmail = {s for s in GMAIL_SCOPES if "auth/gmail." in s}
+        if not required_gmail.issubset(granted):
+            print(f"[gmail_oauth] Gmail scopes declined. granted={sorted(granted)}")
+            redirect_url = get_frontend_redirect_uri()
+            sep = "&" if "?" in redirect_url else "?"
+            return redirect(f"{redirect_url}{sep}gmail_error=scopes_declined")
+
         # 2) Get Gmail profile email
         gmail_service = build("gmail", "v1", credentials=creds)
         profile = gmail_service.users().getProfile(userId="me").execute()
@@ -298,7 +316,10 @@ def google_oauth_callback():
     except Exception as e:
         print(f"[gmail_oauth] OAuth token exchange failed: {e}")
         traceback.print_exc()
-        return jsonify({"error": f"Token exchange failed: {str(e)}"}), 500
+        # This response renders in the user's browser tab — never show JSON.
+        redirect_url = get_frontend_redirect_uri()
+        sep = "&" if "?" in redirect_url else "?"
+        return redirect(f"{redirect_url}{sep}gmail_error=oauth_failed")
 
 
 
