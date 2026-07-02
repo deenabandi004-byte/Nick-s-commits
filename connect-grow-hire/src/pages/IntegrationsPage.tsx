@@ -1,5 +1,14 @@
+// IntegrationsPage — /integrations
+// Connect external accounts (Gmail today). Handles OAuth return params
+// (?connected=gmail / ?gmail_error=...) with toasts, and ?connect=gmail
+// auto-launches the Gmail OAuth flow via GmailIntegrationCard.
+
 import { useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { AppSidebar } from "@/components/AppSidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
+import { AppHeader } from "@/components/AppHeader";
+import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { useToast } from "@/hooks/use-toast";
 import { GmailIntegrationCard } from "@/components/integrations/GmailIntegrationCard";
 
@@ -45,15 +54,27 @@ const IntegrationsPage = () => {
   }, [location.search, navigate, toast]);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-6 py-8">
-      <h1 className="text-2xl font-semibold text-foreground">Integrations</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Connect your accounts to unlock drafting and reply tracking.
-      </p>
-      <div className="mt-6 space-y-4">
-        <GmailIntegrationCard autoConnect={autoConnect} />
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full font-sans" style={{ color: "var(--ink)" }}>
+        <AppSidebar />
+        <MainContentWrapper>
+          <AppHeader title="Integrations" />
+
+          <div className="flex-1 overflow-y-auto" style={{ background: "#FBFCFE" }}>
+            <div className="mx-auto w-full max-w-[820px] space-y-8 px-5 py-6 sm:px-10 sm:py-8">
+              <div>
+                <p className="text-sm text-muted-foreground">
+                  Connect your accounts to unlock drafting and reply tracking.
+                </p>
+                <div className="mt-6 space-y-4">
+                  <GmailIntegrationCard autoConnect={autoConnect} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </MainContentWrapper>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 

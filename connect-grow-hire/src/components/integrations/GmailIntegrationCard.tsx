@@ -26,7 +26,14 @@ export function GmailIntegrationCard({ autoConnect = false }: GmailIntegrationCa
         setGmailAddress(data.gmail_address ?? null);
       })
       .catch(() => {
-        if (!cancelled) setConnected(false);
+        if (cancelled) return;
+        // Constraint: auto-connect must only fire when a SUCCESSFUL status
+        // fetch reports not-connected. On a failed fetch we still render the
+        // not-connected UI (manual Connect stays available), but we burn the
+        // auto-connect guard so a transient API blip can't hurl an
+        // already-connected user into a fresh OAuth consent screen.
+        autoConnectRan.current = true;
+        setConnected(false);
       });
     return () => {
       cancelled = true;
