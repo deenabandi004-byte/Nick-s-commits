@@ -63,6 +63,11 @@ def get_oauth_redirect_uri():
         else "http://localhost:5001/api/google/oauth/callback"
     )
 
+def get_frontend_base_uri():
+    """Frontend origin without a path — for OAuth return_to redirects."""
+    is_production = os.getenv("FLASK_ENV") == "production" or os.getenv("RENDER")
+    return "https://offerloop.ai" if is_production else "http://localhost:8080"
+
 def get_frontend_redirect_uri():
     """Get the appropriate frontend redirect URI based on environment
     

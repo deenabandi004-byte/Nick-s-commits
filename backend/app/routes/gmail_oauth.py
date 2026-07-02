@@ -14,12 +14,21 @@ from google_auth_oauthlib.flow import Flow
 # the raw JSON error page. We do our own scope check after the exchange.
 os.environ.setdefault("OAUTHLIB_RELAX_TOKEN_SCOPE", "1")
 
-from app.config import GMAIL_SCOPES, OAUTH_REDIRECT_URI, get_frontend_redirect_uri
+from app.config import GMAIL_SCOPES, OAUTH_REDIRECT_URI, get_frontend_redirect_uri, get_frontend_base_uri
 from ..extensions import require_firebase_auth
 from app.services.gmail_client import _gmail_client_config, _save_user_gmail_creds, _load_user_gmail_creds, _gmail_service
 from ..extensions import get_db
 
 gmail_oauth_bp = Blueprint('gmail_oauth', __name__, url_prefix='/api/google')
+
+
+def _safe_return_path(value):
+    """Allow only same-site paths like '/integrations' as OAuth return targets."""
+    if not value or not isinstance(value, str):
+        return None
+    if not value.startswith("/") or value.startswith("//"):
+        return None
+    return value
 
 
 def build_gmail_oauth_url_for_user(uid, user_email=None):
@@ -100,6 +109,7 @@ def google_oauth_start():
     state_data = {
         "uid": uid,
         "email": user_email,
+        "return_to": _safe_return_path(request.args.get("return_to")),
         "created": datetime.utcnow(),
         "expires": datetime.utcnow() + timedelta(minutes=15)
     }
@@ -185,11 +195,15 @@ def google_oauth_callback():
             redirect_url = f"{redirect_url}?gmail_error=not_test_user"
             return redirect(redirect_url)
         
-        return jsonify({"error": "Missing authorization code", "error_details": error}), 400
+        # This response renders in the user's browser tab — never show JSON.
+        redirect_url = get_frontend_redirect_uri()
+        sep = "&" if "?" in redirect_url else "?"
+        return redirect(f"{redirect_url}{sep}gmail_error=oauth_failed")
 
     # Extract UID and expected email from state
     uid = None
     expected_email_from_state = None
+    return_to = None
     if state:
         try:
             sdoc = db.collection("oauth_state").document(state).get()
@@ -200,6 +214,7 @@ def google_oauth_callback():
                 state_data = sdoc.to_dict() or {}
                 uid = state_data.get("uid")
                 expected_email_from_state = state_data.get("email")
+                return_to = _safe_return_path(state_data.get("return_to"))
 
                 # Clean up state document after use
                 try:
@@ -217,7 +232,12 @@ def google_oauth_callback():
         if not uid:
             redirect_url = get_frontend_redirect_uri()
             return redirect(f"{redirect_url}?gmail_error=missing_state")
-    
+
+    def _frontend_redirect(param_key, param_value):
+        base = f"{get_frontend_base_uri()}{return_to}" if return_to else get_frontend_redirect_uri()
+        sep = "&" if "?" in base else "?"
+        return redirect(f"{base}{sep}{param_key}={param_value}")
+
     try:
         # 1) Exchange code for tokens
         flow = Flow.from_client_config(_gmail_client_config(), scopes=GMAIL_SCOPES)
@@ -233,9 +253,7 @@ def google_oauth_callback():
         required_gmail = {s for s in GMAIL_SCOPES if "auth/gmail." in s}
         if not required_gmail.issubset(granted):
             print(f"[gmail_oauth] Gmail scopes declined. granted={sorted(granted)}")
-            redirect_url = get_frontend_redirect_uri()
-            sep = "&" if "?" in redirect_url else "?"
-            return redirect(f"{redirect_url}{sep}gmail_error=scopes_declined")
+            return _frontend_redirect("gmail_error", "scopes_declined")
 
         # 2) Get Gmail profile email
         gmail_service = build("gmail", "v1", credentials=creds)
@@ -285,8 +303,7 @@ def google_oauth_callback():
         # 5) Save creds (only if we have a UID)
         if not uid:
             print("[gmail_oauth] Cannot save Gmail credentials — no UID available")
-            redirect_url = add_param(redirect_url, "gmail_error", "no_user_id")
-            return redirect(redirect_url)
+            return _frontend_redirect("gmail_error", "no_user_id")
 
         _save_user_gmail_creds(uid, creds)
         gmail_ref = db.collection("users").document(uid).collection("integrations").document("gmail")
@@ -310,16 +327,13 @@ def google_oauth_callback():
             db.collection("oauth_state").document(state).delete()
 
         # 6) Redirect back with ?connected=gmail so SignIn.tsx can react
-        redirect_url = add_param(redirect_url, "connected", "gmail")
-        return redirect(redirect_url)
+        return _frontend_redirect("connected", "gmail")
 
     except Exception as e:
         print(f"[gmail_oauth] OAuth token exchange failed: {e}")
         traceback.print_exc()
         # This response renders in the user's browser tab — never show JSON.
-        redirect_url = get_frontend_redirect_uri()
-        sep = "&" if "?" in redirect_url else "?"
-        return redirect(f"{redirect_url}{sep}gmail_error=oauth_failed")
+        return _frontend_redirect("gmail_error", "oauth_failed")
 
 
 

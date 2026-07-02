@@ -84,3 +84,37 @@ def test_token_exchange_error_redirects_to_frontend(client, callback_mocks):
     assert resp.status_code == 302
     assert "gmail_error=oauth_failed" in resp.headers["Location"]
     callback_mocks["save_creds"].assert_not_called()
+
+
+def test_missing_code_redirects_to_frontend(client, callback_mocks):
+    """No code + an unrecognized error must still redirect, never return JSON."""
+    resp = client.get("/api/google/oauth/callback?error=server_error")
+
+    assert resp.status_code == 302
+    assert "gmail_error=oauth_failed" in resp.headers["Location"]
+
+
+def test_safe_return_path_validation():
+    from backend.app.routes.gmail_oauth import _safe_return_path
+
+    assert _safe_return_path("/integrations") == "/integrations"
+    assert _safe_return_path("/integrations?connect=gmail") == "/integrations?connect=gmail"
+    assert _safe_return_path("//evil.com") is None          # protocol-relative
+    assert _safe_return_path("https://evil.com") is None    # absolute URL
+    assert _safe_return_path("") is None
+    assert _safe_return_path(None) is None
+
+
+def test_declined_scopes_honors_return_to(client, callback_mocks):
+    callback_mocks["get_db"].return_value = _fake_db_with_state(
+        extra_state={"return_to": "/integrations"}
+    )
+    callback_mocks["flow"].credentials.scopes = GMAIL_ONLY_PROFILE_SCOPES
+
+    resp = client.get("/api/google/oauth/callback?code=abc&state=xyz")
+
+    assert resp.status_code == 302
+    loc = resp.headers["Location"]
+    assert "/integrations" in loc
+    assert "gmail_error=scopes_declined" in loc
+    assert "/signin" not in loc
