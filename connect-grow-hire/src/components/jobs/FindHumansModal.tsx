@@ -34,6 +34,8 @@ import {
   type Contact as FirebaseContact,
   type Recruiter as FirebaseRecruiter,
 } from "@/services/firebaseApi";
+import { ConnectGmailModal } from "@/components/ConnectGmailModal";
+import { useGmailConnection } from "@/hooks/useGmailConnection";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -186,6 +188,8 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
   const [response, setResponse] = useState<FindRecruiterResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingStepId, setLoadingStepId] = useState<string>(LOADING_STEPS[0].id);
+  const { connected: gmailConnected } = useGmailConnection();
+  const [showConnectGmail, setShowConnectGmail] = useState(false);
 
   // Token to ignore stale responses if the modal is closed/reopened mid-flight.
   const requestTokenRef = useRef(0);
@@ -431,7 +435,11 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
     }
   }, [clearStepTimer, job, startStepAnimation, kind, count, persistResults]);
 
-  // Kick off the search the first time the modal opens for a given job.
+  // Kick off the search the first time the modal opens for a given job. This
+  // flow always creates Gmail drafts (createDrafts: true above), so gate it on
+  // a known-disconnected account instead of burning credits on a search whose
+  // drafts silently fail. Never blocks while status is still unknown
+  // (gmailConnected === null) — see useGmailConnection.
   useEffect(() => {
     if (!open) {
       // Cancel any pending step animation when modal closes.
@@ -439,11 +447,17 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
       return;
     }
     if (state === "idle") {
+      if (gmailConnected === false) {
+        setShowConnectGmail(true);
+        return;
+      }
       void runSearch();
     }
-    // Intentionally only depend on `open` so we don't re-run on every state change.
+    // Intentionally only depend on `open`/`gmailConnected` so we don't re-run
+    // on every state change (the `state === "idle"` check above already
+    // prevents a duplicate runSearch once the search has kicked off).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, gmailConnected]);
 
   // Reset state when the modal fully closes so the next open starts fresh.
   useEffect(() => {
@@ -476,6 +490,7 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-gray-100">
@@ -606,6 +621,8 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
         </div>
       </DialogContent>
     </Dialog>
+    <ConnectGmailModal open={showConnectGmail} onOpenChange={setShowConnectGmail} />
+    </>
   );
 }
 

@@ -56,7 +56,7 @@ export function GmailBanner() {
   };
 
   const handleReconnect = () => {
-    navigate("/account-settings");
+    navigate("/integrations?connect=gmail");
   };
 
   // Don't render until we've resolved status, or if connected, or if dismissed this session
@@ -79,7 +79,7 @@ export function GmailBanner() {
           onClick={handleReconnect}
           className="text-sm font-medium underline underline-offset-2 hover:no-underline focus:outline-none focus:underline shrink-0"
         >
-          Reconnect in Account Settings
+          Connect Gmail
         </button>
       </div>
       <Button

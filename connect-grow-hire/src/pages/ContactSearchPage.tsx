@@ -28,6 +28,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { trackFeatureActionCompleted, trackError } from "../lib/analytics";
 import { ACCEPTED_RESUME_TYPES, isValidResumeFile } from "@/utils/resumeFileTypes";
 import ContactImport from "@/components/ContactImport";
+import { ConnectGmailModal } from "@/components/ConnectGmailModal";
 import { motion, AnimatePresence } from "framer-motion";
 import DimensionChips from "@/components/find/DimensionChips";
 import CompanyAlternatives from "@/components/find/CompanyAlternatives";
@@ -696,6 +697,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
 
   // Gmail state
   const [gmailConnected, setGmailConnected] = useState<boolean | null>(null);
+  const [showConnectGmailModal, setShowConnectGmailModal] = useState(false);
   const [gmailBannerDismissed, setGmailBannerDismissed] = useState(() => {
     try { return localStorage.getItem('offerloop-gmail-banner-dismissed') === 'true'; } catch { return false; }
   });
@@ -1416,6 +1418,15 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
       return;
     }
 
+    // Draft/send both write to Gmail — block on a known-disconnected account
+    // before any credits are spent or the send-confirm dialog is shown. Preview
+    // mode doesn't touch Gmail, so it's exempt. Never blocks while status is
+    // still unknown (gmailConnected === null) — see useGmailConnection/GmailBanner.
+    if (outreachMode !== "preview" && gmailConnected === false) {
+      setShowConnectGmailModal(true);
+      return;
+    }
+
     // Send is irreversible: gate it behind the hard confirm dialog. The dialog's
     // confirm handler re-invokes handleSearch(true) to actually run the send.
     if (outreachMode === "send" && !confirmedSend) {
@@ -1970,6 +1981,8 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
             disabled={isSearching || linkedInLoading}
           />
         </div>
+
+        <ConnectGmailModal open={showConnectGmailModal} onOpenChange={setShowConnectGmailModal} />
 
         <SendConfirmDialog
           open={showSendConfirm}
