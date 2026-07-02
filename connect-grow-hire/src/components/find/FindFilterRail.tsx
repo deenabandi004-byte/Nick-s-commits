@@ -61,7 +61,7 @@ export function FindFilterRail({
   };
 
   return (
-    <div className="flex flex-col" style={{ position: "sticky", top: 8, gap: 6 }}>
+    <div className="flex flex-row sm:flex-col" style={{ position: "sticky", top: 8, gap: 6 }}>
       {/* Tab toggle — moved verbatim from FindPage (keep styles in sync if FindPage's tokens change) */}
       {TABS.map((tab) => {
         const isActive = activeTab === tab.id;
