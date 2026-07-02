@@ -28,6 +28,7 @@ export function FilterGroup({ label, values, onChange, suggestions = [], placeho
   }, [draft, suggestions, values]);
 
   const add = (raw: string) => {
+    if (!singleValue && values.length >= MAX_VALUES) return;
     const v = raw.trim().slice(0, 100);
     if (!v || values.includes(v)) return;
     onChange(singleValue ? [v] : [...values, v].slice(0, MAX_VALUES));
@@ -104,7 +105,8 @@ export function FilterGroup({ label, values, onChange, suggestions = [], placeho
               onKeyDown={(e) => {
                 if (e.key === "Enter") { e.preventDefault(); add(draft); }
               }}
-              placeholder={placeholder ?? `Add ${label.toLowerCase()}…`}
+              disabled={!singleValue && values.length >= MAX_VALUES}
+              placeholder={!singleValue && values.length >= MAX_VALUES ? "Max 5" : placeholder ?? `Add ${label.toLowerCase()}…`}
               style={{
                 width: "100%", padding: "6px 9px", fontSize: 12.5,
                 border: "1px solid var(--line, #E8E8E8)", borderRadius: 7,
