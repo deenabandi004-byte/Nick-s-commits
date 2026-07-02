@@ -5,6 +5,12 @@ import { apiService } from "@/services/api";
 // (same pattern as GmailBanner.tsx).
 let cachedConnected: boolean | null = null;
 
+// Call after a successful disconnect so the next mount refetches instead of
+// trusting a stale `true` from before the disconnect.
+export function invalidateGmailConnectionCache() {
+  cachedConnected = null;
+}
+
 export function useGmailConnection(): { connected: boolean | null } {
   const [connected, setConnected] = useState<boolean | null>(cachedConnected);
 

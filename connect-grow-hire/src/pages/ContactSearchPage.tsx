@@ -1042,19 +1042,6 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
     }
   };
 
-  const initiateGmailOAuth = async () => {
-    try {
-      const authUrl = await apiService.startGmailOAuth();
-      if (authUrl) {
-        sessionStorage.setItem('gmail_oauth_return', window.location.pathname);
-        window.location.href = authUrl;
-      }
-    } catch (error) {
-      if (import.meta.env.DEV) console.error("Error initiating Gmail OAuth:", error);
-    }
-  };
-
-
   // Check Gmail status on mount
   useEffect(() => {
     const checkGmailStatus = async () => {
@@ -1900,7 +1887,7 @@ const ContactSearchPage: React.FC<{ embedded?: boolean; hideSubTabs?: boolean; p
           <span style={{ fontSize: 12, color: 'var(--ink-3, #8A8F9A)' }}>
             <button
               type="button"
-              onClick={initiateGmailOAuth}
+              onClick={() => navigate("/integrations?connect=gmail")}
               style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 12, color: 'var(--ink-2, #4A4F5B)', textDecoration: 'underline', textUnderlineOffset: 2, fontFamily: 'inherit' }}
             >
               Connect Gmail

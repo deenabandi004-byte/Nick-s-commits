@@ -104,6 +104,17 @@ def test_safe_return_path_validation():
     assert _safe_return_path("") is None
     assert _safe_return_path(None) is None
 
+    # Header-injection guard: raw CR/LF control characters must be rejected
+    # so this value can never split a redirect Location header if it's ever
+    # concatenated into one manually.
+    assert _safe_return_path("/foo\r\nSet-Cookie: x=y") is None
+    # A literal "%0d%0a" substring is just percent-sign/digit characters —
+    # inert as a Python string (no actual CR/LF bytes) — so it legitimately
+    # passes the guard here. Flask/Werkzeug already URL-decodes query params
+    # before this function ever sees them, and downstream redirect() raises
+    # on real control characters, so this is not a bypass in practice.
+    assert _safe_return_path("/foo%0d%0abar") == "/foo%0d%0abar"
+
 
 def test_declined_scopes_honors_return_to(client, callback_mocks):
     callback_mocks["get_db"].return_value = _fake_db_with_state(

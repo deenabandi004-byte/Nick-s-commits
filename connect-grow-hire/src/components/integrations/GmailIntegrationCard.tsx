@@ -3,6 +3,7 @@ import { Mail, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { apiService } from "@/services/api";
+import { invalidateGmailConnectionCache } from "@/hooks/useGmailConnection";
 
 interface GmailIntegrationCardProps {
   /** When true (from /integrations?connect=gmail), launch OAuth immediately. */
@@ -59,6 +60,7 @@ export function GmailIntegrationCard({ autoConnect = false }: GmailIntegrationCa
     setActionLoading(true);
     try {
       await apiService.revokeGmail();
+      invalidateGmailConnectionCache();
       setConnected(false);
       setGmailAddress(null);
       toast({ title: "Gmail disconnected", description: "You can reconnect anytime." });

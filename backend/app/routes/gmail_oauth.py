@@ -28,6 +28,10 @@ def _safe_return_path(value):
         return None
     if not value.startswith("/") or value.startswith("//"):
         return None
+    # Reject raw CR/LF control characters to prevent header/response-splitting
+    # if this value is ever concatenated into a redirect Location header.
+    if "\r" in value or "\n" in value:
+        return None
     return value
 
 
