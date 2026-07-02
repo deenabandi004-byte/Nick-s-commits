@@ -35,7 +35,7 @@ FREE_FIRM_BATCH_DEFAULT = 10
 PRO_FIRM_BATCH_DEFAULT = 10
 
 # Find Companies batch-size caps per tier (slider max).
-COMPANY_BATCH_CAPS = {'free': 10, 'pro': 25, 'elite': 50}
+COMPANY_BATCH_CAPS = {'free': 10, 'pro': 20, 'elite': 30}
 # Fail-safe: if the tier lookup is missing, unknown, or fails, fall back to the
 # FREE cap so a bad/empty tier can never bypass the cap or grant unlimited.
 COMPANY_BATCH_CAP_FALLBACK = COMPANY_BATCH_CAPS['free']
@@ -180,7 +180,8 @@ def search_firms_route():
         # Perform the search with progress tracking
         # NOTE: Search is synchronous, but progress is tracked for future async implementation
         try:
-            result = search_firms(query, limit=batch_size, search_id=search_id)
+            result = search_firms(query, limit=batch_size, search_id=search_id,
+                                  filter_overrides=validated_data.get('filters'))
         except Exception as e:
             print(f"❌ Error calling search_firms: {e}")
             traceback.print_exc()
@@ -466,7 +467,8 @@ def search_firms_async():
 
         def _run_search():
             try:
-                result = search_firms(query, limit=batch_size, search_id=search_id)
+                result = search_firms(query, limit=batch_size, search_id=search_id,
+                                      filter_overrides=validated_data.get('filters'))
                 firms = result.get('firms', [])
 
                 if not result.get('success'):

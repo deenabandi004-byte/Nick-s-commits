@@ -1080,7 +1080,8 @@ def _build_firm_search_suggestions(parsed: dict, location: str, firms_found: int
     return suggestions[:4]
 
 
-def search_firms(prompt: str, limit: int = 20, search_id: Optional[str] = None) -> Dict[str, Any]:
+def search_firms(prompt: str, limit: int = 20, search_id: Optional[str] = None,
+                 filter_overrides: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
     Main entry point for firm search.
     Takes a natural language prompt, parses it, and returns matching firms.
@@ -1120,6 +1121,21 @@ def search_firms(prompt: str, limit: int = 20, search_id: Optional[str] = None) 
         }
     
     parsed = parse_result["parsed"]
+
+    # Filter-rail edits override the parse (spec: filter rail ⇄ prompt sync).
+    if filter_overrides:
+        from app.services.filter_overrides import apply_firm_filters
+        parsed = apply_firm_filters(parsed, filter_overrides)
+        if not (parsed.get("industry") or parsed.get("location") or parsed.get("keywords")):
+            if search_id:
+                from app.services.search_progress import fail_search_progress
+                fail_search_progress(search_id, "No filters left after edits")
+            return {
+                "success": False, "firms": [], "total": 0,
+                "parsedFilters": parsed,
+                "error": "Your search needs at least one filter. Add an industry, location, or focus area.",
+                "fallbackApplied": False, "queryLevel": None,
+            }
 
     # Step 2: Normalize location
     if search_id:
@@ -1162,7 +1178,7 @@ def search_firms(prompt: str, limit: int = 20, search_id: Optional[str] = None) 
     # Add adjacent suggestions when results are sparse
     firms_found = len(search_result.get("firms", []))
     if firms_found < limit * 0.5:
-        suggestions = _build_firm_search_suggestions(parsed, location, firms_found, limit)
+        suggestions = _build_firm_search_suggestions(parsed, parsed.get("location", ""), firms_found, limit)
         if suggestions:
             search_result["suggestions"] = suggestions
 

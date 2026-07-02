@@ -2,7 +2,7 @@
 Input validation schemas using Pydantic
 """
 from pydantic import BaseModel, ConfigDict, Field, EmailStr, HttpUrl, field_validator
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from app.utils.exceptions import ValidationError
 
 
@@ -49,7 +49,8 @@ class FirmSearchRequest(BaseModel):
     # Per-tier caps (free 10 / pro 25 / elite 50) are enforced in the route after
     # the tier is resolved, so this only needs to allow the largest valid request.
     batchSize: Optional[int] = Field(None, ge=1, le=50, description="Number of firms to return")
-    
+    filters: Optional[Dict[str, Any]] = Field(None, description="Filter-rail overrides: industry/location/size/keywords")
+
     @field_validator('query')
     @classmethod
     def validate_query(cls, v):
