@@ -10,6 +10,7 @@ import {
   ScrollText,
   PanelLeft,
   Tag,
+  Plug,
   FileText,
   Users,
   Home,
@@ -83,6 +84,7 @@ const baseNavItems: NavItemDef[] = [
 ];
 
 const utilityNavItems: NavItemDef[] = [
+  { title: "Integrations",  url: "/integrations",  LucideIcon: Plug },
   { title: "Pricing",       url: "/pricing",       LucideIcon: Tag },
 ];
 

@@ -48,6 +48,7 @@ const PrivacyPolicy = React.lazy(() => import("./pages/PrivacyPolicy"));
 const ExtensionPrivacyPolicy = React.lazy(() => import("./pages/ExtensionPrivacyPolicy"));
 const TermsOfService = React.lazy(() => import("./pages/TermsOfService"));
 const AccountSettings = React.lazy(() => import("./pages/AccountSettings"));
+const IntegrationsPage = React.lazy(() => import("./pages/IntegrationsPage"));
 const ReferPage = React.lazy(() => import("./pages/ReferPage"));
 const Pricing = React.lazy(() => import("./pages/Pricing"));
 const DocumentationPage = React.lazy(() => import("./pages/DocumentationPage"));
@@ -364,6 +365,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/contact-directory" element={<Navigate to="/my-network/people" replace />} />
       <Route path="/coffee-chat-library" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><CoffeeChatLibrary /></Suspense></ProtectedRoute>} />
       <Route path="/account-settings" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AccountSettings /></Suspense></ProtectedRoute>} />
+      <Route path="/integrations" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><IntegrationsPage /></Suspense></ProtectedRoute>} />
       <Route path="/refer" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><ReferPage /></Suspense></ProtectedRoute>} />
       <Route path="/pricing" element={<Suspense fallback={<PageLoader />}><Pricing /></Suspense>} />
       <Route path="/documentation" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><DocumentationPage /></Suspense></ProtectedRoute>} />

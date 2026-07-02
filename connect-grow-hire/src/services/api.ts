@@ -1616,10 +1616,11 @@ class ApiService {
     // ================================
   // Gmail Integration Endpoints
   // ================================
-  async startGmailOAuth(): Promise<string> {
+  async startGmailOAuth(returnTo?: string): Promise<string> {
     const headers = await this.getAuthHeaders();
+    const qs = returnTo ? `?return_to=${encodeURIComponent(returnTo)}` : '';
     const { authUrl } = await this.makeRequest<{ authUrl: string }>(
-      '/google/oauth/start',
+      `/google/oauth/start${qs}`,
       { headers }
     );
     return authUrl;
