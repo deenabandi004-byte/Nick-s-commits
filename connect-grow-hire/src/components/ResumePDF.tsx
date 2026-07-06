@@ -8,31 +8,31 @@ import {
   Link,
 } from '@react-pdf/renderer';
 
-// @react-pdf/renderer has built-in Helvetica support - no font registration needed
+// Harvard-style formatting (Mignone Center guidance): single column, serif
+// (Times), all-black text, no colors/graphics, thin black section rules,
+// dates right-aligned, no summary/objective section.
 
 // Styles
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    fontFamily: 'Helvetica', // Built-in font, no registration needed
+    paddingVertical: 44,
+    paddingHorizontal: 52,
+    fontFamily: 'Times-Roman',
     fontSize: 10,
-    lineHeight: 1.4,
-    color: '#333333',
+    lineHeight: 1.35,
+    color: '#000000',
   },
-  
+
   // Header
   header: {
-    marginBottom: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: '#2563eb',
-    paddingBottom: 12,
+    marginBottom: 14,
   },
   name: {
-    fontSize: 22,
-    fontWeight: 'bold', // Use string instead of number
+    fontSize: 18,
+    fontWeight: 'bold',
     textAlign: 'center',
-    color: '#1a1a1a',
-    marginBottom: 6,
+    color: '#000000',
+    marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -40,44 +40,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 8,
   },
   contactItem: {
-    fontSize: 9,
-    color: '#666666',
+    fontSize: 10,
+    color: '#000000',
   },
   contactSeparator: {
-    fontSize: 9,
-    color: '#999999',
-    marginHorizontal: 6,
+    fontSize: 10,
+    color: '#000000',
+    marginHorizontal: 5,
   },
   contactLink: {
-    fontSize: 9,
-    color: '#2563eb',
+    fontSize: 10,
+    color: '#000000',
     textDecoration: 'none',
   },
-  
+
   // Sections
   section: {
-    marginBottom: 12,
+    marginBottom: 11,
   },
   sectionTitle: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#000000',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e5e5',
-    paddingBottom: 3,
-    marginBottom: 8,
-  },
-  
-  // Summary
-  summary: {
-    fontSize: 10,
-    lineHeight: 1.5,
-    color: '#444444',
+    borderBottomWidth: 0.75,
+    borderBottomColor: '#000000',
+    paddingBottom: 2,
+    marginBottom: 6,
   },
   
   // Education
@@ -89,25 +81,25 @@ const styles = StyleSheet.create({
   universityName: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#000000',
   },
   educationLocation: {
     fontSize: 9,
-    color: '#666666',
+    color: '#000000',
   },
   degree: {
     fontSize: 10,
-    color: '#444444',
+    color: '#000000',
     marginBottom: 2,
   },
   gpa: {
     fontSize: 9,
-    color: '#666666',
+    color: '#000000',
     marginBottom: 2,
   },
   coursework: {
     fontSize: 9,
-    color: '#555555',
+    color: '#000000',
     marginTop: 4,
   },
   courseworkLabel: {
@@ -126,15 +118,15 @@ const styles = StyleSheet.create({
   jobTitle: {
     fontSize: 11,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#000000',
   },
   companyName: {
     fontSize: 10,
-    color: '#444444',
+    color: '#000000',
   },
   experienceMeta: {
     fontSize: 9,
-    color: '#666666',
+    color: '#000000',
     textAlign: 'right',
   },
   bulletList: {
@@ -148,13 +140,13 @@ const styles = StyleSheet.create({
   bullet: {
     width: 12,
     fontSize: 10,
-    color: '#666666',
+    color: '#000000',
   },
   bulletText: {
     flex: 1,
     fontSize: 9,
     lineHeight: 1.4,
-    color: '#444444',
+    color: '#000000',
   },
   
   // Projects
@@ -164,17 +156,17 @@ const styles = StyleSheet.create({
   projectName: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#000000',
     marginBottom: 2,
   },
   projectDescription: {
     fontSize: 9,
     lineHeight: 1.4,
-    color: '#444444',
+    color: '#000000',
   },
   projectTech: {
     fontSize: 8,
-    color: '#666666',
+    color: '#000000',
     marginTop: 2,
     fontStyle: 'italic',
   },
@@ -191,12 +183,12 @@ const styles = StyleSheet.create({
   skillLabel: {
     fontSize: 9,
     fontWeight: 'bold',
-    color: '#1a1a1a',
+    color: '#000000',
     width: 100,
   },
   skillValue: {
     fontSize: 9,
-    color: '#444444',
+    color: '#000000',
     flex: 1,
   },
   
@@ -208,12 +200,12 @@ const styles = StyleSheet.create({
   extraBullet: {
     width: 12,
     fontSize: 10,
-    color: '#666666',
+    color: '#000000',
   },
   extraText: {
     flex: 1,
     fontSize: 9,
-    color: '#444444',
+    color: '#000000',
   },
   extraActivity: {
     fontWeight: 'bold',
@@ -293,6 +285,13 @@ const hasSkills = (skills?: Skills) => {
   if (!skills) return false;
   return Object.values(skills).some(arr => arr && arr.length > 0);
 };
+// Only render profile links that are actually URLs — parsed resumes sometimes
+// carry placeholder text like "LinkedIn" in these fields, which would print
+// a dead label on the document.
+const isRealUrl = (v?: string) => !!v && v.includes('.') && !v.includes(' ');
+const displayUrl = (v: string) =>
+  v.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '');
+const linkHref = (v: string) => (v.startsWith('http') ? v : `https://${v}`);
 
 // Component
 const ResumePDF: React.FC<ResumePDFProps> = ({ resume }) => {
@@ -324,33 +323,33 @@ const ResumePDF: React.FC<ResumePDFProps> = ({ resume }) => {
               {resume.contact.phone && (
                 <Text style={styles.contactItem}>{resume.contact.phone}</Text>
               )}
-              {resume.contact.linkedin && (
+              {isRealUrl(resume.contact.linkedin) && (
                 <>
                   <Text style={styles.contactSeparator}>|</Text>
-                  <Link src={resume.contact.linkedin} style={styles.contactLink}>
-                    LinkedIn
+                  <Link src={linkHref(resume.contact.linkedin!)} style={styles.contactLink}>
+                    {displayUrl(resume.contact.linkedin!)}
                   </Link>
                 </>
               )}
-              {resume.contact.github && (
+              {isRealUrl(resume.contact.github) && (
                 <>
                   <Text style={styles.contactSeparator}>|</Text>
-                  <Link src={resume.contact.github} style={styles.contactLink}>
-                    GitHub
+                  <Link src={linkHref(resume.contact.github!)} style={styles.contactLink}>
+                    {displayUrl(resume.contact.github!)}
+                  </Link>
+                </>
+              )}
+              {isRealUrl(resume.contact.website) && (
+                <>
+                  <Text style={styles.contactSeparator}>|</Text>
+                  <Link src={linkHref(resume.contact.website!)} style={styles.contactLink}>
+                    {displayUrl(resume.contact.website!)}
                   </Link>
                 </>
               )}
             </View>
           )}
         </View>
-
-        {/* Summary */}
-        {resume.Summary && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Summary</Text>
-            <Text style={styles.summary}>{resume.Summary}</Text>
-          </View>
-        )}
 
         {/* Education */}
         {resume.Education && (

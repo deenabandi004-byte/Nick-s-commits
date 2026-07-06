@@ -756,16 +756,10 @@ const ResumePage = () => {
                         </div>
                       </EditorSection>
 
-                      <EditorSection title="Summary / Objective">
-                        <textarea
-                          className={`${INPUT_CLASS} min-h-[90px] resize-y`}
-                          value={resumeData.objective}
-                          onChange={(e) =>
-                            updateResume((p) => ({ ...p, objective: e.target.value }))
-                          }
-                          placeholder="Brief summary or objective"
-                        />
-                      </EditorSection>
+                      {/* No Summary/Objective section: Harvard's resume guidance
+                          (Mignone Center) recommends student resumes skip it, and
+                          the PDF template no longer renders one. The `objective`
+                          field is preserved untouched in Firestore. */}
 
                       <EditorSection
                         title="Education"
