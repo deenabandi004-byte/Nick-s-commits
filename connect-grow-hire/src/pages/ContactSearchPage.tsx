@@ -2594,8 +2594,24 @@ const ContactSearchPage: React.FC<{
           </div>
         )}
 
-        {/* Email Template + Resume — matched pair, centered; Import link kept right */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 18, marginBottom: 4 }}>
+        {/* Outreach setup group (template choice + resume status); Import link kept right */}
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 18, marginBottom: 4 }}>
+          <div style={{
+            background: 'var(--paper, #FFFFFF)',
+            border: '1px solid var(--line, #E5E5E0)',
+            borderRadius: 12,
+            padding: '12px 16px 14px',
+          }}>
+            <div style={{
+              fontFamily: '"Libre Baskerville", Georgia, serif',
+              fontSize: 10, letterSpacing: '0.12em', color: '#8A8F97',
+            }}>
+              OUTREACH SETUP
+            </div>
+            <div style={{ fontSize: 11.5, color: 'var(--ink-3, #8A8F9A)', marginTop: 2 }}>
+              Applied to every email drafted from this search.
+            </div>
+            <div style={{ display: 'flex', alignItems: 'stretch', flexWrap: 'wrap', gap: 10, marginTop: 10 }}>
           <TemplateButton
             template={activeEmailTemplate}
             onClick={() => navigate("/find/templates")}
@@ -2681,6 +2697,8 @@ const ContactSearchPage: React.FC<{
               </span>
             </button>
           )}
+            </div>
+          </div>
           {/* Import contacts — kept on the right */}
           <button
             type="button"
