@@ -468,10 +468,11 @@ const FirmSearchPage: React.FC<{
 
   useEffect(() => {
     if (railFiltersNonce === 0 || railFiltersNonce === lastRailNonceRef.current) return;
+    if (isSearching) return; // leave the nonce pending; this effect re-fires when isSearching flips false
     lastRailNonceRef.current = railFiltersNonce;
-    if (!isSearching) handleSearch();
+    handleSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [railFiltersNonce]);
+  }, [railFiltersNonce, isSearching]);
 
   // Handle search submission
   const handleSearch = async (searchQuery?: string) => {
