@@ -2768,7 +2768,7 @@ const ContactSearchPage: React.FC<{
                 flexShrink: 0,
               }}
             >
-              Upload resume
+              Attach resume
             </button>
           </div>
         )}
