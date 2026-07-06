@@ -38,6 +38,10 @@ type ImportFormat = "csv" | "url";
 
 const MAX_URLS = 25;
 const LINKEDIN_MARKER = "linkedin.com/in/";
+// Flat, unconditional charge per import-linkedin call. The backend deducts
+// this on every lookup regardless of whether a contact/email is found — see
+// backend/app/routes/linkedin_import.py:803-818 (`credits_to_deduct = 5`).
+const CREDITS_PER_URL_LOOKUP = 5;
 
 interface UrlImportOutcome {
   url: string;
@@ -182,8 +186,19 @@ const UploadListPage = () => {
 
     const outcomes: UrlImportOutcome[] = [];
     let stoppedEarly = false;
+    // Honest credit accounting: the backend deducts CREDITS_PER_URL_LOOKUP on
+    // every call that imports a contact (even when no email is found) and only
+    // those responses carry `credits_remaining` — so charged calls are exactly
+    // the responses that include it. Early-return failures (invalid URL,
+    // not-found 404, PDL quota 503) never reach the deduction.
+    let chargedCalls = 0;
+    let lastCreditsRemaining: number | undefined;
 
     try {
+      // One token for the whole loop. This only holds because every call stays
+      // on the fast path (create_draft: false, seconds per lookup); if the loop
+      // ever grows slow per-call work, per-iteration token refresh is needed
+      // (Firebase ID tokens expire after ~1 hour).
       const token = await getIdToken();
 
       for (let i = 0; i < urls.length; i++) {
@@ -204,6 +219,11 @@ const UploadListPage = () => {
           });
 
           const data = await response.json().catch(() => ({}));
+
+          if (typeof data?.credits_remaining === "number") {
+            chargedCalls++;
+            lastCreditsRemaining = data.credits_remaining;
+          }
 
           if (response.status === 402 || data?.error_code === "PDL_QUOTA_EXCEEDED" || data?.error_code === "INSUFFICIENT_CREDITS") {
             outcomes.push({ url, success: false, message: data?.message || "Out of credits" });
@@ -243,6 +263,8 @@ const UploadListPage = () => {
     setSummary({
       imported: succeeded.length,
       failed: outcomes.length - succeeded.length,
+      creditsUsed: chargedCalls * CREDITS_PER_URL_LOOKUP,
+      creditsRemaining: lastCreditsRemaining,
       contactIds: ids,
     });
     setStep(4);
@@ -406,8 +428,13 @@ const UploadListPage = () => {
                     </button>
                   </div>
 
+                  {/* Truthful per-branch pricing note: CSV only charges for
+                      created contacts; the URL branch charges per profile
+                      lookup that imports a contact (flat 5 credits each). */}
                   <p className="text-xs text-gray-400 text-center mb-6">
-                    You&apos;re only charged for contacts we actually find.
+                    {format === "url"
+                      ? `Each profile lookup uses ${CREDITS_PER_URL_LOOKUP} credits.`
+                      : "You're only charged for contacts we actually find."}
                   </p>
 
                   <div className="flex items-center justify-between">
