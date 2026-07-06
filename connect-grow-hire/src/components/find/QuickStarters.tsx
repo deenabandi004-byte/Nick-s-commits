@@ -26,7 +26,7 @@ interface QuickStartersProps {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-function buildStarters({
+export function buildStarters({
   schoolShort,
   schoolFull,
   targetFirms = [],

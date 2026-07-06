@@ -33,14 +33,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import DimensionChips from "@/components/find/DimensionChips";
 import CompanyAlternatives from "@/components/find/CompanyAlternatives";
 import RoleVariations from "@/components/find/RoleVariations";
-import QuickStarters from "@/components/find/QuickStarters";
+import StarterChips from "@/components/find/StarterChips";
 import { SearchPromptBox, PEOPLE_SEARCH_HELPER_PREVIEW } from "@/components/find/SearchPromptBox";
 import { ResultActionButton } from "@/components/find/ResultActionButton";
 import { SendConfirmDialog } from "@/components/SendConfirmDialog";
 import { canUseOutreachMode } from "@/utils/featureAccess";
 import { UpgradeModal } from "@/components/gates/UpgradeModal";
 import { findCompletion, expandQueryForBackend } from "@/lib/specificity";
-import { PromptTemplates } from "@/components/find/PromptTemplates";
 import { PEOPLE_TEMPLATE_CATEGORIES } from "@/data/searchTemplates";
 import { TemplateButton } from "@/components/TemplateButton";
 
@@ -466,13 +465,21 @@ const ContactSearchPage: React.FC<{
   // parser and the rail repopulates from its output.
   const lastSearchedPromptRef = useRef<string>("");
   const lastRailNonceRef = useRef(0);
+  // Search state
+  // Declared here (ahead of its historical spot further down) because the
+  // rail-nonce effect below reads it in its dependency array, which is
+  // evaluated eagerly during render — a forward reference there would be a
+  // TDZ error, unlike the effect *body*, which only runs after the whole
+  // component function has finished executing.
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     if (railFiltersNonce === 0 || railFiltersNonce === lastRailNonceRef.current) return;
+    if (isSearching) return; // leave the nonce pending; this effect re-fires when isSearching flips false
     lastRailNonceRef.current = railFiltersNonce;
-    if (!isSearching) handleSearch();
+    handleSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [railFiltersNonce]);
+  }, [railFiltersNonce, isSearching]);
 
   // Form state (prompt-based search).
   // Initial value may come from the landing-page hero: HeroSearchCTA stashes
@@ -508,8 +515,8 @@ const ContactSearchPage: React.FC<{
   const [isUploadingResume, setIsUploadingResume] = useState(false);
   const [currentFitContext, setCurrentFitContext] = useState<any>(null); // Track fit context for UI display
 
-  // Search state
-  const [isSearching, setIsSearching] = useState(false);
+  // isSearching is declared earlier (near the rail-nonce effect that reads
+  // it in a dependency array) — see the comment there.
   // Rotation seed — drives randomization in the right-rail recommendations so
   // users who click Network multiple times get fresh suggestions each pass.
   // Initialized to a random page-load value, incremented every search submission.
@@ -2243,9 +2250,11 @@ const ContactSearchPage: React.FC<{
                   When the user has typed something, dimension chips take over. */}
               <div style={{ paddingLeft: 26 }}>
                 {!searchPrompt.trim() ? (
-                  <QuickStarters
+                  <StarterChips
                     visible
-                    onPick={(seed) => {
+                    categories={PEOPLE_TEMPLATE_CATEGORIES}
+                    disabled={isSearching || linkedInLoading}
+                    onPickPlain={(seed) => {
                       // Treat the click as if the user had typed the seed verbatim:
                       // fill the prompt, place caret at end, keep focus on the input,
                       // and let the existing pipeline (DimensionChips, RoleVariations,
@@ -2258,8 +2267,27 @@ const ContactSearchPage: React.FC<{
                           try {
                             el.setSelectionRange(seed.length, seed.length);
                           } catch {
-                            // Safari may throw on hidden/transparent inputs — non-fatal.
+                            // Safari may throw on hidden/transparent inputs, non-fatal.
                           }
+                        }
+                      });
+                    }}
+                    onPickTemplate={(pattern) => {
+                      // Insert the fill-in pattern and select the first bracketed
+                      // placeholder so typing replaces it; Tab jumps to the next one
+                      // (handled in the textarea keydown).
+                      setSearchPrompt(pattern);
+                      requestAnimationFrame(() => {
+                        const el = promptInputRef.current;
+                        if (!el) return;
+                        el.focus();
+                        const start = pattern.indexOf('[');
+                        const end = start >= 0 ? pattern.indexOf(']', start) : -1;
+                        try {
+                          if (start >= 0 && end > start) el.setSelectionRange(start, end + 1);
+                          else el.setSelectionRange(pattern.length, pattern.length);
+                        } catch {
+                          // Safari may throw on hidden/transparent inputs, non-fatal.
                         }
                       });
                     }}
@@ -2405,6 +2433,32 @@ const ContactSearchPage: React.FC<{
                     el.style.height = `${Math.min(el.scrollHeight, 200)}px`;
                   }}
                   onKeyDown={(e) => {
+                    // Template chips insert bracketed [placeholders]; while any remain,
+                    // Tab cycles the selection through them (takes priority over the
+                    // ghost-completion Tab below).
+                    if (e.key === 'Tab' && !e.shiftKey && /\[[^\]]*\]/.test(searchPrompt)) {
+                      const el = e.currentTarget;
+                      const from = el.selectionEnd ?? 0;
+                      const re = /\[[^\]]*\]/g;
+                      let m: RegExpExecArray | null;
+                      let first: { start: number; end: number } | null = null;
+                      let next: { start: number; end: number } | null = null;
+                      while ((m = re.exec(searchPrompt))) {
+                        const tok = { start: m.index, end: m.index + m[0].length };
+                        if (!first) first = tok;
+                        if (tok.start >= from && !next) next = tok;
+                      }
+                      const target = next ?? first;
+                      if (target) {
+                        e.preventDefault();
+                        try {
+                          el.setSelectionRange(target.start, target.end);
+                        } catch {
+                          // Safari may throw on hidden/transparent inputs, non-fatal.
+                        }
+                        return;
+                      }
+                    }
                     if (e.key === 'Tab' && ghostCompletion && !e.shiftKey) {
                       e.preventDefault();
                       setSearchPrompt((prev) => prev + ghostCompletion);
@@ -2793,32 +2847,6 @@ const ContactSearchPage: React.FC<{
 
         {/* Resume status — compact indicator when resume is already uploaded */}
         {/* Resume status now lives in the Resume button beside Email Template (above). */}
-
-        {/* Suggestion cards — visible whenever the input doesn't have focus and there
-            are no results yet. Includes the case where the user has typed content and
-            then clicked away — the recs surface immediately as a discovery panel. */}
-        <AnimatePresence initial={false}>
-          {!hasResults && !isSearching && (
-            <motion.div
-              key="recs"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              style={{ marginTop: 36 }}
-            >
-              <PromptTemplates
-                categories={PEOPLE_TEMPLATE_CATEGORIES}
-                disabled={isSearching || linkedInLoading}
-                onSubmit={(prompt) => {
-                  pendingAutoSearch.current = true;
-                  setSearchPrompt(prompt);
-                }}
-              />
-            </motion.div>
-          )}
-        </AnimatePresence>
-
 
         {/* Results section */}
         {hasResults && !isSearching && !linkedInSuccess && (
