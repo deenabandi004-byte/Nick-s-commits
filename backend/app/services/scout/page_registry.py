@@ -1,35 +1,35 @@
 """Scout PAGE_REGISTRY: the single source of truth for every page Scout can
 navigate a user to.
 
-Phase 2 of the Scout consolidation. The registry drives three things:
+The registry drives three things:
   1. The "pages you can navigate to" section of Scout's system prompt
      (build_pages_prompt_section), so the prompt and the navigable route set
      can never drift apart.
   2. navigate tool-call validation (valid_routes, get_page).
   3. The approve-flow rules (required_inputs, credit_cost, tier_required).
 
-Route strings match Scout's current knowledge (the legacy PAGES dict).
-Reconciling legacy vs new route names (/contact-search vs /find, etc.) is
-Phase 3 work, when Scout Chat is deleted and routing is unified.
+Route strings match the LIVE frontend route table (connect-grow-hire/src/
+App.tsx). The Find tabs are distinct entries keyed by their full
+query-string route ("/find?tab=companies") because they are different
+products with different prefill fields; get_page resolves an exact match
+before falling back to the bare path.
 
 Fields per entry:
   route            Path Scout navigates to.
-  purpose          What the page does. Pulled verbatim from the existing Scout
-                   prompt where one existed; terse and factual otherwise.
+  purpose          What the page does. Terse and factual.
   inputs           Form field names Scout may prefill. These must match the
-                   frontend form fields AND the scout_auto_populate
-                   sessionStorage bridge. Empty when the page has no
-                   Scout-prefillable form.
+                   frontend form fields AND the scout_prefill sessionStorage
+                   bridge. Empty when the page has no Scout-prefillable form.
   required_inputs  Subset of inputs that must be present to navigate. Empty for
                    every page today: landing on a page never hard-requires a
                    field, the page accepts partial prefill. Kept as the hook
                    the clarify rule reads.
-  send_user_here_when  Natural-language trigger, derived from ROUTE_KEYWORDS
-                   and the page purpose.
+  send_user_here_when  Natural-language trigger for the model.
   credit_cost      Credits the page's own action charges (per result/use), or
                    None when the page has no credit-spending action. Scout
                    never spends credits; this tells the approve flow whether a
-                   credit-spending action is implied.
+                   credit-spending action is implied. Numbers mirror
+                   backend/app/config.py CREDIT_COSTS.
   tier_required    Minimum tier to use the page ("pro"/"elite"), or None for
                    all tiers.
 """
@@ -42,16 +42,16 @@ from typing import Any, Dict, List, Optional
 PAGE_REGISTRY: List[Dict[str, Any]] = [
     {
         "route": "/dashboard",
-        "purpose": "Central hub for tracking networking progress, managing emails, and planning your recruiting timeline. Shows activity stats, streak counter, and weekly summary.",
+        "purpose": "Getting Started: the launcher home page. A prompt box that hands a search to Find, quick-start cards, and recent activity.",
         "inputs": [],
         "required_inputs": [],
-        "send_user_here_when": "the user wants their home base, activity stats, streak, or a weekly overview of where things stand",
+        "send_user_here_when": "the user wants their home base, getting-started launcher, or recent activity overview",
         "credit_cost": None,
         "tier_required": None,
     },
     {
-        "route": "/contact-search",
-        "purpose": "Find professionals at companies to network with. Enter job title, company, and location to discover contacts and generate personalized outreach emails. The search box accepts a full natural-language prompt, so school context, alumni framing, year, or other profile signals can be carried via the `prompt` field.",
+        "route": "/find",
+        "purpose": "Search, People tab: find professionals at companies to network with, then generate personalized outreach emails. The search box accepts a full natural-language prompt, so school context, alumni framing, year, or other profile signals can be carried via the `prompt` field.",
         # `prompt` carries a full natural-language search ("McKinsey
         # consultants in LA from USC") that goes straight into the search bar.
         # Use it whenever the reasoning depends on context that does not fit
@@ -60,111 +60,52 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         "inputs": ["job_title", "company", "location", "prompt"],
         "required_inputs": [],
         "send_user_here_when": "the user wants to find people, contacts, professionals, or alumni to network with or email",
-        "credit_cost": 15,
+        "credit_cost": 10,
         "tier_required": None,
         # The page honors auto_submit on the Scout navigate payload: when set,
         # the prefill lands AND the search runs automatically.
         "auto_submit_supported": True,
     },
     {
-        "route": "/firm-search",
-        "purpose": "Discover companies and firms matching your criteria. The search box accepts a full natural-language prompt, so size qualifiers, hiring posture, alumni density, or any other framing can be carried via the `prompt` field.",
-        # `prompt` carries a full natural-language search ("AI startups in SF
-        # actively hiring", "mid-market PE firms in Chicago with USC alumni").
-        # Use it whenever the reasoning depends on context that does not fit
-        # the three structured fields. Structured fields are kept for simple
-        # terse cases.
+        "route": "/find?tab=companies",
+        "purpose": "Search, Companies tab: discover companies and firms matching your criteria. The search box accepts a full natural-language prompt, so size qualifiers, hiring posture, alumni density, or any other framing can be carried via the `prompt` field.",
         "inputs": ["industry", "location", "size", "prompt"],
         "required_inputs": [],
         "send_user_here_when": "the user wants to find or research companies, firms, or employers rather than individual people",
-        "credit_cost": 5,
+        "credit_cost": 10,
         "tier_required": "pro",
         "auto_submit_supported": True,
     },
     {
-        "route": "/recruiter-spreadsheet",
-        "purpose": "Find recruiters and hiring managers at target companies.",
+        "route": "/find?tab=hiring-managers",
+        "purpose": "Search, Hiring Managers tab: find recruiters and hiring managers at target companies, or for a specific job posting URL.",
         "inputs": ["company", "job_title", "location", "job_url"],
         "required_inputs": [],
         "send_user_here_when": "the user wants to find recruiters or hiring managers specifically",
-        "credit_cost": 15,
-        "tier_required": None,
-    },
-    {
-        "route": "/meeting-prep",
-        "purpose": "Generate comprehensive preparation materials for networking conversations. Includes talking points, questions, and company research.",
-        "inputs": ["linkedin_url"],
-        "required_inputs": ["linkedin_url"],
-        "send_user_here_when": "the user has a networking call, coffee chat, or informational meeting coming up and wants to prepare",
-        "credit_cost": 15,
-        "tier_required": None,
-    },
-    {
-        "route": "/meeting-library",
-        "purpose": "Library of the meeting prep documents you have already generated.",
-        "inputs": [],
-        "required_inputs": [],
-        "send_user_here_when": "the user wants to revisit or reread a meeting prep they generated earlier",
-        "credit_cost": None,
-        "tier_required": None,
-    },
-    {
-        "route": "/write/resume",
-        "purpose": "Score, fix, and tailor your resume for specific jobs. Manage your resume library.",
-        "inputs": [],
-        "required_inputs": [],
-        "send_user_here_when": "the user wants to score, fix, tailor, or work on their resume",
-        "credit_cost": None,
-        "tier_required": None,
-    },
-    {
-        "route": "/write/resume-library",
-        "purpose": "Your saved resumes. Open, duplicate, or manage resume versions.",
-        "inputs": [],
-        "required_inputs": [],
-        "send_user_here_when": "the user wants to find or manage a resume they saved earlier",
-        "credit_cost": None,
-        "tier_required": None,
-    },
-    {
-        "route": "/write/cover-letter",
-        "purpose": "Generate custom cover letters for job applications.",
-        "inputs": ["company", "job_title", "job_url"],
-        "required_inputs": [],
-        "send_user_here_when": "the user wants to write or generate a cover letter",
         "credit_cost": 10,
         "tier_required": None,
     },
     {
-        "route": "/write/cover-letter-library",
-        "purpose": "Your saved cover letters.",
+        "route": "/find/templates",
+        "purpose": "Create and manage reusable outreach email templates; pick the template applied to drafted emails.",
         "inputs": [],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to find or manage a cover letter they saved earlier",
+        "send_user_here_when": "the user wants to create, edit, or choose their outreach email template",
         "credit_cost": None,
         "tier_required": None,
     },
     {
-        "route": "/outbox",
-        "purpose": "Manage your email threads and track responses. View drafts, sent emails, and replies.",
-        "inputs": ["query"],
+        "route": "/upload-list",
+        "purpose": "Upload a contact list (CSV or pasted LinkedIn URLs). Offerloop finds emails, drafts outreach, and saves the contacts to My Network.",
+        "inputs": [],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to see their email threads, drafts, sent mail, or replies",
+        "send_user_here_when": "the user has their own list of contacts or LinkedIn URLs to import, enrich, or bulk-email",
         "credit_cost": 10,
         "tier_required": None,
     },
     {
-        "route": "/calendar",
-        "purpose": "View your personalized recruiting timeline with key dates and milestones.",
-        "inputs": [],
-        "required_inputs": [],
-        "send_user_here_when": "the user asks about their recruiting timeline, key dates, deadlines, or schedule",
-        "credit_cost": None,
-        "tier_required": None,
-    },
-    {
-        "route": "/contact-directory",
-        "purpose": "View and manage all your saved contacts from previous searches.",
+        "route": "/my-network/people",
+        "purpose": "The People tab of My Network: every contact the user has saved, with drafting and sending in place.",
         "inputs": [],
         "required_inputs": [],
         "send_user_here_when": "the user wants to see or manage the contacts they have already saved",
@@ -172,17 +113,8 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         "tier_required": None,
     },
     {
-        "route": "/hiring-manager-tracker",
-        "purpose": "Track hiring managers you've contacted.",
-        "inputs": [],
-        "required_inputs": [],
-        "send_user_here_when": "the user wants to track the hiring managers they have reached out to",
-        "credit_cost": None,
-        "tier_required": None,
-    },
-    {
         "route": "/my-network/companies",
-        "purpose": "The Companies tab of My Network: the spreadsheet of every firm the user has saved from a Find Companies search. This is the canonical home for saved firms; the legacy /company-tracker standalone page was retired and now redirects here.",
+        "purpose": "The Companies tab of My Network: the spreadsheet of every firm the user has saved from a Find Companies search.",
         "inputs": [],
         "required_inputs": [],
         "send_user_here_when": "the user wants to see the companies they have saved or are tracking",
@@ -191,19 +123,109 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
     },
     {
         "route": "/job-board",
-        "purpose": "Browse job listings, optimize your resume for specific jobs, generate cover letters, and find recruiters.",
+        "purpose": "Browse job listings: a personalized ranked feed (List view) and a browse-everything gallery. Save jobs, see match scores, find the hiring manager or team for a job, and auto-apply on supported postings.",
         "inputs": ["query"],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to browse or search open job listings",
+        "send_user_here_when": "the user wants to browse or search open job listings, internships, or roles",
         "credit_cost": None,
         "tier_required": None,
     },
     {
-        "route": "/email-templates",
-        "purpose": "Create and manage reusable outreach email templates.",
+        "route": "/applications",
+        "purpose": "Auto-apply home: three queues - All applications (every auto-application with its status), Needs your answers (applications paused on a screening question), and Finish in browser (forms blocked by a CAPTCHA needing a final human step).",
         "inputs": [],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to create, edit, or manage their outreach email templates",
+        "send_user_here_when": "the user asks about their applications, auto-apply status, submitted applications, or anything an application is waiting on",
+        "credit_cost": None,
+        "tier_required": "pro",
+    },
+    {
+        "route": "/agent",
+        "purpose": "Loops: the fleet of recurring autonomous outreach agents. Each Loop runs a saved brief (target role, company, school) on a schedule - finding contacts, drafting, and (with approval) sending outreach.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user asks about their Loops, the agent, automated or recurring outreach that runs on its own",
+        "credit_cost": None,
+        "tier_required": None,
+    },
+    {
+        "route": "/agent/setup",
+        "purpose": "Create a new Loop: describe who to reach and how often, review the proposed brief, and launch the recurring agent.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to set up, create, or start a new Loop / recurring outreach agent",
+        "credit_cost": None,
+        "tier_required": None,
+    },
+    {
+        "route": "/outbox",
+        "purpose": "Inbox: email threads with the contacts you have emailed. Tracks sent mail, detects replies from Gmail, and drafts and sends responses.",
+        "inputs": ["query"],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to see their email threads, sent mail, replies, or respond to someone",
+        "credit_cost": 20,
+        "tier_required": None,
+    },
+    {
+        "route": "/coffee-chat-prep",
+        "purpose": "Meeting Prep: paste the LinkedIn URL of who you are meeting and get a research dossier - background, talking points, and questions - as a PDF.",
+        "inputs": ["linkedin_url"],
+        "required_inputs": ["linkedin_url"],
+        "send_user_here_when": "the user has a networking call, coffee chat, or informational meeting coming up and wants to prepare",
+        "credit_cost": 30,
+        "tier_required": None,
+    },
+    {
+        "route": "/coffee-chat-library",
+        "purpose": "Library of the meeting prep documents you have already generated.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to revisit or reread a meeting prep they generated earlier",
+        "credit_cost": None,
+        "tier_required": None,
+    },
+    {
+        "route": "/resume",
+        "purpose": "Resume: upload your resume, get it parsed and scored with recommendations, and edit it with live re-scoring. The stored resume also powers cover letters, auto-apply, and meeting prep.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to upload, score, fix, tailor, or work on their resume",
+        "credit_cost": None,
+        "tier_required": None,
+    },
+    {
+        "route": "/cover-letter",
+        "purpose": "Cover Letter: paste a job URL or description and generate a tailored cover letter from your stored resume; edit inline and download as PDF.",
+        "inputs": ["company", "job_title", "job_url"],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to write or generate a cover letter",
+        "credit_cost": 20,
+        "tier_required": None,
+    },
+    {
+        "route": "/recruiting-timeline",
+        "purpose": "Your personalized recruiting timeline with key dates and milestones by industry.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user asks about their recruiting timeline, key dates, deadlines, or schedule",
+        "credit_cost": 20,
+        "tier_required": None,
+    },
+    {
+        "route": "/integrations",
+        "purpose": "Connect external accounts. Gmail is the key one: connecting it lets Offerloop write drafts into Gmail, send outreach, and sync replies into the Inbox.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to connect or disconnect Gmail, or asks why drafts/replies are not showing up",
+        "credit_cost": None,
+        "tier_required": None,
+    },
+    {
+        "route": "/mcp-server",
+        "purpose": "Set up Offerloop's MCP server inside Claude or ChatGPT, so those assistants can find contacts, get company intel, and draft outreach using the user's Offerloop account.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to use Offerloop from Claude or ChatGPT, or asks about the MCP server / connector",
         "credit_cost": None,
         "tier_required": None,
     },
@@ -218,10 +240,10 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
     },
     {
         "route": "/account-settings",
-        "purpose": "Manage your profile, upload resume, connect Gmail, and update preferences.",
+        "purpose": "Manage your profile and update preferences.",
         "inputs": [],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to update their profile, upload a resume, connect Gmail, or change preferences",
+        "send_user_here_when": "the user wants to update their profile or change preferences",
         "credit_cost": None,
         "tier_required": None,
     },
@@ -253,7 +275,7 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
 # version it was built against. A lookup ignores entries from an older
 # version, and stale entries are evicted on the next write cycle. Bumping this
 # is how a registry change invalidates the caches without a manual flush.
-REGISTRY_VERSION = 2
+REGISTRY_VERSION = 3
 
 
 # ---------------------------------------------------------------------------
@@ -267,42 +289,67 @@ REGISTRY_VERSION = 2
 ROUTE_ALIASES: Dict[str, str] = {
     "dashboard": "/dashboard",
     "home": "/dashboard",
-    "contact search": "/contact-search",
-    "people search": "/contact-search",
-    "find people": "/contact-search",
-    "find contacts": "/contact-search",
-    "firm search": "/firm-search",
-    "company search": "/firm-search",
-    "recruiter spreadsheet": "/recruiter-spreadsheet",
-    "hiring managers": "/recruiter-spreadsheet",
-    "hiring manager search": "/recruiter-spreadsheet",
-    "meeting prep": "/meeting-prep",
-    "coffee chat prep": "/meeting-prep",
-    "meeting library": "/meeting-library",
-    "resume": "/write/resume",
-    "resume builder": "/write/resume",
-    "resume workshop": "/write/resume",
-    "resume library": "/write/resume-library",
-    "cover letter": "/write/cover-letter",
-    "cover letter library": "/write/cover-letter-library",
+    "getting started": "/dashboard",
+    "search": "/find",
+    "contact search": "/find",
+    "people search": "/find",
+    "find people": "/find",
+    "find contacts": "/find",
+    "firm search": "/find?tab=companies",
+    "company search": "/find?tab=companies",
+    "find companies": "/find?tab=companies",
+    "recruiter spreadsheet": "/find?tab=hiring-managers",
+    "hiring managers": "/find?tab=hiring-managers",
+    "hiring manager search": "/find?tab=hiring-managers",
+    "find recruiters": "/find?tab=hiring-managers",
+    "email templates": "/find/templates",
+    "upload list": "/upload-list",
+    "upload contacts": "/upload-list",
+    "import contacts": "/upload-list",
+    "import a list": "/upload-list",
+    "meeting prep": "/coffee-chat-prep",
+    "coffee chat prep": "/coffee-chat-prep",
+    "meeting library": "/coffee-chat-library",
+    "coffee chat library": "/coffee-chat-library",
+    "resume": "/resume",
+    "resume builder": "/resume",
+    "resume workshop": "/resume",
+    "cover letter": "/cover-letter",
+    "inbox": "/outbox",
     "outbox": "/outbox",
     "tracker": "/outbox",
     "network tracker": "/outbox",
     "email tracker": "/outbox",
-    "calendar": "/calendar",
-    "recruiting timeline": "/calendar",
-    "recruiting calendar": "/calendar",
-    "contact directory": "/contact-directory",
-    "saved contacts": "/contact-directory",
-    "my contacts": "/contact-directory",
-    "hiring manager tracker": "/hiring-manager-tracker",
+    "replies": "/outbox",
+    "applications": "/applications",
+    "auto apply": "/applications",
+    "auto-apply": "/applications",
+    "my applications": "/applications",
+    "loops": "/agent",
+    "loop": "/agent",
+    "agent": "/agent",
+    "new loop": "/agent/setup",
+    "create a loop": "/agent/setup",
+    "calendar": "/recruiting-timeline",
+    "recruiting timeline": "/recruiting-timeline",
+    "recruiting calendar": "/recruiting-timeline",
+    "contact directory": "/my-network/people",
+    "saved contacts": "/my-network/people",
+    "my contacts": "/my-network/people",
+    "my network": "/my-network/people",
+    "hiring manager tracker": "/find?tab=hiring-managers",
     "company tracker": "/my-network/companies",
     "companies tab": "/my-network/companies",
     "saved companies": "/my-network/companies",
     "job board": "/job-board",
     "jobs": "/job-board",
     "job listings": "/job-board",
-    "email templates": "/email-templates",
+    "integrations": "/integrations",
+    "connect gmail": "/integrations",
+    "gmail": "/integrations",
+    "mcp server": "/mcp-server",
+    "mcp": "/mcp-server",
+    "connector": "/mcp-server",
     "pricing": "/pricing",
     "plans": "/pricing",
     "upgrade": "/pricing",
@@ -326,12 +373,17 @@ _BY_ROUTE: Dict[str, Dict[str, Any]] = {p["route"]: p for p in PAGE_REGISTRY}
 def get_page(route: str) -> Optional[Dict[str, Any]]:
     """Return the registry entry for a route, or None if not a known route.
 
-    Tolerates query strings: "/contact-search?tab=x" resolves to "/contact-search".
+    Exact match (including query string) wins, so "/find?tab=companies"
+    resolves to the Companies entry; then the bare path is tried, so
+    "/find?anything" still resolves to "/find".
     """
     if not route:
         return None
+    exact = _BY_ROUTE.get(route)
+    if exact:
+        return exact
     base = route.split("?")[0].rstrip("/") or "/"
-    return _BY_ROUTE.get(base) or _BY_ROUTE.get(route)
+    return _BY_ROUTE.get(base)
 
 
 def valid_routes() -> List[str]:
@@ -340,7 +392,7 @@ def valid_routes() -> List[str]:
 
 
 def is_valid_route(route: str) -> bool:
-    """True if route (ignoring any query string) is in the registry."""
+    """True if route (exact or ignoring any query string) is in the registry."""
     return get_page(route) is not None
 
 

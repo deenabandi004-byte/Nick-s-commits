@@ -328,7 +328,7 @@ def scout_assistant_chat():
             {"role": "user", "content": "..."},
             {"role": "assistant", "content": "..."}
         ],
-        "current_page": "/contact-search",
+        "current_page": "/find",
         "user_info": {
             "name": "John",
             "tier": "free",
@@ -340,9 +340,9 @@ def scout_assistant_chat():
     Response:
     {
         "message": "Scout's response text",
-        "navigate_to": "/contact-search" or null,
+        "navigate_to": "/find" or null,
         "action_buttons": [
-            {"label": "Go to Contact Search", "route": "/contact-search"}
+            {"label": "Go to Search", "route": "/find"}
         ],
         "contacts_results": [...] or null,
         "email_preview": {...} or null,

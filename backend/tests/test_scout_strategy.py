@@ -165,11 +165,11 @@ def test_clean_steps_caps_at_max():
 
 def test_clean_steps_validates_route():
     steps = clean_steps([
-        {"title": "search", "route": "/contact-search"},
+        {"title": "search", "route": "/find"},
         {"title": "bad", "route": "/not-a-real-route"},
         {"title": "no-route"},
     ])
-    assert steps[0].get("route") == "/contact-search"
+    assert steps[0].get("route") == "/find"
     assert "route" not in steps[1]
     assert "route" not in steps[2]
 
@@ -232,7 +232,7 @@ def test_render_includes_goal_progress_and_steps():
         "goal": "Break into IB",
         "steps": [
             {"title": "Map firms", "done": True},
-            {"title": "Build contacts", "done": False, "route": "/contact-search"},
+            {"title": "Build contacts", "done": False, "route": "/find"},
             {"title": "Outreach", "done": False, "detail": "Start with Evercore"},
         ],
         "updated_at": now - timedelta(days=1),
@@ -243,7 +243,7 @@ def test_render_includes_goal_progress_and_steps():
     assert "1 of 3 steps done" in out
     assert "[done]" in out
     assert "[next]" in out
-    assert "[page: /contact-search]" in out
+    assert "[page: /find]" in out
     assert "Start with Evercore" in out
     assert "stalled" not in out
 
@@ -343,11 +343,11 @@ def test_goal_switch_outcome_matrix(db):
 
 def test_save_strategy_validates_step_routes(db):
     save_strategy("u1", "pro", "g", [
-        {"title": "real", "route": "/contact-search"},
+        {"title": "real", "route": "/find"},
         {"title": "bad", "route": "/imaginary"},
     ], db=db)
     active = get_active_strategy("u1", db=db)
-    assert active["steps"][0]["route"] == "/contact-search"
+    assert active["steps"][0]["route"] == "/find"
     assert "route" not in active["steps"][1]
 
 

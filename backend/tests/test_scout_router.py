@@ -19,24 +19,24 @@ _HIT = "regex"
 CASES = [
     # --- Rule (a): a pasted LinkedIn profile URL --------------------------
     ("https://linkedin.com/in/jane-doe",
-     _HIT, "/meeting-prep", {"linkedin_url": "https://linkedin.com/in/jane-doe"}, False),
+     _HIT, "/coffee-chat-prep", {"linkedin_url": "https://linkedin.com/in/jane-doe"}, False),
     ("https://www.linkedin.com/in/john-smith-12345/",
-     _HIT, "/meeting-prep",
+     _HIT, "/coffee-chat-prep",
      {"linkedin_url": "https://www.linkedin.com/in/john-smith-12345"}, False),
     ("prep for https://linkedin.com/in/maya-r",
-     _HIT, "/meeting-prep", {"linkedin_url": "https://linkedin.com/in/maya-r"}, False),
+     _HIT, "/coffee-chat-prep", {"linkedin_url": "https://linkedin.com/in/maya-r"}, False),
     # --- Rule (b): a route mention behind a navigation verb ---------------
-    ("open meeting prep", _HIT, "/meeting-prep", {}, True),
-    ("take me to contact search", _HIT, "/contact-search", {}, True),
+    ("open meeting prep", _HIT, "/coffee-chat-prep", {}, True),
+    ("take me to contact search", _HIT, "/find", {}, True),
     ("go to the job board", _HIT, "/job-board", {}, True),
     ("show me my outbox", _HIT, "/outbox", {}, True),
     # --- Rule (c): find <role> at <company> -------------------------------
     ("find engineers at Datadog",
-     _HIT, "/contact-search", {"company": "Datadog", "job_title": "engineers"}, False),
+     _HIT, "/find", {"company": "Datadog", "job_title": "engineers"}, False),
     ("find people at Stripe",
-     _HIT, "/contact-search", {"company": "Stripe"}, False),
+     _HIT, "/find", {"company": "Stripe"}, False),
     ("find product managers at Notion in NYC",
-     _HIT, "/contact-search",
+     _HIT, "/find",
      {"company": "Notion", "job_title": "product managers", "location": "NYC"}, False),
     # --- Ambiguous: must fall through to the LLM --------------------------
     ("can you explain to me how the meeting prep feature actually works, here is "
@@ -55,23 +55,23 @@ CASES = [
     ("find someone at the gym to talk to about my career", None, None, None, None),
     # --- Prefill extraction edge cases -----------------------------------
     ("https://linkedin.com/in/jane-doe.",
-     _HIT, "/meeting-prep", {"linkedin_url": "https://linkedin.com/in/jane-doe"}, False),
+     _HIT, "/coffee-chat-prep", {"linkedin_url": "https://linkedin.com/in/jane-doe"}, False),
     ("HTTPS://LINKEDIN.COM/IN/JaneDoe",
-     _HIT, "/meeting-prep", {"linkedin_url": "HTTPS://LINKEDIN.COM/IN/JaneDoe"}, False),
+     _HIT, "/coffee-chat-prep", {"linkedin_url": "HTTPS://LINKEDIN.COM/IN/JaneDoe"}, False),
     ("https://linkedin.com/in/jane-doe?utm_source=share",
-     _HIT, "/meeting-prep", {"linkedin_url": "https://linkedin.com/in/jane-doe"}, False),
+     _HIT, "/coffee-chat-prep", {"linkedin_url": "https://linkedin.com/in/jane-doe"}, False),
     ("https://linkedin.com/in/first-person and https://linkedin.com/in/second-person",
      None, None, None, None),
     ("find designers at Figma in San Francisco",
-     _HIT, "/contact-search",
+     _HIT, "/find",
      {"company": "Figma", "job_title": "designers", "location": "San Francisco"}, False),
     ("find data scientists at Two Sigma",
-     _HIT, "/contact-search",
+     _HIT, "/find",
      {"company": "Two Sigma", "job_title": "data scientists"}, False),
     # --- Alias map cases --------------------------------------------------
-    ("open coffee chat prep", _HIT, "/meeting-prep", {}, True),
+    ("open coffee chat prep", _HIT, "/coffee-chat-prep", {}, True),
     ("take me to the network tracker", _HIT, "/outbox", {}, True),
-    ("go to hiring managers", _HIT, "/recruiter-spreadsheet", {}, True),
+    ("go to hiring managers", _HIT, "/find?tab=hiring-managers", {}, True),
     ("pull up pricing", _HIT, "/pricing", {}, True),
 ]
 

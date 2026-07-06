@@ -87,7 +87,7 @@ NAVIGATE_TOOL: Dict[str, Any] = {
                     "specific count (or the count slider can default sanely). "
                     "Set false when the user might still want to tweak the "
                     "search before running it (broad query, ambiguous scope). "
-                    "Currently honored by /contact-search and /firm-search."
+                    "Currently honored by /find and /find?tab=companies."
                 ),
             },
         },
@@ -112,7 +112,13 @@ ANSWER_TOOL: Dict[str, Any] = {
         "properties": {
             "text": {
                 "type": "string",
-                "description": "Your reply to the user, in Scout's voice.",
+                "description": (
+                    "Your reply to the user, in Scout's voice. A planning, "
+                    "strategy, how-to, or walkthrough reply MUST be broken "
+                    "into multiple short paragraphs or numbered lines "
+                    "separated by newline characters, never one dense "
+                    "block. Short factual replies stay short."
+                ),
             },
             "cta": {
                 "type": "object",
@@ -255,7 +261,7 @@ SAVE_STRATEGY_TOOL: Dict[str, Any] = {
                             "description": (
                                 "Optional. The Offerloop route this step maps "
                                 "to, taken exactly from PAGES YOU CAN NAVIGATE "
-                                "TO (for example /contact-search). Omit it "
+                                "TO (for example /find). Omit it "
                                 "when the step is not a single Offerloop page."
                             ),
                         },

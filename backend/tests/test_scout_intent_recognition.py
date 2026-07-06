@@ -52,7 +52,7 @@ def test_tier_a_find_people(message, prefill):
     assert plan is not None, f"{message!r} should be a Tier A regex hit"
     assert plan["name"] == "navigate"
     args = plan["args"]
-    assert args["route"] == "/contact-search"
+    assert args["route"] == "/find"
     for key, value in prefill.items():
         assert args["prefill"].get(key) == value, (
             f"prefill[{key}]: got {args['prefill'].get(key)!r}, want {value!r}")
@@ -69,11 +69,11 @@ def test_tier_a_ignores_find_out():
 # message, accepted routes. Every case must navigate, never answer/clarify the
 # need away. A genuinely ambiguous target accepts more than one route.
 _LLM_NAVIGATE = [
-    ("email ey portland auditors", ("/contact-search",)),
+    ("email ey portland auditors", ("/find",)),
     # Removed Jane Street interview prep case: /interview-prep no longer
     # exists in the page registry after the Phase 5 cleanup.
-    ("draft a cover letter for the stripe pm role", ("/write/cover-letter",)),
-    ("who do i know at anthropic", ("/contact-directory", "/contact-search")),
+    ("draft a cover letter for the stripe pm role", ("/cover-letter",)),
+    ("who do i know at anthropic", ("/my-network/people", "/find")),
     ("auto apply to swe jobs in nyc", ("/job-board",)),
 ]
 

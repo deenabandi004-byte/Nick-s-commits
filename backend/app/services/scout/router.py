@@ -130,7 +130,7 @@ def _rule_linkedin_url(message: str) -> Optional[Dict[str, Any]]:
         return None
     url = raw.rstrip("/.,);:")
     return _navigate_plan(
-        route="/meeting-prep",
+        route="/coffee-chat-prep",
         prefill={"linkedin_url": url},
         reasoning="Open meeting prep for this LinkedIn profile.",
         user_was_imperative=False,
@@ -189,7 +189,7 @@ def _rule_find_people(message: str) -> Optional[Dict[str, Any]]:
     if role and role.lower() not in _GENERIC_PEOPLE_WORDS and _word_count(role) <= 5:
         prefill["job_title"] = role
     return _navigate_plan(
-        route="/contact-search",
+        route="/find",
         prefill=prefill,
         reasoning=f"Search for contacts at {company}.",
         user_was_imperative=False,
