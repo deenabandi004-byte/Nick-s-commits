@@ -10,7 +10,7 @@ import { useScout } from "@/contexts/ScoutContext";
 import { useTour } from "@/contexts/TourContext";
 import {
   History, Loader2, AlertCircle, Download, Trash2, Building2, Search,
-  CheckCircle, X, ChevronRight, ArrowRight, ArrowUp
+  CheckCircle, X, ChevronRight, ArrowUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { VideoDemo } from "@/components/VideoDemo";
@@ -34,8 +34,10 @@ import { StickyCTA } from "@/components/StickyCTA";
 
 import { DEV_MOCK_USER } from "@/lib/devPreview";
 import { getUniversityShortName } from "@/lib/universityUtils";
-import { generateFirmDiscoveryPrompts, getGenericFirmPrompts, isContextEmpty, type UserContext, type PromptChip } from "@/utils/suggestionChips";
+import { isContextEmpty, type UserContext } from "@/utils/suggestionChips";
 import { SearchPromptBox } from "@/components/find/SearchPromptBox";
+import { PromptTemplates } from "@/components/find/PromptTemplates";
+import { COMPANY_TEMPLATES } from "@/data/searchTemplates";
 import { firebaseApi } from "@/services/firebaseApi";
 import { CompanyFilters, companyFiltersActive } from "@/types/findFilters";
 
@@ -239,11 +241,11 @@ const FirmSearchPage: React.FC<{
   const archiveLoadedRef = useRef(false);
 
   // Prompt cards state (prompt-first discovery)
-  const [promptChips, setPromptChips] = useState<PromptChip[]>([]);
   const [promptsPersonalized, setPromptsPersonalized] = useState(false);
   const [userSchoolShortForPrompts, setUserSchoolShortForPrompts] = useState<string | null>(null);
 
-  // Build prompt cards from user profile data
+  // Determine whether the user's profile is filled in enough to personalize
+  // the "Recommended Searches" nudge copy.
   useEffect(() => {
     if (!user?.uid || archiveLoadedRef.current) return;
     archiveLoadedRef.current = true;
@@ -269,17 +271,9 @@ const FirmSearchPage: React.FC<{
           personalContext: onboarding.personalContext || '',
         };
 
-        // Build prompt cards
-        if (!isContextEmpty(ctx)) {
-          setPromptChips(generateFirmDiscoveryPrompts(ctx));
-          setPromptsPersonalized(true);
-        } else {
-          setPromptChips(getGenericFirmPrompts());
-          setPromptsPersonalized(false);
-        }
+        setPromptsPersonalized(!isContextEmpty(ctx));
       } catch (err) {
-        console.error('[FirmSearch] onboarding fetch failed, using generic prompts:', err);
-        setPromptChips(getGenericFirmPrompts());
+        console.error('[FirmSearch] onboarding fetch failed:', err);
         setPromptsPersonalized(false);
       }
     };
@@ -1037,87 +1031,14 @@ const FirmSearchPage: React.FC<{
                             </div>
                           )}
 
-                          {/* Recommendation cards — reuses Find People card tokens, adapted for a company search query */}
-                          <div style={{
-                            display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6,
-                            scrollbarWidth: 'none',
-                          }}>
-                            {promptChips.map((chip, idx) => (
-                              <button
-                                key={chip.id}
-                                type="button"
-                                disabled={isSearching}
-                                onClick={() => {
-                                  setQuery(chip.prompt);
-                                  handleSearch(chip.prompt);
-                                }}
-                                className="suggestion-row-enter"
-                                style={{
-                                  flex: '0 0 280px', width: 280,
-                                  borderRadius: 16, overflow: 'hidden',
-                                  background: 'var(--elev, #FFFFFF)',
-                                  border: '1px solid var(--line, #E8E8E8)',
-                                  cursor: 'pointer', textAlign: 'left',
-                                  transition: 'all .2s ease',
-                                  fontFamily: 'inherit', padding: 0,
-                                  boxShadow: 'inset 0 -1px 0 var(--line, #E8E8E8), 0 1px 2px rgba(26,29,35,0.03)',
-                                  animationDelay: `${idx * 60}ms`,
-                                }}
-                                onMouseEnter={(e) => {
-                                  const el = e.currentTarget as HTMLButtonElement;
-                                  el.style.borderColor = 'var(--accent, #4A60A8)';
-                                  el.style.boxShadow = 'inset 0 -1px 0 var(--line, #E8E8E8), 0 2px 6px rgba(26,29,35,0.06)';
-                                  el.style.transform = 'translateY(-1px)';
-                                }}
-                                onMouseLeave={(e) => {
-                                  const el = e.currentTarget as HTMLButtonElement;
-                                  el.style.borderColor = 'var(--line, #E8E8E8)';
-                                  el.style.boxShadow = 'inset 0 -1px 0 var(--line, #E8E8E8), 0 1px 2px rgba(26,29,35,0.03)';
-                                  el.style.transform = 'translateY(0)';
-                                }}
-                              >
-                                <div style={{ padding: '12px 14px 14px' }}>
-                                  {/* Leading companies-icon tile — colored accent for a bit of style */}
-                                  <div style={{ marginBottom: 10 }}>
-                                    <div style={{
-                                      width: 32, height: 32, borderRadius: 8,
-                                      background: 'rgba(74, 96, 168, 0.10)',
-                                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    }}>
-                                      <Building2 style={{ width: 16, height: 16, color: 'var(--accent, #4A60A8)' }} />
-                                    </div>
-                                  </div>
-
-                                  {/* Company search query — card title, wraps to 2 lines */}
-                                  <div style={{
-                                    fontSize: 13.5, fontWeight: 500, color: 'var(--ink, #111318)',
-                                    lineHeight: 1.4,
-                                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden', minHeight: 38, marginBottom: 6,
-                                  }}>
-                                    {chip.prompt}
-                                  </div>
-
-                                  {/* Descriptor — mirrors the People card's reason line */}
-                                  <div style={{
-                                    fontSize: 11, color: 'var(--ink-2, #4A4F5B)', lineHeight: 1.4,
-                                    marginBottom: 10,
-                                  }}>
-                                    {chip.hint || 'Suggested search'}
-                                  </div>
-
-                                  {/* CTA — same indigo as "Find contacts →" */}
-                                  <div style={{
-                                    fontSize: 11, color: 'var(--accent, #4A60A8)', fontWeight: 500,
-                                    display: 'flex', alignItems: 'center', gap: 4,
-                                  }}>
-                                    Run search
-                                    <ArrowRight style={{ width: 11, height: 11, opacity: 0.7 }} />
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
-                          </div>
+                          <PromptTemplates
+                            categories={[{ id: "companies", label: "Companies", templates: COMPANY_TEMPLATES }]}
+                            disabled={isSearching}
+                            onSubmit={(prompt) => {
+                              setQuery(prompt);
+                              handleSearch(prompt);
+                            }}
+                          />
 
                           {/* Recent searches — compact toggle */}
                           {searchHistory.length > 0 && (

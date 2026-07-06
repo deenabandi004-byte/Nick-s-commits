@@ -40,7 +40,8 @@ import { SendConfirmDialog } from "@/components/SendConfirmDialog";
 import { canUseOutreachMode } from "@/utils/featureAccess";
 import { UpgradeModal } from "@/components/gates/UpgradeModal";
 import { findCompletion, expandQueryForBackend } from "@/lib/specificity";
-import SuggestionChips from "@/components/find/SuggestionChips";
+import { PromptTemplates } from "@/components/find/PromptTemplates";
+import { PEOPLE_TEMPLATE_CATEGORIES } from "@/data/searchTemplates";
 import { TemplateButton } from "@/components/TemplateButton";
 
 import { DEV_MOCK_USER } from "@/lib/devPreview";
@@ -683,9 +684,6 @@ const ContactSearchPage: React.FC<{
       setBatchSize(PEOPLE_BATCH_DEFAULTS[userTier]);
     }
   }, [userTier]);
-
-  // UI polish state
-  const [suggestionsCollapsed, setSuggestionsCollapsed] = useState(false);
 
   // Typewriter rotating examples (types + deletes between rotations)
   const [typedText, setTypedText] = useState('');
@@ -2728,17 +2726,13 @@ const ContactSearchPage: React.FC<{
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               style={{ marginTop: 36 }}
             >
-              <SuggestionChips
-                type="people"
-                uid={user?.uid}
-                onSelect={(prompt) => {
+              <PromptTemplates
+                categories={PEOPLE_TEMPLATE_CATEGORIES}
+                disabled={isSearching || linkedInLoading}
+                onSubmit={(prompt) => {
                   pendingAutoSearch.current = true;
                   setSearchPrompt(prompt);
                 }}
-                collapsed={suggestionsCollapsed}
-                onCollapse={setSuggestionsCollapsed}
-                hasSearched={hasResults}
-                disabled={isSearching || linkedInLoading}
               />
             </motion.div>
           )}
