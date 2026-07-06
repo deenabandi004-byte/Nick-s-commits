@@ -191,16 +191,21 @@ export const JobBoardPage: React.FC = () => {
   // Top-level tab. "discover" = the existing Recent + Recommended view.
   // "saved" swaps the entire job list for the bookmarked bin, mirroring
   // the Outbox tab pattern (always-visible at the top of the page).
-  // "auto-submission" lists every auto-apply job (in-flight + done + failed).
-  // "needs-attention" lists jobs paused waiting on the user to answer a
-  // custom screening question we don't have an answer for.
+  // "applications" hosts the three auto-apply queues as sub-tabs:
+  //   all: every auto-apply job (in-flight + done + failed)
+  //   needs-answers: jobs paused waiting on the user to answer a custom
+  //     screening question we don't have an answer for
+  //   finish-browser: jobs waiting on an in-browser verification step
   const [activeJobTab, setActiveJobTab] = useState<
     | "discover"
     | "saved"
-    | "auto-submission"
-    | "needs-attention"
-    | "needs-verification"
+    | "applications"
   >("discover");
+  const [appsSubTab, setAppsSubTab] = useState<
+    | "all"
+    | "needs-answers"
+    | "finish-browser"
+  >("all");
 
   // Collapsible section state. Default: Recent collapsed, Recommended open
   // so the better-matching list is visible without scrolling. User's choice
@@ -633,12 +638,13 @@ export const JobBoardPage: React.FC = () => {
   //   1. Pro/Elite gate (frontend-side; backend rechecks).
   //   2. POST /submit directly (no prepare/modal step). The job lands in
   //      autoApplyJobs status="queued" and a background worker takes over.
-  //   3. Switch the active tab to "auto-submission" so the user sees the
-  //      in-flight card immediately. They can keep clicking Auto-apply on
+  //   3. The job shows up in the Applications tab (All applications sub-tab)
+  //      as an in-flight card. The user can keep clicking Auto-apply on
   //      other jobs while the background workers run.
   //   4. If the worker hits a question with no saved answer, it bails with
-  //      status="needs_attention" and the card moves to the Needs Attention
-  //      tab. The user resolves via NeedsAttentionDrawer; the worker resumes.
+  //      status="needs_attention" and the card moves to the Needs your
+  //      answers sub-tab. The user resolves via NeedsAttentionDrawer; the
+  //      worker resumes.
   //
   // The legacy prepare/modal flow is still wired (showReviewModal +
   // AutoApplyReviewModal) but no longer triggered by the default Auto-apply
@@ -878,15 +884,14 @@ export const JobBoardPage: React.FC = () => {
                   {([
                     { id: "discover", label: "Discover", count: sections.recent.length + sections.recommended.length, dot: false },
                     { id: "saved", label: "Saved", count: savedJobs.length, dot: false },
-                    { id: "auto-submission", label: "Auto-submission", count: 0, dot: false },
-                    // Notification dot when there's actually work waiting on the user.
-                    { id: "needs-attention", label: "Needs attention", count: needsAttentionCount, dot: needsAttentionCount > 0 },
-                    // Finish-in-browser is now rare (the email-code path handles
-                    // most Greenhouse verification automatically). Hide the tab
-                    // entirely when empty so it doesn't clutter the header.
-                    ...(needsVerificationCount > 0
-                      ? [{ id: "needs-verification" as const, label: "Finish in browser", count: needsVerificationCount, dot: true }]
-                      : []),
+                    // One Applications tab; the three queues live inside it as
+                    // sub-tabs. Notification dot when work is waiting on the user.
+                    {
+                      id: "applications",
+                      label: "Applications",
+                      count: needsAttentionCount + needsVerificationCount,
+                      dot: needsAttentionCount + needsVerificationCount > 0,
+                    },
                   ] as const).map((t) => {
                     const isActive = activeJobTab === t.id;
                     return (
@@ -1112,18 +1117,85 @@ export const JobBoardPage: React.FC = () => {
 
               {/* ---- Body ---- */}
               {/* discover / saved: two-pane editorial layout.
-                  auto-submission / needs-attention: full-width queue view. */}
-              {activeJobTab === "auto-submission" ? (
+                  applications: full-width queue view with its own sub-tabs. */}
+              {activeJobTab === "applications" ? (
                 <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-                  <AutoSubmissionTab />
-                </div>
-              ) : activeJobTab === "needs-attention" ? (
-                <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-                  <NeedsAttentionTab />
-                </div>
-              ) : activeJobTab === "needs-verification" ? (
-                <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-                  <NeedsVerificationTab />
+                  {/* Sub-tabs: All / Needs your answers / Finish in browser */}
+                  <div style={{ display: "flex", gap: 8, padding: "14px 16px 2px", flexWrap: "wrap" }}>
+                    {([
+                      { id: "all", label: "All applications", count: 0, alert: false },
+                      { id: "needs-answers", label: "Needs your answers", count: needsAttentionCount, alert: true },
+                      { id: "finish-browser", label: "Finish in browser", count: needsVerificationCount, alert: false },
+                    ] as const).map((t) => {
+                      const isActive = appsSubTab === t.id;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => setAppsSubTab(t.id)}
+                          aria-pressed={isActive}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            padding: "6px 14px",
+                            borderRadius: 999,
+                            fontSize: 13,
+                            fontWeight: isActive ? 600 : 500,
+                            fontFamily: "inherit",
+                            cursor: "pointer",
+                            border: `1px solid ${isActive ? "var(--brand-blue, #3B82F6)" : "var(--line, #E5E5E5)"}`,
+                            background: isActive ? "var(--brand-blue, #3B82F6)" : "var(--paper, #fff)",
+                            color: isActive ? "#fff" : "var(--ink-2, #475569)",
+                            transition: "background .15s, color .15s, border-color .15s",
+                          }}
+                        >
+                          {t.alert && (
+                            <span
+                              aria-hidden="true"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 14,
+                                height: 14,
+                                borderRadius: "50%",
+                                fontSize: 10,
+                                fontWeight: 700,
+                                lineHeight: 1,
+                                background: t.count > 0 ? "#EF4444" : (isActive ? "rgba(255,255,255,0.35)" : "#CBD5E1"),
+                                color: "#fff",
+                              }}
+                            >
+                              !
+                            </span>
+                          )}
+                          {t.label}
+                          {t.count > 0 && (
+                            <span
+                              style={{
+                                fontFamily: "'JetBrains Mono', monospace",
+                                fontSize: 10,
+                                padding: "1px 6px",
+                                borderRadius: 4,
+                                background: isActive ? "rgba(255,255,255,0.22)" : "var(--paper-2, #FAFBFF)",
+                                color: isActive ? "#fff" : "var(--ink-3, #94A3B8)",
+                              }}
+                            >
+                              {t.count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {appsSubTab === "all" ? (
+                    <AutoSubmissionTab />
+                  ) : appsSubTab === "needs-answers" ? (
+                    <NeedsAttentionTab />
+                  ) : (
+                    <NeedsVerificationTab />
+                  )}
                 </div>
               ) : (
               <div className="jb-twopane">
