@@ -882,6 +882,8 @@ const ContactSearchPage: React.FC<{
   const [activeTab, setActiveTab] = useState<string>("contact-search");
   const [showEliteGate, setShowEliteGate] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  // Outreach setup card is collapsed into the settings summary row; Edit expands it.
+  const [outreachSetupOpen, setOutreachSetupOpen] = useState(false);
 
   const isElite = user?.tier === "elite";
 
@@ -2666,14 +2668,103 @@ const ContactSearchPage: React.FC<{
           </div>
         )}
 
-        {/* Outreach setup group (template choice + resume status); Import link kept right */}
-        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 18, marginBottom: 4 }}>
+        {/* Outreach settings summary row; Edit expands the full setup card inline */}
+        <div style={{ marginTop: 14, marginBottom: 4 }}>
           <div style={{
-            background: 'var(--paper, #FFFFFF)',
-            border: '1px solid var(--line, #E5E5E0)',
-            borderRadius: 12,
-            padding: '12px 16px 14px',
+            display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 10,
+            fontSize: 12.5, color: 'var(--ink-2, #4A4F5B)',
           }}>
+            <span>
+              Email template:{' '}
+              <span style={{ fontWeight: 600, color: 'var(--ink, #111318)' }}>
+                {getEmailTemplateLabel(activeEmailTemplate)}
+              </span>
+            </span>
+            <span aria-hidden="true" style={{ color: 'var(--ink-3, #8A8F9A)' }}>&middot;</span>
+            {savedResumeUrl ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                <Check aria-hidden="true" className="text-green-600" style={{ width: 13, height: 13 }} />
+                Resume attached
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={() => document.getElementById('resume-upload')?.click()}
+                disabled={isSearching || isUploadingResume}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '5px 12px', border: '1.5px dashed #C9CDD6', borderRadius: 8,
+                  background: 'var(--paper, #FFFFFF)', cursor: 'pointer', fontFamily: 'inherit',
+                  fontSize: 12.5, fontWeight: 600, color: 'var(--ink, #111318)',
+                  transition: 'all .15s',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--brand-blue, #3B82F6)';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.08)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#C9CDD6';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <Upload style={{ width: 13, height: 13, color: 'var(--ink-2, #4A4F5B)' }} />
+                {isUploadingResume ? 'Uploading...' : 'Attach resume'}
+              </button>
+            )}
+            <span aria-hidden="true" style={{ color: 'var(--ink-3, #8A8F9A)' }}>&middot;</span>
+            <button
+              type="button"
+              onClick={() => setOutreachSetupOpen((o) => !o)}
+              aria-expanded={outreachSetupOpen}
+              aria-controls="outreach-setup-panel"
+              style={{
+                fontSize: 12.5, fontWeight: 500, color: 'var(--accent, #4A60A8)',
+                background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                padding: '2px 4px', borderRadius: 6,
+              }}
+            >
+              {outreachSetupOpen ? 'Done' : 'Edit'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowImportDialog(true)}
+              style={{
+                fontSize: 12, color: 'var(--ink-2, #4A4F5B)',
+                background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                padding: '4px 6px', borderRadius: 6, transition: 'color .12s, background .12s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--accent, #4A60A8)';
+                e.currentTarget.style.background = 'rgba(74,96,168,0.06)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--ink-2, #4A4F5B)';
+                e.currentTarget.style.background = 'transparent';
+              }}
+            >
+              Import contacts
+            </button>
+          </div>
+
+          {/* Expanded outreach setup card, announced via aria-expanded on Edit */}
+          <AnimatePresence initial={false}>
+            {outreachSetupOpen && (
+              <motion.div
+                id="outreach-setup-panel"
+                key="outreach-setup"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={{
+                  background: 'var(--paper, #FFFFFF)',
+                  border: '1px solid var(--line, #E5E5E0)',
+                  borderRadius: 12,
+                  padding: '12px 16px 14px',
+                  marginTop: 10,
+                }}>
             <div style={{
               fontFamily: '"Libre Baskerville", Georgia, serif',
               fontSize: 10, letterSpacing: '0.12em', color: '#8A8F97',
@@ -2770,23 +2861,10 @@ const ContactSearchPage: React.FC<{
             </button>
           )}
             </div>
-          </div>
-          {/* Import contacts — kept on the right */}
-          <button
-            type="button"
-            onClick={() => setShowImportDialog(true)}
-            style={{ position: 'absolute', right: 0, fontSize: 12, color: 'var(--ink-2, #4A4F5B)', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: '4px 6px', borderRadius: 6, transition: 'color .12s, background .12s' }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--accent, #4A60A8)';
-              e.currentTarget.style.background = 'rgba(74,96,168,0.06)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--ink-2, #4A4F5B)';
-              e.currentTarget.style.background = 'transparent';
-            }}
-          >
-            Import contacts
-          </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Resume upload card — shown when no results and no resume */}
