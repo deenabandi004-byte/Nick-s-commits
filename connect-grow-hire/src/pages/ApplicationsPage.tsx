@@ -81,6 +81,21 @@ const ApplicationsPage = () => {
           <AppHeader title="Applications" />
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-[900px] mx-auto px-6 py-6">
+              {/* Page header, same serif display treatment as the other pages
+                  (Browse all jobs, Who do you want to meet?). */}
+              <h1
+                className="mb-5"
+                style={{
+                  fontFamily: "'Libre Baskerville', Georgia, serif",
+                  fontSize: 30,
+                  fontWeight: 400,
+                  lineHeight: "36px",
+                  color: "#1e2d4d",
+                  margin: "0 0 20px",
+                }}
+              >
+                Applications
+              </h1>
               {locked ? (
                 <div className="rounded-xl border border-line bg-white p-8 text-center">
                   <h2 className="text-[16px] font-semibold mb-2">Auto Apply is a Pro feature</h2>
