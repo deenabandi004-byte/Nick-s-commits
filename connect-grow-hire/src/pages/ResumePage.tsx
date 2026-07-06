@@ -178,6 +178,11 @@ const ResumePage = () => {
   const [resumeScoredAt, setResumeScoredAt] = useState<string | null>(null);
   // Shown once, right after an apply+rescore cycle completes.
   const [scoreDelta, setScoreDelta] = useState<{ prev: number; next: number } | null>(null);
+  // Synchronous re-entrancy lock for handleScore/handleApplySelected. The
+  // state-machine guards below read closure state, so two invocations landing
+  // before React re-renders (e.g. a double-click) could both pass them; this
+  // ref flips immediately and is released in each handler's finally.
+  const busyLockRef = useRef(false);
 
   const loadResume = useCallback(async (userId: string) => {
     try {
@@ -280,27 +285,39 @@ const ResumePage = () => {
   );
 
   const handleScore = useCallback(async () => {
-    if (!hasStoredResume || scoreState === "scoring" || scoreState === "applying" || scoreState === "rescoring") {
+    if (busyLockRef.current) return;
+    if (
+      !hasStoredResume ||
+      uploading ||
+      scoreState === "scoring" ||
+      scoreState === "applying" ||
+      scoreState === "rescoring"
+    ) {
       return;
     }
-    setScoreState("scoring");
-    setScoreDelta(null);
+    busyLockRef.current = true;
     try {
-      const result = await apiService.scoreResume(resumeData);
-      setScoreResult(result);
-      setSelectedRecIds(new Set(result.recommendations.map((r) => r.id)));
-      await persistScore(result);
-      setScoreState("scored");
-    } catch (e) {
-      console.error("Resume scoring failed", e);
-      toast({
-        title: "Couldn't score your resume",
-        description: e instanceof Error ? e.message : undefined,
-        variant: "destructive",
-      });
-      setScoreState("idle");
+      setScoreState("scoring");
+      setScoreDelta(null);
+      try {
+        const result = await apiService.scoreResume(resumeData);
+        setScoreResult(result);
+        setSelectedRecIds(new Set(result.recommendations.map((r) => r.id)));
+        await persistScore(result);
+        setScoreState("scored");
+      } catch (e) {
+        console.error("Resume scoring failed", e);
+        toast({
+          title: "Couldn't score your resume",
+          description: e instanceof Error ? e.message : undefined,
+          variant: "destructive",
+        });
+        setScoreState("idle");
+      }
+    } finally {
+      busyLockRef.current = false;
     }
-  }, [hasStoredResume, resumeData, scoreState, persistScore]);
+  }, [hasStoredResume, uploading, resumeData, scoreState, persistScore]);
 
   const toggleRec = useCallback((id: string) => {
     setSelectedRecIds((prev) => {
@@ -312,68 +329,74 @@ const ResumePage = () => {
   }, []);
 
   const handleApplySelected = useCallback(async () => {
-    if (!scoreResult || scoreState !== "scored") return;
-    const selected = scoreResult.recommendations.filter((r) => selectedRecIds.has(r.id));
-    if (selected.length === 0) {
-      toast({ title: "Select at least one change to apply" });
-      return;
-    }
-
-    setScoreState("applying");
-    const { next, applied, skipped } = applyRecommendations(resumeData, selected);
-
-    if (applied === 0) {
-      toast({
-        title: "Nothing applied",
-        description: "Your resume changed since scoring — try re-scoring first.",
-        variant: "destructive",
-      });
-      setScoreState("scored");
-      return;
-    }
-
+    if (busyLockRef.current) return;
+    if (!scoreResult || scoreState !== "scored" || uploading) return;
+    busyLockRef.current = true;
     try {
-      // One atomic state update, then one save. The existing debounced
-      // preview effect picks up the resumeData change automatically.
-      setResumeData(next);
-      await persistResumeParsed(next);
+      const selected = scoreResult.recommendations.filter((r) => selectedRecIds.has(r.id));
+      if (selected.length === 0) {
+        toast({ title: "Select at least one change to apply" });
+        return;
+      }
 
-      toast({
-        title: skipped > 0 ? `${applied} applied, ${skipped} skipped` : `${applied} applied`,
-        description:
-          skipped > 0 ? "Some changes no longer matched your resume and were skipped." : undefined,
-      });
+      setScoreState("applying");
+      const { next, applied, skipped } = applyRecommendations(resumeData, selected);
 
-      const prevScore = scoreResult.score;
-      setScoreState("rescoring");
-      try {
-        // Pass the freshly-computed resume directly rather than relying on
-        // resumeData state having settled.
-        const rescored = await apiService.scoreResume(next);
-        setScoreResult(rescored);
-        setSelectedRecIds(new Set(rescored.recommendations.map((r) => r.id)));
-        await persistScore(rescored);
-        setScoreDelta({ prev: prevScore, next: rescored.score });
-        setScoreState("scored");
-      } catch (e) {
-        console.error("Auto-rescore failed", e);
+      if (applied === 0) {
         toast({
-          title: "Changes applied, but rescoring failed",
-          description: e instanceof Error ? e.message : "Click Score my resume to try again.",
+          title: "Nothing applied",
+          description: "Your resume changed since scoring — try re-scoring first.",
           variant: "destructive",
         });
-        setScoreState("idle");
+        setScoreState("scored");
+        return;
       }
-    } catch (e) {
-      console.error("Failed to save applied changes", e);
-      toast({
-        title: "Failed to save your resume",
-        description: e instanceof Error ? e.message : undefined,
-        variant: "destructive",
-      });
-      setScoreState("scored");
+
+      try {
+        // One atomic state update, then one save. The existing debounced
+        // preview effect picks up the resumeData change automatically.
+        setResumeData(next);
+        await persistResumeParsed(next);
+
+        toast({
+          title: skipped > 0 ? `${applied} applied, ${skipped} skipped` : `${applied} applied`,
+          description:
+            skipped > 0 ? "Some changes no longer matched your resume and were skipped." : undefined,
+        });
+
+        const prevScore = scoreResult.score;
+        setScoreState("rescoring");
+        try {
+          // Pass the freshly-computed resume directly rather than relying on
+          // resumeData state having settled.
+          const rescored = await apiService.scoreResume(next);
+          setScoreResult(rescored);
+          setSelectedRecIds(new Set(rescored.recommendations.map((r) => r.id)));
+          await persistScore(rescored);
+          setScoreDelta({ prev: prevScore, next: rescored.score });
+          setScoreState("scored");
+        } catch (e) {
+          console.error("Auto-rescore failed", e);
+          toast({
+            title: "Changes applied, but rescoring failed",
+            description: e instanceof Error ? e.message : "Click Score my resume to try again.",
+            variant: "destructive",
+          });
+          setScoreState("idle");
+        }
+      } catch (e) {
+        console.error("Failed to save applied changes", e);
+        toast({
+          title: "Failed to save your resume",
+          description: e instanceof Error ? e.message : undefined,
+          variant: "destructive",
+        });
+        setScoreState("scored");
+      }
+    } finally {
+      busyLockRef.current = false;
     }
-  }, [scoreResult, scoreState, selectedRecIds, resumeData, persistResumeParsed, persistScore]);
+  }, [scoreResult, scoreState, uploading, selectedRecIds, resumeData, persistResumeParsed, persistScore]);
 
   const handleDownloadPdf = async () => {
     if (isDownloading) return;
@@ -399,6 +422,20 @@ const ResumePage = () => {
   const handleFileSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Cross-gate against the score machine: an upload mid-apply/rescore would
+    // interleave a second resumeParsed write path (parse endpoint + loadResume)
+    // with the apply flow's updateDoc and clobber one or the other. The
+    // trigger buttons are disabled while busy, but the file dialog may have
+    // been opened before scoring started — so re-check here.
+    if (scoreState === "scoring" || scoreState === "applying" || scoreState === "rescoring") {
+      toast({
+        title: "Hold on — scoring in progress",
+        description: "Wait for the current scoring/apply step to finish before replacing your resume.",
+      });
+      event.target.value = "";
+      return;
+    }
 
     if (!isValidResumeFile(file)) {
       setUploadError("Please upload a PDF, DOCX, or DOC file");
@@ -524,7 +561,11 @@ const ResumePage = () => {
                         Upload your resume to get started — we&apos;ll score it against a Harvard
                         rubric.
                       </p>
-                      <Button size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+                      <Button
+                        size="sm"
+                        disabled={uploading || isBusy}
+                        onClick={() => fileInputRef.current?.click()}
+                      >
                         {uploading ? (
                           <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
                         ) : (
@@ -553,7 +594,7 @@ const ResumePage = () => {
                       <Button
                         variant="outline"
                         size="sm"
-                        disabled={uploading}
+                        disabled={uploading || isBusy}
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <RefreshCw className="w-4 h-4 mr-1.5" />
