@@ -205,7 +205,7 @@ def search_firms_route():
             # These should be 400 errors, not 502 errors
             if ('Missing required fields' in error_msg
                     or 'Failed to understand' in error_msg
-                    or 'needs at least one filter' in error_msg):
+                    or result.get('error_code') == 'filters_cleared'):
                 raise ValidationError(error_msg, field="query")
             else:
                 # Actual API/service errors

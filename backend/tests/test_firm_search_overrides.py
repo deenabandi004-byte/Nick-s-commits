@@ -44,6 +44,7 @@ def test_clearing_everything_returns_error_not_crash(mock_parse):
     )
     assert result["success"] is False
     assert "filter" in result["error"].lower()
+    assert result["error_code"] == "filters_cleared"
 
 
 @patch("app.services.company_search.parse_firm_search_prompt", side_effect=_fake_parse)
@@ -75,6 +76,7 @@ class TestSyncRouteGuardClassification:
             "parsedFilters": {"industry": None, "location": None,
                               "size": "none", "keywords": []},
             "error": "Your search needs at least one filter. Add an industry, location, or focus area.",
+            "error_code": "filters_cleared",
             "fallbackApplied": False, "queryLevel": None,
         }
 
@@ -100,3 +102,36 @@ class TestSyncRouteGuardClassification:
         assert resp.status_code == 400
         body = resp.get_json()
         assert "needs at least one filter" in body["error"]
+
+    def test_guard_failure_classification_ignores_copy_text(self, client):
+        """Classification must key off error_code, not the error string — reword
+        the copy to something arbitrary and confirm the route still returns 400."""
+        guard_failure = {
+            "success": False, "firms": [], "total": 0,
+            "parsedFilters": {"industry": None, "location": None,
+                              "size": "none", "keywords": []},
+            "error": "reworded copy",
+            "error_code": "filters_cleared",
+            "fallbackApplied": False, "queryLevel": None,
+        }
+
+        mock_db = MagicMock()
+        user_doc = MagicMock()
+        user_doc.exists = False
+        mock_db.collection.return_value.document.return_value.get.return_value = user_doc
+
+        with patch("backend.app.routes.firm_search.get_db", return_value=mock_db), \
+             patch("backend.app.routes.firm_search.search_firms", return_value=guard_failure):
+            resp = client.post(
+                "/api/firm-search/search",
+                data=json.dumps({
+                    "query": "ibanks in nyc",
+                    "filters": {"industry": None, "location": None, "keywords": []},
+                }),
+                content_type="application/json",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert resp.status_code == 400
+        body = resp.get_json()
+        assert "reworded copy" in body["error"]

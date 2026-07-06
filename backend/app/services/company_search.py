@@ -1134,6 +1134,7 @@ def search_firms(prompt: str, limit: int = 20, search_id: Optional[str] = None,
                 "success": False, "firms": [], "total": 0,
                 "parsedFilters": parsed,
                 "error": "Your search needs at least one filter. Add an industry, location, or focus area.",
+                "error_code": "filters_cleared",
                 "fallbackApplied": False, "queryLevel": None,
             }
 
