@@ -2320,13 +2320,21 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
    * the stored resumeParsed server-side if resumeParsed is omitted, but the
    * Edit-tab flow always passes the current in-memory copy so scoring
    * reflects unsaved-but-already-applied edits. Costs no credits.
+   *
+   * With jobContext (jobDescription >= 50 chars, optional jobTitle/company)
+   * the backend switches to job-fit mode: same response shape, but the score
+   * means fit-for-this-job and recommendations tailor bullets toward the
+   * posting.
    */
-  async scoreResume(resumeParsed: ParsedResume): Promise<ResumeScoreResponse> {
+  async scoreResume(
+    resumeParsed: ParsedResume,
+    jobContext?: { jobDescription: string; jobTitle?: string; company?: string }
+  ): Promise<ResumeScoreResponse> {
     const headers = await this.getAuthHeaders();
     return this.makeRequest<ResumeScoreResponse>('/resume/score', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ resumeParsed }),
+      body: JSON.stringify({ resumeParsed, ...(jobContext || {}) }),
     });
   }
 

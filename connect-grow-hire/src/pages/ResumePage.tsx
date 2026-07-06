@@ -7,9 +7,14 @@
 //                         editor that used to live here is gone (see git
 //                         history) — approving a recommendation is now the
 //                         only way to edit resume text on this page.
-//   2. "Tailor to a job" — the previous page's tailor card plus a Job URL
-//                         input; either a URL or a >=50-char description
-//                         enables the ResumeOptimizationModal flow.
+//   2. "Tailor to a job" — the same score-and-approve loop in job-fit mode:
+//                         paste a job URL (parsed via /job-board/parse-job-url)
+//                         or a >=50-char description, "Score for this job"
+//                         returns a fit score + tailoring recommendations,
+//                         approved changes apply to the same resumeParsed and
+//                         show on the shared PDF preview. Free (no credits);
+//                         the old 20-credit ResumeOptimizationModal flow was
+//                         removed from this page (git history keeps it).
 //
 // Load path: users/{uid}.resumeParsed -> normalizeParsedResumeFromFirestore.
 // Also loads resumeScore/resumeScoreLabel/resumeScoredAt so the last score
@@ -45,12 +50,11 @@ import type { ResumeScoreRecommendation, ResumeScoreResponse } from "@/services/
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { ACCEPTED_RESUME_TYPES, isValidResumeFile } from "@/utils/resumeFileTypes";
 import { toast } from "@/hooks/use-toast";
-import { ResumeOptimizationModal } from "@/components/ResumeOptimizationModal";
 import type { ParsedResume } from "@/types/resume";
 import { emptyParsedResume, normalizeParsedResumeFromFirestore } from "@/types/resume";
 import { generateResumePDF } from "@/utils/resumePDFGenerator";
 
-// Backend minimum for /job-board/optimize-resume-v2 (see api.ts optimizeResumeV2).
+// Backend minimum jobDescription length for /api/resume/score job-fit mode.
 const TAILOR_MIN_JD_LENGTH = 50;
 
 type ResumeTab = "edit" | "tailor";
@@ -60,8 +64,19 @@ const TABS: { id: ResumeTab; label: string }[] = [
   { id: "tailor", label: "Tailor to a job" },
 ];
 
-// Rail state machine for the score-and-approve loop.
+// Rail state machine for the score-and-approve loop. Two independent
+// instances run on this page: the general (Edit tab) machine and the job-fit
+// (Tailor tab) machine. They share resumeData, so a single busy lock keeps
+// them from interleaving.
 type ScoreState = "idle" | "scoring" | "scored" | "applying" | "rescoring";
+
+function machineBusy(s: ScoreState): boolean {
+  return s === "scoring" || s === "applying" || s === "rescoring";
+}
+
+// Job context sent to /api/resume/score in job-fit mode; remembered per
+// scoring run so the post-apply auto-rescore uses the exact same posting.
+type JobContext = { jobDescription: string; jobTitle?: string; company?: string };
 
 function isPlausibleUrl(value: string): boolean {
   const s = value.trim();
@@ -160,12 +175,11 @@ const ResumePage = () => {
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Tailor state
+  // Tailor (job-fit) inputs
   const [jobUrl, setJobUrl] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
 
   // ---- Score-and-approve state ---------------------------------------------
   const [scoreState, setScoreState] = useState<ScoreState>("idle");
@@ -178,7 +192,19 @@ const ResumePage = () => {
   const [resumeScoredAt, setResumeScoredAt] = useState<string | null>(null);
   // Shown once, right after an apply+rescore cycle completes.
   const [scoreDelta, setScoreDelta] = useState<{ prev: number; next: number } | null>(null);
-  // Synchronous re-entrancy lock for handleScore/handleApplySelected. The
+  // ---- Job-fit (Tailor tab) score state — SEPARATE machine from the general
+  // score above. Job-fit results are in-memory only: they are never written
+  // to resumeScore/resumeScoreLabel/resumeScoredAt (those stay general-mode).
+  const [fitState, setFitState] = useState<ScoreState>("idle");
+  const [fitResult, setFitResult] = useState<ResumeScoreResponse | null>(null);
+  const [fitSelectedIds, setFitSelectedIds] = useState<Set<string>>(new Set());
+  const [fitDelta, setFitDelta] = useState<{ prev: number; next: number } | null>(null);
+  // The job context of the last fit scoring, so the post-apply auto-rescore
+  // scores against the exact same posting (not re-resolved inputs).
+  const fitContextRef = useRef<JobContext | null>(null);
+
+  // Synchronous re-entrancy lock shared by ALL score/apply handlers (both the
+  // general and the job-fit machine — they mutate the same resumeData). The
   // state-machine guards below read closure state, so two invocations landing
   // before React re-renders (e.g. a double-click) could both pass them; this
   // ref flips immediately and is released in each handler's finally.
@@ -286,13 +312,7 @@ const ResumePage = () => {
 
   const handleScore = useCallback(async () => {
     if (busyLockRef.current) return;
-    if (
-      !hasStoredResume ||
-      uploading ||
-      scoreState === "scoring" ||
-      scoreState === "applying" ||
-      scoreState === "rescoring"
-    ) {
+    if (!hasStoredResume || uploading || machineBusy(scoreState) || machineBusy(fitState)) {
       return;
     }
     busyLockRef.current = true;
@@ -317,7 +337,7 @@ const ResumePage = () => {
     } finally {
       busyLockRef.current = false;
     }
-  }, [hasStoredResume, uploading, resumeData, scoreState, persistScore]);
+  }, [hasStoredResume, uploading, resumeData, scoreState, fitState, persistScore]);
 
   const toggleRec = useCallback((id: string) => {
     setSelectedRecIds((prev) => {
@@ -330,7 +350,7 @@ const ResumePage = () => {
 
   const handleApplySelected = useCallback(async () => {
     if (busyLockRef.current) return;
-    if (!scoreResult || scoreState !== "scored" || uploading) return;
+    if (!scoreResult || scoreState !== "scored" || uploading || machineBusy(fitState)) return;
     busyLockRef.current = true;
     try {
       const selected = scoreResult.recommendations.filter((r) => selectedRecIds.has(r.id));
@@ -396,7 +416,185 @@ const ResumePage = () => {
     } finally {
       busyLockRef.current = false;
     }
-  }, [scoreResult, scoreState, uploading, selectedRecIds, resumeData, persistResumeParsed, persistScore]);
+  }, [scoreResult, scoreState, fitState, uploading, selectedRecIds, resumeData, persistResumeParsed, persistScore]);
+
+  // ---- Job-fit (Tailor tab) handlers ---------------------------------------
+
+  const toggleFitRec = useCallback((id: string) => {
+    setFitSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleFitScore = useCallback(async () => {
+    if (busyLockRef.current) return;
+    if (!hasStoredResume || uploading || machineBusy(scoreState) || machineBusy(fitState)) {
+      return;
+    }
+    busyLockRef.current = true;
+    try {
+      const prevState: ScoreState = fitState;
+      setFitState("scoring");
+      setFitDelta(null);
+
+      let description = jobDescription.trim();
+      let title = jobTitle.trim();
+      let companyName = company.trim();
+
+      // If a URL is present, read the posting and backfill EMPTY fields only
+      // (typed values win). Mirrors RecruiterSpreadsheetPage's parse handling.
+      if (jobUrl.trim()) {
+        try {
+          const parseResponse = await apiService.parseJobUrl({ url: jobUrl.trim() });
+          if (parseResponse.job) {
+            if (parseResponse.job.description && !description) {
+              description = parseResponse.job.description.trim();
+              setJobDescription(description);
+            }
+            if (parseResponse.job.title && !title) {
+              title = parseResponse.job.title.trim();
+              setJobTitle(title);
+            }
+            if (parseResponse.job.company && !companyName) {
+              companyName = parseResponse.job.company.trim();
+              setCompany(companyName);
+            }
+          } else {
+            console.warn("Failed to parse job URL:", parseResponse.error);
+            toast({
+              title: "Could not read that URL — paste the description instead",
+            });
+          }
+        } catch (error) {
+          console.error("Error parsing job URL:", error);
+          toast({
+            title: "Could not read that URL — paste the description instead",
+          });
+        }
+      }
+
+      if (description.length < TAILOR_MIN_JD_LENGTH) {
+        toast({
+          title: "Job description required",
+          description: `Paste at least ${TAILOR_MIN_JD_LENGTH} characters of the job description, or use a link we can read.`,
+          variant: "destructive",
+        });
+        setFitState(prevState);
+        return;
+      }
+
+      const jobContext: JobContext = {
+        jobDescription: description,
+        ...(title ? { jobTitle: title } : {}),
+        ...(companyName ? { company: companyName } : {}),
+      };
+      fitContextRef.current = jobContext;
+
+      try {
+        const result = await apiService.scoreResume(resumeData, jobContext);
+        setFitResult(result);
+        setFitSelectedIds(new Set(result.recommendations.map((r) => r.id)));
+        setFitState("scored");
+      } catch (e) {
+        console.error("Job-fit scoring failed", e);
+        toast({
+          title: "Couldn't score your resume for this job",
+          description: e instanceof Error ? e.message : undefined,
+          variant: "destructive",
+        });
+        setFitState(prevState);
+      }
+    } finally {
+      busyLockRef.current = false;
+    }
+  }, [
+    hasStoredResume,
+    uploading,
+    scoreState,
+    fitState,
+    jobUrl,
+    jobDescription,
+    jobTitle,
+    company,
+    resumeData,
+  ]);
+
+  const handleFitApplySelected = useCallback(async () => {
+    if (busyLockRef.current) return;
+    if (!fitResult || fitState !== "scored" || uploading || machineBusy(scoreState)) return;
+    busyLockRef.current = true;
+    try {
+      const selected = fitResult.recommendations.filter((r) => fitSelectedIds.has(r.id));
+      if (selected.length === 0) {
+        toast({ title: "Select at least one change to apply" });
+        return;
+      }
+
+      setFitState("applying");
+      const { next, applied, skipped } = applyRecommendations(resumeData, selected);
+
+      if (applied === 0) {
+        toast({
+          title: "Nothing applied",
+          description: "Your resume changed since scoring — try re-scoring first.",
+          variant: "destructive",
+        });
+        setFitState("scored");
+        return;
+      }
+
+      try {
+        // Same apply engine as the Edit tab: one atomic state update, one
+        // save; the shared debounced preview effect picks up the change.
+        setResumeData(next);
+        await persistResumeParsed(next);
+
+        toast({
+          title: skipped > 0 ? `${applied} applied, ${skipped} skipped` : `${applied} applied`,
+          description:
+            skipped > 0 ? "Some changes no longer matched your resume and were skipped." : undefined,
+        });
+
+        const prevScore = fitResult.score;
+        setFitState("rescoring");
+        try {
+          // Auto-rescore with the SAME job context as the last fit scoring,
+          // passing the freshly-computed resume directly. Job-fit results are
+          // NOT persisted to the user doc's resumeScore fields.
+          const rescored = await apiService.scoreResume(
+            next,
+            fitContextRef.current ?? undefined
+          );
+          setFitResult(rescored);
+          setFitSelectedIds(new Set(rescored.recommendations.map((r) => r.id)));
+          setFitDelta({ prev: prevScore, next: rescored.score });
+          setFitState("scored");
+        } catch (e) {
+          console.error("Job-fit auto-rescore failed", e);
+          toast({
+            title: "Changes applied, but rescoring failed",
+            description:
+              e instanceof Error ? e.message : "Click Score for this job to try again.",
+            variant: "destructive",
+          });
+          setFitState("idle");
+        }
+      } catch (e) {
+        console.error("Failed to save applied changes", e);
+        toast({
+          title: "Failed to save your resume",
+          description: e instanceof Error ? e.message : undefined,
+          variant: "destructive",
+        });
+        setFitState("scored");
+      }
+    } finally {
+      busyLockRef.current = false;
+    }
+  }, [fitResult, fitState, scoreState, uploading, fitSelectedIds, resumeData, persistResumeParsed]);
 
   const handleDownloadPdf = async () => {
     if (isDownloading) return;
@@ -423,12 +621,12 @@ const ResumePage = () => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // Cross-gate against the score machine: an upload mid-apply/rescore would
-    // interleave a second resumeParsed write path (parse endpoint + loadResume)
-    // with the apply flow's updateDoc and clobber one or the other. The
-    // trigger buttons are disabled while busy, but the file dialog may have
-    // been opened before scoring started — so re-check here.
-    if (scoreState === "scoring" || scoreState === "applying" || scoreState === "rescoring") {
+    // Cross-gate against BOTH score machines: an upload mid-apply/rescore
+    // would interleave a second resumeParsed write path (parse endpoint +
+    // loadResume) with the apply flow's updateDoc and clobber one or the
+    // other. The trigger buttons are disabled while busy, but the file dialog
+    // may have been opened before scoring started — so re-check here.
+    if (machineBusy(scoreState) || machineBusy(fitState)) {
       toast({
         title: "Hold on — scoring in progress",
         description: "Wait for the current scoring/apply step to finish before replacing your resume.",
@@ -475,10 +673,15 @@ const ResumePage = () => {
       });
 
       // Re-read the user doc so the preview + score chip repopulate from the
-      // fresh parse. A new upload invalidates any prior score/recommendations.
+      // fresh parse. A new upload invalidates any prior score/recommendations
+      // on BOTH machines (rec targets point into the old parse).
       setScoreResult(null);
       setScoreState("idle");
       setScoreDelta(null);
+      setFitResult(null);
+      setFitState("idle");
+      setFitDelta(null);
+      fitContextRef.current = null;
       await loadResume(userId);
 
       toast({ title: "Resume uploaded", description: "We filled in the preview from your file." });
@@ -500,9 +703,181 @@ const ResumePage = () => {
     [scoreResult, selectedRecIds]
   );
 
-  const isBusy = scoreState === "scoring" || scoreState === "applying" || scoreState === "rescoring";
+  const fitSelectedCount = useMemo(
+    () => (fitResult ? fitResult.recommendations.filter((r) => fitSelectedIds.has(r.id)).length : 0),
+    [fitResult, fitSelectedIds]
+  );
+
+  // Busy if EITHER machine is mid-flight — gates uploads and both rails.
+  const isBusy = machineBusy(scoreState) || machineBusy(fitState);
 
   // ---- Render -------------------------------------------------------------
+
+  // Shared left column: the live PDF preview (same page-level preview state
+  // on both tabs, so approved tailoring is visible on the paper either way).
+  const previewPanel = (
+    <div className="lg:col-span-2 lg:sticky lg:top-4 self-start">
+      <div className="rounded-xl border border-line bg-white overflow-hidden">
+        <div className="px-4 py-2 border-b border-line bg-paper-2 flex items-center justify-between">
+          <span className="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">
+            Live preview
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            {previewRendering ? "Updating…" : "This is the exact PDF you'll download"}
+          </span>
+        </div>
+        {previewUrl ? (
+          <iframe
+            src={`${previewUrl}#toolbar=0&navpanes=0&view=FitH`}
+            title="Resume PDF preview"
+            style={{
+              width: "100%",
+              height: "calc(100vh - 200px)",
+              border: "none",
+              display: "block",
+            }}
+          />
+        ) : (
+          <div
+            className="flex items-center justify-center text-[13px] text-muted-foreground"
+            style={{ height: "calc(100vh - 200px)" }}
+          >
+            Rendering preview…
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Shared scored-state rail (score card + recommendation cards) for both
+  // machines; the callers pass their own state/handlers.
+  const renderScoredRail = (opts: {
+    result: ResumeScoreResponse;
+    delta: { prev: number; next: number } | null;
+    state: ScoreState;
+    selectedIds: Set<string>;
+    count: number;
+    onToggle: (id: string) => void;
+    onRescore: () => void;
+    onApply: () => void;
+  }) => (
+    <>
+      <div className="rounded-xl border border-line bg-white p-5">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-baseline gap-2">
+            <span
+              className="text-[32px] font-bold leading-none"
+              style={{ color: scoreColor(opts.result.score) }}
+            >
+              {opts.result.score}
+            </span>
+            <span className="text-[13px] font-medium text-muted-foreground">
+              {opts.result.score_label}
+            </span>
+          </div>
+          <Button variant="outline" size="sm" disabled={isBusy} onClick={opts.onRescore}>
+            <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+            Re-score
+          </Button>
+        </div>
+
+        {opts.delta && (
+          <div
+            className="flex items-center gap-1.5 text-[12.5px] font-medium mb-3 rounded-md px-2.5 py-1.5"
+            style={{
+              color: opts.delta.next >= opts.delta.prev ? "#16A34A" : "#DC2626",
+              background: opts.delta.next >= opts.delta.prev ? "#F0FDF4" : "#FEF2F2",
+            }}
+          >
+            {opts.delta.next >= opts.delta.prev ? (
+              <ArrowUp className="h-3.5 w-3.5" />
+            ) : (
+              <ArrowDown className="h-3.5 w-3.5" />
+            )}
+            {opts.delta.prev} → {opts.delta.next} (
+            {opts.delta.next >= opts.delta.prev ? "+" : ""}
+            {opts.delta.next - opts.delta.prev})
+          </div>
+        )}
+
+        <p className="text-[12.5px] text-ink-2 mb-4">{opts.result.summary}</p>
+
+        <div className="space-y-2.5">
+          {opts.result.categories.map((cat) => (
+            <div key={cat.name}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[12px] font-medium text-ink">{cat.name}</span>
+                <span
+                  className="text-[12px] font-semibold"
+                  style={{ color: scoreColor(cat.score) }}
+                >
+                  {cat.score}
+                </span>
+              </div>
+              <Progress value={cat.score} className="h-1.5" />
+              <p className="text-[11px] text-muted-foreground mt-1">{cat.explanation}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {opts.result.recommendations.length > 0 && (
+        <div className="rounded-xl border border-line bg-white p-5">
+          <h3 className="text-[13px] font-semibold text-ink mb-3">
+            Recommended changes ({opts.result.recommendations.length})
+          </h3>
+          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
+            {opts.result.recommendations.map((rec) => (
+              <label
+                key={rec.id}
+                className="flex gap-2.5 items-start rounded-lg border border-line p-3 cursor-pointer hover:bg-paper-2"
+              >
+                <Checkbox
+                  checked={opts.selectedIds.has(rec.id)}
+                  onCheckedChange={() => opts.onToggle(rec.id)}
+                  disabled={isBusy}
+                  className="mt-0.5"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="inline-block text-[10.5px] font-semibold uppercase tracking-wide text-[#3B82F6] bg-[#EFF6FF] rounded px-1.5 py-0.5">
+                      {rec.category}
+                    </span>
+                  </div>
+                  <p className="text-[11.5px] text-muted-foreground mb-1.5">{rec.reason}</p>
+                  <p className="text-[12px] text-red-700 bg-red-50 rounded px-2 py-1 line-through decoration-red-400 mb-1">
+                    {rec.current}
+                  </p>
+                  <p className="text-[12px] text-green-800 bg-green-50 rounded px-2 py-1">
+                    {rec.proposed}
+                  </p>
+                </div>
+              </label>
+            ))}
+          </div>
+          <Button
+            className="w-full mt-4"
+            disabled={opts.count === 0 || isBusy}
+            onClick={opts.onApply}
+          >
+            {opts.state === "applying" ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                Applying…
+              </>
+            ) : opts.state === "rescoring" ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                Rescoring…
+              </>
+            ) : (
+              `Apply ${opts.count} selected change${opts.count === 1 ? "" : "s"}`
+            )}
+          </Button>
+        </div>
+      )}
+    </>
+  );
 
   return (
     <SidebarProvider>
@@ -623,37 +998,7 @@ const ResumePage = () => {
                     {/* Left/main: live PDF preview — the real document,
                         rendered by the browser's PDF viewer so it looks like
                         the paper page you'd actually submit. */}
-                    <div className="lg:col-span-2 lg:sticky lg:top-4 self-start">
-                      <div className="rounded-xl border border-line bg-white overflow-hidden">
-                        <div className="px-4 py-2 border-b border-line bg-paper-2 flex items-center justify-between">
-                          <span className="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">
-                            Live preview
-                          </span>
-                          <span className="text-[11px] text-muted-foreground">
-                            {previewRendering ? "Updating…" : "This is the exact PDF you'll download"}
-                          </span>
-                        </div>
-                        {previewUrl ? (
-                          <iframe
-                            src={`${previewUrl}#toolbar=0&navpanes=0&view=FitH`}
-                            title="Resume PDF preview"
-                            style={{
-                              width: "100%",
-                              height: "calc(100vh - 200px)",
-                              border: "none",
-                              display: "block",
-                            }}
-                          />
-                        ) : (
-                          <div
-                            className="flex items-center justify-center text-[13px] text-muted-foreground"
-                            style={{ height: "calc(100vh - 200px)" }}
-                          >
-                            Rendering preview…
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                    {previewPanel}
 
                     {/* Right: score rail */}
                     <div className="lg:sticky lg:top-4 self-start space-y-4">
@@ -715,193 +1060,108 @@ const ResumePage = () => {
                       {(scoreState === "scored" ||
                         scoreState === "applying" ||
                         scoreState === "rescoring") &&
-                        scoreResult && (
-                          <>
-                            <div className="rounded-xl border border-line bg-white p-5">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-baseline gap-2">
-                                  <span
-                                    className="text-[32px] font-bold leading-none"
-                                    style={{ color: scoreColor(scoreResult.score) }}
-                                  >
-                                    {scoreResult.score}
-                                  </span>
-                                  <span className="text-[13px] font-medium text-muted-foreground">
-                                    {scoreResult.score_label}
-                                  </span>
-                                </div>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  disabled={isBusy}
-                                  onClick={handleScore}
-                                >
-                                  <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
-                                  Re-score
-                                </Button>
-                              </div>
-
-                              {scoreDelta && (
-                                <div
-                                  className="flex items-center gap-1.5 text-[12.5px] font-medium mb-3 rounded-md px-2.5 py-1.5"
-                                  style={{
-                                    color:
-                                      scoreDelta.next >= scoreDelta.prev ? "#16A34A" : "#DC2626",
-                                    background:
-                                      scoreDelta.next >= scoreDelta.prev ? "#F0FDF4" : "#FEF2F2",
-                                  }}
-                                >
-                                  {scoreDelta.next >= scoreDelta.prev ? (
-                                    <ArrowUp className="h-3.5 w-3.5" />
-                                  ) : (
-                                    <ArrowDown className="h-3.5 w-3.5" />
-                                  )}
-                                  {scoreDelta.prev} → {scoreDelta.next} (
-                                  {scoreDelta.next >= scoreDelta.prev ? "+" : ""}
-                                  {scoreDelta.next - scoreDelta.prev})
-                                </div>
-                              )}
-
-                              <p className="text-[12.5px] text-ink-2 mb-4">{scoreResult.summary}</p>
-
-                              <div className="space-y-2.5">
-                                {scoreResult.categories.map((cat) => (
-                                  <div key={cat.name}>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-[12px] font-medium text-ink">
-                                        {cat.name}
-                                      </span>
-                                      <span
-                                        className="text-[12px] font-semibold"
-                                        style={{ color: scoreColor(cat.score) }}
-                                      >
-                                        {cat.score}
-                                      </span>
-                                    </div>
-                                    <Progress value={cat.score} className="h-1.5" />
-                                    <p className="text-[11px] text-muted-foreground mt-1">
-                                      {cat.explanation}
-                                    </p>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-
-                            {scoreResult.recommendations.length > 0 && (
-                              <div className="rounded-xl border border-line bg-white p-5">
-                                <h3 className="text-[13px] font-semibold text-ink mb-3">
-                                  Recommended changes ({scoreResult.recommendations.length})
-                                </h3>
-                                <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-                                  {scoreResult.recommendations.map((rec) => (
-                                    <label
-                                      key={rec.id}
-                                      className="flex gap-2.5 items-start rounded-lg border border-line p-3 cursor-pointer hover:bg-paper-2"
-                                    >
-                                      <Checkbox
-                                        checked={selectedRecIds.has(rec.id)}
-                                        onCheckedChange={() => toggleRec(rec.id)}
-                                        disabled={isBusy}
-                                        className="mt-0.5"
-                                      />
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <span className="inline-block text-[10.5px] font-semibold uppercase tracking-wide text-[#3B82F6] bg-[#EFF6FF] rounded px-1.5 py-0.5">
-                                            {rec.category}
-                                          </span>
-                                        </div>
-                                        <p className="text-[11.5px] text-muted-foreground mb-1.5">
-                                          {rec.reason}
-                                        </p>
-                                        <p className="text-[12px] text-red-700 bg-red-50 rounded px-2 py-1 line-through decoration-red-400 mb-1">
-                                          {rec.current}
-                                        </p>
-                                        <p className="text-[12px] text-green-800 bg-green-50 rounded px-2 py-1">
-                                          {rec.proposed}
-                                        </p>
-                                      </div>
-                                    </label>
-                                  ))}
-                                </div>
-                                <Button
-                                  className="w-full mt-4"
-                                  disabled={selectedCount === 0 || isBusy}
-                                  onClick={handleApplySelected}
-                                >
-                                  {scoreState === "applying" ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                                      Applying…
-                                    </>
-                                  ) : scoreState === "rescoring" ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                                      Rescoring…
-                                    </>
-                                  ) : (
-                                    `Apply ${selectedCount} selected change${selectedCount === 1 ? "" : "s"}`
-                                  )}
-                                </Button>
-                              </div>
-                            )}
-                          </>
-                        )}
+                        scoreResult &&
+                        renderScoredRail({
+                          result: scoreResult,
+                          delta: scoreDelta,
+                          state: scoreState,
+                          selectedIds: selectedRecIds,
+                          count: selectedCount,
+                          onToggle: toggleRec,
+                          onRescore: handleScore,
+                          onApply: handleApplySelected,
+                        })}
                     </div>
                   </div>
                 </>
               ) : (
-                /* Tailor tab */
-                <div className="max-w-[560px]">
-                  <div className="rounded-xl border border-line bg-white p-5">
-                    <h2 className="text-[15px] font-semibold text-ink mb-1">Tailor to a job</h2>
-                    <p className="text-[12.5px] text-muted-foreground mb-4">
-                      Paste a job posting URL or the description and we&apos;ll tailor your resume
-                      to match it.
-                    </p>
-                    <div className="space-y-3">
-                      <div>
-                        <Input
-                          value={jobUrl}
-                          onChange={(e) => setJobUrl(e.target.value)}
-                          placeholder="Job posting URL — we'll read it for you"
+                /* Tailor tab: same PDF preview, job-fit score rail */
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                  {previewPanel}
+
+                  {/* Right: job inputs + fit score rail */}
+                  <div className="lg:sticky lg:top-4 self-start space-y-4">
+                    <div className="rounded-xl border border-line bg-white p-5">
+                      <h2 className="text-[15px] font-semibold text-ink mb-1">Tailor to a job</h2>
+                      <p className="text-[12.5px] text-muted-foreground mb-4">
+                        Paste a job posting URL or the description — we&apos;ll score your resume
+                        against the job and suggest tailored rewrites you can approve one by one.
+                      </p>
+                      <div className="space-y-3">
+                        <div>
+                          <Input
+                            value={jobUrl}
+                            onChange={(e) => setJobUrl(e.target.value)}
+                            placeholder="Job posting URL — we'll read it for you"
+                          />
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            If you provide a URL, we read the posting and fill in anything you
+                            left blank below.
+                          </p>
+                        </div>
+                        <Textarea
+                          value={jobDescription}
+                          onChange={(e) => setJobDescription(e.target.value)}
+                          placeholder="...or paste the job description here"
+                          className="min-h-[120px]"
                         />
-                        <p className="text-[11px] text-muted-foreground mt-1">
-                          If you provide a URL, we read the posting directly and it takes
-                          precedence over the pasted description.
+                        <Input
+                          value={jobTitle}
+                          onChange={(e) => setJobTitle(e.target.value)}
+                          placeholder="Job title (optional)"
+                        />
+                        <Input
+                          value={company}
+                          onChange={(e) => setCompany(e.target.value)}
+                          placeholder="Company (optional)"
+                        />
+                        {fitState === "idle" && (
+                          <Button
+                            className="w-full"
+                            disabled={!canTailor || !hasStoredResume || uploading || isBusy}
+                            onClick={handleFitScore}
+                          >
+                            <Sparkles className="w-4 h-4 mr-1.5" />
+                            Score for this job
+                          </Button>
+                        )}
+                        {!canTailor && (
+                          <p className="text-[12px] text-muted-foreground">
+                            Add a job URL or paste at least {TAILOR_MIN_JD_LENGTH} characters of
+                            the description to enable scoring.
+                          </p>
+                        )}
+                        {!hasStoredResume && (
+                          <p className="text-[12px] text-muted-foreground">
+                            No resume on file yet — upload one in the Edit tab first.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {fitState === "scoring" && (
+                      <div className="rounded-xl border border-line bg-white p-8 flex flex-col items-center justify-center text-center">
+                        <Loader2 className="h-6 w-6 animate-spin text-[#3B82F6] mb-3" />
+                        <p className="text-[13px] text-ink font-medium">
+                          Scoring your resume against this job…
                         </p>
                       </div>
-                      <Textarea
-                        value={jobDescription}
-                        onChange={(e) => setJobDescription(e.target.value)}
-                        placeholder="...or paste the job description here"
-                        className="min-h-[160px]"
-                      />
-                      <Input
-                        value={jobTitle}
-                        onChange={(e) => setJobTitle(e.target.value)}
-                        placeholder="Job title (optional)"
-                      />
-                      <Input
-                        value={company}
-                        onChange={(e) => setCompany(e.target.value)}
-                        placeholder="Company (optional)"
-                      />
-                      <Button className="w-full" disabled={!canTailor} onClick={() => setModalOpen(true)}>
-                        <Sparkles className="w-4 h-4 mr-1.5" />
-                        Tailor resume · 20 credits
-                      </Button>
-                      {!canTailor && (
-                        <p className="text-[12px] text-muted-foreground">
-                          Add a job URL or paste at least {TAILOR_MIN_JD_LENGTH} characters of the
-                          description to enable tailoring.
-                        </p>
-                      )}
-                      {!hasStoredResume && (
-                        <p className="text-[12px] text-muted-foreground">
-                          No resume on file yet — upload one in the Edit tab first.
-                        </p>
-                      )}
-                    </div>
+                    )}
+
+                    {(fitState === "scored" ||
+                      fitState === "applying" ||
+                      fitState === "rescoring") &&
+                      fitResult &&
+                      renderScoredRail({
+                        result: fitResult,
+                        delta: fitDelta,
+                        state: fitState,
+                        selectedIds: fitSelectedIds,
+                        count: fitSelectedCount,
+                        onToggle: toggleFitRec,
+                        onRescore: handleFitScore,
+                        onApply: handleFitApplySelected,
+                      })}
                   </div>
                 </div>
               )}
@@ -909,15 +1169,6 @@ const ResumePage = () => {
           </div>
         </MainContentWrapper>
       </div>
-
-      <ResumeOptimizationModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        jobDescription={jobDescription}
-        jobTitle={jobTitle || undefined}
-        company={company || undefined}
-        jobUrl={jobUrl.trim() || undefined}
-      />
     </SidebarProvider>
   );
 };
