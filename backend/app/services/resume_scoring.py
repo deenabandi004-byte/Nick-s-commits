@@ -25,7 +25,8 @@ from typing import Any, Dict, List, Optional
 from app.services.openai_client import get_openai_client
 
 MODEL = "gpt-4o"
-TEMPERATURE = 0.3
+# Low temperature: grading should be strict and repeatable, not creative.
+TEMPERATURE = 0.2
 MAX_TOKENS = 3000
 MAX_RECOMMENDATIONS = 8
 
@@ -78,6 +79,35 @@ both succeed.
 itself (dates, locations, tense, capitalization, punctuation across \
 bullets). Content is dense enough to fill a single page without being \
 padded with filler bullets.
+
+## GRADING CALIBRATION — BE STRICT
+
+You are grading against the bar of competitive consulting, investment \
+banking, and tech applicant pools — not against average student resumes. \
+Most resumes you evaluate should land between 45 and 70 overall. Reserve \
+85+ for resumes where nearly every bullet opens with a strong action verb \
+AND carries a concrete metric; a 90+ resume should be nearly impossible to \
+improve within this rubric.
+
+Grade each category by starting at 100 and deducting:
+- Impact & Results: deduct 8-12 points for EVERY bullet with no quantified \
+result (%, $, count, time, scale); deduct 10 for each duty-listing opener \
+("Responsible for", "Helped", "Worked on", "Assisted"). If fewer than half \
+the bullets are quantified, this category cannot exceed 55.
+- Clarity & Structure: deduct 10 per first-person pronoun; deduct 5-10 for \
+tense inconsistency within a role; deduct 8 for any bullet that runs well \
+past one line or buries the result at the end.
+- Keywords / ATS Readiness: deduct for buzzword filler ("team player", \
+"hard-working", "detail-oriented") and for missing the concrete tools or \
+skills the described work obviously involved. A generic skills list with no \
+supporting evidence in the bullets caps this category at 65.
+- Professional Presentation: deduct for inconsistent date/location formats, \
+punctuation drift across bullets, or thin sections padded with filler.
+
+The overall score reflects the weighted reality of the four categories — \
+Impact & Results weighs heaviest — not their optimistic average. When torn \
+between two scores, give the lower one. Do not grade on effort or \
+potential; grade the text on the page.
 
 ## RECOMMENDATIONS — HARD RULES (violating these gets a recommendation discarded)
 

@@ -429,3 +429,23 @@ class TestScoreResumeRoute:
             )
 
         assert resp.status_code == 502
+
+
+class TestStrictGradingCalibration:
+    """The strict-calibration block is load-bearing product behavior (Nick:
+    scoring must be strict). Guard its presence so a prompt refactor can't
+    silently revert the scorer to a generous default."""
+
+    def test_system_prompt_carries_strict_calibration(self):
+        from app.services import resume_scoring
+
+        prompt = resume_scoring._SYSTEM_PROMPT
+        assert "GRADING CALIBRATION" in prompt
+        assert "give the lower one" in prompt
+        assert "cannot exceed 55" in prompt  # unquantified-bullets cap
+        assert "45 and 70" in prompt         # expected score band
+
+    def test_temperature_stays_low(self):
+        from app.services import resume_scoring
+
+        assert resume_scoring.TEMPERATURE <= 0.2
