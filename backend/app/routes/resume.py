@@ -12,6 +12,7 @@ from app.services.resume_capabilities import (
     get_file_extension,
     build_resume_metadata
 )
+from app.services.resume_scoring import score_resume_structured
 from ..extensions import require_firebase_auth
 from app.utils.users import parse_resume_info, validate_parsed_resume
 from ..extensions import get_db
@@ -425,4 +426,45 @@ def delete_resume():
         import traceback
         traceback.print_exc()
         return jsonify({'error': 'Failed to delete resume'}), 500
+
+
+@resume_bp.route('/resume/score', methods=['POST'])
+@require_firebase_auth
+def score_resume():
+    """
+    Score the caller's resume against the Harvard rubric and return
+    path-targeted, mechanically-applicable recommendations.
+
+    Body: {"resumeParsed": {...}} (optional — falls back to the user doc's
+    stored resumeParsed if omitted or empty). Costs no credits.
+    """
+    try:
+        uid = request.firebase_user['uid']
+        db = get_db()
+
+        payload = request.get_json(silent=True) or {}
+        parsed = payload.get('resumeParsed')
+
+        if not parsed:
+            user_data = {}
+            if db:
+                user_doc = db.collection('users').document(uid).get()
+                user_data = user_doc.to_dict() or {}
+            parsed = user_data.get('resumeParsed')
+
+        if not parsed:
+            return jsonify({'error': 'No resume data to score. Upload a resume first.'}), 400
+
+        try:
+            result = score_resume_structured(parsed)
+        except ValueError as e:
+            return jsonify({'error': str(e)}), 400
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print(f"[Resume] Scoring failed: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to score resume'}), 502
 
