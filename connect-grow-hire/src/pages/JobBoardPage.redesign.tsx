@@ -861,7 +861,7 @@ export const JobBoardPage: React.FC = () => {
               <div className="jb-fb">
                 <div className="jb-fb-row">
                   <div>
-                    <h1 className="jb-fb-title">Discover Opportunities</h1>
+                    <h1 className="jb-fb-title">Browse all jobs</h1>
                   </div>
                 </div>
 
