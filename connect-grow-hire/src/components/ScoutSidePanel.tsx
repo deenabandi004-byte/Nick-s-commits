@@ -142,6 +142,15 @@ export function ScoutSidePanel() {
   // because the panel never unmounts.
   const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
 
+  // Page context sent to Scout. The bare pathname collapses the Find tabs
+  // (people / companies / hiring-managers) into one page, so carry the tab
+  // param when present. Other query params are deliberately dropped: they are
+  // noise for the model and would churn the backend's context cache.
+  const tabParam = new URLSearchParams(location.search).get('tab');
+  const scoutCurrentPage = tabParam
+    ? `${location.pathname}?tab=${tabParam}`
+    : location.pathname;
+
   const {
     messages,
     input,
@@ -158,7 +167,7 @@ export function ScoutSidePanel() {
     appendSyntheticAssistant,
     appendSyntheticUser,
     requestBriefing,
-  } = useScoutChat(location.pathname);
+  } = useScoutChat(scoutCurrentPage);
 
   // Phase 4B auto-fire: when the user opens Scout for the very first time
   // (no prior briefing flagged in localStorage AND a fresh chat with zero
@@ -927,7 +936,7 @@ export function ScoutSidePanel() {
                         />
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-10">
-                        {(SCOUT_CHIPS_BY_PAGE[location.pathname] ?? SUGGESTED_QUESTIONS).map((question, idx) => (
+                        {(SCOUT_CHIPS_BY_PAGE[scoutCurrentPage] ?? SCOUT_CHIPS_BY_PAGE[location.pathname] ?? SUGGESTED_QUESTIONS).map((question, idx) => (
                           <button
                             key={idx}
                             onClick={() => sendMessage(question)}

@@ -534,31 +534,134 @@ export const SUGGESTED_QUESTIONS = [
   "What's the deal with credits?"
 ] as const;
 
-/** Context-aware suggestion chips by route. Fallback to SUGGESTED_QUESTIONS for unmapped pages. */
+/**
+ * Context-aware suggestion chips by route. Fallback to SUGGESTED_QUESTIONS
+ * for unmapped pages.
+ *
+ * Keys are pathnames, except the Find tabs, which are keyed by
+ * "pathname?tab=<tab>". The panel looks up the tab-qualified key first, then
+ * the bare pathname (see ScoutSidePanel), so the tab entries actually match.
+ */
 export const SCOUT_CHIPS_BY_PAGE: Record<string, readonly string[]> = {
+  "/dashboard": [
+    "What should I do first?",
+    "Find me 5 people to reach out to",
+    "Build me a networking plan for this month",
+    "What's waiting on me right now?",
+  ],
   "/find": [
     "Help me narrow my search",
-    "What filters work best?",
+    "Find alumni from my school at my target firms",
     "I'm not getting good results",
     "How do credits work with searches?",
   ],
   "/find?tab=companies": [
-    "How do I find firms in my industry?",
-    "What info do firm profiles show?",
+    "Find firms in my industry that are hiring",
+    "Help me build a target company list",
     "Help me narrow these results",
     "What's the deal with credits?",
   ],
+  "/find?tab=hiring-managers": [
+    "Find the hiring manager for a job posting",
+    "Who should I email at my target company?",
+    "Recruiter or hiring manager: who do I contact?",
+    "How do credits work with searches?",
+  ],
   "/job-board": [
     "Find contacts at these companies",
-    "How do I prep for a role?",
+    "Which of these jobs fit my resume best?",
+    "How does auto-apply work?",
     "Help me find similar jobs",
-    "What do I get on each plan?",
+  ],
+  "/applications": [
+    "What's the status of my applications?",
+    "What does 'needs your answers' mean?",
+    "Why is an application stuck in the browser step?",
+    "How does auto-apply work?",
+  ],
+  "/outbox": [
+    "Who hasn't replied yet?",
+    "Help me write a follow-up",
+    "How do I reply to this thread?",
+    "When should I follow up after no response?",
+  ],
+  "/agent": [
+    "What does a Loop actually do?",
+    "Set up a Loop for my target companies",
+    "How many credits does a Loop use?",
+    "Should I approve auto-sending?",
   ],
   "/coffee-chat-prep": [
     "What questions should I ask?",
     "Help me research this person",
     "How do I follow up after?",
+    "What goes into a prep document?",
+  ],
+  "/coffee-chat-library": [
+    "Prep me for another meeting",
+    "How do I reuse a past prep?",
+    "What questions should I ask in a coffee chat?",
+    "How many preps do I get on my plan?",
+  ],
+  "/resume": [
+    "How do I improve my resume score?",
+    "What does the score measure?",
+    "How is my resume used across Offerloop?",
+    "Tailor my resume advice to my target role",
+  ],
+  "/cover-letter": [
+    "Write a cover letter for a job posting",
+    "What makes a strong cover letter?",
+    "Why does it need my resume first?",
+    "How many credits per letter?",
+  ],
+  "/upload-list": [
+    "How should I format my CSV?",
+    "What happens after I upload a list?",
+    "Can I import LinkedIn URLs?",
+    "Where do imported contacts go?",
+  ],
+  "/my-network": [
+    "Who should I follow up with?",
+    "Find more people like my saved contacts",
+    "Help me email someone in my network",
+    "How do pipeline stages work?",
+  ],
+  "/my-network/people": [
+    "Who should I follow up with?",
+    "Find more people like my saved contacts",
+    "Help me email someone in my network",
+    "How do pipeline stages work?",
+  ],
+  "/my-network/companies": [
+    "Find people at my saved companies",
+    "Add more companies like these",
+    "Which of these firms hire from my school?",
+    "Help me prioritize this list",
+  ],
+  "/integrations": [
+    "Why should I connect Gmail?",
+    "Is it safe to connect my Gmail?",
+    "My drafts aren't showing up in Gmail",
+    "How do replies get tracked?",
+  ],
+  "/mcp-server": [
+    "What can I do from Claude or ChatGPT?",
+    "How do I set up the connector?",
+    "Does MCP use my credits?",
+    "What's the difference from using the website?",
+  ],
+  "/recruiting-timeline": [
+    "What should I be doing right now?",
+    "When does recruiting start for my industry?",
+    "Am I behind for this cycle?",
+    "Build me a plan for the next month",
+  ],
+  "/pricing": [
     "What do I get on each plan?",
+    "How far do 2,000 credits go?",
+    "What happens to unused credits?",
+    "Which plan fits how I'm recruiting?",
   ],
 };
 
