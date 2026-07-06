@@ -46,6 +46,11 @@ import { TemplateButton } from "@/components/TemplateButton";
 import { DEV_MOCK_USER } from "@/lib/devPreview";
 import { getUniversityShortName } from "@/lib/universityUtils";
 import { PeopleFilters, peopleFiltersActive } from "@/types/findFilters";
+import {
+  readScoutPrefillEnvelope,
+  SCOUT_PREFILL_EVENT,
+  SCOUT_SEARCH_COMPLETED_EVENT,
+} from "@/lib/scoutBridge";
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
@@ -992,22 +997,20 @@ const ContactSearchPage: React.FC<{
     }
   }, [routerLocation.state]);
 
-  // Handle Scout auto-populate from failed search, chat "Take me there", or navigation state
-  useEffect(() => {
-    const applyPopulate = (
-      populateData: {
-        job_title?: string;
-        company?: string;
-        location?: string;
-        prompt?: string;
-        autoSubmit?: boolean;
-      },
-    ) => {
-      // Prompt-mode: refined-prompt cards from Scout's failed-search panel
-      // pass the full natural-language prompt directly. Skip the structured
-      // assembly path and just drop the prompt in. autoSubmit re-runs the
-      // search immediately so the user sees fresh results without a second
-      // click.
+  // Shared Scout populate: fills the search box from Scout-provided fields.
+  // Used by both the legacy scout_auto_populate bridge (failed-search
+  // recovery) and the scout_prefill bridge (chat navigate / CTA / plan step).
+  const applyScoutPopulate = useCallback(
+    (populateData: {
+      job_title?: string;
+      company?: string;
+      location?: string;
+      prompt?: string;
+      autoSubmit?: boolean;
+    }) => {
+      // Prompt-mode: a full natural-language prompt goes straight into the
+      // search bar. autoSubmit runs the search immediately so the user sees
+      // results without a second click.
       if (populateData.prompt && populateData.prompt.trim()) {
         setSearchPrompt(populateData.prompt.trim());
         if (populateData.autoSubmit) {
@@ -1028,12 +1031,22 @@ const ContactSearchPage: React.FC<{
       if (autoLocation != null && autoLocation !== '') parts.push(`in ${autoLocation}`);
       if (parts.length) {
         setSearchPrompt(parts.join(' '));
-        toast({
-          title: "Search pre-filled",
-          description: "Scout has filled in your search. Click Search to find contacts.",
-        });
+        if (populateData.autoSubmit) {
+          pendingAutoSearch.current = true;
+        } else {
+          toast({
+            title: "Search pre-filled",
+            description: "Scout has filled in your search. Click Search to find contacts.",
+          });
+        }
       }
-    };
+    },
+    [],
+  );
+
+  // Handle Scout auto-populate from failed search, chat "Take me there", or navigation state
+  useEffect(() => {
+    const applyPopulate = applyScoutPopulate;
 
     const handleAutoPopulate = () => {
       try {
@@ -1071,7 +1084,33 @@ const ContactSearchPage: React.FC<{
 
     window.addEventListener('scout-auto-populate', handleAutoPopulate);
     return () => window.removeEventListener('scout-auto-populate', handleAutoPopulate);
-  }, [routerLocation.state, routerLocation.pathname, navigate]);
+  }, [routerLocation.state, routerLocation.pathname, navigate, applyScoutPopulate]);
+
+  // Scout chat prefill bridge (scout_prefill in sessionStorage): the panel's
+  // navigate / CTA chip / plan step writes it keyed to this route, then
+  // navigates (or dispatches the in-place event when already here). Consume on
+  // mount and on the event. Gated to the People tab because all three Find
+  // tabs stay mounted and the envelope is consume-on-read: without the gate
+  // a hidden tab could swallow a prefill addressed to a sibling.
+  useEffect(() => {
+    const applyFromBridge = () => {
+      const tab = searchParams.get('tab');
+      if (tab && tab !== 'people' && tab !== 'contact-search' && tab !== 'linkedin-email') return;
+      const env = readScoutPrefillEnvelope(routerLocation.pathname);
+      if (!env) return;
+      const p = env.prefill || {};
+      applyScoutPopulate({
+        prompt: p.prompt,
+        job_title: p.job_title,
+        company: p.company,
+        location: p.location,
+        autoSubmit: env.auto_submit,
+      });
+    };
+    applyFromBridge();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+  }, [routerLocation.pathname, searchParams, applyScoutPopulate]);
 
   // Helper function to trigger Scout on 0 results. Forwards the parsed query +
   // retry-chain context so the backend can generate concrete refined prompts
@@ -1712,6 +1751,19 @@ const ContactSearchPage: React.FC<{
       setLastResults(result.contacts);
       setAlreadySavedResults(alreadySavedFromServer);
       setResultMessage(backendMessage);
+
+      // Tell Scout's panel the search it kicked off finished, so the chat can
+      // post its "Found N contacts" follow-up (scoutBridge contract). Harmless
+      // no-op when the panel is closed or the search was user-initiated.
+      try {
+        window.dispatchEvent(
+          new CustomEvent(SCOUT_SEARCH_COMPLETED_EVENT, {
+            detail: { count: result.contacts?.length || 0, route: '/find' },
+          }),
+        );
+      } catch {
+        // non-fatal
+      }
 
       // Append every completed search to a rolling localStorage list so Scout's
       // chat can reference "you searched for X yesterday and got 5 results"

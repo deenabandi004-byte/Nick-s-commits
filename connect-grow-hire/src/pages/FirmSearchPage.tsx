@@ -38,6 +38,7 @@ import { isContextEmpty, type UserContext } from "@/utils/suggestionChips";
 import { SearchPromptBox } from "@/components/find/SearchPromptBox";
 import { PromptTemplates } from "@/components/find/PromptTemplates";
 import { COMPANY_TEMPLATES } from "@/data/searchTemplates";
+import { readScoutPrefillEnvelope, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 import { firebaseApi } from "@/services/firebaseApi";
 import { CompanyFilters, companyFiltersActive } from "@/types/findFilters";
 
@@ -902,6 +903,41 @@ const FirmSearchPage: React.FC<{
     // to avoid re-firing on unrelated renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery]);
+
+  // Scout chat prefill bridge (scout_prefill in sessionStorage): consume on
+  // mount and on the in-place event. Gated to the Companies tab because all
+  // three Find tabs stay mounted and the envelope is consume-on-read.
+  useEffect(() => {
+    const applyFromBridge = () => {
+      const tab = new URLSearchParams(routerLocation.search).get('tab');
+      if (tab !== 'companies') return;
+      const env = readScoutPrefillEnvelope(routerLocation.pathname);
+      if (!env) return;
+      const p = env.prefill || {};
+      let newQuery = (p.prompt || '').trim();
+      if (!newQuery) {
+        if (p.industry) newQuery += p.industry;
+        if (p.location) newQuery += (newQuery ? ' in ' : '') + p.location;
+        if (p.size) newQuery += (newQuery ? ', ' : '') + p.size;
+      }
+      if (!newQuery) return;
+      setQuery(newQuery);
+      if (env.auto_submit) {
+        handleSearch(newQuery);
+      } else {
+        toast({
+          title: "Search pre-filled",
+          description: "Scout has filled in your search. Click Search to find firms.",
+        });
+      }
+    };
+    applyFromBridge();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+    // handleSearch identity churns per render; mount + event-driven re-reads
+    // are the correct cadence here, mirroring the initialQuery hand-off above.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routerLocation.pathname, routerLocation.search]);
 
   // CSV Export function
   const handleExportCsv = () => {
