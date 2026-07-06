@@ -431,6 +431,164 @@ class TestScoreResumeRoute:
         assert resp.status_code == 502
 
 
+class TestJobFitMode:
+    """Job-fit scoring mode: same contract, prompt scores fit against one
+    specific posting; job posting text is untrusted DATA."""
+
+    JD = (
+        "We are seeking a Backend Software Engineer Intern to build Python "
+        "microservices on AWS. Required: Python, Flask, PostgreSQL, REST API "
+        "design, and experience with CI/CD pipelines. Nice to have: Docker, "
+        "Kubernetes, and exposure to event-driven architectures."
+    )
+
+    def _job_context(self, **over):
+        ctx = {
+            "job_description": self.JD,
+            "job_title": "Backend Software Engineer Intern",
+            "company": "Initech",
+        }
+        ctx.update(over)
+        return ctx
+
+    def _run(self, job_context):
+        client = _make_client(_valid_llm_payload())
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            result = score_resume_structured(_sample_parsed(), job_context=job_context)
+        messages = client.chat.completions.create.call_args.kwargs["messages"]
+        return result, messages[0]["content"], messages[1]["content"], client
+
+    def test_job_mode_embeds_posting_as_delimited_data_in_user_prompt(self):
+        result, _system, user, _client = self._run(self._job_context())
+        assert self.JD in user
+        assert "Backend Software Engineer Intern" in user
+        assert "Initech" in user
+        assert "JOB POSTING" in user
+        assert "DATA" in user  # delimited as data, not instructions
+        # Contract unchanged: still exactly the 4 canonical categories.
+        assert len(result["categories"]) == 4
+
+    def test_job_mode_system_prompt_has_tailoring_rule_security_and_calibration(self):
+        _result, system, _user, _client = self._run(self._job_context())
+        # Tailoring hard rule: truthful reframing only, no fabrication.
+        assert "NEVER fabricate" in system
+        # SECURITY framing extended to the pasted job posting.
+        assert "SECURITY" in system
+        assert "job posting" in system.lower()
+        # Strict calibration retained, reworded for fit-against-posting.
+        assert "GRADING CALIBRATION" in system
+        assert "this specific posting" in system
+        assert "45 and 70" in system
+        assert "give the lower one" in system
+
+    def test_job_description_is_truncated_to_4000_chars(self):
+        long_jd = self.JD + " " + ("x" * 6000)
+        _result, _system, user, _client = self._run(self._job_context(job_description=long_jd))
+        assert long_jd not in user             # full text must not be embedded
+        assert long_jd.strip()[:4000] in user  # truncated prefix is
+
+    def test_short_job_description_raises_value_error_before_llm_call(self):
+        client = _make_client(_valid_llm_payload())
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            with pytest.raises(ValueError):
+                score_resume_structured(
+                    _sample_parsed(),
+                    job_context={"job_description": "too short"},
+                )
+        assert client.chat.completions.create.call_count == 0
+
+    def test_missing_job_description_raises_value_error(self):
+        client = _make_client(_valid_llm_payload())
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            with pytest.raises(ValueError):
+                score_resume_structured(
+                    _sample_parsed(),
+                    job_context={"job_title": "Engineer", "company": "Initech"},
+                )
+        assert client.chat.completions.create.call_count == 0
+
+    def test_general_mode_prompts_are_unchanged_without_job_context(self):
+        from app.services import resume_scoring
+
+        client = _make_client(_valid_llm_payload())
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            score_resume_structured(_sample_parsed())
+        messages = client.chat.completions.create.call_args.kwargs["messages"]
+        # System prompt is exactly the general literal — no job-mode leakage.
+        assert messages[0]["content"] == resume_scoring._SYSTEM_PROMPT
+        assert "NEVER fabricate" not in messages[0]["content"]
+        assert "JOB POSTING" not in messages[1]["content"]
+
+
+class TestScoreResumeRouteJobFit:
+    @pytest.fixture(autouse=True)
+    def _bypass_firebase_auth(self):
+        with patch("firebase_admin._apps", {"[DEFAULT]": MagicMock()}), \
+             patch("firebase_admin.auth.verify_id_token", return_value=FAKE_USER):
+            yield
+
+    def _mock_db_with_resume(self):
+        mock_db = MagicMock()
+        user_doc = MagicMock()
+        user_doc.to_dict.return_value = {"resumeParsed": _sample_parsed()}
+        mock_db.collection.return_value.document.return_value.get.return_value = user_doc
+        return mock_db
+
+    def test_short_job_description_returns_400_before_scoring(self, client):
+        with patch("backend.app.routes.resume.get_db", return_value=self._mock_db_with_resume()), \
+             patch("backend.app.routes.resume.score_resume_structured",
+                   side_effect=AssertionError("scoring should not run with a too-short JD")):
+            resp = client.post(
+                "/api/resume/score",
+                data=json.dumps({"jobDescription": "short JD"}),
+                content_type="application/json",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert resp.status_code == 400
+        assert "job description" in resp.get_json()["error"].lower()
+
+    def test_job_fields_are_passed_through_as_job_context(self, client):
+        with patch("backend.app.routes.resume.get_db", return_value=self._mock_db_with_resume()), \
+             patch("backend.app.routes.resume.score_resume_structured",
+                   return_value={"score": 61, "score_label": "Good", "summary": "",
+                                 "categories": [], "recommendations": []}) as mock_score:
+            resp = client.post(
+                "/api/resume/score",
+                data=json.dumps({
+                    "resumeParsed": _sample_parsed(),
+                    "jobDescription": TestJobFitMode.JD,
+                    "jobTitle": "Backend Software Engineer Intern",
+                    "company": "Initech",
+                }),
+                content_type="application/json",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert resp.status_code == 200
+        mock_score.assert_called_once()
+        job_context = mock_score.call_args.kwargs["job_context"]
+        assert job_context["job_description"] == TestJobFitMode.JD
+        assert job_context["job_title"] == "Backend Software Engineer Intern"
+        assert job_context["company"] == "Initech"
+
+    def test_absent_job_description_scores_in_general_mode(self, client):
+        with patch("backend.app.routes.resume.get_db", return_value=self._mock_db_with_resume()), \
+             patch("backend.app.routes.resume.score_resume_structured",
+                   return_value={"score": 70, "score_label": "Good", "summary": "",
+                                 "categories": [], "recommendations": []}) as mock_score:
+            resp = client.post(
+                "/api/resume/score",
+                data=json.dumps({}),
+                content_type="application/json",
+                headers={"Authorization": "Bearer test-token"},
+            )
+
+        assert resp.status_code == 200
+        mock_score.assert_called_once()
+        assert mock_score.call_args.kwargs["job_context"] is None
+
+
 class TestStrictGradingCalibration:
     """The strict-calibration block is load-bearing product behavior (Nick:
     scoring must be strict). Guard its presence so a prompt refactor can't

@@ -436,7 +436,10 @@ def score_resume():
     path-targeted, mechanically-applicable recommendations.
 
     Body: {"resumeParsed": {...}} (optional — falls back to the user doc's
-    stored resumeParsed if omitted or empty). Costs no credits.
+    stored resumeParsed if omitted or empty). Optional job-fit mode: pass
+    "jobDescription" (plus optional "jobTitle", "company") to score fit
+    against that specific posting instead of general quality. Costs no
+    credits.
     """
     try:
         uid = request.firebase_user['uid']
@@ -444,6 +447,27 @@ def score_resume():
 
         payload = request.get_json(silent=True) or {}
         parsed = payload.get('resumeParsed')
+
+        # Optional job-fit mode: a meaningful jobDescription switches the
+        # scorer to grade fit against that posting. Empty/whitespace-only is
+        # treated as absent (general mode) so clients that always send the
+        # field don't break; present-but-too-short is a hard 400.
+        job_context = None
+        job_description = payload.get('jobDescription')
+        job_description = job_description.strip() if isinstance(job_description, str) else ''
+        if job_description:
+            if len(job_description) < 50:
+                return jsonify({
+                    'error': 'Job description is too short to score against '
+                             '(minimum 50 characters). Paste the full posting.'
+                }), 400
+            job_title = payload.get('jobTitle')
+            company = payload.get('company')
+            job_context = {
+                'job_description': job_description,
+                'job_title': job_title.strip() if isinstance(job_title, str) else '',
+                'company': company.strip() if isinstance(company, str) else '',
+            }
 
         if not parsed:
             user_data = {}
@@ -456,7 +480,7 @@ def score_resume():
             return jsonify({'error': 'No resume data to score. Upload a resume first.'}), 400
 
         try:
-            result = score_resume_structured(parsed)
+            result = score_resume_structured(parsed, job_context=job_context)
         except ValueError as e:
             return jsonify({'error': str(e)}), 400
 
