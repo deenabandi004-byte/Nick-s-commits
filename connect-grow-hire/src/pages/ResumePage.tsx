@@ -39,8 +39,6 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { ACCEPTED_RESUME_TYPES, isValidResumeFile } from "@/utils/resumeFileTypes";
 import { toast } from "@/hooks/use-toast";
 import { ResumeOptimizationModal } from "@/components/ResumeOptimizationModal";
-import ResumeRenderer from "@/components/ResumeRenderer";
-import "@/components/ResumeRenderer.css";
 import type {
   ParsedResume,
   ParsedResumeContact,
@@ -50,7 +48,7 @@ import type {
   ParsedResumeExtracurricularEntry,
 } from "@/types/resume";
 import { emptyParsedResume, normalizeParsedResumeFromFirestore } from "@/types/resume";
-import { parseResumeToPdfPayload, generateResumePDF } from "@/utils/resumePDFGenerator";
+import { generateResumePDF } from "@/utils/resumePDFGenerator";
 
 // Backend minimum for /job-board/optimize-resume-v2 (see api.ts optimizeResumeV2).
 const TAILOR_MIN_JD_LENGTH = 50;
@@ -242,7 +240,43 @@ const ResumePage = () => {
     [resumeData, savedSnapshot]
   );
 
-  const previewPayload = useMemo(() => parseResumeToPdfPayload(resumeData), [resumeData]);
+  // Real-PDF live preview: regenerate the ACTUAL ResumePDF document (the same
+  // one Download saves) shortly after the user stops typing, and display it in
+  // the browser's PDF viewer so it reads as a true paginated sheet of paper.
+  // The previous blob stays on screen while the next renders — no blank flash.
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewRendering, setPreviewRendering] = useState(false);
+  const previewUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setPreviewRendering(true);
+    const timer = setTimeout(async () => {
+      try {
+        const blob = await generateResumePDF(resumeData);
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = url;
+        setPreviewUrl(url);
+      } catch {
+        // Keep the last good preview; the next edit retries.
+      } finally {
+        if (!cancelled) setPreviewRendering(false);
+      }
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [resumeData]);
+
+  useEffect(
+    () => () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    },
+    []
+  );
 
   // ---- Immutable updaters -------------------------------------------------
 
@@ -970,17 +1004,38 @@ const ResumePage = () => {
                       </EditorSection>
                     </div>
 
-                    {/* Right: live preview (sticky, own scroll) */}
+                    {/* Right: live PDF preview (sticky) — the real document,
+                        rendered by the browser's PDF viewer so it looks like
+                        the paper page you'd actually submit. */}
                     <div className="lg:sticky lg:top-4 self-start">
                       <div className="rounded-xl border border-line bg-white overflow-hidden">
-                        <div className="px-4 py-2 border-b border-line bg-paper-2">
+                        <div className="px-4 py-2 border-b border-line bg-paper-2 flex items-center justify-between">
                           <span className="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">
                             Live preview
                           </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            {previewRendering ? "Updating…" : "This is the exact PDF you'll download"}
+                          </span>
                         </div>
-                        <div className="max-h-[calc(100vh-160px)] overflow-y-auto p-6">
-                          <ResumeRenderer resume={previewPayload || {}} />
-                        </div>
+                        {previewUrl ? (
+                          <iframe
+                            src={`${previewUrl}#toolbar=0&navpanes=0&view=FitH`}
+                            title="Resume PDF preview"
+                            style={{
+                              width: "100%",
+                              height: "calc(100vh - 200px)",
+                              border: "none",
+                              display: "block",
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="flex items-center justify-center text-[13px] text-muted-foreground"
+                            style={{ height: "calc(100vh - 200px)" }}
+                          >
+                            Rendering preview…
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
