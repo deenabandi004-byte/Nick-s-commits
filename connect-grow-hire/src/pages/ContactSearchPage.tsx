@@ -2280,6 +2280,99 @@ const ContactSearchPage: React.FC<{
                   />
                 )}
               </div>
+
+              {/* Card footer: count slider, live cost, and the visible primary submit.
+                  Hidden for LinkedIn URLs (import mode has no batch size). */}
+              {!isLinkedInUrl(searchPrompt) && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 14,
+                  marginTop: 16, paddingTop: 14, borderTop: '1px solid var(--line, #E5E5E0)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: '1 1 240px', minWidth: 220 }}>
+                    <span style={{ fontSize: 11, color: '#8A8F97', minWidth: 12 }}>1</span>
+                    <div className="slider-input-wrapper" style={{ flex: 1, position: 'relative', height: 4, background: '#E5E3DE', borderRadius: 2 }}>
+                      <div style={{
+                        position: 'absolute', left: 0, top: 0, height: 4,
+                        width: maxBatchSize > 1 ? `${((batchSize - 1) / (maxBatchSize - 1)) * 100}%` : '0%',
+                        background: sliderFlashing ? 'var(--brand-blue, #3B82F6)' : 'var(--accent, #1B2A44)',
+                        borderRadius: 2,
+                        transition: 'background .35s ease',
+                      }} />
+                      <input
+                        type="range"
+                        min={1}
+                        max={maxBatchSize}
+                        step={1}
+                        value={batchSize}
+                        onChange={(e) => {
+                          userAdjustedBatchSize.current = true;
+                          setBatchSize(Math.min(Number(e.target.value), maxBatchSize));
+                          flashSlider();
+                        }}
+                        disabled={isSearching}
+                        className="slider-custom"
+                        aria-label="Number of contacts to find"
+                        style={{
+                          position: 'absolute', inset: 0, width: '100%', height: '100%',
+                          opacity: 0, cursor: 'pointer', margin: 0,
+                        }}
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        left: `calc(${maxBatchSize > 1 ? ((batchSize - 1) / (maxBatchSize - 1)) * 100 : 0}% - 7px)`,
+                        top: -5, width: 14, height: 14, borderRadius: '50%',
+                        background: sliderFlashing ? 'var(--brand-blue, #3B82F6)' : 'var(--accent, #1B2A44)',
+                        boxShadow: sliderFlashing
+                          ? '0 1px 6px rgba(59,130,246,0.55)'
+                          : '0 1px 4px rgba(27,42,68,0.4)',
+                        pointerEvents: 'none',
+                        transition: 'background .35s ease, box-shadow .35s ease',
+                      }} />
+                    </div>
+                    <span style={{ fontSize: 11, color: '#8A8F97', minWidth: 16, textAlign: 'right' }}>{maxBatchSize}</span>
+                  </div>
+                  <div style={{
+                    fontFamily: "var(--serif, 'Instrument Serif', Georgia, serif)",
+                    fontStyle: 'italic', fontSize: 13.5, color: '#111418', whiteSpace: 'nowrap',
+                  }}>
+                    {batchSize} contact{batchSize !== 1 ? 's' : ''}
+                  </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#4A4F57' }}>
+                    <span style={{
+                      display: 'inline-flex', padding: '3px 8px',
+                      background: '#FAFAF8', border: '1px solid #E5E3DE', borderRadius: 4,
+                      fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#111418',
+                    }}>
+                      {batchSize * CREDIT_COSTS.find_contact} credits
+                    </span>
+                    <span style={{ color: '#8A8F97' }}>
+                      of {creditsView.balance.toLocaleString()}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleSubmit}
+                    disabled={isSearching || linkedInLoading || !user}
+                    style={{
+                      marginLeft: 'auto',
+                      background: 'var(--accent, #4A60A8)', color: '#fff', border: 'none',
+                      borderRadius: 10, padding: '9px 18px', fontSize: 13.5, fontWeight: 600,
+                      fontFamily: 'inherit', whiteSpace: 'nowrap',
+                      cursor: (isSearching || linkedInLoading || !user) ? 'not-allowed' : 'pointer',
+                      opacity: (isSearching || linkedInLoading || !user) ? 0.75 : 1,
+                      transition: 'background .15s ease, opacity .15s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--brand-blue, #3B82F6)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--accent, #4A60A8)';
+                    }}
+                  >
+                    {isSearching ? 'Finding...' : 'Find people'}
+                  </button>
+                </div>
+              )}
                 </>
               }
             >
@@ -2516,81 +2609,6 @@ const ContactSearchPage: React.FC<{
           <div className="p-3 bg-red-50 text-red-700 text-sm rounded-[3px] flex items-center gap-2 border border-red-200 mb-4">
             <AlertCircle className="w-4 h-4 flex-shrink-0" />
             {linkedInError}
-          </div>
-        )}
-
-        {/* Quantity slider — matched to the Companies slider; hidden for LinkedIn URLs */}
-        {!isLinkedInUrl(searchPrompt) && (
-          <div style={{ marginTop: 8, marginBottom: 12 }}>
-            <div style={{
-              fontFamily: '"Libre Baskerville", Georgia, serif',
-              fontSize: 10, letterSpacing: '0.12em', color: '#8A8F97', marginBottom: 8,
-            }}>
-              HOW MANY TO FIND?
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 11, color: '#8A8F97', minWidth: 12 }}>1</span>
-              <div className="slider-input-wrapper" style={{ flex: 1, position: 'relative', height: 4, background: '#E5E3DE', borderRadius: 2 }}>
-                <div style={{
-                  position: 'absolute', left: 0, top: 0, height: 4,
-                  width: maxBatchSize > 1 ? `${((batchSize - 1) / (maxBatchSize - 1)) * 100}%` : '0%',
-                  background: sliderFlashing ? 'var(--brand-blue, #3B82F6)' : 'var(--accent, #1B2A44)',
-                  borderRadius: 2,
-                  transition: 'background .35s ease',
-                }} />
-                <input
-                  type="range"
-                  min={1}
-                  max={maxBatchSize}
-                  step={1}
-                  value={batchSize}
-                  onChange={(e) => {
-                    userAdjustedBatchSize.current = true;
-                    setBatchSize(Math.min(Number(e.target.value), maxBatchSize));
-                    flashSlider();
-                  }}
-                  disabled={isSearching}
-                  className="slider-custom"
-                  aria-label="Number of contacts to find"
-                  style={{
-                    position: 'absolute', inset: 0, width: '100%', height: '100%',
-                    opacity: 0, cursor: 'pointer', margin: 0,
-                  }}
-                />
-                <div style={{
-                  position: 'absolute',
-                  left: `calc(${maxBatchSize > 1 ? ((batchSize - 1) / (maxBatchSize - 1)) * 100 : 0}% - 7px)`,
-                  top: -5, width: 14, height: 14, borderRadius: '50%',
-                  background: sliderFlashing ? 'var(--brand-blue, #3B82F6)' : 'var(--accent, #1B2A44)',
-                  boxShadow: sliderFlashing
-                    ? '0 1px 6px rgba(59,130,246,0.55)'
-                    : '0 1px 4px rgba(27,42,68,0.4)',
-                  pointerEvents: 'none',
-                  transition: 'background .35s ease, box-shadow .35s ease',
-                }} />
-              </div>
-              <span style={{ fontSize: 11, color: '#8A8F97', minWidth: 16, textAlign: 'right' }}>{maxBatchSize}</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 9 }}>
-              <div style={{
-                fontFamily: "var(--serif, 'Instrument Serif', Georgia, serif)",
-                fontStyle: 'italic', fontSize: 13.5, color: '#111418',
-              }}>
-                Find {batchSize} contact{batchSize !== 1 ? 's' : ''}
-              </div>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#4A4F57' }}>
-                <span style={{
-                  display: 'inline-flex', padding: '3px 8px',
-                  background: '#FAFAF8', border: '1px solid #E5E3DE', borderRadius: 4,
-                  fontFamily: "'JetBrains Mono', monospace", fontSize: 10, color: '#111418',
-                }}>
-                  {batchSize * CREDIT_COSTS.find_contact} credits
-                </span>
-                <span style={{ color: '#8A8F97' }}>
-                  of {creditsView.balance.toLocaleString()}
-                </span>
-              </div>
-            </div>
           </div>
         )}
 
