@@ -2211,7 +2211,7 @@ const ContactSearchPage: React.FC<{
         {/* Hero search bar — full-width prompt. Company Alternatives sidebar is
             absolutely positioned in the empty space to the right of the form (outside
             the prompt bubble) so the prompt keeps its full width for typing. */}
-        <div style={{ marginTop: 0, marginBottom: 16, position: 'relative', maxWidth: 896, marginLeft: 'auto', marginRight: 'auto' }}>
+        <div style={{ marginTop: 0, marginBottom: 16, position: 'relative' }}>
             <SearchPromptBox
               onSubmit={handleSubmit}
               submitDisabled={isSearching || linkedInLoading || !user}
@@ -2922,9 +2922,6 @@ const ContactSearchPage: React.FC<{
             </button>
           </div>
         )}
-
-        {/* Resume status — compact indicator when resume is already uploaded */}
-        {/* Resume status now lives in the Resume button beside Email Template (above). */}
 
         {/* Results section */}
         {hasResults && !isSearching && !linkedInSuccess && (
