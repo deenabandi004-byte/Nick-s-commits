@@ -18,10 +18,15 @@ import {
   Coffee,
   Inbox,
   Briefcase,
+  Upload,
   BookOpen,
   Bell,
   User,
   Gift,
+  Plug,
+  Server,
+  ClipboardList,
+  PenLine,
 } from "lucide-react";
 
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
@@ -30,6 +35,7 @@ import { trackNavClick, trackUpgradeClick } from "../lib/analytics";
 import { useAgentSidebarStatus } from "@/hooks/useAgent";
 import { useTour } from "@/contexts/TourContext";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useApplicationsAttention } from "@/hooks/useApplicationsAttention";
 import { CreditsPanel } from "./sidebar/CreditsPanel";
 import { useCreditsView } from "@/hooks/useCreditsView";
 
@@ -76,13 +82,30 @@ type NavItemDef = {
   dataTour?: string;
 };
 
-const baseNavItems: NavItemDef[] = [
+// RocketReach-style grouping: Discover = find/collect data, Engage = act on it.
+// Getting Started renders alone above Discover (its own section, no label).
+const discoverNavItems: NavItemDef[] = [
+  { title: "Search",      url: "/find",        LucideIcon: Search },
+  { title: "Job Board",   url: "/job-board",   LucideIcon: Briefcase },
+  { title: "My Network",  url: "/my-network",  LucideIcon: Users },
+  { title: "Upload List", url: "/upload-list", LucideIcon: Upload },
+];
+
+const engageNavItems: NavItemDef[] = [
+  { title: "Loops",        url: "/agent",            LucideIcon: Repeat },
   { title: "Inbox",        url: "/outbox",           LucideIcon: Inbox,  dataTour: "tour-track-email" },
   { title: "Meeting Prep", url: "/coffee-chat-prep", LucideIcon: Coffee, dataTour: "tour-coffee-chat-prep" },
-  { title: "My Network",   url: "/my-network",       LucideIcon: Users },
+];
+
+const applicationsNavItems: NavItemDef[] = [
+  { title: "Applications", url: "/applications", LucideIcon: ClipboardList },
+  { title: "Resume",       url: "/resume",       LucideIcon: FileText },
+  { title: "Cover Letter", url: "/cover-letter", LucideIcon: PenLine },
 ];
 
 const utilityNavItems: NavItemDef[] = [
+  { title: "Integrations",  url: "/integrations",  LucideIcon: Plug },
+  { title: "MCP Server",    url: "/mcp-server",    LucideIcon: Server },
   { title: "Pricing",       url: "/pricing",       LucideIcon: Tag },
 ];
 
@@ -97,9 +120,11 @@ const userMenuItems = [
   { title: "Terms of Service",  url: "/terms-of-service",   icon: ScrollText },
 ];
 
-const NAV_FONT_SIZE = "13.5px";
-const NAV_PY = "11px";
-const NAV_GAP = "11px";
+// Compact scale: three labeled sections + Getting Started must fit without
+// scrolling, so nav rows run tighter than the old single-list layout.
+const NAV_FONT_SIZE = "12.5px";
+const NAV_PY = "7.5px";
+const NAV_GAP = "10px";
 const NAV_RADIUS = "8px";
 
 export function AppSidebar() {
@@ -139,13 +164,12 @@ export function AppSidebar() {
     notifications.unreadReplyCount + notifications.unreadLoopRunCount;
 
   const agentStatus = useAgentSidebarStatus();
-  const mainNavItems: NavItemDef[] = [
-    { title: "Getting Started", url: "/dashboard", LucideIcon: Home },
-    { title: "Find",      url: "/find",       LucideIcon: Search },
-    { title: "Job Board", url: "/job-board",  LucideIcon: Briefcase },
-    { title: "Loops",     url: "/agent",      LucideIcon: Repeat },
-    ...baseNavItems,
-  ];
+  const applicationsAttention = useApplicationsAttention();
+  const gettingStartedItem: NavItemDef = {
+    title: "Getting Started",
+    url: "/dashboard",
+    LucideIcon: Home,
+  };
 
   const initials =
     user?.name
@@ -161,12 +185,12 @@ export function AppSidebar() {
     <div
       style={{
         fontFamily: T.fontBody,
-        fontSize: "10.5px",
+        fontSize: "10px",
         fontWeight: 600,
         letterSpacing: "0.08em",
         textTransform: "uppercase",
         color: T.sectionText,
-        padding: "4px 12px 8px",
+        padding: "3px 12px 6px",
       }}
     >
       {text}
@@ -270,6 +294,17 @@ export function AppSidebar() {
             }}
           >
             {agentStatus.pendingCount}
+          </span>
+        )}
+        {item.title === "Applications" && applicationsAttention > 0 && (
+          <span
+            className="ml-auto text-[10px] font-medium rounded-full px-1.5 py-0.5 leading-none"
+            style={{
+              background: "rgba(252,211,77,0.15)",
+              color: "#FCD34D",
+            }}
+          >
+            {applicationsAttention}
           </span>
         )}
       </NavLink>
@@ -580,13 +615,37 @@ export function AppSidebar() {
               padding: isCollapsed ? "0 8px" : "0 14px",
             }}
           >
-            {!isCollapsed && sectionLabel("Workspace")}
-            <div className="flex flex-col" style={{ gap: 3 }}>
-              {mainNavItems.map(renderNavItem)}
+            {/* Getting Started — its own unlabeled section above Discover */}
+            <div className="flex flex-col" style={{ gap: 2 }}>
+              {renderNavItem(gettingStartedItem)}
+            </div>
+            <div style={{ height: 12 }} />
+            {!isCollapsed && sectionLabel("Discover")}
+            {isCollapsed && (
+              <div style={{ borderTop: `1px solid ${T.hairline}`, margin: "0 6px 6px" }} />
+            )}
+            <div className="flex flex-col" style={{ gap: 2 }}>
+              {discoverNavItems.map(renderNavItem)}
+            </div>
+            <div style={{ height: 12 }} />
+            {!isCollapsed && sectionLabel("Engage")}
+            {isCollapsed && (
+              <div style={{ borderTop: `1px solid ${T.hairline}`, margin: "0 6px 6px" }} />
+            )}
+            <div className="flex flex-col" style={{ gap: 2 }}>
+              {engageNavItems.map(renderNavItem)}
+            </div>
+            <div style={{ height: 12 }} />
+            {!isCollapsed && sectionLabel("Applications")}
+            {isCollapsed && (
+              <div style={{ borderTop: `1px solid ${T.hairline}`, margin: "0 6px 6px" }} />
+            )}
+            <div className="flex flex-col" style={{ gap: 2 }}>
+              {applicationsNavItems.map(renderNavItem)}
             </div>
             <div className="flex-1" />
             {!isCollapsed && sectionLabel("Resources")}
-            <div className="flex flex-col" style={{ gap: 3, paddingBottom: 8 }}>
+            <div className="flex flex-col" style={{ gap: 2, paddingBottom: 8 }}>
               {utilityNavItems.map(renderNavItem)}
             </div>
           </nav>
