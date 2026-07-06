@@ -8972,9 +8972,19 @@ def find_hiring_manager_endpoint():
             "linkedin": resume_linkedin or user_data.get('linkedin', '')
         }
 
-        # Check if user wants to generate emails (default to True)
-        generate_emails = data.get('generateEmails', True)
-        create_drafts = data.get('createDrafts', True)
+        # Outreach mode governs whether we generate emails / create Gmail drafts
+        # during the search. The website search-box sends mode='preview', which
+        # finds the contacts (name, title, email) first and lets the user draft or
+        # send afterward — matching Find People. Legacy callers that pass explicit
+        # generateEmails / createDrafts flags still win; any non-preview mode keeps
+        # the old generate-and-draft behavior.
+        mode = (data.get('mode') or '').strip().lower()
+        generate_emails = data.get('generateEmails')
+        if generate_emails is None:
+            generate_emails = (mode != 'preview')
+        create_drafts = data.get('createDrafts')
+        if create_drafts is None:
+            create_drafts = (mode != 'preview')
 
         # Find hiring managers
         result = find_hiring_manager(
@@ -9409,7 +9419,19 @@ def generate_cover_letter():
         
         if not job_description:
             return jsonify({"error": "Job description is required. Please paste the job description or provide a valid URL."}), 400
-        
+
+        # Paste-anything support (same pattern as Find Hiring Manager at
+        # ~line 7849): when the user pastes a raw posting without typing
+        # title/company, extract them from the pasted text itself so the
+        # letter addresses the right company instead of a blank.
+        if not job_title or not company:
+            extracted = extract_job_details_with_openai(job_description)
+            if extracted:
+                if not job_title and extracted.get('job_title'):
+                    job_title = extracted['job_title']
+                if not company and extracted.get('company'):
+                    company = extracted['company']
+
         # Get user's resume - use cached sanitized version if available
         raw_resume = user_data.get("resumeParsed", {})
         if not raw_resume:
@@ -9493,8 +9515,13 @@ def generate_cover_letter():
             "coverLetter": cover_letter,
             "creditsUsed": COVER_LETTER_CREDIT_COST,
             "creditsRemaining": new_credits,
+            # Resolved from URL parse / paste extraction — lets the client
+            # name the PDF and show the target even when the user typed
+            # neither field.
+            "company": company or None,
+            "jobTitle": job_title or None,
         }), 200
-        
+
     except Exception as e:
         logger.error(f"[JobBoard] Cover letter generation error: {e}")
         return jsonify({"error": str(e)}), 500

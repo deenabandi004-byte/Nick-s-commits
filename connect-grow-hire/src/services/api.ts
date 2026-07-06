@@ -959,6 +959,10 @@ export interface GenerateCoverLetterResponse {
   coverLetter: CoverLetter;
   creditsUsed: number;
   creditsRemaining: number;
+  // Resolved server-side from the URL parse / paste extraction; present even
+  // when the user typed neither field.
+  company?: string | null;
+  jobTitle?: string | null;
 }
 
 // ================================

@@ -12,7 +12,7 @@ import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Copy, Download, FileText, Sparkles } from "lucide-react";
+import { Copy, Download, FileText } from "lucide-react";
 import { apiService } from "@/services/api";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "@/hooks/use-toast";
@@ -50,6 +50,10 @@ const CoverLetterPage = () => {
         company: company.trim() || undefined,
       });
       setLetter(res.coverLetter.content);
+      // Backfill fields the server resolved from the URL/pasted text so the
+      // PDF filename and the form reflect the real target company/role.
+      if (!company.trim() && res.company) setCompany(res.company);
+      if (!jobTitle.trim() && res.jobTitle) setJobTitle(res.jobTitle);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Failed to generate cover letter";
       if (msg.includes("No resume")) {
@@ -125,7 +129,6 @@ const CoverLetterPage = () => {
                     />
                   </div>
                   <Button className="w-full" disabled={!canGenerate} onClick={handleGenerate}>
-                    <Sparkles className="w-4 h-4 mr-1.5" />
                     {generating ? "Generating..." : "Generate cover letter · 5 credits"}
                   </Button>
 
