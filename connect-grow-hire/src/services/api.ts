@@ -2408,6 +2408,18 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
     return response;
   }
 
+  /** Render an already-generated cover letter to PDF (no credit cost). */
+  async downloadCoverLetterPdf(content: string, company?: string): Promise<Blob> {
+    const headers = await this.getAuthHeaders();
+    const res = await fetch(`${API_BASE_URL}/job-board/cover-letter-pdf`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content, ...(company ? { company } : {}) }),
+    });
+    if (!res.ok) throw new Error(`Cover letter PDF failed (${res.status})`);
+    return res.blob();
+  }
+
   // ================================
   // Error Reporting
   // ================================
