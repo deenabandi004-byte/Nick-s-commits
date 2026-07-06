@@ -96,10 +96,18 @@ interface ImportResult {
     total_eligible: number;
   };
   warnings?: string[];
+  // Firestore-ready contact records created by this import (each carries an
+  // `id`). Present on the CSV import response — used by callers (e.g. the
+  // Upload List wizard) that need to batch-tag the newly created contacts
+  // after the fact (list name, etc.) without re-querying Firestore.
+  contacts?: Array<Record<string, any>>;
 }
 
 interface ContactImportProps {
-  onImportComplete?: () => void;
+  // Callers that only need a "done" signal can ignore the argument; the
+  // Upload List wizard (UploadListPage) reads it to build its own summary
+  // step and to batch-apply a list name to the newly created contacts.
+  onImportComplete?: (result?: ImportResult) => void;
   onSwitchTab?: (tab: string) => void;
 }
 
@@ -252,7 +260,7 @@ const ContactImport: React.FC<ContactImportProps> = ({ onImportComplete, onSwitc
       }
       
       if (onImportComplete) {
-        onImportComplete();
+        onImportComplete(data);
       }
       
     } catch (err: any) {
