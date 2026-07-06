@@ -160,6 +160,27 @@ class TestRecommendationTargetValidation:
 
         assert result["recommendations"] == []
 
+    def test_bool_indices_are_dropped(self):
+        # bool is an int subclass in Python — {"index": true, "bullet": false}
+        # would otherwise resolve to experience[1].bullets[0]. Must be dropped.
+        payload = _valid_llm_payload(recommendations=[
+            {
+                "id": "rec_1", "category": "Impact & Results", "reason": "x",
+                "target": {"section": "experience", "index": True, "bullet": False},
+                "current": "Worked on backend systems", "proposed": "y",
+            },
+            {
+                "id": "rec_2", "category": "Impact & Results", "reason": "x",
+                "target": {"section": "projects", "index": False, "field": "description"},
+                "current": "Built a tool to analyze resumes", "proposed": "y",
+            },
+        ])
+        client = _make_client(payload)
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            result = score_resume_structured(_sample_parsed())
+
+        assert result["recommendations"] == []
+
     def test_valid_projects_target_survives(self):
         payload = _valid_llm_payload(recommendations=[
             {
@@ -178,6 +199,63 @@ class TestRecommendationTargetValidation:
         assert result["recommendations"][0]["target"] == {
             "section": "projects", "index": 0, "field": "description"
         }
+
+
+class TestCategoryCoercion:
+    CANONICAL = (
+        "Impact & Results",
+        "Clarity & Structure",
+        "Keywords / ATS Readiness",
+        "Professional Presentation",
+    )
+
+    def test_missing_categories_are_backfilled_with_overall_score(self):
+        # LLM returns only one canonical category plus a junk one.
+        payload = _valid_llm_payload(categories=[
+            {"name": "Impact & Results", "score": 55, "explanation": "Weak verbs."},
+            {"name": "Vibes", "score": 99, "explanation": "Great vibes."},
+        ])
+        client = _make_client(payload)
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            result = score_resume_structured(_sample_parsed())
+
+        assert [c["name"] for c in result["categories"]] == list(self.CANONICAL)
+        # The matched canonical category keeps its own score/explanation.
+        impact = result["categories"][0]
+        assert impact["score"] == 55
+        assert impact["explanation"] == "Weak verbs."
+        # Backfilled ones use the overall score and an empty explanation.
+        for cat in result["categories"][1:]:
+            assert cat["score"] == result["score"]
+            assert cat["explanation"] == ""
+
+    def test_extra_and_duplicate_categories_are_truncated_to_the_four(self):
+        payload = _valid_llm_payload(categories=[
+            {"name": "Impact & Results", "score": 70, "explanation": "a"},
+            {"name": "Impact & Results", "score": 10, "explanation": "dupe ignored"},
+            {"name": "Clarity & Structure", "score": 80, "explanation": "b"},
+            {"name": "Keywords / ATS Readiness", "score": 75, "explanation": "c"},
+            {"name": "Professional Presentation", "score": 85, "explanation": "d"},
+            {"name": "Extra Category", "score": 5, "explanation": "junk"},
+        ])
+        client = _make_client(payload)
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            result = score_resume_structured(_sample_parsed())
+
+        assert len(result["categories"]) == 4
+        assert [c["name"] for c in result["categories"]] == list(self.CANONICAL)
+        assert result["categories"][0]["score"] == 70  # first match wins over dupe
+
+    def test_non_list_categories_still_yields_four_backfilled(self):
+        payload = _valid_llm_payload(categories="not a list")
+        client = _make_client(payload)
+        with patch("app.services.resume_scoring.get_openai_client", return_value=client):
+            result = score_resume_structured(_sample_parsed())
+
+        assert [c["name"] for c in result["categories"]] == list(self.CANONICAL)
+        for cat in result["categories"]:
+            assert cat["score"] == result["score"]
+            assert cat["explanation"] == ""
 
 
 class TestRecommendationCurrentTextValidation:
