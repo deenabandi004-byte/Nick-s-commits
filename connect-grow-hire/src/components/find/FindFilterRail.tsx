@@ -2,13 +2,15 @@
 // Left rail on /find: tab toggle + per-tab filter groups mirroring the
 // backend parsers. The rail DISPLAYS what the parser understood and lets
 // the user override it; it never searches on its own.
-import { Search, Building2, UserCheck } from "lucide-react";
+import { useState } from "react";
+import { Search, Building2, UserCheck, SlidersHorizontal } from "lucide-react";
 import {
   FindTab, PeopleFilters, CompanyFilters,
   EMPTY_PEOPLE_FILTERS, EMPTY_COMPANY_FILTERS,
   peopleFiltersActive, companyFiltersActive,
 } from "@/types/findFilters";
 import { FilterGroup } from "./FilterGroup";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 // Data imports adapted to each file's real exports (none export a plain
 // string[] named *_NAMES except universities):
 // - src/data/companies.ts exports `companies: Company[]` (objects with a
@@ -50,6 +52,8 @@ export function FindFilterRail({
   peopleFilters, onPeopleFiltersChange,
   companyFilters, onCompanyFiltersChange,
 }: FindFilterRailProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   const hasActive =
     activeTab === "people" ? peopleFiltersActive(peopleFilters)
     : activeTab === "companies" ? companyFiltersActive(companyFilters)
@@ -59,6 +63,68 @@ export function FindFilterRail({
     if (activeTab === "people") onPeopleFiltersChange(EMPTY_PEOPLE_FILTERS);
     if (activeTab === "companies") onCompanyFiltersChange(EMPTY_COMPANY_FILTERS);
   };
+
+  // Shared between the desktop panel and the mobile Sheet — groups only.
+  // Header + Clear All stay in the desktop wrapper (below) and get a
+  // separate Clear All row inside the Sheet so we don't duplicate the
+  // "Search Filters" title (SheetHeader already renders one).
+  const renderGroups = () => (
+    <>
+      {activeTab === "people" && (
+        <>
+          <FilterGroup label="Job Title" values={peopleFilters.titles}
+            onChange={(titles) => onPeopleFiltersChange({ ...peopleFilters, titles })} />
+          <FilterGroup label="Company" values={peopleFilters.companies} suggestions={COMPANY_NAMES}
+            onChange={(companies) => onPeopleFiltersChange({ ...peopleFilters, companies })} />
+          <FilterGroup label="Location" values={peopleFilters.locations}
+            onChange={(locations) => onPeopleFiltersChange({ ...peopleFilters, locations })} />
+          <FilterGroup label="School" values={peopleFilters.schools} suggestions={UNIVERSITY_NAMES}
+            onChange={(schools) => onPeopleFiltersChange({ ...peopleFilters, schools })} />
+          <FilterGroup label="Industry" values={peopleFilters.industries} suggestions={INDUSTRY_NAMES}
+            onChange={(industries) => onPeopleFiltersChange({ ...peopleFilters, industries })} />
+        </>
+      )}
+
+      {activeTab === "companies" && (
+        <>
+          <FilterGroup label="Industry" singleValue suggestions={INDUSTRY_NAMES}
+            values={companyFilters.industry ? [companyFilters.industry] : []}
+            onChange={(vals) => onCompanyFiltersChange({ ...companyFilters, industry: vals[vals.length - 1] ?? null })} />
+          <FilterGroup label="Location" singleValue
+            values={companyFilters.location ? [companyFilters.location] : []}
+            onChange={(vals) => onCompanyFiltersChange({ ...companyFilters, location: vals[vals.length - 1] ?? null })} />
+          {/* Size — enum chips, matches parse_firm_search_prompt's small|mid|large|none */}
+          <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--line, #E8E8E8)" }}>
+            <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink, #111318)", marginBottom: 7 }}>Size</div>
+            <div className="flex" style={{ gap: 5 }}>
+              {SIZE_OPTIONS.map((s) => {
+                const selected = companyFilters.size === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => onCompanyFiltersChange({ ...companyFilters, size: selected ? "none" : s.id })}
+                    style={{
+                      padding: "4px 11px", borderRadius: 999, fontSize: 12, fontWeight: 500,
+                      cursor: "pointer", fontFamily: "inherit",
+                      border: selected ? "1px solid transparent" : "1px solid var(--line, #E8E8E8)",
+                      background: selected ? "var(--accent, #4A60A8)" : "#fff",
+                      color: selected ? "#fff" : "var(--ink-2, #475569)",
+                    }}
+                  >
+                    {s.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          <FilterGroup label="Focus" placeholder="e.g. healthcare, M&A…"
+            values={companyFilters.keywords}
+            onChange={(keywords) => onCompanyFiltersChange({ ...companyFilters, keywords })} />
+        </>
+      )}
+    </>
+  );
 
   return (
     <div className="flex flex-row sm:flex-col" style={{ position: "sticky", top: 8, gap: 6 }}>
@@ -126,59 +192,50 @@ export function FindFilterRail({
             )}
           </div>
 
-          {activeTab === "people" && (
-            <>
-              <FilterGroup label="Job Title" values={peopleFilters.titles}
-                onChange={(titles) => onPeopleFiltersChange({ ...peopleFilters, titles })} />
-              <FilterGroup label="Company" values={peopleFilters.companies} suggestions={COMPANY_NAMES}
-                onChange={(companies) => onPeopleFiltersChange({ ...peopleFilters, companies })} />
-              <FilterGroup label="Location" values={peopleFilters.locations}
-                onChange={(locations) => onPeopleFiltersChange({ ...peopleFilters, locations })} />
-              <FilterGroup label="School" values={peopleFilters.schools} suggestions={UNIVERSITY_NAMES}
-                onChange={(schools) => onPeopleFiltersChange({ ...peopleFilters, schools })} />
-              <FilterGroup label="Industry" values={peopleFilters.industries} suggestions={INDUSTRY_NAMES}
-                onChange={(industries) => onPeopleFiltersChange({ ...peopleFilters, industries })} />
-            </>
-          )}
+          {renderGroups()}
+        </div>
+      )}
 
-          {activeTab === "companies" && (
-            <>
-              <FilterGroup label="Industry" singleValue suggestions={INDUSTRY_NAMES}
-                values={companyFilters.industry ? [companyFilters.industry] : []}
-                onChange={(vals) => onCompanyFiltersChange({ ...companyFilters, industry: vals[vals.length - 1] ?? null })} />
-              <FilterGroup label="Location" singleValue
-                values={companyFilters.location ? [companyFilters.location] : []}
-                onChange={(vals) => onCompanyFiltersChange({ ...companyFilters, location: vals[vals.length - 1] ?? null })} />
-              {/* Size — enum chips, matches parse_firm_search_prompt's small|mid|large|none */}
-              <div style={{ padding: "10px 12px", borderBottom: "1px solid var(--line, #E8E8E8)" }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: "var(--ink, #111318)", marginBottom: 7 }}>Size</div>
-                <div className="flex" style={{ gap: 5 }}>
-                  {SIZE_OPTIONS.map((s) => {
-                    const selected = companyFilters.size === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => onCompanyFiltersChange({ ...companyFilters, size: selected ? "none" : s.id })}
-                        style={{
-                          padding: "4px 11px", borderRadius: 999, fontSize: 12, fontWeight: 500,
-                          cursor: "pointer", fontFamily: "inherit",
-                          border: selected ? "1px solid transparent" : "1px solid var(--line, #E8E8E8)",
-                          background: selected ? "var(--accent, #4A60A8)" : "#fff",
-                          color: selected ? "#fff" : "var(--ink-2, #475569)",
-                        }}
-                      >
-                        {s.label}
-                      </button>
-                    );
-                  })}
+      {/* Mobile filters trigger — sits inline with the tab pills since the
+          outer container is flex-row on mobile (RocketReach-style compact row). */}
+      {activeTab !== "hiring-managers" && (
+        <div className="sm:hidden">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="flex items-center"
+                style={{
+                  gap: 7, padding: "8px 13px", borderRadius: 10, fontSize: 13, fontWeight: 500,
+                  border: "1px solid var(--line, #E5E5E5)", background: "#fff",
+                  color: "var(--ink, #111318)", cursor: "pointer", fontFamily: "inherit",
+                }}
+              >
+                <SlidersHorizontal style={{ width: 14, height: 14 }} />
+                Filters{hasActive ? " •" : ""}
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] overflow-y-auto p-0">
+              <SheetHeader className="p-4 pb-2">
+                <div className="flex items-center justify-between">
+                  <SheetTitle style={{ fontSize: 15 }}>Search Filters</SheetTitle>
+                  {hasActive && (
+                    <button
+                      type="button"
+                      onClick={clearAll}
+                      style={{
+                        fontSize: 11.5, fontWeight: 500, color: "var(--accent, #4A60A8)",
+                        background: "none", border: "none", cursor: "pointer", fontFamily: "inherit", padding: 0,
+                      }}
+                    >
+                      Clear All
+                    </button>
+                  )}
                 </div>
-              </div>
-              <FilterGroup label="Focus" placeholder="e.g. healthcare, M&A…"
-                values={companyFilters.keywords}
-                onChange={(keywords) => onCompanyFiltersChange({ ...companyFilters, keywords })} />
-            </>
-          )}
+              </SheetHeader>
+              {renderGroups()}
+            </SheetContent>
+          </Sheet>
         </div>
       )}
     </div>
