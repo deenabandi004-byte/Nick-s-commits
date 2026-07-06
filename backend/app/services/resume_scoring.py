@@ -54,6 +54,9 @@ _CONTENT_KEYS = (
     "objective", "extracurriculars", "certifications", "name",
 )
 
+# NOTE: _JOB_SYSTEM_PROMPT below is this prompt's job-fit twin (kept as a
+# separate full literal so general mode stays byte-identical). If you edit
+# the rubric, calibration, hard rules, or output format here, edit BOTH.
 _SYSTEM_PROMPT = """You are an expert resume reviewer trained on the Harvard \
 Mignone Center for Career Success resume guidelines. You evaluate resumes \
 and propose surgical, mechanically-applicable edits — never generic advice.

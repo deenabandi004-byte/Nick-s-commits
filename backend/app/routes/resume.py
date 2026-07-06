@@ -12,7 +12,7 @@ from app.services.resume_capabilities import (
     get_file_extension,
     build_resume_metadata
 )
-from app.services.resume_scoring import score_resume_structured
+from app.services.resume_scoring import MIN_JOB_DESCRIPTION_CHARS, score_resume_structured
 from ..extensions import require_firebase_auth
 from app.utils.users import parse_resume_info, validate_parsed_resume
 from ..extensions import get_db
@@ -456,10 +456,11 @@ def score_resume():
         job_description = payload.get('jobDescription')
         job_description = job_description.strip() if isinstance(job_description, str) else ''
         if job_description:
-            if len(job_description) < 50:
+            if len(job_description) < MIN_JOB_DESCRIPTION_CHARS:
                 return jsonify({
                     'error': 'Job description is too short to score against '
-                             '(minimum 50 characters). Paste the full posting.'
+                             f'(minimum {MIN_JOB_DESCRIPTION_CHARS} characters). '
+                             'Paste the full posting.'
                 }), 400
             job_title = payload.get('jobTitle')
             company = payload.get('company')
