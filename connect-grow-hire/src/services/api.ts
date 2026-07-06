@@ -1532,12 +1532,14 @@ class ApiService {
    * Start an async firm search. Returns a searchId immediately.
    * Use streamFirmSearchProgress() to receive real-time SSE progress.
    */
-  async searchFirmsAsync(query: string, batchSize: number = 10): Promise<{ searchId: string }> {
+  async searchFirmsAsync(query: string, batchSize: number = 10, filters?: import("@/types/findFilters").CompanyFilters): Promise<{ searchId: string }> {
     const headers = await this.getAuthHeaders();
+    const body: Record<string, unknown> = { query, batchSize };
+    if (filters) body.filters = filters;
     return this.makeRequest<{ searchId: string }>('/firm-search/search-async', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ query, batchSize }),
+      body: JSON.stringify(body),
     });
   }
 

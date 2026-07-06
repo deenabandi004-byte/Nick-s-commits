@@ -37,6 +37,7 @@ import { getUniversityShortName } from "@/lib/universityUtils";
 import { generateFirmDiscoveryPrompts, getGenericFirmPrompts, isContextEmpty, type UserContext, type PromptChip } from "@/utils/suggestionChips";
 import { SearchPromptBox } from "@/components/find/SearchPromptBox";
 import { firebaseApi } from "@/services/firebaseApi";
+import { CompanyFilters, companyFiltersActive } from "@/types/findFilters";
 
 // Session storage key for Scout auto-populate
 const SCOUT_AUTO_POPULATE_KEY = 'scout_auto_populate';
@@ -54,12 +55,17 @@ function getFirmPlaceholders(schoolShort: string | null): string[] {
 // Find Companies batch-size caps per tier (slider max) and defaults (where the
 // slider initially sits). Free's default (5) sits below its max (10).
 type CompanyTier = "free" | "pro" | "elite";
-const COMPANY_BATCH_CAPS: Record<CompanyTier, number> = { free: 10, pro: 25, elite: 50 };
+const COMPANY_BATCH_CAPS: Record<CompanyTier, number> = { free: 10, pro: 20, elite: 30 };
 const COMPANY_BATCH_DEFAULTS: Record<CompanyTier, number> = { free: 5, pro: 10, elite: 20 };
 const normalizeCompanyTier = (tier: unknown): CompanyTier =>
   tier === "pro" || tier === "elite" ? tier : "free";
 
-const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevPreview?: boolean }> = ({ embedded = false, initialTab, isDevPreview = false }) => {
+const FirmSearchPage: React.FC<{
+  embedded?: boolean; initialTab?: string; isDevPreview?: boolean; initialQuery?: string;
+  railFilters?: CompanyFilters; railFiltersNonce?: number;
+  onParsedFilters?: (f: CompanyFilters) => void;
+}> = ({ embedded = false, initialTab, isDevPreview = false, initialQuery,
+        railFilters, railFiltersNonce = 0, onParsedFilters }) => {
   const navigate = useNavigate();
   const routerLocation = useLocation();
   const { user: authUser, checkCredits } = useFirebaseAuth();
@@ -460,18 +466,48 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
     loadAllSavedFirms();
   }, [activeTab, user, loadAllSavedFirms]);
 
+  // Overrides apply only after a rail edit (nonce > 0) AND only while the
+  // query text is unchanged — typing a new query hands control back to the
+  // parser and the rail repopulates from its output.
+  const lastSearchedQueryRef = useRef<string>("");
+  const lastRailNonceRef = useRef(0);
+
+  useEffect(() => {
+    if (railFiltersNonce === 0 || railFiltersNonce === lastRailNonceRef.current) return;
+    lastRailNonceRef.current = railFiltersNonce;
+    if (!isSearching) handleSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [railFiltersNonce]);
+
   // Handle search submission
   const handleSearch = async (searchQuery?: string) => {
     // Hard short-circuit while the tour's demo is active on this surface.
     // Catches button click, Enter key, and chip-driven prefills in one
     // guard. No API call fires.
     if (companiesDemoActive) return;
-    const q = searchQuery || query;
 
-    if (!q.trim()) {
+    // If the user typed nothing but the filter rail has active filters, synthesize
+    // a query from them so the search (and the validation below) still has text
+    // to work with — this is the rail-only search path (nonce-triggered re-search
+    // or a first search driven entirely by rail edits).
+    const railActive = railFilters && companyFiltersActive(railFilters);
+    let effectiveQuery = (searchQuery || query).trim();
+    if (!effectiveQuery && railActive) {
+      const f = railFilters!;
+      const sizeWord = f.size === "none" ? "" : `${f.size === "mid" ? "mid-sized" : f.size} `;
+      effectiveQuery = `${sizeWord}${f.industry ?? "companies"}${f.location ? ` in ${f.location}` : ""}${f.keywords.length ? ` focused on ${f.keywords.join(", ")}` : ""}`;
+    }
+
+    if (!effectiveQuery) {
       setError('Please enter a search query');
       return;
     }
+
+    // Attach the rail's filters as explicit overrides only when this run was
+    // triggered by a rail edit (or a re-search of the exact same effective
+    // query) — a freshly typed/changed query hands control back to the parser.
+    const sendOverrides = !!railActive && railFiltersNonce > 0 && effectiveQuery === lastSearchedQueryRef.current;
+    lastSearchedQueryRef.current = effectiveQuery;
 
     if (!user) {
       setError('Please sign in to search for firms');
@@ -500,7 +536,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
 
     try {
       // Start async search — returns immediately with searchId
-      const { searchId } = await apiService.searchFirmsAsync(q, batchSize);
+      const { searchId } = await apiService.searchFirmsAsync(effectiveQuery, batchSize, sendOverrides ? railFilters : undefined);
 
       // Open SSE stream for real-time progress
       eventSource = await apiService.createFirmSearchStream(searchId);
@@ -526,6 +562,14 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
 
             if (result.success && result.firms?.length > 0) {
               setParsedFilters(result.parsedFilters);
+              if (result.parsedFilters) {
+                onParsedFilters?.({
+                  industry: result.parsedFilters.industry ?? null,
+                  location: result.parsedFilters.location ?? null,
+                  size: (["small", "mid", "large"].includes(result.parsedFilters.size) ? result.parsedFilters.size : "none") as CompanyFilters["size"],
+                  keywords: result.parsedFilters.keywords ?? [],
+                });
+              }
               setResults(result.firms);
               setSearchComplete(true);
               setFirmSuggestions(result.suggestions || []);
@@ -540,7 +584,7 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
               setError('Hmm, nothing matched that exactly. Try broadening to just the city or industry — or ask Scout.');
               openPanelWithSearchHelp({
                 searchType: 'firm',
-                failedSearchParams: { industry: q, location: '', size: '' },
+                failedSearchParams: { industry: effectiveQuery, location: '', size: '' },
                 errorType: 'no_results',
               });
             } else {
@@ -848,6 +892,21 @@ const FirmSearchPage: React.FC<{ embedded?: boolean; initialTab?: string; isDevP
       handleSearch();
     }
   };
+
+  // Prefill + auto-run from the Getting Started launcher hand-off (initialQuery).
+  // Runs exactly once per query since this page stays mounted behind the toggle.
+  const consumedInitialQuery = useRef<string | null>(null);
+  useEffect(() => {
+    const q = (initialQuery || '').trim();
+    if (q && consumedInitialQuery.current !== initialQuery) {
+      consumedInitialQuery.current = initialQuery ?? null;
+      setQuery(q);
+      handleSearch(q);
+    }
+    // handleSearch is stable enough for this one-shot hand-off; deps kept minimal
+    // to avoid re-firing on unrelated renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
 
   // CSV Export function
   const handleExportCsv = () => {
