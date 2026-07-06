@@ -1,6 +1,7 @@
 // src/services/api.ts
 import { auth } from '../lib/firebase';
 import type { OutreachMode } from '../utils/featureAccess';
+import type { ParsedResume } from '../types/resume';
 
 export const BACKEND_URL =
   import.meta.env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '') ||
@@ -907,6 +908,37 @@ export interface OptimizeResumeResponse {
   creditsUsed: number;
   creditsRemaining: number;
   processingTimeMs?: number;
+}
+
+// ================================
+// Resume Score-and-Approve Types
+// ================================
+
+export interface ResumeScoreCategory {
+  name: string;
+  score: number;
+  explanation: string;
+}
+
+export type ResumeScoreRecommendationTarget =
+  | { section: 'experience'; index: number; bullet: number }
+  | { section: 'projects'; index: number; field: 'description' };
+
+export interface ResumeScoreRecommendation {
+  id: string;
+  category: string;
+  reason: string;
+  target: ResumeScoreRecommendationTarget;
+  current: string;
+  proposed: string;
+}
+
+export interface ResumeScoreResponse {
+  score: number;
+  score_label: 'Needs Work' | 'Good' | 'Very Good' | 'Excellent';
+  summary: string;
+  categories: ResumeScoreCategory[];
+  recommendations: ResumeScoreRecommendation[];
 }
 
 export interface GenerateCoverLetterRequest {
@@ -2276,6 +2308,22 @@ async setOutboxThreadResolution(contactId: string, resolution: Resolution, detai
       // Suggestions or template rebuild - returns JSON
       return response.json();
     }
+  }
+
+  /**
+   * Score the caller's resume against the Harvard rubric and return
+   * path-targeted, mechanically-applicable recommendations. Falls back to
+   * the stored resumeParsed server-side if resumeParsed is omitted, but the
+   * Edit-tab flow always passes the current in-memory copy so scoring
+   * reflects unsaved-but-already-applied edits. Costs no credits.
+   */
+  async scoreResume(resumeParsed: ParsedResume): Promise<ResumeScoreResponse> {
+    const headers = await this.getAuthHeaders();
+    return this.makeRequest<ResumeScoreResponse>('/resume/score', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ resumeParsed }),
+    });
   }
 
   /**
