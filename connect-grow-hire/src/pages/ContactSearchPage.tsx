@@ -2600,42 +2600,87 @@ const ContactSearchPage: React.FC<{
             template={activeEmailTemplate}
             onClick={() => navigate("/find/templates")}
           />
-          {/* Resume button — matches TemplateButton; replaces the old "Resume: <filename>" line */}
-          <button
-            type="button"
-            onClick={() => document.getElementById('resume-upload')?.click()}
-            disabled={isSearching || isUploadingResume}
-            title={savedResumeFileName || undefined}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 9,
-              padding: '12px 20px',
-              border: '1px solid var(--line, #E5E5E0)',
-              borderRadius: 12,
-              background: 'var(--paper, #FFFFFF)',
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              fontSize: 14,
-              fontWeight: 500,
-              color: 'var(--ink, #111318)',
-              transition: 'all .15s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent, #4A60A8)';
-              e.currentTarget.style.color = 'var(--accent, #4A60A8)';
-              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(74,96,168,0.08)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--line, #E5E5E0)';
-              e.currentTarget.style.color = 'var(--ink, #111318)';
-              e.currentTarget.style.boxShadow = 'none';
-            }}
-          >
-            <Upload style={{ width: 18, height: 18, color: 'currentColor', opacity: 0.7 }} />
-            <span style={{ color: 'currentColor' }}>{savedResumeUrl ? 'Resume' : 'Upload Resume'}</span>
-            {savedResumeUrl && <Check className="w-4 h-4 text-green-600" />}
-          </button>
+          {/* Resume control: reads as confirmed status when attached, flips to an
+              upload CTA when empty. Both states open the same hidden file input. */}
+          {savedResumeUrl ? (
+            <button
+              type="button"
+              onClick={() => document.getElementById('resume-upload')?.click()}
+              disabled={isSearching || isUploadingResume}
+              title={savedResumeFileName || undefined}
+              aria-label="Resume attached. Change resume"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 14px',
+                border: '1px solid transparent',
+                borderRadius: 10,
+                background: 'var(--paper-2, #FAFBFF)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                transition: 'all .15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#F3F5FA';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--paper-2, #FAFBFF)';
+              }}
+            >
+              <Check aria-hidden="true" className="text-green-600" style={{ width: 16, height: 16, flexShrink: 0 }} />
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-3, #8A8F9A)', lineHeight: 1.2 }}>
+                  Resume
+                </span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink, #111318)', lineHeight: 1.25 }}>
+                  {isUploadingResume ? 'Uploading...' : 'Attached'}
+                </span>
+              </span>
+              <span style={{ marginLeft: 6, fontSize: 11.5, fontWeight: 500, color: 'var(--ink-2, #4A4F5B)' }}>
+                Change
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => document.getElementById('resume-upload')?.click()}
+              disabled={isSearching || isUploadingResume}
+              aria-label="Attach resume"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '9px 14px',
+                border: '1.5px dashed #C9CDD6',
+                borderRadius: 10,
+                background: 'var(--paper, #FFFFFF)',
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+                textAlign: 'left',
+                transition: 'all .15s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--brand-blue, #3B82F6)';
+                e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.08)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = '#C9CDD6';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <Upload style={{ width: 16, height: 16, color: 'var(--ink-2, #4A4F5B)', flexShrink: 0 }} />
+              <span style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--ink, #111318)', lineHeight: 1.25 }}>
+                  {isUploadingResume ? 'Uploading...' : 'Attach resume'}
+                </span>
+                <span style={{ fontSize: 10.5, color: 'var(--ink-3, #8A8F9A)', lineHeight: 1.2 }}>
+                  Referenced in drafted outreach
+                </span>
+              </span>
+            </button>
+          )}
           {/* Import contacts — kept on the right */}
           <button
             type="button"
