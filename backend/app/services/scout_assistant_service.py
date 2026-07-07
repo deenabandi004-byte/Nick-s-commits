@@ -418,13 +418,17 @@ Parallel tracks:
 NEVER pitch Loop more than once per thread, even when subsequent turns would also fit. The pitch is a planted seed, not a refrain.
 
 ## Workflow state
-You can read the user's actual workflow state across the product through six read-only helper tools. They are reads, not writes: you cannot change anything through them. The workflow pages remain the source of truth; you reach in when you need the data.
+You can read the user's actual workflow state across the product through read-only helper tools. They are reads, not writes: you cannot change anything through them. The workflow pages remain the source of truth; you reach in when you need the data.
 
 - get_outbox_status: their outreach pipeline (total contacts, awaiting reply, replied, recent contacts with status and days since the last send). The most important one.
 - get_recent_searches: recent natural-language contact searches from the Find page.
 - get_recent_firm_searches: recent structured firm-discovery searches.
 - get_recent_cover_letters: metadata for recent cover letters (company, role, created date, length). Not the body.
 - get_meeting_prep_drafts: recent coffee chat / informational meeting prep drafts.
+- get_applications_status: their auto-apply applications, per queue (submitted, in flight, needs the user's answers, finish in browser, failed) with the most recent jobs. Call it whenever they ask about applications or auto-apply; answer with the specific jobs and companies, and when something needs them (answers or a browser step), say which job and point them to /applications.
+- get_loops_status: their Loops (recurring outreach agents) with per-loop status, cadence, last and next run, pending drafts, and unread replies. Call it whenever they ask about their Loops or automated outreach; name the loops.
+
+"What's waiting on me?" style questions usually need three reads together: get_outbox_status (replies to respond to), get_applications_status (answers or browser steps owed), and get_loops_status (pending drafts to review). Pull what applies and lead with whichever has the most urgent item.
 
 Call them in two situations. One: when the answer depends on workflow state ("how many people have I emailed?", "what did I search for last week?", "did anyone reply yet?"). Two: proactively when you are about to suggest next steps on an active strategy or talk through a plan, so the advice is grounded in what actually happened, not assumed. Before telling someone to start outreach for the consulting plan, peek at the outbox; if they already sent 4 emails to BCG alums and got 1 reply, name that and build from it.
 
@@ -1880,6 +1884,8 @@ class ScoutAssistantService:
         "get_recent_firm_searches": "Checking your firm searches",
         "get_recent_cover_letters": "Checking your cover letters",
         "get_meeting_prep_drafts": "Checking your meeting preps",
+        "get_applications_status": "Checking your applications",
+        "get_loops_status": "Checking your Loops",
         "save_strategy": "Saving your plan",
         "update_strategy_progress": "Updating your plan",
         "parse_job_url": "Reading the job posting",
@@ -1909,6 +1915,16 @@ class ScoutAssistantService:
             awaiting = result.get("awaiting_reply") or 0
             replied = result.get("replied") or 0
             return f"{total} contacts, {awaiting} awaiting, {replied} replied"
+        if name == "get_applications_status":
+            total = result.get("total") or 0
+            submitted = result.get("submitted") or 0
+            waiting = (result.get("needs_answers") or 0) + (result.get("finish_in_browser") or 0)
+            return f"{total} applications, {submitted} submitted, {waiting} waiting on you"
+        if name == "get_loops_status":
+            count = result.get("count") or 0
+            running = result.get("running") or 0
+            drafts = result.get("pending_drafts") or 0
+            return f"{count} loops, {running} running, {drafts} drafts pending"
         if name in ("get_recent_searches", "get_recent_firm_searches",
                     "get_recent_cover_letters", "get_meeting_prep_drafts"):
             count = result.get("count")

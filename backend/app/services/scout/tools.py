@@ -413,6 +413,49 @@ GET_RECENT_FIRM_SEARCHES_TOOL: Dict[str, Any] = {
     },
 }
 
+GET_APPLICATIONS_STATUS_TOOL: Dict[str, Any] = {
+    "name": "get_applications_status",
+    "description": (
+        "Read-only. Returns the user's auto-apply applications: counts per "
+        "queue (submitted, in flight, needs the user's answers, finish in "
+        "browser, failed) plus the most recent applications with job title, "
+        "company, and status. Use when the user asks about their "
+        "applications, auto-apply progress, or what an application is "
+        "waiting on. Cite specific jobs and companies, not just totals."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max recent applications to return (default 8).",
+            },
+        },
+        "required": [],
+    },
+}
+
+GET_LOOPS_STATUS_TOOL: Dict[str, Any] = {
+    "name": "get_loops_status",
+    "description": (
+        "Read-only. Returns the user's Loops (recurring outreach agents): "
+        "per-loop name, status, cadence, last/next run, pending drafts, "
+        "unread replies, and weekly credit spend, plus fleet totals. Use "
+        "when the user asks about their Loops, the agent, or automated "
+        "outreach that runs on its own. Cite specific loops by name."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "limit": {
+                "type": "integer",
+                "description": "Max loops to return (default 6).",
+            },
+        },
+        "required": [],
+    },
+}
+
 # Terminal tools end a turn (exactly one per turn). Helper tools gather data
 # or write memory mid-turn and the model keeps going. parallel_tool_calls=False
 # caps each step at one tool; the caller offers only terminal tools on the
@@ -427,6 +470,8 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     GET_RECENT_COVER_LETTERS_TOOL,
     GET_MEETING_PREP_DRAFTS_TOOL,
     GET_RECENT_FIRM_SEARCHES_TOOL,
+    GET_APPLICATIONS_STATUS_TOOL,
+    GET_LOOPS_STATUS_TOOL,
 ]
 SCOUT_TOOLS: List[Dict[str, Any]] = TERMINAL_TOOLS + HELPER_TOOLS
 
@@ -557,6 +602,14 @@ async def _run_workflow_read(
 # workflow_state) so the dispatch table stays self-contained.
 _OUTBOX_EMPTY = {"total_contacts": 0, "awaiting_reply": 0, "replied": 0, "recent": []}
 _LIST_EMPTY = {"count": 0, "recent": []}
+_APPLICATIONS_EMPTY = {
+    "total": 0, "submitted": 0, "in_flight": 0, "needs_answers": 0,
+    "finish_in_browser": 0, "failed": 0, "recent": [],
+}
+_LOOPS_EMPTY = {
+    "count": 0, "running": 0, "paused": 0,
+    "pending_drafts": 0, "unread_replies": 0, "loops": [],
+}
 
 
 async def run_helper_tool(
@@ -594,4 +647,10 @@ async def run_helper_tool(
     if name == "get_recent_firm_searches":
         return await _run_workflow_read(
             "get_recent_firm_searches", args, ctx, 5, _LIST_EMPTY)
+    if name == "get_applications_status":
+        return await _run_workflow_read(
+            "get_applications_status", args, ctx, 8, _APPLICATIONS_EMPTY)
+    if name == "get_loops_status":
+        return await _run_workflow_read(
+            "get_loops_status", args, ctx, 6, _LOOPS_EMPTY)
     return {"error": f"unknown helper tool: {name}"}

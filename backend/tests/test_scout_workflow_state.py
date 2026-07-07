@@ -1,6 +1,6 @@
 """Phase 5 Stage 2: Scout workflow-state read tools unit tests.
 
-Each of the six read functions is exercised against a small in-process fake
+Each of the read functions is exercised against a small in-process fake
 Firestore (the same shape as test_scout_strategy uses) in four configurations:
 empty state, populated state with limit truncation, field-shape contract, and
 tier independence. Plus one integration check that the system prompt advertises
@@ -11,6 +11,8 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from app.services.scout.workflow_state import (
+    get_applications_status,
+    get_loops_status,
     get_meeting_prep_drafts,
     get_outbox_status,
     get_recent_cover_letters,
@@ -93,7 +95,10 @@ def db():
 # ============================================================================
 
 def _now():
-    return datetime(2026, 5, 22, 12, 0, tzinfo=timezone.utc)
+    # Real current time: get_outbox_status computes days-since against the
+    # actual clock, so a pinned date here ages into spurious no_reply_Nd
+    # statuses (this test broke exactly that way once).
+    return datetime.now(timezone.utc)
 
 
 def _put(db, uid: str, coll: str, doc_id: str, data: dict) -> None:
@@ -396,7 +401,118 @@ def test_system_prompt_mentions_every_workflow_tool():
         "get_recent_cover_letters",
         "get_meeting_prep_drafts",
         "get_recent_firm_searches",
+        "get_applications_status",
+        "get_loops_status",
     ):
         assert tool_name in prompt, f"system prompt is missing {tool_name}"
     # Interview prep tool is held back from Phase 5 (feature not shipping yet).
     assert "get_interview_prep_drafts" not in prompt
+
+
+# ============================================================================
+# Applications (auto-apply queues)
+# ============================================================================
+
+def _seed_application(db, uid, doc_id, **fields):
+    doc = {
+        "job_title": "Analyst",
+        "company": "Acme",
+        "status": "submitted",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    doc.update(fields)
+    db.collection("users").document(uid).collection("autoApplyJobs").document(doc_id).set(doc)
+
+
+def test_applications_empty(db):
+    out = get_applications_status("u1", db=db)
+    assert out == {
+        "total": 0, "submitted": 0, "in_flight": 0, "needs_answers": 0,
+        "finish_in_browser": 0, "failed": 0, "recent": [],
+    }
+
+
+def test_applications_buckets_and_shape(db):
+    now = datetime.now(timezone.utc)
+    _seed_application(db, "u1", "a", status="submitted", created_at=(now - timedelta(days=1)).isoformat())
+    _seed_application(db, "u1", "b", status="queued", created_at=now.isoformat())
+    _seed_application(db, "u1", "c", status="running")
+    _seed_application(db, "u1", "d", status="needs_attention")
+    _seed_application(db, "u1", "e", status="needs_verification")
+    _seed_application(db, "u1", "f", status="submit_failed")
+    out = get_applications_status("u1", db=db)
+    assert out["total"] == 6
+    assert out["submitted"] == 1
+    assert out["in_flight"] == 2
+    assert out["needs_answers"] == 1
+    assert out["finish_in_browser"] == 1
+    assert out["failed"] == 1
+    row = out["recent"][0]
+    assert set(row) == {"id", "job_title", "company", "status", "created_at"}
+
+
+def test_applications_limit(db):
+    for i in range(12):
+        _seed_application(db, "u1", f"job{i}")
+    out = get_applications_status("u1", limit=3, db=db)
+    assert out["total"] == 12
+    assert len(out["recent"]) == 3
+
+
+# ============================================================================
+# Loops
+# ============================================================================
+
+def _seed_loop(db, uid, doc_id, **fields):
+    doc = {
+        "name": "IB analysts",
+        "status": "running",
+        "cadence": "every_other_day",
+        "lastRunAt": datetime.now(timezone.utc).isoformat(),
+        "pendingDrafts": 2,
+        "unreadReplies": 1,
+        "totalEmailsDrafted": 10,
+        "totalRepliesReceived": 3,
+        "weekCreditsSpent": 40,
+        "creditBudgetPerWeek": 200,
+    }
+    doc.update(fields)
+    db.collection("users").document(uid).collection("loops").document(doc_id).set(doc)
+
+
+def test_loops_empty(db):
+    out = get_loops_status("u1", db=db)
+    assert out == {
+        "count": 0, "running": 0, "paused": 0,
+        "pending_drafts": 0, "unread_replies": 0, "loops": [],
+    }
+
+
+def test_loops_aggregates_and_shape(db):
+    _seed_loop(db, "u1", "l1", status="running")
+    _seed_loop(db, "u1", "l2", status="paused", pauseReason="budget", pendingDrafts=3)
+    out = get_loops_status("u1", db=db)
+    assert out["count"] == 2
+    assert out["running"] == 1
+    assert out["paused"] == 1
+    assert out["pending_drafts"] == 5
+    assert out["unread_replies"] == 2
+    row = out["loops"][0]
+    assert {"id", "name", "status", "cadence", "last_run_at", "next_run_at",
+            "pending_drafts", "unread_replies", "emails_drafted",
+            "replies_received", "week_credits_spent",
+            "credit_budget_per_week", "pause_reason"} == set(row)
+
+
+def test_loops_name_falls_back_to_brief(db):
+    _seed_loop(db, "u1", "l1", name="", briefText="Reach USC alumni at MBB firms every week")
+    out = get_loops_status("u1", db=db)
+    assert out["loops"][0]["name"].startswith("Reach USC alumni")
+
+
+@pytest.mark.parametrize("fn,empty_keys", [
+    (get_applications_status, {"total", "submitted", "in_flight", "needs_answers", "finish_in_browser", "failed", "recent"}),
+    (get_loops_status, {"count", "running", "paused", "pending_drafts", "unread_replies", "loops"}),
+])
+def test_new_readers_degrade_with_no_uid(fn, empty_keys):
+    assert set(fn("", db=FakeDb())) == empty_keys

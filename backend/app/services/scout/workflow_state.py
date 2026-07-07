@@ -1,6 +1,6 @@
 """Scout workflow-state read tools (Phase 5, Stage 2).
 
-Six read-only Firestore wrappers that let Scout pull workflow state from
+Eight read-only Firestore wrappers that let Scout pull workflow state from
 across the product when it needs to ground a chat response or a strategy
 discussion in what the user has actually done. Read-only by design: the
 workflow pages remain the source of truth and Scout never writes through
@@ -22,6 +22,8 @@ Collection paths (audited against the production code, not invented):
   cover letters   users/{uid}/cover_letter_library
   meeting preps   users/{uid}/coffee-chat-preps
   firm searches   users/{uid}/firmSearches
+  applications    users/{uid}/autoApplyJobs     (auto-apply queue)
+  loops           users/{uid}/loops             (recurring outreach agents)
 
 When the interview prep feature is rebuilt later, add a reader function
 following the get_meeting_prep_drafts pattern. The Application Lab and
@@ -403,3 +405,143 @@ def get_recent_firm_searches(uid: str, limit: int = 5, db=None) -> Dict[str, Any
             "searched_at": _iso(it.get("createdAt")),
         })
     return {"count": count, "recent": recent}
+
+
+# ===========================================================================
+# 6. Auto-apply applications (the Applications page queues)
+# ===========================================================================
+
+# Raw autoApplyJobs statuses bucketed the way the Applications page groups
+# them: needs_answers = paused on a screening question, finish_in_browser =
+# form filled but blocked by a CAPTCHA the user must clear themselves.
+_APP_IN_FLIGHT_STATUSES = frozenset({"queued", "running"})
+_APP_FAILED_STATUSES = frozenset({"failed", "submit_failed"})
+
+_EMPTY_APPLICATIONS = {
+    "total": 0,
+    "submitted": 0,
+    "in_flight": 0,
+    "needs_answers": 0,
+    "finish_in_browser": 0,
+    "failed": 0,
+    "recent": [],
+}
+
+
+def get_applications_status(uid: str, limit: int = 8, db=None) -> Dict[str, Any]:
+    """The user's auto-apply applications, summarized for the LLM.
+
+    Reads users/{uid}/autoApplyJobs (the same collection the Applications
+    page's three queues read). Counts cover every application; the recent
+    array is ordered by created_at desc and truncated to `limit`.
+    """
+    if not uid:
+        return dict(_EMPTY_APPLICATIONS)
+    db = db or _db()
+    if db is None:
+        return dict(_EMPTY_APPLICATIONS)
+
+    coll = _subcollection(db, uid, "autoApplyJobs")
+    items: List[Dict[str, Any]] = []
+    for snap in _stream(coll):
+        data = snap.to_dict() or {}
+        items.append({"_id": snap.id, **data})
+
+    total = len(items)
+    statuses = [str(it.get("status") or "") for it in items]
+    summary = {
+        "total": total,
+        "submitted": sum(1 for s in statuses if s == "submitted"),
+        "in_flight": sum(1 for s in statuses if s in _APP_IN_FLIGHT_STATUSES),
+        "needs_answers": sum(1 for s in statuses if s == "needs_attention"),
+        "finish_in_browser": sum(1 for s in statuses if s == "needs_verification"),
+        "failed": sum(1 for s in statuses if s in _APP_FAILED_STATUSES),
+    }
+
+    _sort_by_timestamp(items, "created_at", reverse=True)
+
+    recent: List[Dict[str, Any]] = []
+    for it in items[:max(0, int(limit))]:
+        recent.append({
+            "id": it["_id"],
+            "job_title": _truncate(it.get("job_title") or it.get("job_id"), 160),
+            "company": _truncate(it.get("company"), 120),
+            "status": _truncate(it.get("status") or "unknown", 40),
+            "created_at": _iso(it.get("created_at")),
+        })
+    summary["recent"] = recent
+    return summary
+
+
+# ===========================================================================
+# 7. Loops (recurring outreach agents)
+# ===========================================================================
+
+_EMPTY_LOOPS = {
+    "count": 0,
+    "running": 0,
+    "paused": 0,
+    "pending_drafts": 0,
+    "unread_replies": 0,
+    "loops": [],
+}
+
+
+def get_loops_status(uid: str, limit: int = 6, db=None) -> Dict[str, Any]:
+    """The user's Loops (recurring outreach agents), summarized for the LLM.
+
+    Reads users/{uid}/loops directly (same collection the Loops fleet page
+    lists). Aggregates cover every Loop; the loops array is ordered by
+    lastRunAt desc and truncated to `limit`.
+    """
+    if not uid:
+        return dict(_EMPTY_LOOPS)
+    db = db or _db()
+    if db is None:
+        return dict(_EMPTY_LOOPS)
+
+    coll = _subcollection(db, uid, "loops")
+    items: List[Dict[str, Any]] = []
+    for snap in _stream(coll):
+        data = snap.to_dict() or {}
+        items.append({"_id": snap.id, **data})
+
+    count = len(items)
+    running = sum(1 for it in items if it.get("status") == "running")
+    paused = sum(1 for it in items if it.get("status") == "paused")
+    pending_drafts = sum(int(it.get("pendingDrafts") or 0) for it in items)
+    unread_replies = sum(int(it.get("unreadReplies") or 0) for it in items)
+
+    _sort_by_timestamp(items, "lastRunAt", reverse=True)
+
+    loops: List[Dict[str, Any]] = []
+    for it in items[:max(0, int(limit))]:
+        name = (
+            _truncate(it.get("name"), 120)
+            or _truncate(it.get("briefText"), 80)
+            or "(unnamed loop)"
+        )
+        loops.append({
+            "id": it["_id"],
+            "name": name,
+            "status": _truncate(it.get("status") or "unknown", 40),
+            "cadence": _truncate(it.get("cadence"), 40),
+            "last_run_at": _iso(it.get("lastRunAt")),
+            "next_run_at": _iso(it.get("nextRunAt")),
+            "pending_drafts": int(it.get("pendingDrafts") or 0),
+            "unread_replies": int(it.get("unreadReplies") or 0),
+            "emails_drafted": int(it.get("totalEmailsDrafted") or 0),
+            "replies_received": int(it.get("totalRepliesReceived") or 0),
+            "week_credits_spent": int(it.get("weekCreditsSpent") or 0),
+            "credit_budget_per_week": int(it.get("creditBudgetPerWeek") or 0),
+            "pause_reason": _truncate(it.get("pauseReason"), 160) or None,
+        })
+
+    return {
+        "count": count,
+        "running": running,
+        "paused": paused,
+        "pending_drafts": pending_drafts,
+        "unread_replies": unread_replies,
+        "loops": loops,
+    }
