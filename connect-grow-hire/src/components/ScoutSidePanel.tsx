@@ -171,39 +171,12 @@ export function ScoutSidePanel() {
     requestBriefing,
   } = useScoutChat(scoutCurrentPage);
 
-  // Phase 4B auto-fire: when the user opens Scout for the very first time
-  // (no prior briefing flagged in localStorage AND a fresh chat with zero
-  // messages), kick off the strategist briefing once so they land on a
-  // profile-grounded plan, not an empty state. Manual button always works
-  // regardless of the flag and never resets it. Per-uid key so two users on
-  // the same machine each get their own first-time experience.
-  const briefingShownKey = user?.uid
-    ? `scout_briefing_shown_${user.uid}`
-    : null;
-  const briefingAutoFiredRef = useRef(false);
-  useEffect(() => {
-    if (!isPanelOpen) return;
-    if (!briefingShownKey) return;
-    if (isLoading || isLoadingChat) return;
-    if (messages.length > 0) return;
-    if (briefingAutoFiredRef.current) return;
-    try {
-      if (localStorage.getItem(briefingShownKey) === '1') return;
-    } catch {
-      // Storage disabled; fall back to once-per-session.
-    }
-    briefingAutoFiredRef.current = true;
-    void (async () => {
-      const ok = await requestBriefing();
-      if (ok) {
-        try {
-          localStorage.setItem(briefingShownKey, '1');
-        } catch {
-          // Best-effort; not worth surfacing.
-        }
-      }
-    })();
-  }, [isPanelOpen, briefingShownKey, isLoading, isLoadingChat, messages.length, requestBriefing]);
+  // The strategist briefing is OPT-IN only (the BriefingButton in the empty
+  // state). It used to auto-fire on "first open" gated by a per-browser
+  // localStorage flag, which ambushed every existing user on a new device or
+  // cleared storage with an unsolicited wall of Loop pitches before they had
+  // said anything. A chat never starts with unrequested output: the cold
+  // open is the short greeting plus suggestion chips.
 
   // The most-recent message carrying an active_strategy payload becomes the
   // source for the header card. Looking at messages in reverse so a fresh
