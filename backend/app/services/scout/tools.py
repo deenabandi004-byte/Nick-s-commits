@@ -459,12 +459,16 @@ GET_LOOPS_STATUS_TOOL: Dict[str, Any] = {
 FIND_JOBS_TOOL: Dict[str, Any] = {
     "name": "find_jobs",
     "description": (
-        "Read-only. Searches the job catalog by keywords (role, company, "
-        "location all work as keywords) and returns up to `limit` recent "
-        "matches with job_id, title, company, location, and whether each "
-        "supports auto-apply. Use this to look up concrete jobs before "
-        "discussing or applying to them. Present matches by title and "
-        "company; never invent job ids."
+        "Read-only. Searches the job catalog by keywords and returns up to "
+        "`limit` recent matches with job_id, title, company, location, and "
+        "whether each supports auto-apply. QUERY DISCIPLINE: use ONLY the "
+        "role words the user gave, plus a company or city IF THE USER NAMED "
+        "ONE (2-4 words total, e.g. 'data science intern'). NEVER pad the "
+        "query with profile context - no school names, no 'student', no "
+        "graduation year, no 'summer 2026': the catalog matches keywords "
+        "literally and padded queries return nothing the user asked for. "
+        "Use this to look up concrete jobs before discussing or applying to "
+        "them. Present matches by title and company; never invent job ids."
     ),
     "input_schema": {
         "type": "object",
@@ -486,11 +490,15 @@ AUTO_APPLY_TOOL: Dict[str, Any] = {
     "name": "auto_apply_to_job",
     "description": (
         "EXECUTE ACTION - queues a real auto-apply submission for one job "
-        "and spends the user's credits. HARD RULES: (1) only call this "
-        "after the user has EXPLICITLY confirmed, in this conversation, "
-        "applying to this specific job (named by title and company); a "
-        "general 'apply to jobs for me' is not confirmation for any "
-        "particular job - list the matches and ask which ones first. "
+        "and spends the user's credits. HARD RULES: (1) consent is "
+        "intent-based. When the user's message is an explicit imperative "
+        "to apply ('apply to three data science internships', 'auto-apply "
+        "me to the Snap role'), you may find_jobs and apply to the "
+        "best-matching eligible jobs in the same turn, up to the count "
+        "they named. When the request is exploratory or ambiguous ('what "
+        "internships are out there', 'can you apply to jobs for me?', no "
+        "count and no named job), list the matches and ask which ones "
+        "FIRST; apply only after they answer. When unsure, ask. "
         "(2) job_id must come from a find_jobs result in this conversation, "
         "and the job must be auto-apply eligible. (3) at most 3 submissions "
         "per user turn. After calling, your answer MUST name each job "
@@ -740,27 +748,37 @@ def _find_jobs(query: str, limit: Any = None) -> Dict[str, Any]:
         from google.cloud.firestore_v1.base_query import FieldFilter
 
         db = get_db()
-        tokens = build_search_terms(query, None, None)
-        primary = max(tokens, key=len) if tokens else None
-        q = db.collection("jobs").order_by("posted_at", direction="DESCENDING")
-        if primary:
-            q = q.where(filter=FieldFilter("search_terms", "array_contains", primary))
-        extra = [t for t in (tokens or []) if t != primary]
-        jobs: List[Dict[str, Any]] = []
-        for snap in q.limit(60).stream():
-            d = snap.to_dict() or {}
-            haystack = f"{d.get('title','')} {d.get('company','')} {d.get('location','')}".lower()
-            if any(t not in haystack for t in extra):
-                continue
-            jobs.append({
-                "job_id": snap.id,
-                "title": (d.get("title") or "")[:160],
-                "company": (d.get("company") or "")[:120],
-                "location": (d.get("location") or "")[:120],
-                "auto_apply_eligible": bool(is_eligible(d)),
-            })
-            if len(jobs) >= limit:
+        tokens = build_search_terms(query, None, None) or []
+        # Try up to the two longest tokens as the Firestore filter: a stuffed
+        # or unlucky primary ("angeles") should not zero out the whole search.
+        primaries = sorted(set(tokens), key=len, reverse=True)[:2] or [None]
+        candidates: Dict[str, Dict[str, Any]] = {}
+        for primary in primaries:
+            q = db.collection("jobs").order_by("posted_at", direction="DESCENDING")
+            if primary:
+                q = q.where(filter=FieldFilter("search_terms", "array_contains", primary))
+            for snap in q.limit(60).stream():
+                if snap.id in candidates:
+                    continue
+                d = snap.to_dict() or {}
+                haystack = (
+                    f"{d.get('title','')} {d.get('company','')} {d.get('location','')}".lower()
+                )
+                # Rank by how many query tokens land; never hard-require all
+                # of them (an extra word like a city must not zero the search).
+                score = sum(1 for t in tokens if t in haystack)
+                candidates[snap.id] = {
+                    "job_id": snap.id,
+                    "title": (d.get("title") or "")[:160],
+                    "company": (d.get("company") or "")[:120],
+                    "location": (d.get("location") or "")[:120],
+                    "auto_apply_eligible": bool(is_eligible(d)),
+                    "_score": score,
+                }
+            if candidates:
                 break
+        ranked = sorted(candidates.values(), key=lambda j: j["_score"], reverse=True)
+        jobs = [{k: v for k, v in j.items() if k != "_score"} for j in ranked[:limit]]
         return {"count": len(jobs), "jobs": jobs}
     except Exception as e:
         print(f"[ScoutTools] find_jobs failed: {e}")
