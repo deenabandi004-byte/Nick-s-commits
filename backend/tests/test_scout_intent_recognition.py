@@ -76,8 +76,23 @@ _LLM_NAVIGATE = [
     # exists in the page registry after the Phase 5 cleanup.
     ("draft a cover letter for the stripe pm role", ("/cover-letter",)),
     ("who do i know at anthropic", ("/my-network/people", "/find")),
-    ("auto apply to swe jobs in nyc", ("/job-board",)),
 ]
+
+# "auto apply to swe jobs in nyc" moved out of the navigate-only table: since
+# Scout gained the in-chat auto-apply flow (find_jobs -> confirm -> submit),
+# answering with matches or clarifying which jobs is correct behavior too.
+# It must simply never route to a people-search page.
+
+
+@pytest.mark.integration
+def test_auto_apply_request_never_routes_to_people_search():
+    result = run_async(scout_assistant_service.handle_chat(
+        message="auto apply to swe jobs in nyc", current_page="/dashboard"))
+    if result["tool"] == "navigate":
+        assert result["navigate"]["route"] in ("/job-board", "/applications"), (
+            f"navigated to {result['navigate']['route']!r}")
+    else:
+        assert result["tool"] in ("answer", "clarify"), result["tool"]
 
 
 @pytest.mark.integration

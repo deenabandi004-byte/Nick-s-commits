@@ -433,6 +433,14 @@ You can read the user's actual workflow state across the product through read-on
 
 Call them in two situations. One: when the answer depends on workflow state ("how many people have I emailed?", "what did I search for last week?", "did anyone reply yet?"). Two: proactively when you are about to suggest next steps on an active strategy or talk through a plan, so the advice is grounded in what actually happened, not assumed. Before telling someone to start outreach for the consulting plan, peek at the outbox; if they already sent 4 emails to BCG alums and got 1 reply, name that and build from it.
 
+## Applying to jobs from chat
+You CAN submit auto-apply applications directly from this chat, and it is the one action you execute yourself. A request to apply or auto-apply to jobs is ALWAYS a jobs task: handle it with this flow or a /job-board navigate. NEVER route an apply request to /find - that page finds people to email, not jobs. The flow is strict:
+1. Use find_jobs to look up concrete matches; present them by title and company, noting which support auto-apply.
+2. Get explicit confirmation for specific jobs. "Apply to jobs for me" is not confirmation for any particular job: show the matches and ask which ones. "Yes, apply to the Stripe PM role" is confirmation for that job only.
+3. Call auto_apply_to_job once per confirmed job (max 3 per turn), then answer by naming each job (title, company) and its queued status, and point them to /applications to track progress. Auto-apply costs credits and runs in the background; results land in the Applications page queues.
+Error codes: PROFILE_REQUIRED means their application profile is incomplete (finish it from any job page); INSUFFICIENT_CREDITS means they need credits; INELIGIBLE means that job's ATS is unsupported (they can still apply manually via the job link); TIER_REQUIRED means auto-apply needs Pro or Elite; BROWSERBASE_NOT_CONFIGURED means the feature is not live in this environment - say so plainly.
+NEVER claim an application was submitted, queued, or started unless auto_apply_to_job returned status=queued in THIS turn. If find_jobs fails or returns nothing, say the job lookup came up empty and offer the Job Board instead; do not pretend the flow started.
+
 When you reference workflow state in chat, do it with specifics, not aggregates. Not "you have some emails in your outbox" but "you sent 4 emails to BCG alums last week and only Sarah at the Chicago office has replied". Not "you have some saved cover letters" but "your BCG cover letter is two weeks old and BCG's full-time cycle opens in six weeks; want me to help refresh it?". The data is there; use it.
 
 ## Chat continuity
@@ -1929,6 +1937,8 @@ class ScoutAssistantService:
         "get_meeting_prep_drafts": "Checking your meeting preps",
         "get_applications_status": "Checking your applications",
         "get_loops_status": "Checking your Loops",
+        "find_jobs": "Searching the job catalog",
+        "auto_apply_to_job": "Submitting your application",
         "save_strategy": "Saving your plan",
         "update_strategy_progress": "Updating your plan",
         "parse_job_url": "Reading the job posting",
@@ -1968,6 +1978,14 @@ class ScoutAssistantService:
             running = result.get("running") or 0
             drafts = result.get("pending_drafts") or 0
             return f"{count} loops, {running} running, {drafts} drafts pending"
+        if name == "find_jobs":
+            count = result.get("count") or 0
+            return f"{count} matching jobs"
+        if name == "auto_apply_to_job":
+            if result.get("status") == "queued":
+                title = result.get("job_title") or "application"
+                return f"queued: {title}"
+            return result.get("code") or "not submitted"
         if name in ("get_recent_searches", "get_recent_firm_searches",
                     "get_recent_cover_letters", "get_meeting_prep_drafts"):
             count = result.get("count")

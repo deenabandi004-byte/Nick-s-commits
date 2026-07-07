@@ -59,7 +59,7 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         # structured fields are still accepted for simple cases.
         "inputs": ["job_title", "company", "location", "prompt"],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to find people, contacts, professionals, or alumni to network with or email",
+        "send_user_here_when": "the user wants to find people, contacts, professionals, or alumni to network with or email. NOT for job listings or applying to jobs - that is the Job Board",
         "credit_cost": 10,
         "tier_required": None,
         # The page honors auto_submit on the Scout navigate payload: when set,

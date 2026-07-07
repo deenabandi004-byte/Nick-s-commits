@@ -456,6 +456,62 @@ GET_LOOPS_STATUS_TOOL: Dict[str, Any] = {
     },
 }
 
+FIND_JOBS_TOOL: Dict[str, Any] = {
+    "name": "find_jobs",
+    "description": (
+        "Read-only. Searches the job catalog by keywords (role, company, "
+        "location all work as keywords) and returns up to `limit` recent "
+        "matches with job_id, title, company, location, and whether each "
+        "supports auto-apply. Use this to look up concrete jobs before "
+        "discussing or applying to them. Present matches by title and "
+        "company; never invent job ids."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": "Keywords, e.g. 'software engineer intern stripe'.",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Max jobs to return (default 5, max 10).",
+            },
+        },
+        "required": ["query"],
+    },
+}
+
+AUTO_APPLY_TOOL: Dict[str, Any] = {
+    "name": "auto_apply_to_job",
+    "description": (
+        "EXECUTE ACTION - queues a real auto-apply submission for one job "
+        "and spends the user's credits. HARD RULES: (1) only call this "
+        "after the user has EXPLICITLY confirmed, in this conversation, "
+        "applying to this specific job (named by title and company); a "
+        "general 'apply to jobs for me' is not confirmation for any "
+        "particular job - list the matches and ask which ones first. "
+        "(2) job_id must come from a find_jobs result in this conversation, "
+        "and the job must be auto-apply eligible. (3) at most 3 submissions "
+        "per user turn. After calling, your answer MUST name each job "
+        "(title, company) and its status, and point the user to "
+        "/applications to track progress. If the result code is "
+        "PROFILE_REQUIRED, tell the user to complete their application "
+        "profile from any job page first; INSUFFICIENT_CREDITS means they "
+        "need credits; INELIGIBLE means this job's ATS is unsupported."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "job_id": {
+                "type": "string",
+                "description": "The job_id from a find_jobs result.",
+            },
+        },
+        "required": ["job_id"],
+    },
+}
+
 # Terminal tools end a turn (exactly one per turn). Helper tools gather data
 # or write memory mid-turn and the model keeps going. parallel_tool_calls=False
 # caps each step at one tool; the caller offers only terminal tools on the
@@ -472,6 +528,8 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     GET_RECENT_FIRM_SEARCHES_TOOL,
     GET_APPLICATIONS_STATUS_TOOL,
     GET_LOOPS_STATUS_TOOL,
+    FIND_JOBS_TOOL,
+    AUTO_APPLY_TOOL,
 ]
 SCOUT_TOOLS: List[Dict[str, Any]] = TERMINAL_TOOLS + HELPER_TOOLS
 
@@ -653,4 +711,88 @@ async def run_helper_tool(
     if name == "get_loops_status":
         return await _run_workflow_read(
             "get_loops_status", args, ctx, 6, _LOOPS_EMPTY)
+    if name == "find_jobs":
+        return await asyncio.to_thread(
+            _find_jobs, str(args.get("query") or ""), args.get("limit"))
+    if name == "auto_apply_to_job":
+        return await _run_auto_apply(args, ctx)
     return {"error": f"unknown helper tool: {name}"}
+
+
+def _find_jobs(query: str, limit: Any = None) -> Dict[str, Any]:
+    """Lean catalog search for Scout: token filter + recency, best-effort.
+
+    Mirrors the /api/jobs/search primary-token strategy without the cursor /
+    post-filter machinery: one array_contains on the rarest token, ordered by
+    posted_at desc, annotated with auto-apply eligibility.
+    """
+    try:
+        limit = max(1, min(int(limit or 5), 10))
+    except (TypeError, ValueError):
+        limit = 5
+    query = (query or "").strip()
+    if not query:
+        return {"count": 0, "jobs": [], "error": "query required"}
+    try:
+        from app.extensions import get_db
+        from app.services.auto_apply.ats_detector import is_eligible
+        from backend.pipeline.normalizer import build_search_terms
+        from google.cloud.firestore_v1.base_query import FieldFilter
+
+        db = get_db()
+        tokens = build_search_terms(query, None, None)
+        primary = max(tokens, key=len) if tokens else None
+        q = db.collection("jobs").order_by("posted_at", direction="DESCENDING")
+        if primary:
+            q = q.where(filter=FieldFilter("search_terms", "array_contains", primary))
+        extra = [t for t in (tokens or []) if t != primary]
+        jobs: List[Dict[str, Any]] = []
+        for snap in q.limit(60).stream():
+            d = snap.to_dict() or {}
+            haystack = f"{d.get('title','')} {d.get('company','')} {d.get('location','')}".lower()
+            if any(t not in haystack for t in extra):
+                continue
+            jobs.append({
+                "job_id": snap.id,
+                "title": (d.get("title") or "")[:160],
+                "company": (d.get("company") or "")[:120],
+                "location": (d.get("location") or "")[:120],
+                "auto_apply_eligible": bool(is_eligible(d)),
+            })
+            if len(jobs) >= limit:
+                break
+        return {"count": len(jobs), "jobs": jobs}
+    except Exception as e:
+        print(f"[ScoutTools] find_jobs failed: {e}")
+        return {"count": 0, "jobs": [], "error": "job search unavailable"}
+
+
+async def _run_auto_apply(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute one auto-apply submission on the user's behalf.
+
+    Tier-gated to Pro/Elite (mirrors the HTTP route's @require_tier). Marks
+    workflow_state_touched so the turn is never served from or promoted to
+    the shared answer cache.
+    """
+    uid = context.get("uid")
+    if not uid:
+        return {"error": "sign in required", "code": "AUTH_REQUIRED"}
+    tier = str(context.get("tier") or "free").lower()
+    if tier not in ("pro", "elite"):
+        return {
+            "error": "auto-apply requires Pro or Elite",
+            "code": "TIER_REQUIRED",
+        }
+    job_id = str(args.get("job_id") or "").strip()
+    if not job_id:
+        return {"error": "job_id required", "code": "BAD_REQUEST"}
+    try:
+        from app.services.auto_apply.submit_service import submit_auto_apply_for_user
+        payload, _status = await asyncio.to_thread(
+            submit_auto_apply_for_user, uid, job_id, dry_run=False,
+        )
+        context["workflow_state_touched"] = True
+        return payload
+    except Exception as e:
+        print(f"[ScoutTools] auto_apply_to_job failed: {e}")
+        return {"error": "auto-apply failed to start", "code": "INTERNAL"}
