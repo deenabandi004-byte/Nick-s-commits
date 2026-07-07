@@ -68,12 +68,16 @@ type NavAction = 'in-place' | 'skip-approve' | 'approve-card';
 
 function decideNavAction(nav: ScoutNavigate, mode?: ScoutMode | null): NavAction {
   if (nav.already_on_page) return 'in-place';
-  if (mode === 'do' && !nav.credit_spending) return 'skip-approve';
+  // DO mode means the user gave a directive; executing it IS the product,
+  // credit-spending searches included (product call 2026-07-07: no approve
+  // card between an explicit ask and the action). The undo toast and the
+  // destination page's own controls are the escape hatches.
+  if (mode === 'do') return 'skip-approve';
   // Fallback: when the classifier was unavailable (no key, timeout, parse
   // error) the mode pill defaults to 'chat' regardless of navigate intent;
   // honor the model's own user_was_imperative + confidence so a clear
   // command still skips the card.
-  if (!mode && nav.user_was_imperative && nav.confidence >= 0.9 && !nav.credit_spending) {
+  if (!mode && nav.user_was_imperative && nav.confidence >= 0.9) {
     return 'skip-approve';
   }
   return 'approve-card';

@@ -1,11 +1,15 @@
 /**
  * ScoutApproveCard - the inline approve UI for a Scout navigate proposal.
  *
- * Rendered in the chat when Scout proposes a navigation that needs the user's
- * sign-off: an inferred (non-imperative) navigate, or any credit-spending
- * destination. It shows the reasoning, the destination route, and each prefill
- * field as an editable chip. Approving calls onApprove with the (possibly
- * edited) prefill; the panel then writes the bridge and navigates.
+ * Rendered in the chat only when Scout proposes a navigation it is NOT sure
+ * the user directed (DO-mode navigations execute immediately). Shows a
+ * friendly destination name and each prefill field as an editable chip.
+ * Approving calls onApprove with the (possibly edited) prefill; the panel
+ * then writes the bridge and navigates.
+ *
+ * Styling uses the app's real tokens (--brand-blue, --line, --ink) with hex
+ * fallbacks. An earlier version used a --c-* token set that exists nowhere
+ * in this codebase, which rendered the Approve button invisible.
  */
 import { useState } from 'react';
 import { Check, ArrowRight } from 'lucide-react';
@@ -28,7 +32,35 @@ const FIELD_LABELS: Record<string, string> = {
   linkedin_url: 'LinkedIn',
   job_url: 'Job link',
   query: 'Search',
+  prompt: 'Search',
 };
+
+// Friendly destination names; falls back to a prettified path.
+const PAGE_LABELS: Record<string, string> = {
+  '/find': 'Find People',
+  '/find?tab=companies': 'Find Companies',
+  '/find?tab=hiring-managers': 'Find Hiring Managers',
+  '/coffee-chat-prep': 'Meeting Prep',
+  '/coffee-chat-library': 'Meeting Prep Library',
+  '/cover-letter': 'Cover Letter',
+  '/resume': 'Resume',
+  '/job-board': 'Job Board',
+  '/applications': 'Applications',
+  '/outbox': 'your Inbox',
+  '/agent': 'Loops',
+  '/agent/setup': 'a new Loop',
+  '/upload-list': 'Upload List',
+  '/my-network/people': 'My Network',
+  '/my-network/companies': 'My Network (Companies)',
+  '/integrations': 'Integrations',
+};
+
+function pageLabel(route: string): string {
+  if (PAGE_LABELS[route]) return PAGE_LABELS[route];
+  const base = (route || '').split('?')[0];
+  if (PAGE_LABELS[base]) return PAGE_LABELS[base];
+  return base.replace(/^\//, '').replace(/[-/]/g, ' ') || 'that page';
+}
 
 export function ScoutApproveCard({ navigate, resolved, onApprove }: ScoutApproveCardProps) {
   const [prefill, setPrefill] = useState<Record<string, string>>(
@@ -37,34 +69,33 @@ export function ScoutApproveCard({ navigate, resolved, onApprove }: ScoutApprove
   const [editingKey, setEditingKey] = useState<string | null>(null);
 
   const keys = Object.keys(prefill);
+  const destination = pageLabel(navigate.route);
 
   if (resolved) {
     return (
-      <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-[var(--c-border-subtle)] bg-[var(--c-surface)] px-3 py-2 text-xs text-[var(--c-text-tertiary)]">
-        <Check className="h-3.5 w-3.5 text-[var(--c-accent)]" />
-        <span>Approved, went to {navigate.route}</span>
+      <div className="mt-2 flex items-center gap-1.5 rounded-lg border border-[var(--line,#E5E5E0)] bg-[var(--paper,#fff)] px-3 py-2 text-xs text-[var(--ink-3,#8A8F9A)]">
+        <Check className="h-3.5 w-3.5 text-[var(--brand-blue,#3B82F6)]" />
+        <span>Done, opened {destination}</span>
       </div>
     );
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-[var(--c-border)] bg-[var(--c-surface-raised)] p-3 shadow-sm">
-      <p className="text-sm leading-snug text-[var(--c-text)]">{navigate.reasoning}</p>
-
-      <div className="mt-2 flex flex-wrap items-center gap-2">
-        <span className="rounded-md bg-[var(--c-surface-sunken)] px-2 py-0.5 font-mono text-[11px] text-[var(--c-text-secondary)]">
-          {navigate.route}
-        </span>
-      </div>
+    <div className="mt-2 rounded-xl border border-[var(--line,#E5E5E0)] bg-[var(--paper,#fff)] p-3 shadow-sm">
+      {/* The reasoning already appears in the message bubble above; the card
+          only carries the destination, the editable inputs, and the button. */}
+      <p className="text-xs text-[var(--ink-3,#8A8F9A)]">
+        Run this in <span className="font-semibold text-[var(--ink,#111318)]">{destination}</span>?
+      </p>
 
       {keys.length > 0 && (
         <div className="mt-2.5 flex flex-wrap gap-1.5">
           {keys.map((k) => (
             <div
               key={k}
-              className="inline-flex items-center gap-1 rounded-full border border-[var(--c-border)] bg-[var(--c-surface)] px-2 py-1 text-xs"
+              className="inline-flex items-center gap-1 rounded-full border border-[var(--line,#E5E5E0)] bg-[var(--paper-2,#FAFBFF)] px-2 py-1 text-xs"
             >
-              <span className="text-[var(--c-text-tertiary)]">{FIELD_LABELS[k] || k}</span>
+              <span className="text-[var(--ink-3,#8A8F9A)]">{FIELD_LABELS[k] || k}</span>
               {editingKey === k ? (
                 <input
                   autoFocus
@@ -74,14 +105,14 @@ export function ScoutApproveCard({ navigate, resolved, onApprove }: ScoutApprove
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === 'Escape') setEditingKey(null);
                   }}
-                  className="w-32 rounded bg-[var(--c-surface-sunken)] px-1 text-[var(--c-text)] outline-none focus:ring-1 focus:ring-[var(--c-accent)]"
+                  className="w-40 rounded bg-white px-1 text-[var(--ink,#111318)] outline-none ring-1 ring-[var(--brand-blue,#3B82F6)]"
                 />
               ) : (
                 <button
                   type="button"
                   onClick={() => setEditingKey(k)}
                   title="Click to edit"
-                  className="font-medium text-[var(--c-text)] underline decoration-dotted decoration-[var(--c-text-tertiary)] underline-offset-2"
+                  className="font-medium text-[var(--ink,#111318)] underline decoration-dotted decoration-[var(--ink-3,#8A8F9A)] underline-offset-2"
                 >
                   {prefill[k] || 'add'}
                 </button>
@@ -94,10 +125,11 @@ export function ScoutApproveCard({ navigate, resolved, onApprove }: ScoutApprove
       <button
         type="button"
         onClick={() => onApprove(prefill)}
-        className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-[var(--c-accent)] px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-[var(--c-accent-hover)] active:scale-[0.98]"
+        className="mt-3 inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-semibold text-white transition active:scale-[0.98]"
+        style={{ background: 'var(--brand-blue, #3B82F6)' }}
       >
         <Check className="h-4 w-4" />
-        Approve
+        Run it
         <ArrowRight className="h-3.5 w-3.5" />
       </button>
     </div>
