@@ -214,6 +214,10 @@ def draft_emails_to_contacts(
             "company": _text(d.get("Company") or d.get("company")),
             "recipient_email": draft.recipient_email,
             "subject": subject[:160],
+            # For the chat report: deep links to the Gmail draft and to the
+            # exact Inbox conversation (/outbox?contact=<id>).
+            "gmail_draft_url": draft.draft_url or "",
+            "contact_id": d["_id"],
         })
 
     return {"drafted": drafted, "skipped": skipped, "count": len(drafted)}

@@ -434,7 +434,7 @@ You can read the user's actual workflow state across the product through read-on
 Call them in two situations. One: when the answer depends on workflow state ("how many people have I emailed?", "what did I search for last week?", "did anyone reply yet?"). Two: proactively when you are about to suggest next steps on an active strategy or talk through a plan, so the advice is grounded in what actually happened, not assumed. Before telling someone to start outreach for the consulting plan, peek at the outbox; if they already sent 4 emails to BCG alums and got 1 reply, name that and build from it.
 
 ## Drafting emails from chat
-You CAN draft outreach emails yourself with draft_outreach_emails, for contacts already saved in the user's network. THE DISTINCTION THAT MATTERS: finding people and emailing found people are different actions. When a search already found contacts (this chat shows their names) and the user says "draft emails to them", "email them", or "write to each of them", call draft_outreach_emails with those exact names. NEVER respond to that by running another contact search: a new search finds DIFFERENT people and spends credits. Only navigate to /find when the user wants NEW people. After drafting, name each email (contact, company, subject line) and any skips with the reason, and bridge to /outbox with the cta chip so they can review and send. GMAIL_NOT_CONNECTED means drafts have nowhere to go: say so and cta to /integrations.
+You CAN draft outreach emails yourself with draft_outreach_emails, for contacts already saved in the user's network. THE DISTINCTION THAT MATTERS: finding people and emailing found people are different actions. When a search already found contacts (this chat shows their names) and the user says "draft emails to them", "email them", or "write to each of them", call draft_outreach_emails with those exact names. NEVER respond to that by running another contact search: a new search finds DIFFERENT people and spends credits. Only navigate to /find when the user wants NEW people. After drafting, name each email (contact, company, subject line) with its [View in Gmail](gmail_draft_url) link, plus any skips with the reason. The review page is called the INBOX (the route is /outbox, a legacy name - never say "Outbox" to the user). Bridge with the cta chip: one draft -> route "/outbox?contact=<contact_id>" labeled "Open in your Inbox" so it lands on that exact conversation; multiple drafts -> "/outbox" labeled "Open your Inbox". When the user referred to a specific person ("draft an email to her"), you MUST pass that person's name in contact_names - drafting to whoever was saved most recently instead is emailing the wrong person. GMAIL_NOT_CONNECTED means drafts have nowhere to go: say so and cta to /integrations.
 
 ## Applying to jobs from chat
 You CAN submit auto-apply applications directly from this chat, and it is the one action you execute yourself. A request to apply or auto-apply to jobs is ALWAYS a jobs task: handle it with this flow or a /job-board navigate. NEVER route an apply request to /find - that page finds people to email, not jobs. The flow is strict:
@@ -1018,6 +1018,7 @@ class ScoutAssistantService:
             result = self._build_tool_response(
                 tool_call, current_page, intent=intent, plan=plan_payload,
             )
+            result = self._enrich_draft_report(result, helper_results)
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
             # the active strategy this turn (strategy_touched), AND any
@@ -1721,13 +1722,86 @@ class ScoutAssistantService:
             for k, v in prefill_in.items()
             if k in allowed and str(v).strip() and _prefill_value_ok(k, v)
         }
+        # Preserve the model's query string when it still resolves to this
+        # page (e.g. /outbox?contact=<id> deep-links to one Inbox
+        # conversation); otherwise normalize to the registry route.
+        route_out = route if (route != page["route"] and get_page(route) is page) else page["route"]
         return {
             "label": _strip_em_dashes(label)[:140],
-            "route": page["route"],
+            "route": route_out,
             "prefill": prefill,
             "credit_spending": page.get("credit_cost") is not None,
             "credit_cost": page.get("credit_cost"),
         }
+
+    def _enrich_draft_report(
+        self,
+        result: Dict[str, Any],
+        helper_results: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Guarantee the draft-report contract regardless of model brevity.
+
+        When this turn successfully created outreach drafts, the answer must
+        carry a View-in-Gmail link per draft and a cta that lands on the
+        exact Inbox conversation (single draft) or the Inbox (multiple).
+        gpt-5-mini often skips these under its brevity habits, so the
+        harness appends them deterministically.
+        """
+        try:
+            if result.get("tool") != "answer":
+                return result
+            entry = next(
+                (
+                    h.get("result") for h in reversed(helper_results or [])
+                    if h.get("name") == "draft_outreach_emails"
+                    and isinstance(h.get("result"), dict)
+                    and (h["result"].get("count") or 0) > 0
+                ),
+                None,
+            )
+            if not entry:
+                return result
+            drafted = [d for d in (entry.get("drafted") or []) if isinstance(d, dict)]
+            if not drafted:
+                return result
+
+            message = result.get("message") or ""
+            links: List[str] = []
+            for d in drafted:
+                url = (d.get("gmail_draft_url") or "").strip()
+                if url and url not in message:
+                    first = (d.get("name") or "the draft").split()[0]
+                    links.append(f"[View {first}'s draft in Gmail]({url})")
+            if links:
+                result["message"] = f"{message}\n{' '.join(links)}".strip()
+
+            # Deep-link the cta to the exact conversation for a single draft.
+            cta = result.get("cta")
+            if len(drafted) == 1 and drafted[0].get("contact_id"):
+                deep_route = f"/outbox?contact={drafted[0]['contact_id']}"
+                if not cta:
+                    result["cta"] = {
+                        "label": "Open in your Inbox",
+                        "route": deep_route,
+                        "prefill": {},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                elif cta.get("route") in ("/outbox", deep_route):
+                    cta["route"] = deep_route
+                    if "outbox" in (cta.get("label") or "").lower():
+                        cta["label"] = "Open in your Inbox"
+            elif not cta:
+                result["cta"] = {
+                    "label": "Open your Inbox",
+                    "route": "/outbox",
+                    "prefill": {},
+                    "credit_spending": False,
+                    "credit_cost": None,
+                }
+        except Exception as e:
+            print(f"[ScoutChat] draft report enrichment failed: {e}")
+        return result
 
     def _clarify_for_missing(self, missing: List[str]) -> str:
         """Phrase a natural-language clarify question for missing required fields.
