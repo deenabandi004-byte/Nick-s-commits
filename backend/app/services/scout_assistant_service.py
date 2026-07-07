@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import random
 import re
 import time
@@ -347,7 +348,7 @@ Turn N+2 (navigate, auto_submit=true): reasoning "Got it, pulling 5 USC alumni i
 
 The user clicks Approve once, the search RUNS, and they see results land. They never have to click Search themselves. That is the bar.
 
-answer - reply in chat with no navigation. Use answer for CONVERSATIONAL and META intent. Do not answer an ACTION request by describing the steps the user should take when you could navigate them there. When you answer, the turn can be as long as the question warrants: planning, brainstorming, strategy, or walkthrough requests get a real, structured answer with numbered steps, clear sections, and concrete suggestions, broken into short paragraphs or numbered lines separated by actual line breaks, never one dense block; a meta-question gets a short factual reply. Sound like a person talking, not a help doc (see Voice). After a substantive answer you may optionally suggest a relevant page ("When you're ready to track this, I can take you to the recruiting timeline."), but the substance comes first.
+answer - reply in chat with no navigation. Use answer for CONVERSATIONAL and META intent. Do not answer an ACTION request by describing the steps the user should take when you could navigate them there. When you answer, the turn can be as long as the question warrants: planning, brainstorming, strategy, or walkthrough requests get a real, structured answer with numbered steps, clear sections, and concrete suggestions, broken into short paragraphs or numbered lines separated by actual line breaks, never one dense block; a meta-question gets a short factual reply. Sound like a person talking, not a help doc (see Voice). After a substantive answer you may optionally suggest a relevant page ("When you're ready to track this, I can take you to the recruiting timeline."), but the substance comes first. NEVER write that you are opening, taking, or navigating the user anywhere inside an answer: only the navigate tool moves them, so "I'll open Integrations for you" in an answer is a false claim. When the next step is a page, describe what they'll find there and put the move itself in the cta chip.
 
 ## Navigate response style
 
@@ -762,9 +763,49 @@ def _prefill_value_ok(key: str, value: str) -> bool:
 class ScoutAssistantService:
     """Service for Scout product assistant functionality."""
 
-    # Scout runs on the OpenAI API. gpt-4.1-mini: strong tool-calling, low cost,
-    # and automatic prompt-prefix caching for the static-first system prompt.
-    DEFAULT_MODEL = "gpt-4.1-mini"
+    # Scout runs on the OpenAI API, main chat loop and side tasks on separate
+    # models. Both env-overridable so a model change is a config rollout, not
+    # a deploy.
+    #   SCOUT_MODEL          the tool-calling chat loop (quality matters here:
+    #                        tool choice, prefill fidelity, cta discipline).
+    #                        gpt-5-mini beat gpt-4.1-mini on the July 2026
+    #                        probe battery (cta chips actually fire, grounded
+    #                        specifics) at comparable latency and LOWER cost
+    #                        (cheaper cached input, which dominates Scout's
+    #                        11K-token 99%-cached prompt).
+    #   SCOUT_UTILITY_MODEL  cheap side tasks (chat titles, search-help
+    #                        refinement) where gpt-4.1-mini is plenty
+    DEFAULT_MODEL = os.getenv("SCOUT_MODEL", "gpt-5-mini")
+    UTILITY_MODEL = os.getenv("SCOUT_UTILITY_MODEL", "gpt-4.1-mini")
+
+    @staticmethod
+    def _chat_params(model: str, *, temperature: float, max_tokens: int) -> Dict[str, Any]:
+        """Per-family Chat Completions params.
+
+        gpt-5* models reject `temperature` and `max_tokens`: they take
+        `max_completion_tokens` plus a `reasoning_effort`. Scout is a fast
+        router, so reasoning defaults to the lowest tier the family supports
+        ("minimal" for the original gpt-5 family, "none" for gpt-5.1+),
+        overridable via SCOUT_REASONING_EFFORT.
+        """
+        if model.startswith("gpt-5"):
+            version = model.split("-")[1]
+            effort_default = "minimal" if version == "5" else "none"
+            effort = os.getenv("SCOUT_REASONING_EFFORT", effort_default)
+            # Reasoning tokens count against max_completion_tokens on the
+            # gpt-5 family; without headroom a long answer truncates mid
+            # tool-call JSON and the turn degrades to the parse fallback.
+            params: Dict[str, Any] = {"max_completion_tokens": max_tokens + 600}
+            # Newer minis (gpt-5.4-mini) reject reasoning_effort alongside
+            # function tools on Chat Completions (Responses API only), so
+            # SCOUT_REASONING_EFFORT=omit drops the param entirely.
+            if effort and effort != "omit":
+                # extra_body, not a named kwarg: the pinned openai SDK (1.5x)
+                # predates reasoning_effort and rejects it as a kwarg, but
+                # passes extra_body straight through to the request JSON.
+                params["extra_body"] = {"reasoning_effort": effort}
+            return params
+        return {"temperature": temperature, "max_tokens": max_tokens}
 
     def __init__(self):
         self._openai = get_async_openai_client()
@@ -1277,7 +1318,7 @@ class ScoutAssistantService:
                 client = self._get_openai()
                 resp = await asyncio.wait_for(
                     client.chat.completions.create(
-                        model=self.DEFAULT_MODEL,
+                        model=self.UTILITY_MODEL,
                         messages=[
                             {"role": "system", "content": "You write short, concrete chat titles."},
                             {
@@ -1289,8 +1330,7 @@ class ScoutAssistantService:
                                 ),
                             },
                         ],
-                        temperature=0.2,
-                        max_tokens=30,
+                        **self._chat_params(self.UTILITY_MODEL, temperature=0.2, max_tokens=30),
                     ),
                     timeout=10.0,
                 )
@@ -1342,11 +1382,10 @@ class ScoutAssistantService:
                 client.chat.completions.create(
                     model=self.DEFAULT_MODEL,
                     messages=convo,
-                    temperature=0.3,
-                    max_tokens=600,
                     tools=to_openai_tools(terminal_only=final_step),
                     tool_choice="required",
                     parallel_tool_calls=False,
+                    **self._chat_params(self.DEFAULT_MODEL, temperature=0.3, max_tokens=600),
                 ),
                 timeout=25.0,
             )
@@ -2219,13 +2258,12 @@ VOICE: direct, warm, no fluff. Don't say "I'm sorry" or "unfortunately." Lead wi
 
         response = await asyncio.wait_for(
             self._get_openai().chat.completions.create(
-                model=self.DEFAULT_MODEL,
+                model=self.UTILITY_MODEL,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
                 ],
-                temperature=0.6,
-                max_tokens=600,
+                **self._chat_params(self.UTILITY_MODEL, temperature=0.6, max_tokens=600),
                 response_format={"type": "json_object"},
             ),
             timeout=12,
@@ -2355,13 +2393,12 @@ Keep the message to 1-2 sentences. Be specific about the company if known."""
         try:
             response = await asyncio.wait_for(
                 self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
+                    model=self.UTILITY_MODEL,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_message},
                     ],
-                    temperature=0.7,
-                    max_tokens=300,
+                    **self._chat_params(self.UTILITY_MODEL, temperature=0.7, max_tokens=300),
                     response_format={"type": "json_object"},
                 ),
                 timeout=10,
@@ -2467,13 +2504,12 @@ Keep the message to 1-2 sentences."""
         try:
             response = await asyncio.wait_for(
                 self._get_openai().chat.completions.create(
-                    model=self.DEFAULT_MODEL,
+                    model=self.UTILITY_MODEL,
                     messages=[
                         {"role": "system", "content": system_prompt},
                         {"role": "user", "content": user_message},
                     ],
-                    temperature=0.7,
-                    max_tokens=300,
+                    **self._chat_params(self.UTILITY_MODEL, temperature=0.7, max_tokens=300),
                     response_format={"type": "json_object"},
                 ),
                 timeout=10,

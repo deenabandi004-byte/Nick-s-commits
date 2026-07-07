@@ -126,7 +126,7 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         "purpose": "Browse job listings: a personalized ranked feed (List view) and a browse-everything gallery. Save jobs, see match scores, find the hiring manager or team for a job, and auto-apply on supported postings.",
         "inputs": ["query"],
         "required_inputs": [],
-        "send_user_here_when": "the user wants to browse or search open job listings, internships, or roles",
+        "send_user_here_when": "the user wants to browse or search open job listings, internships, or roles, or wants to auto-apply to jobs (auto-apply is triggered from a job listing)",
         "credit_cost": None,
         "tier_required": None,
     },
