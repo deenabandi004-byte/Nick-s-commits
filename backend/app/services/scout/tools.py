@@ -727,6 +727,21 @@ async def run_helper_tool(
     return {"error": f"unknown helper tool: {name}"}
 
 
+def _job_text(value: Any) -> str:
+    """Coerce a job-doc field to display text. Some sources store location or
+    company as dicts; slicing those raised KeyError(slice(...)) and killed
+    the whole search."""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        for key in ("name", "display", "label", "city", "text"):
+            v = value.get(key)
+            if isinstance(v, str) and v.strip():
+                return v
+        return ""
+    return str(value) if value is not None else ""
+
+
 def _find_jobs(query: str, limit: Any = None) -> Dict[str, Any]:
     """Lean catalog search for Scout: token filter + recency, best-effort.
 
@@ -761,17 +776,18 @@ def _find_jobs(query: str, limit: Any = None) -> Dict[str, Any]:
                 if snap.id in candidates:
                     continue
                 d = snap.to_dict() or {}
-                haystack = (
-                    f"{d.get('title','')} {d.get('company','')} {d.get('location','')}".lower()
-                )
+                title = _job_text(d.get("title"))
+                company = _job_text(d.get("company"))
+                loc = _job_text(d.get("location"))
+                haystack = f"{title} {company} {loc}".lower()
                 # Rank by how many query tokens land; never hard-require all
                 # of them (an extra word like a city must not zero the search).
                 score = sum(1 for t in tokens if t in haystack)
                 candidates[snap.id] = {
                     "job_id": snap.id,
-                    "title": (d.get("title") or "")[:160],
-                    "company": (d.get("company") or "")[:120],
-                    "location": (d.get("location") or "")[:120],
+                    "title": title[:160],
+                    "company": company[:120],
+                    "location": loc[:120],
                     "auto_apply_eligible": bool(is_eligible(d)),
                     "_score": score,
                 }
