@@ -83,8 +83,22 @@ export const JobRow: React.FC<JobRowProps> = ({
           paddingRight: 4,
         }}
       >
-        <h2 style={{ fontSize: 17, fontWeight: 700, color: "var(--ink-1, #0F172A)", margin: 0 }}>
-          <span style={{ marginRight: 8 }}>{category.emoji}</span>
+        <h2
+          style={{
+            fontSize: 17,
+            fontWeight: 700,
+            color: "var(--ink-1, #0F172A)",
+            margin: 0,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <category.icon
+            size={17}
+            strokeWidth={2}
+            style={{ color: "var(--ink-3, #94A3B8)", flexShrink: 0 }}
+          />
           {category.label}
         </h2>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
