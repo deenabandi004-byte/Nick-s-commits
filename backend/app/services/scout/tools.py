@@ -520,6 +520,42 @@ AUTO_APPLY_TOOL: Dict[str, Any] = {
     },
 }
 
+DRAFT_OUTREACH_EMAILS_TOOL: Dict[str, Any] = {
+    "name": "draft_outreach_emails",
+    "description": (
+        "EXECUTE ACTION - writes personalized outreach emails as Gmail "
+        "drafts for contacts ALREADY SAVED in the user's network, and "
+        "attaches them so the Inbox shows each conversation. Use this when "
+        "the user asks to draft, write, or email contacts that were already "
+        "found ('draft emails to each of them' right after a search means "
+        "THOSE contacts). NEVER run a new contact search for such a "
+        "request - searching again finds different people and spends "
+        "credits. Pass contact_names exactly as they appeared in the chat "
+        "when the user referred to specific people; omit to use the most "
+        "recently saved contacts. Free (the contact-search credits already "
+        "covered drafting). Requires Gmail connected "
+        "(GMAIL_NOT_CONNECTED -> point them to /integrations). After "
+        "calling, your answer MUST name each drafted email (contact, "
+        "company, subject) and any skips with reasons, with a cta to "
+        "/outbox to review and send."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "contact_names": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Names of the saved contacts to draft for, as shown in chat. Omit for the most recent.",
+            },
+            "limit": {
+                "type": "integer",
+                "description": "Max drafts when contact_names is omitted (default 4, max 5).",
+            },
+        },
+        "required": [],
+    },
+}
+
 # Terminal tools end a turn (exactly one per turn). Helper tools gather data
 # or write memory mid-turn and the model keeps going. parallel_tool_calls=False
 # caps each step at one tool; the caller offers only terminal tools on the
@@ -538,6 +574,7 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     GET_LOOPS_STATUS_TOOL,
     FIND_JOBS_TOOL,
     AUTO_APPLY_TOOL,
+    DRAFT_OUTREACH_EMAILS_TOOL,
 ]
 SCOUT_TOOLS: List[Dict[str, Any]] = TERMINAL_TOOLS + HELPER_TOOLS
 
@@ -724,7 +761,32 @@ async def run_helper_tool(
             _find_jobs, str(args.get("query") or ""), args.get("limit"))
     if name == "auto_apply_to_job":
         return await _run_auto_apply(args, ctx)
+    if name == "draft_outreach_emails":
+        return await _run_draft_outreach(args, ctx)
     return {"error": f"unknown helper tool: {name}"}
+
+
+async def _run_draft_outreach(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """Draft Gmail outreach for saved contacts. Marks workflow_state_touched
+    so the turn is never cached or served cross-user."""
+    uid = context.get("uid")
+    if not uid:
+        return {"drafted": [], "skipped": [], "count": 0,
+                "error": "sign in required", "code": "AUTH_REQUIRED"}
+    names = args.get("contact_names")
+    if not isinstance(names, list):
+        names = None
+    try:
+        from app.services.scout.outreach_actions import draft_emails_to_contacts
+        result = await asyncio.to_thread(
+            draft_emails_to_contacts, uid, names, args.get("limit") or 4,
+        )
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] draft_outreach_emails failed: {e}")
+        return {"drafted": [], "skipped": [], "count": 0,
+                "error": "drafting failed", "code": "INTERNAL"}
 
 
 def _job_text(value: Any) -> str:

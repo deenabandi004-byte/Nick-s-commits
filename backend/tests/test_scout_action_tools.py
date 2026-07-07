@@ -114,3 +114,22 @@ def test_find_jobs_tolerates_dict_fields(monkeypatch):
     assert by_id["j1"]["location"] == "Los Angeles"
     # Higher token overlap ranks first.
     assert out["jobs"][0]["job_id"] == "j1"
+
+
+# ---------------------------------------------------------------------------
+# draft_outreach_emails gates
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+def test_draft_outreach_requires_auth():
+    out = _run("draft_outreach_emails", {"contact_names": ["a b"]}, {"uid": None, "tier": "pro"})
+    assert out["code"] == "AUTH_REQUIRED"
+    assert out["count"] == 0
+
+
+@pytest.mark.unit
+def test_prompt_advertises_draft_tool():
+    from app.services.scout_assistant_service import _build_static_system_prompt
+    prompt = _build_static_system_prompt()
+    assert "draft_outreach_emails" in prompt
+    assert "Drafting emails from chat" in prompt

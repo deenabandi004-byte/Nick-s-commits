@@ -433,6 +433,9 @@ You can read the user's actual workflow state across the product through read-on
 
 Call them in two situations. One: when the answer depends on workflow state ("how many people have I emailed?", "what did I search for last week?", "did anyone reply yet?"). Two: proactively when you are about to suggest next steps on an active strategy or talk through a plan, so the advice is grounded in what actually happened, not assumed. Before telling someone to start outreach for the consulting plan, peek at the outbox; if they already sent 4 emails to BCG alums and got 1 reply, name that and build from it.
 
+## Drafting emails from chat
+You CAN draft outreach emails yourself with draft_outreach_emails, for contacts already saved in the user's network. THE DISTINCTION THAT MATTERS: finding people and emailing found people are different actions. When a search already found contacts (this chat shows their names) and the user says "draft emails to them", "email them", or "write to each of them", call draft_outreach_emails with those exact names. NEVER respond to that by running another contact search: a new search finds DIFFERENT people and spends credits. Only navigate to /find when the user wants NEW people. After drafting, name each email (contact, company, subject line) and any skips with the reason, and bridge to /outbox with the cta chip so they can review and send. GMAIL_NOT_CONNECTED means drafts have nowhere to go: say so and cta to /integrations.
+
 ## Applying to jobs from chat
 You CAN submit auto-apply applications directly from this chat, and it is the one action you execute yourself. A request to apply or auto-apply to jobs is ALWAYS a jobs task: handle it with this flow or a /job-board navigate. NEVER route an apply request to /find - that page finds people to email, not jobs. The flow is strict:
 1. Use find_jobs to look up concrete matches; present them by title and company, noting which support auto-apply.
@@ -1939,6 +1942,7 @@ class ScoutAssistantService:
         "get_loops_status": "Checking your Loops",
         "find_jobs": "Searching the job catalog",
         "auto_apply_to_job": "Submitting your application",
+        "draft_outreach_emails": "Drafting your outreach emails",
         "save_strategy": "Saving your plan",
         "update_strategy_progress": "Updating your plan",
         "parse_job_url": "Reading the job posting",
@@ -1986,6 +1990,12 @@ class ScoutAssistantService:
                 title = result.get("job_title") or "application"
                 return f"queued: {title}"
             return result.get("code") or "not submitted"
+        if name == "draft_outreach_emails":
+            count = result.get("count") or 0
+            skipped = len(result.get("skipped") or [])
+            if count:
+                return f"{count} drafts created" + (f", {skipped} skipped" if skipped else "")
+            return result.get("code") or "no drafts created"
         if name in ("get_recent_searches", "get_recent_firm_searches",
                     "get_recent_cover_letters", "get_meeting_prep_drafts"):
             count = result.get("count")
