@@ -930,7 +930,8 @@ def _find_jobs(query: str, limit: Any = None) -> Dict[str, Any]:
                 break
         ranked = sorted(candidates.values(), key=lambda j: j["_score"], reverse=True)
         jobs = [{k: v for k, v in j.items() if k != "_score"} for j in ranked[:limit]]
-        return {"count": len(jobs), "jobs": jobs}
+        # query rides along so the harness can prefill the Job Board chip.
+        return {"count": len(jobs), "jobs": jobs, "query": query}
     except Exception as e:
         print(f"[ScoutTools] find_jobs failed: {e}")
         return {"count": 0, "jobs": [], "error": "job search unavailable"}

@@ -1026,6 +1026,7 @@ class ScoutAssistantService:
             )
             result = self._enrich_draft_report(result, helper_results)
             result = self._enrich_prep_report(result, helper_results)
+            result = self._enrich_workflow_ctas(result, helper_results)
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
             # the active strategy this turn (strategy_touched), AND any
@@ -1843,6 +1844,50 @@ class ScoutAssistantService:
             }
         except Exception as e:
             print(f"[ScoutChat] prep report enrichment failed: {e}")
+        return result
+
+    def _enrich_workflow_ctas(
+        self,
+        result: Dict[str, Any],
+        helper_results: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Fallback navigate chip under execute-workflow results.
+
+        The contract for every workflow Scout runs from chat is
+        execute -> result in chat -> ONE navigate chip underneath. The prompt
+        asks the model to attach the chip; this guarantees it when the model
+        forgets. Only fires when the turn ended in an answer with no cta, so
+        a model-authored chip always wins.
+        """
+        try:
+            if result.get("tool") != "answer" or result.get("cta"):
+                return result
+            for h in reversed(helper_results or []):
+                name = h.get("name")
+                res = h.get("result")
+                if not isinstance(res, dict):
+                    continue
+                if name == "auto_apply_to_job" and res.get("status") == "queued":
+                    result["cta"] = {
+                        "label": "Track it in Applications",
+                        "route": "/applications",
+                        "prefill": {},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
+                if name == "find_jobs" and (res.get("count") or 0) > 0:
+                    query = str(res.get("query") or "").strip()
+                    result["cta"] = {
+                        "label": "See more on the Job Board",
+                        "route": "/job-board",
+                        "prefill": {"query": query} if query else {},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
+        except Exception as e:
+            print(f"[ScoutChat] workflow cta enrichment failed: {e}")
         return result
 
     def _clarify_for_missing(self, missing: List[str]) -> str:

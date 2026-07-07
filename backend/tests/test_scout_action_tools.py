@@ -133,3 +133,40 @@ def test_prompt_advertises_draft_tool():
     prompt = _build_static_system_prompt()
     assert "draft_outreach_emails" in prompt
     assert "Drafting emails from chat" in prompt
+
+
+# ---------------------------------------------------------------------------
+# Workflow cta fallback (execute -> result in chat -> navigate chip): the
+# harness attaches the chip when the model forgets, and never overrides a
+# model-authored one.
+# ---------------------------------------------------------------------------
+
+def _svc():
+    from app.services.scout_assistant_service import ScoutAssistantService
+    return ScoutAssistantService.__new__(ScoutAssistantService)
+
+
+@pytest.mark.unit
+def test_workflow_cta_fallback_for_queued_apply():
+    result = {"tool": "answer", "message": "queued", "cta": None}
+    helpers = [{"name": "auto_apply_to_job", "result": {"status": "queued"}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["route"] == "/applications"
+
+
+@pytest.mark.unit
+def test_workflow_cta_fallback_for_job_matches():
+    result = {"tool": "answer", "message": "5 matches", "cta": None}
+    helpers = [{"name": "find_jobs", "result": {"count": 5, "jobs": [], "query": "swe intern"}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["route"] == "/job-board"
+    assert out["cta"]["prefill"] == {"query": "swe intern"}
+
+
+@pytest.mark.unit
+def test_workflow_cta_respects_model_chip():
+    chip = {"label": "x", "route": "/find", "prefill": {}}
+    result = {"tool": "answer", "message": "5 matches", "cta": chip}
+    helpers = [{"name": "find_jobs", "result": {"count": 5, "jobs": [], "query": "swe"}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"] is chip
