@@ -32,12 +32,12 @@ CASES = [
     ("show me my outbox", _HIT, "/outbox", {}, True),
     # --- Rule (c): find <role> at <company> -------------------------------
     ("find engineers at Datadog",
-     _HIT, "/find", {"company": "Datadog", "job_title": "engineers"}, False),
+     _HIT, "/find", {"prompt": "engineers at Datadog"}, False),
     ("find people at Stripe",
-     _HIT, "/find", {"company": "Stripe"}, False),
+     _HIT, "/find", {"prompt": "people at Stripe"}, False),
     ("find product managers at Notion in NYC",
      _HIT, "/find",
-     {"company": "Notion", "job_title": "product managers", "location": "NYC"}, False),
+     {"prompt": "product managers at Notion in NYC"}, False),
     # --- Ambiguous: must fall through to the LLM --------------------------
     ("can you explain to me how the meeting prep feature actually works, here is "
      "my linkedin profile just for context https://linkedin.com/in/x",
@@ -64,10 +64,14 @@ CASES = [
      None, None, None, None),
     ("find designers at Figma in San Francisco",
      _HIT, "/find",
-     {"company": "Figma", "job_title": "designers", "location": "San Francisco"}, False),
+     {"prompt": "designers at Figma in San Francisco"}, False),
     ("find data scientists at Two Sigma",
      _HIT, "/find",
-     {"company": "Two Sigma", "job_title": "data scientists"}, False),
+     {"prompt": "data scientists at Two Sigma"}, False),
+    # Count + school framing must survive verbatim in the prompt carrier.
+    ("find me 5 usc alumni at bain in los angeles",
+     _HIT, "/find",
+     {"prompt": "5 usc alumni at bain in los angeles"}, False),
     # --- Alias map cases --------------------------------------------------
     ("open coffee chat prep", _HIT, "/coffee-chat-prep", {}, True),
     ("take me to the network tracker", _HIT, "/outbox", {}, True),

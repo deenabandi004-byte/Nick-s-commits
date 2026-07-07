@@ -112,8 +112,12 @@ def test_03_inferred_navigate_contact_search_with_prefill(scout_client):
     assert status == 200, data
     nav = _assert_navigate(data, "/find")
     prefill = nav["prefill"]
-    for key in ("job_title", "company", "location"):
-        assert key in prefill and prefill[key], f"missing prefill {key}: {prefill}"
+    # The prompt carrier is the default contract; structured fields remain
+    # acceptable when a path still emits them. Either way every piece of the
+    # query (role, company, location) must survive into the prefill.
+    carried = " ".join(str(v) for v in prefill.values()).lower()
+    for piece in ("product manager", "stripe", "sf"):
+        assert piece in carried, f"missing {piece!r} in prefill: {prefill}"
     assert nav["user_was_imperative"] is False, data
 
 
@@ -160,7 +164,8 @@ def test_08_already_on_page_navigate(scout_client):
     assert status == 200, data
     nav = _assert_navigate(data, "/find")
     assert nav["already_on_page"] is True, data
-    assert nav["prefill"].get("company"), f"expected company prefill: {nav}"
+    carried = " ".join(str(v) for v in nav["prefill"].values()).lower()
+    assert "google" in carried, f"expected Google in prefill: {nav}"
 
 
 # Case 9 -------------------------------------------------------------------

@@ -33,15 +33,17 @@ except Exception:
 
 # --- Tier A: the broadened find-people rule (regex, deterministic) ----------
 
-# message, required prefill subset. All resolve to /contact-search.
+# message, required prefill subset. All resolve to /find. The rule emits a
+# natural-language prompt carrier (matching the LLM path's default-to-prompt
+# rule) so count/school/framing context survives verbatim.
 _TIER_A = [
-    ("reach out to PMs at stripe", {"company": "stripe", "job_title": "PMs"}),
-    ("find consultants at mckinsey", {"company": "mckinsey", "job_title": "consultants"}),
-    ("find me a recruiter at apple", {"company": "apple", "job_title": "recruiter"}),
-    ("looking for engineers at Anthropic", {"company": "Anthropic", "job_title": "engineers"}),
-    ("need to connect with recruiters at Meta", {"company": "Meta", "job_title": "recruiters"}),
+    ("reach out to PMs at stripe", {"prompt": "PMs at stripe"}),
+    ("find consultants at mckinsey", {"prompt": "consultants at mckinsey"}),
+    ("find me a recruiter at apple", {"prompt": "recruiter at apple"}),
+    ("looking for engineers at Anthropic", {"prompt": "engineers at Anthropic"}),
+    ("need to connect with recruiters at Meta", {"prompt": "recruiters at Meta"}),
     ("connect with analysts at Goldman in Chicago",
-     {"company": "Goldman", "job_title": "analysts", "location": "Chicago"}),
+     {"prompt": "analysts at Goldman in Chicago"}),
 ]
 
 
