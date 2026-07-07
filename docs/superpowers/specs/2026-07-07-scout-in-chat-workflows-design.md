@@ -32,7 +32,8 @@ plus a View PDF button that lands on the Meeting Prep page.
   once for the URL (one clarify per missing fact).
 - Guards, in order, mirroring the HTTP route create_coffee_chat_prep:
   PDL outage flag, tier limit via can_access_feature, resume/profile
-  presence, atomic 15-credit deduction (config COFFEE_CHAT_CREDITS).
+  presence, atomic 30-credit deduction (config COFFEE_CHAT_CREDITS is 30;
+  the 15 in CLAUDE.md is stale).
   Failures return structured codes (INSUFFICIENT_CREDITS, LIMIT_REACHED,
   NEEDS_RESUME, PDL_OUTAGE) the model reports honestly.
 - Execution: creates the prep doc in users/{uid}/coffee-chat-preps and
