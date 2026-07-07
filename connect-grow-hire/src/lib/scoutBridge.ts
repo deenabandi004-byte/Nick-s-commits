@@ -16,6 +16,35 @@
 const KEY = 'scout_prefill';
 const TTL_MS = 30_000;
 
+/**
+ * Split a route into its page identity: path plus the Find tab. The three
+ * Find tabs share the /find pathname but are different products with
+ * different forms, so "/find" and "/find?tab=companies" must NOT be treated
+ * as the same page (that exact confusion once ran a people search through
+ * the firm-search form). For /find, no tab means the People tab.
+ */
+export function scoutPageIdentity(route: string): { path: string; tab: string | null } {
+  const [rawPath, qs] = (route || '').split('?');
+  const path = rawPath.replace(/\/+$/, '') || '/';
+  let tab: string | null = null;
+  if (qs) {
+    try {
+      tab = new URLSearchParams(qs).get('tab');
+    } catch {
+      tab = null;
+    }
+  }
+  if (path === '/find' && !tab) tab = 'people';
+  return { path, tab };
+}
+
+/** True when two routes are the same page (path AND Find tab). */
+export function isSameScoutPage(a: string, b: string): boolean {
+  const ia = scoutPageIdentity(a);
+  const ib = scoutPageIdentity(b);
+  return ia.path === ib.path && ia.tab === ib.tab;
+}
+
 export interface ScoutPrefillEnvelope {
   route: string;
   prefill: Record<string, string>;
@@ -53,6 +82,9 @@ export interface ScoutSearchCompletedDetail {
   count: number;
   route: string;
   results_route?: string;
+  // Display names of the top results ("Jane Doe (BCG)" / "Acme Capital"),
+  // so the chat celebration can cite specifics instead of a bare count.
+  names?: string[];
 }
 
 /** Store prefill addressed to `route`, valid for the next 30 seconds. */
@@ -63,7 +95,9 @@ export function writeScoutPrefill(
 ): void {
   try {
     const envelope: ScoutPrefillEnvelope = {
-      route: (route || '').split('?')[0],
+      // Full route, tab included: readers match on page identity so a
+      // people-search prefill can never be consumed by the companies tab.
+      route: route || '',
       prefill: prefill || {},
       expires_at: Date.now() + TTL_MS,
       auto_submit: !!options?.auto_submit,
@@ -99,8 +133,9 @@ export function readScoutPrefillEnvelope(route: string): ScoutPrefillResult | nu
     const raw = sessionStorage.getItem(KEY);
     if (!raw) return null;
     const env = JSON.parse(raw) as ScoutPrefillEnvelope;
-    const here = (route || '').split('?')[0];
-    if ((env.route || '') !== here) return null; // addressed to another page
+    // Page-identity match (path AND Find tab). A non-matching envelope is
+    // left in place so the page it is addressed to can still read it.
+    if (!isSameScoutPage(env.route || '', route || '')) return null;
     sessionStorage.removeItem(KEY); // consume on match
     if (Date.now() >= env.expires_at) return null; // stale, ignore
     return {

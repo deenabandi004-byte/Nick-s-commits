@@ -38,7 +38,7 @@ import { isContextEmpty, type UserContext } from "@/utils/suggestionChips";
 import { SearchPromptBox } from "@/components/find/SearchPromptBox";
 import { PromptTemplates } from "@/components/find/PromptTemplates";
 import { COMPANY_TEMPLATES } from "@/data/searchTemplates";
-import { readScoutPrefillEnvelope, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
+import { readScoutPrefillEnvelope, SCOUT_PREFILL_EVENT, SCOUT_SEARCH_COMPLETED_EVENT } from "@/lib/scoutBridge";
 import { firebaseApi } from "@/services/firebaseApi";
 import { CompanyFilters, companyFiltersActive } from "@/types/findFilters";
 
@@ -569,6 +569,19 @@ const FirmSearchPage: React.FC<{
               setResults(result.firms);
               setSearchComplete(true);
               setFirmSuggestions(result.suggestions || []);
+              // Tell Scout's panel the search it kicked off finished, with
+              // the top firm names so the chat cites specifics. No-op when
+              // the panel is closed or the search was user-initiated.
+              try {
+                const names = (result.firms || []).slice(0, 4)
+                  .map((f: any) => f.name || f.companyName || f.company || '')
+                  .filter(Boolean);
+                window.dispatchEvent(
+                  new CustomEvent(SCOUT_SEARCH_COMPLETED_EVENT, {
+                    detail: { count: result.firms.length, route: '/find?tab=companies', names },
+                  }),
+                );
+              } catch { /* non-fatal */ }
               toast({
                 title: "Search Complete!",
                 description: `Found ${result.firms.length} firm${result.firms.length !== 1 ? 's' : ''}. Used ${result.creditsCharged || 0} credits.`,
@@ -909,9 +922,9 @@ const FirmSearchPage: React.FC<{
   // three Find tabs stay mounted and the envelope is consume-on-read.
   useEffect(() => {
     const applyFromBridge = () => {
-      const tab = new URLSearchParams(routerLocation.search).get('tab');
-      if (tab !== 'companies') return;
-      const env = readScoutPrefillEnvelope(routerLocation.pathname);
+      // Fixed page identity: this embedded page IS the Find Companies tab.
+      // The bridge's identity matching keeps people-search prefill out.
+      const env = readScoutPrefillEnvelope('/find?tab=companies');
       if (!env) return;
       const p = env.prefill || {};
       let newQuery = (p.prompt || '').trim();

@@ -1094,9 +1094,10 @@ const ContactSearchPage: React.FC<{
   // a hidden tab could swallow a prefill addressed to a sibling.
   useEffect(() => {
     const applyFromBridge = () => {
-      const tab = searchParams.get('tab');
-      if (tab && tab !== 'people' && tab !== 'contact-search' && tab !== 'linkedin-email') return;
-      const env = readScoutPrefillEnvelope(routerLocation.pathname);
+      // Fixed page identity: this embedded page IS the Find People tab, so it
+      // reads only envelopes addressed to /find (people). The bridge's
+      // identity matching keeps companies/hiring-manager prefill out.
+      const env = readScoutPrefillEnvelope('/find');
       if (!env) return;
       const p = env.prefill || {};
       applyScoutPopulate({
@@ -1753,12 +1754,21 @@ const ContactSearchPage: React.FC<{
       setResultMessage(backendMessage);
 
       // Tell Scout's panel the search it kicked off finished, so the chat can
-      // post its "Found N contacts" follow-up (scoutBridge contract). Harmless
-      // no-op when the panel is closed or the search was user-initiated.
+      // post its "Found N contacts" follow-up (scoutBridge contract). Names
+      // ride along so the chat cites who was found, not just a count.
+      // Harmless no-op when the panel is closed or the search was
+      // user-initiated.
       try {
+        const names = (result.contacts || []).slice(0, 4).map((c: any) => {
+          const first = c.FirstName || c.firstName || '';
+          const last = c.LastName || c.lastName || '';
+          const company = c.Company || c.company || '';
+          const full = `${first} ${last}`.trim() || 'Unnamed contact';
+          return company ? `${full} (${company})` : full;
+        });
         window.dispatchEvent(
           new CustomEvent(SCOUT_SEARCH_COMPLETED_EVENT, {
-            detail: { count: result.contacts?.length || 0, route: '/find' },
+            detail: { count: result.contacts?.length || 0, route: '/find', names },
           }),
         );
       } catch {

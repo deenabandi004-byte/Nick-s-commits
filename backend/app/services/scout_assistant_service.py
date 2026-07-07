@@ -27,7 +27,7 @@ from app.services.openai_client import (
     get_async_anthropic_client,
 )
 from app.extensions import get_db
-from app.services.scout.page_registry import build_pages_prompt_section, get_page
+from app.services.scout.page_registry import build_pages_prompt_section, get_page, page_identity
 from app.services.scout.router import try_pre_llm
 from app.services.scout.cache import (
     embed,
@@ -1644,7 +1644,11 @@ class ScoutAssistantService:
                     "credit_spending": page.get("credit_cost") is not None,
                     "credit_cost": page.get("credit_cost"),
                     "missing_required": missing_required,
-                    "already_on_page": current_page.split("?")[0].rstrip("/") == page["route"],
+                    # Identity-aware: /find?tab=companies is a different page
+                    # than /find (people), so a cross-tab navigate does a real
+                    # route change (which switches the tab) instead of an
+                    # in-place populate into the wrong hidden form.
+                    "already_on_page": page_identity(current_page) == page_identity(page["route"]),
                 },
                 "mode": mode,
                 "intent": intent,

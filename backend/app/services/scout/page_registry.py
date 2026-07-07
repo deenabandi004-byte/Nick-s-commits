@@ -386,6 +386,27 @@ def get_page(route: str) -> Optional[Dict[str, Any]]:
     return _BY_ROUTE.get(base)
 
 
+def page_identity(route: str) -> tuple:
+    """Page identity for same-page comparisons: (path, find_tab).
+
+    The three Find tabs share the /find pathname but are different products,
+    so "/find" and "/find?tab=companies" are NOT the same page. For /find,
+    no tab means the People tab. Query params other than tab are ignored.
+    """
+    raw = route or ""
+    base = raw.split("?")[0].rstrip("/") or "/"
+    tab = None
+    if "?" in raw:
+        try:
+            from urllib.parse import parse_qs
+            tab = (parse_qs(raw.split("?", 1)[1]).get("tab") or [None])[0]
+        except Exception:
+            tab = None
+    if base == "/find" and not tab:
+        tab = "people"
+    return (base, tab)
+
+
 def valid_routes() -> List[str]:
     """All routes Scout is allowed to navigate to."""
     return [p["route"] for p in PAGE_REGISTRY]

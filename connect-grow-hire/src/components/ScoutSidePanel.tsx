@@ -37,6 +37,8 @@ import {
   writeScoutPrefill,
   SCOUT_PREFILL_EVENT,
   SCOUT_SEARCH_COMPLETED_EVENT,
+  isSameScoutPage,
+  scoutPageIdentity,
   type ScoutSearchCompletedDetail,
 } from '@/lib/scoutBridge';
 import ScoutYetiHead from '@/assets/scouts/scout-yeti-head.png';
@@ -406,13 +408,16 @@ export function ScoutSidePanel() {
   /** CTA chip click (Change 6): single-chip bridge to a workflow. */
   const handleCtaAction = useCallback((cta: ScoutCta) => {
     writeScoutPrefill(cta.route, cta.prefill || {});
-    if (location.pathname === cta.route) {
+    // Identity-aware: /find on the companies tab is NOT the same page as
+    // /find (people), so a mismatched tab does a real navigate that also
+    // switches the tab.
+    if (isSameScoutPage(location.pathname + location.search, cta.route)) {
       window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
     } else {
       navigate(cta.route);
     }
     closePanel();
-  }, [location.pathname, navigate, closePanel]);
+  }, [location.pathname, location.search, navigate, closePanel]);
 
   /** Plan-checklist "Do this" click (Change 5): take a single step to its
    *  page. The step's route is the same shape as a navigate route, so we use
@@ -420,13 +425,13 @@ export function ScoutSidePanel() {
   const handlePlanStep = useCallback((step: ScoutPlanStep) => {
     if (!step.route) return;
     writeScoutPrefill(step.route, {});
-    if (location.pathname === step.route) {
+    if (isSameScoutPage(location.pathname + location.search, step.route)) {
       window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
     } else {
       navigate(step.route);
     }
     closePanel();
-  }, [location.pathname, navigate, closePanel]);
+  }, [location.pathname, location.search, navigate, closePanel]);
 
   // -------------------------------------------------------------------------
   // Tried-and-failed proactive hint (Change 3)
@@ -472,18 +477,25 @@ export function ScoutSidePanel() {
       // Default to the My Network tab matching the source page. The
       // unified /my-network/{tab} view is the canonical home for saved
       // people and companies (legacy standalone trackers were retired),
-      // so anything Scout drives points there.
-      const wasContacts = detail.route === '/contact-search';
+      // so anything Scout drives points there. Identity-based: the firm
+      // search is /find?tab=companies; every other source is people.
+      const sourceId = scoutPageIdentity(detail.route || '');
+      const wasContacts = !(sourceId.path === '/find' && sourceId.tab === 'companies');
       const resultsRoute = detail.results_route
         || (wasContacts ? '/my-network/people' : '/my-network/companies');
       const subject = wasContacts ? 'contact' : 'firm';
       const subjectPlural = wasContacts ? 'contacts' : 'firms';
       const chipLabel = wasContacts ? 'Open your network' : 'Open your companies';
+      // Cite who was found when the page told us, not just a count.
+      const names = Array.isArray(detail.names) ? detail.names.filter(Boolean) : [];
+      const namesLine = names.length
+        ? ` ${names.slice(0, 3).join(', ')}${count > 3 ? ` and ${count - 3} more` : ''}.`
+        : '';
       const content = count === 0
         ? `Search ran, no ${subjectPlural} this time. Want me to widen it?`
         : count === 1
-        ? `Found 1 ${subject}. Pick who to reach out to or open your full list.`
-        : `Found ${count} ${subjectPlural}. Pick who to reach out to or open your full list.`;
+        ? `Found 1 ${subject}:${namesLine || ' pick who to reach out to or open your full list.'}`
+        : `Found ${count} ${subjectPlural}:${namesLine} Pick who to reach out to or open your full list.`;
       appendSyntheticAssistant(content, {
         mode: 'do',
         cta: count === 0
@@ -733,7 +745,9 @@ export function ScoutSidePanel() {
                                   /* sessionStorage may be disabled - non-fatal */
                                 }
                                 closePanel();
-                                if (location.pathname !== '/find') {
+                                if (!isSameScoutPage(location.pathname + location.search, '/find')) {
+                                  // Also switches the Find tab back to People
+                                  // when the user is on companies/hiring-managers.
                                   navigate('/find');
                                 } else {
                                   window.dispatchEvent(new CustomEvent('scout-auto-populate'));
