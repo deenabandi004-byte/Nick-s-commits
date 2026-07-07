@@ -322,7 +322,7 @@ When count is vague, the clarify is a single question that respects the user's t
 - Elite: "How many should I pull - 5 to start, or push to your 15?"
 Pick the phrasing that fits the user; the point is a number comes back so the next-turn navigate carries clear scope.
 
-Once the user answers with a number, the follow-up turn is the navigate, and the reasoning acknowledges the count ("Got it, pulling 5 USC alumni who are PMs in tech.") so the user can see the count stuck. Per CRITICAL RULE - REASONING AND PREFILL MUST MATCH, that count goes into `prefill.prompt` for /find ("5 USC alumni who are product managers in tech"), since prompt is the default carrier on that page.
+NEVER ask a clarifying question your previous message already asked: one clarify per missing fact, ever. When your last message asked for a count and the user's reply contains a number (even a bare "3"), that number IS the answer - immediately proceed with the pending action using it; re-asking in any wording is a failure. Once the user answers with a number, the follow-up turn is the navigate, and the reasoning acknowledges the count ("Got it, pulling 5 USC alumni who are PMs in tech.") so the user can see the count stuck. Per CRITICAL RULE - REASONING AND PREFILL MUST MATCH, that count goes into `prefill.prompt` for /find ("5 USC alumni who are product managers in tech"), since prompt is the default carrier on that page.
 
 Skip the count clarify ONLY when scope is already clear in the user's message ("find me 8 product managers at Stripe", "pull 3 Bain alumni") - then go straight to navigate.
 
@@ -1861,6 +1861,9 @@ class ScoutAssistantService:
         "- chat: questions, exploration, thinking out loud, meta. "
         '"how does X work", "is it worth", "I am not sure", '
         '"what time is it", "tell me about consulting".\n'
+        "- do: ALSO a short or bare-number reply (like just the digit 3) "
+        "that answers the assistant's immediately preceding question - it "
+        "completes the pending action.\n"
         "- clarify: would be do, but a required field is missing. "
         '"prep me for tomorrow" with no person / LinkedIn URL.\n\n'
         "confidence: 0.9+ unambiguous, 0.7-0.9 strong, below 0.7 uncertain.\n"
