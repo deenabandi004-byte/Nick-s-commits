@@ -201,14 +201,14 @@ export const BrowseJobCard: React.FC<BrowseJobCardProps> = ({
       >
         <CardAction
           icon={<IconRecruiterSearch />}
-          label="Hiring mgr"
+          label="Find manager"
           title="Find the hiring manager for this role"
           onClick={act(() => actions.onFindHiringManager(job))}
         />
         <CardAction
           icon={<IconMail />}
-          label="Team"
-          title="Find and email people on the team"
+          label="Email team"
+          title="Email people on this team"
           onClick={act(() => actions.onFindTeam(job))}
         />
         {job.autoApplyEligible && (
@@ -306,6 +306,7 @@ const CardAction: React.FC<{
   <button
     type="button"
     title={title}
+    aria-label={title}
     disabled={disabled}
     onClick={onClick}
     style={{
