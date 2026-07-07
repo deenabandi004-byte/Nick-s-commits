@@ -275,7 +275,7 @@ prefill (either is fine): {"prompt": "product managers at Stripe in New York"} O
 When the user has not named a school but their profile carries one AND the task benefits from it (alumni, warm intros, "leg up"), pull the school name from USER PROFILE into the prompt explicitly. Profile is in scope. Use it. Likewise for year, target industries, dream companies - if you reference them in the reasoning, they go into the prompt.
 
 OTHER DESTINATIONS - structured-only, faithful passthrough required:
-- /coffee-chat-prep: `prefill.linkedin_url` MUST be the exact URL the user provided in chat (or returned by parse_job_url for a job-posting context). Do not paraphrase, do not strip path segments, do not invent. If the user did not give a URL and there is no way to derive one, do not navigate - clarify.
+- /coffee-chat-prep: `prefill.linkedin_url` MUST be the exact URL the user provided in chat (or returned by parse_job_url for a job-posting context). Do not paraphrase, do not strip path segments, do not invent. Navigate here only for browsing the prep library or an explicit "open the meeting prep page"; a request to actually prep for a meeting with a named person is run_meeting_prep (see "Meeting prep from chat"), not a navigate.
 - /find?tab=hiring-managers: `company` / `job_title` / `location` / `job_url` must match what you named in the reasoning. If the reasoning says "Stripe", the prefill says "Stripe", not "Stripe Inc".
 - /cover-letter: same rule for `company` / `job_title` / `job_url`.
 - /job-board: `query` is one string - put the actual search the user asked for, do not summarize.
@@ -299,12 +299,12 @@ The decisive test: a concrete named entity AND an action verb means ACTION. A go
 
 navigate - propose taking the user to a page, with form fields pre-filled where you can. The approve card is how you offer; you do not need permission first to propose it.
   - route: must be one of the routes listed in PAGES YOU CAN NAVIGATE TO.
-  - prefill: fill in fields only with values the user actually gave you, using only that route's prefillable field names. A value must be the right kind of thing for the field: a person's first name is not a linkedin_url. Never invent, guess, or construct a value - not a LinkedIn URL you were not given, not a company the user did not name. If a route has a required field the user has not provided (for example meeting-prep needs a linkedin_url but the user only named a person), call clarify to ask for it, or navigate with that field left empty - never stuff a name or placeholder into it. Use an empty object when there is nothing to prefill.
+  - prefill: fill in fields only with values the user actually gave you, using only that route's prefillable field names. A value must be the right kind of thing for the field: a person's first name is not a linkedin_url. Never invent, guess, or construct a value - not a LinkedIn URL you were not given, not a company the user did not name. If a route has a required field the user has not provided, call clarify to ask for it, or navigate with that field left empty - never stuff a name or placeholder into it (a person's name is never a linkedin_url). Use an empty object when there is nothing to prefill.
   - reasoning: the chat text shown above the approve card. Write it in Scout's voice; see "Navigate response style" below. Do not restate the route, role, or location - the card already shows them.
   - confidence: 0.9 or higher only when the user was explicit about where to go or what to do; 0.6 to 0.9 when you inferred the navigation from what they described; below 0.6 means you should probably clarify instead.
   - user_was_imperative: true only when the user gave a direct command to go to a page ("take me to", "go to", "open", "show me the X page"). False when you inferred the destination from a described task: "find product managers at Stripe", "I need to email someone at Bain", "help me prep" all describe a task, so user_was_imperative is False even though they read as commands.
 
-clarify - ask one short follow-up question. Use clarify when the user's intent is ambiguous between two routes, or when a required prefill field for the route you would choose is missing. If the user is prepping for a meeting or coffee chat with a specific person but has not given that person's LinkedIn URL, clarify to ask for it - meeting prep needs the URL; do not route them to a contacts list or another page instead.
+clarify - ask one short follow-up question. Use clarify when the user's intent is ambiguous between two routes, or when a required prefill field for the route you would choose is missing. When the user wants to prep for a meeting or coffee chat with a named person, do NOT ask for their LinkedIn URL up front: call run_meeting_prep with the name (it resolves the URL from their saved contacts) and ask for the URL only if that tool returns CONTACT_NOT_FOUND or NO_LINKEDIN.
 
 CRITICAL RULE - DO NOT ASK A QUESTION IN A NAVIGATE: If the reasoning text on a navigate contains a real question to the user (spelling confirmation, ambiguous company name, "did you mean", count, scope, alternative target), you have used the wrong tool. The user reads the question and the approve card together as a contradiction: they cannot answer the question AND click Approve at the same time, and clicking Approve looks like proceeding without confirmation. The correct move is `clarify` - ask the question, get the answer, then on the NEXT turn issue the navigate with the resolved value baked into the prefill.
 
@@ -435,6 +435,9 @@ Call them in two situations. One: when the answer depends on workflow state ("ho
 
 ## Drafting emails from chat
 You CAN draft outreach emails yourself with draft_outreach_emails, for contacts already saved in the user's network. THE DISTINCTION THAT MATTERS: finding people and emailing found people are different actions. When a search already found contacts (this chat shows their names) and the user says "draft emails to them", "email them", or "write to each of them", call draft_outreach_emails with those exact names. NEVER respond to that by running another contact search: a new search finds DIFFERENT people and spends credits. Only navigate to /find when the user wants NEW people. After drafting, name each email (contact, company, subject line) with its [View in Gmail](gmail_draft_url) link, plus any skips with the reason. The review page is called the INBOX (the route is /outbox, a legacy name - never say "Outbox" to the user). Bridge with the cta chip: one draft -> route "/outbox?contact=<contact_id>" labeled "Open in your Inbox" so it lands on that exact conversation; multiple drafts -> "/outbox" labeled "Open your Inbox". When the user referred to a specific person ("draft an email to her"), you MUST pass that person's name in contact_names - drafting to whoever was saved most recently instead is emailing the wrong person. GMAIL_NOT_CONNECTED means drafts have nowhere to go: say so and cta to /integrations.
+
+## Meeting prep from chat
+You CAN run a real meeting prep yourself with run_meeting_prep. When the user asks to be prepped for a meeting, call, or coffee chat with a NAMED person ("I have a call with Veronica Wittig, prep me for it"), call run_meeting_prep with that name immediately - the explicit ask is consent, it costs 30 credits, and the person's LinkedIn URL is resolved from their saved contacts automatically. Do NOT navigate to /coffee-chat-prep for this and do NOT ask for a LinkedIn URL up front. Pass linkedin_url only when the user pasted one in chat. On started=true, answer that the prep for that person is running, takes about a minute, and the packet with the PDF will land right here in the chat - NEVER describe the prep's contents or say it is ready, it has not finished. On CONTACT_NOT_FOUND or NO_LINKEDIN, ask once for the person's LinkedIn URL, then call run_meeting_prep again with it next turn. On INSUFFICIENT_CREDITS say the numbers; on LIMIT_REACHED say their plan's meeting prep limit is used and cta to /pricing; on NEEDS_RESUME point them to Account Settings to upload a resume.
 
 ## Finding jobs from chat
 When the user asks you to find them a job or role ("find me a job at Lyft", "any data roles at Spotify?"), use find_jobs and SURFACE THE MATCHES IN THE CHAT: title, company, location, and whether each supports auto-apply, then offer the next step (apply with the consent rules below, or the Job Board via the cta with prefill.query set for more). Do NOT answer a specific job ask with a bare navigate to /job-board - that shows the user a generic board instead of the jobs they asked for. Navigate to /job-board only when they want to browse.
@@ -1022,6 +1025,7 @@ class ScoutAssistantService:
                 tool_call, current_page, intent=intent, plan=plan_payload,
             )
             result = self._enrich_draft_report(result, helper_results)
+            result = self._enrich_prep_report(result, helper_results)
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
             # the active strategy this turn (strategy_touched), AND any
@@ -1806,6 +1810,41 @@ class ScoutAssistantService:
             print(f"[ScoutChat] draft report enrichment failed: {e}")
         return result
 
+    def _enrich_prep_report(
+        self,
+        result: Dict[str, Any],
+        helper_results: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Stamp prep_job on the response when this turn started a meeting prep.
+
+        The frontend polls /api/coffee-chat-prep/<prep_id> off this payload and
+        posts the finished packet (digest + PDF link + View PDF chip) back into
+        the chat. Done harness-side, deterministically, so the contract holds
+        regardless of model verbosity.
+        """
+        try:
+            if result.get("tool") != "answer":
+                return result
+            entry = next(
+                (
+                    h.get("result") for h in reversed(helper_results or [])
+                    if h.get("name") == "run_meeting_prep"
+                    and isinstance(h.get("result"), dict)
+                    and h["result"].get("started")
+                    and h["result"].get("prep_id")
+                ),
+                None,
+            )
+            if not entry:
+                return result
+            result["prep_job"] = {
+                "prep_id": str(entry.get("prep_id")),
+                "contact_name": str(entry.get("contact_name") or ""),
+            }
+        except Exception as e:
+            print(f"[ScoutChat] prep report enrichment failed: {e}")
+        return result
+
     def _clarify_for_missing(self, missing: List[str]) -> str:
         """Phrase a natural-language clarify question for missing required fields.
 
@@ -2023,6 +2062,7 @@ class ScoutAssistantService:
         "find_jobs": "Searching the job catalog",
         "auto_apply_to_job": "Submitting your application",
         "draft_outreach_emails": "Drafting your outreach emails",
+        "run_meeting_prep": "Starting your meeting prep",
         "save_strategy": "Saving your plan",
         "update_strategy_progress": "Updating your plan",
         "parse_job_url": "Reading the job posting",
@@ -2076,6 +2116,11 @@ class ScoutAssistantService:
             if count:
                 return f"{count} drafts created" + (f", {skipped} skipped" if skipped else "")
             return result.get("code") or "no drafts created"
+        if name == "run_meeting_prep":
+            if result.get("started"):
+                who = result.get("contact_name") or "your meeting"
+                return f"prep running for {who}"
+            return result.get("code") or "not started"
         if name in ("get_recent_searches", "get_recent_firm_searches",
                     "get_recent_cover_letters", "get_meeting_prep_drafts"):
             count = result.get("count")

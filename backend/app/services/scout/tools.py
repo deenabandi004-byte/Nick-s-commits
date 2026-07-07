@@ -565,6 +565,46 @@ DRAFT_OUTREACH_EMAILS_TOOL: Dict[str, Any] = {
     },
 }
 
+RUN_MEETING_PREP_TOOL: Dict[str, Any] = {
+    "name": "run_meeting_prep",
+    "description": (
+        "EXECUTE ACTION - starts a real meeting prep (research packet + PDF) "
+        "for a person and spends 30 of the user's credits. Use this when the "
+        "user asks to be prepped for a meeting, call, or coffee chat with a "
+        "NAMED person ('prep me for my call with Veronica Wittig'). An "
+        "explicit ask like that IS consent: run it immediately, do not ask "
+        "first and do not navigate to the meeting prep page instead. Pass "
+        "contact_name; the person's LinkedIn URL is resolved automatically "
+        "from the user's saved contacts. Pass linkedin_url ONLY when the "
+        "user pasted one in chat. NEVER ask for a LinkedIn URL up front: "
+        "ask only after this tool returns CONTACT_NOT_FOUND or NO_LINKEDIN. "
+        "On started=true your answer MUST say the prep for <contact_name> "
+        "is running, takes about a minute, and will appear right here in "
+        "the chat with the PDF when done. NEVER say the prep is ready or "
+        "describe its contents - it has not finished. Error codes: "
+        "CONTACT_NOT_FOUND / NO_LINKEDIN -> ask for the person's LinkedIn "
+        "URL (once); INSUFFICIENT_CREDITS -> say how many credits are "
+        "needed vs available; LIMIT_REACHED -> their plan's meeting prep "
+        "limit is used up, cta to /pricing; NEEDS_RESUME -> they must "
+        "upload a resume in Account Settings first; PDL_OUTAGE -> the data "
+        "provider is temporarily down, try later."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "contact_name": {
+                "type": "string",
+                "description": "The person's name exactly as the user said it.",
+            },
+            "linkedin_url": {
+                "type": "string",
+                "description": "Their LinkedIn URL, ONLY if the user pasted one.",
+            },
+        },
+        "required": ["contact_name"],
+    },
+}
+
 # Terminal tools end a turn (exactly one per turn). Helper tools gather data
 # or write memory mid-turn and the model keeps going. parallel_tool_calls=False
 # caps each step at one tool; the caller offers only terminal tools on the
@@ -584,6 +624,7 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     FIND_JOBS_TOOL,
     AUTO_APPLY_TOOL,
     DRAFT_OUTREACH_EMAILS_TOOL,
+    RUN_MEETING_PREP_TOOL,
 ]
 SCOUT_TOOLS: List[Dict[str, Any]] = TERMINAL_TOOLS + HELPER_TOOLS
 
@@ -772,7 +813,30 @@ async def run_helper_tool(
         return await _run_auto_apply(args, ctx)
     if name == "draft_outreach_emails":
         return await _run_draft_outreach(args, ctx)
+    if name == "run_meeting_prep":
+        return await _run_meeting_prep(args, ctx)
     return {"error": f"unknown helper tool: {name}"}
+
+
+async def _run_meeting_prep(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """Start a meeting prep job for a saved contact. Marks
+    workflow_state_touched so the turn is never cached or served cross-user."""
+    uid = context.get("uid")
+    if not uid:
+        return {"started": False, "error": "sign in required", "code": "AUTH_REQUIRED"}
+    try:
+        from app.services.scout.prep_actions import start_meeting_prep
+        result = await asyncio.to_thread(
+            start_meeting_prep,
+            uid,
+            str(args.get("contact_name") or ""),
+            str(args.get("linkedin_url") or ""),
+        )
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] run_meeting_prep failed: {e}")
+        return {"started": False, "error": "prep failed to start", "code": "INTERNAL"}
 
 
 async def _run_draft_outreach(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
