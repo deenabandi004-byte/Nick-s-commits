@@ -33,6 +33,9 @@ import {
   type SavedJob,
 } from "@/services/api";
 import { JobBoardSkeleton } from "@/components/JobBoardSkeleton";
+import { jobFeedQueryKey, JOB_FEED_STALE_MS } from "@/lib/jobFeedQuery";
+import { readScoutPrefillEnvelope, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
+import { JobBoardViewToggle, type JobBoardView } from "@/components/jobs/JobBoardViewToggle";
 import {
   FindHumansModal,
   type FindHumansJob,
@@ -155,6 +158,19 @@ export const JobBoardPage: React.FC = () => {
 
   // ---- Local UI state -----------------------------------------------------
   const [search, setSearch] = useState("");
+
+  // Scout prefill bridge: consume a /job-board query handoff into the search
+  // box (see BrowseJobsPage for the gallery-view twin).
+  useEffect(() => {
+    const applyFromBridge = () => {
+      const env = readScoutPrefillEnvelope("/job-board");
+      const q = env && (env.prefill.query || env.prefill.prompt || "").trim();
+      if (q) setSearch(q);
+    };
+    applyFromBridge();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+  }, []);
   // No chips active on first render. Earlier the chips defaulted to "all on"
   // because they were visual-only and the user had no way to "turn them on"
   // anyway; now that each chip narrows the query, we start neutral so the

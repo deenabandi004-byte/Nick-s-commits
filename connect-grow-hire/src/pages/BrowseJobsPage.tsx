@@ -21,6 +21,7 @@ import {
   type SavedJob,
 } from "@/services/api";
 import { toast } from "@/hooks/use-toast";
+import { readScoutPrefillEnvelope, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 
 import type { ProtoJob } from "./jobBoardAdapter";
 import { JobDetail, type JobDescriptionState } from "@/components/jobs/JobDetail";
@@ -63,6 +64,21 @@ export const BrowseJobsPage: React.FC<BrowseJobsPageProps> = ({ view = "gallery"
   const creditsView = useCreditsView();
 
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Scout prefill bridge: Scout's "find jobs at X" handoff writes a query
+  // envelope addressed to /job-board; dropping it silently made Scout look
+  // like it did nothing. Setting searchTerm here runs the search via the
+  // existing debounce.
+  useEffect(() => {
+    const applyFromBridge = () => {
+      const env = readScoutPrefillEnvelope("/job-board");
+      const q = env && (env.prefill.query || env.prefill.prompt || "").trim();
+      if (q) setSearchTerm(q);
+    };
+    applyFromBridge();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyFromBridge);
+  }, []);
   const [grid, setGrid] = useState<GridContext | null>(null);
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
 
