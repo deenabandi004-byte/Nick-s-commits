@@ -385,10 +385,17 @@ export function ScoutSidePanel() {
   /** CTA chip click (Change 6): single-chip bridge to a workflow. */
   const handleCtaAction = useCallback((cta: ScoutCta) => {
     writeScoutPrefill(cta.route, cta.prefill || {});
+    // A route carrying query params beyond `tab` is a deep link the
+    // destination page reads from the URL (/outbox?contact=...,
+    // /coffee-chat-prep?prepId=...). Those must always navigate, even when
+    // the user is already on the page, or the param never lands.
+    const query = new URLSearchParams(cta.route.split('?')[1] || '');
+    query.delete('tab');
+    const hasDeepLinkParams = [...query.keys()].length > 0;
     // Identity-aware: /find on the companies tab is NOT the same page as
     // /find (people), so a mismatched tab does a real navigate that also
     // switches the tab.
-    if (isSameScoutPage(location.pathname + location.search, cta.route)) {
+    if (!hasDeepLinkParams && isSameScoutPage(location.pathname + location.search, cta.route)) {
       window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
     } else {
       navigate(cta.route);

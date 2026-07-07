@@ -185,6 +185,15 @@ export interface ScoutToolEvent {
   done: boolean;
 }
 
+/** A meeting prep job Scout started this turn (run_meeting_prep). Stamped by
+ *  the backend as `prep_job` on the response envelope; the hook polls the
+ *  prep status endpoint and posts the finished packet (digest + PDF link +
+ *  View PDF chip) back into the chat. */
+export interface ScoutPrepJob {
+  prep_id: string;
+  contact_name: string;
+}
+
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
@@ -210,6 +219,8 @@ export interface ChatMessage {
   cta?: ScoutCta | null;
   plan?: ScoutPlan | null;
   toolEvents?: ScoutToolEvent[];
+  // A meeting prep Scout kicked off this turn; drives the status poller.
+  prepJob?: ScoutPrepJob | null;
   // Strategist briefing payload (Phase 3B). Set on briefing-* messages only.
   coverage?: ScoutCoverage | null;
   activeStrategy?: ScoutActiveStrategy | null;
@@ -535,6 +546,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
                     intentDetail: data.intent || m.intentDetail || null,
                     cta: data.cta || null,
                     plan: data.plan || null,
+                    prepJob: (data.prep_job as ScoutPrepJob) || null,
                   } : m
                 ));
               } else if (eventType === 'error') {
@@ -623,6 +635,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
         intentDetail: data.intent || null,
         cta: data.cta || null,
         plan: data.plan || null,
+        prepJob: (data.prep_job as ScoutPrepJob) || null,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -718,6 +731,110 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       },
     ]);
   }, []);
+
+  // ---------------------------------------------------------------------
+  // Meeting prep poller. When a turn carries prepJob (Scout started a real
+  // meeting prep via run_meeting_prep), poll the same status endpoint the
+  // Meeting Prep page uses, render the live stage as a tool pill on that
+  // message, and when the job completes post the packet into the chat:
+  // digest + clickable PDF link + a View PDF chip that deep-links to the
+  // Meeting Prep page. A reload drops the poller (the message is contextual
+  // to the just-started action); the prep itself keeps running server-side.
+  // ---------------------------------------------------------------------
+  const handledPrepIdsRef = useRef<Set<string>>(new Set());
+  const prepPollerAliveRef = useRef(true);
+  useEffect(() => {
+    prepPollerAliveRef.current = true;
+    return () => { prepPollerAliveRef.current = false; };
+  }, []);
+
+  useEffect(() => {
+    const pending = messages.find(
+      m => m.prepJob?.prep_id && !handledPrepIdsRef.current.has(m.prepJob.prep_id),
+    );
+    if (!pending?.prepJob) return;
+    const { prep_id: prepId } = pending.prepJob;
+    const contactName = pending.prepJob.contact_name || 'your meeting';
+    handledPrepIdsRef.current.add(prepId);
+    const messageId = pending.id;
+    const startedAt = Date.now();
+    const POLL_MS = 4000;
+    const TIMEOUT_MS = 5 * 60 * 1000;
+    const evtId = `prep-${prepId}`;
+
+    const setPill = (label: string, done: boolean, summary?: string) => {
+      setMessages(prev => prev.map(m => {
+        if (m.id !== messageId) return m;
+        const events = [...(m.toolEvents || [])];
+        const idx = events.findIndex(e => e.id === evtId);
+        const evt: ScoutToolEvent = { id: evtId, name: 'run_meeting_prep', label, summary, done };
+        if (idx >= 0) events[idx] = { ...events[idx], ...evt };
+        else events.push(evt);
+        return { ...m, toolEvents: events };
+      }));
+    };
+
+    const prepPageCta = (id?: string): ScoutCta => ({
+      label: 'View PDF',
+      route: id ? `/coffee-chat-prep?prepId=${id}` : '/coffee-chat-prep',
+      prefill: {},
+      credit_spending: false,
+      credit_cost: null,
+    });
+
+    setPill(`Preparing your ${contactName} packet...`, false);
+
+    const tick = async () => {
+      if (!prepPollerAliveRef.current) return;
+      if (Date.now() - startedAt > TIMEOUT_MS) {
+        setPill('Prep still running', true, 'taking longer than usual');
+        appendSyntheticAssistant(
+          `The prep for **${contactName}** is taking longer than usual. It keeps running in the background; it will be in your Meeting Prep library when it finishes.`,
+          { cta: prepPageCta() },
+        );
+        return;
+      }
+      try {
+        const { apiService } = await import('@/services/api');
+        const status = await apiService.getCoffeeChatPrepStatus(prepId) as Record<string, any>;
+        if (!prepPollerAliveRef.current) return;
+        if (status?.status === 'completed') {
+          setPill('Meeting prep ready', true, `packet for ${contactName}`);
+          const fullName = status.contactData?.fullName || status.contactName || contactName;
+          const questions: string[] = Array.isArray(status.coffeeQuestions)
+            ? status.coffeeQuestions.slice(0, 3)
+            : [];
+          const lines = [
+            `Your meeting prep for **${fullName}** is ready.`,
+            ...(questions.length
+              ? ['A few questions to open with:', ...questions.map(q => `- ${q}`)]
+              : []),
+            ...(status.pdfUrl ? [`[Open the PDF](${status.pdfUrl})`] : []),
+          ];
+          appendSyntheticAssistant(lines.join('\n'), {
+            mode: 'do',
+            cta: prepPageCta(prepId),
+          });
+          return;
+        }
+        if (status?.status === 'failed') {
+          setPill('Prep failed', true, status.error || 'could not finish');
+          appendSyntheticAssistant(
+            `I couldn't finish the prep for **${contactName}**${status.error ? `: ${status.error}` : '.'} The credits were refunded automatically.`,
+          );
+          return;
+        }
+        const label = typeof status?.stageLabel === 'string' && status.stageLabel
+          ? status.stageLabel
+          : `Preparing your ${contactName} packet...`;
+        setPill(label, false);
+      } catch {
+        // Transient poll failure: keep trying until the timeout.
+      }
+      window.setTimeout(tick, POLL_MS);
+    };
+    window.setTimeout(tick, POLL_MS);
+  }, [messages, appendSyntheticAssistant]);
 
   // Tour demo orchestration — local addition, not in loops-setup-v2.
   // Mirror of appendSyntheticAssistant for the user side. Used by the

@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
 import { useTour } from "@/contexts/TourContext";
 import { AppSidebar } from "@/components/AppSidebar";
@@ -141,9 +141,49 @@ const CoffeeChatPrepPage: React.FC = () => {
     try { window.localStorage.setItem('meetingPrep.libraryView.v2', libraryView); } catch {}
   }, [libraryView]);
 
+  // Scout deep link: /coffee-chat-prep?prepId=<id> opens the Library with
+  // that prep highlighted and scrolled into view (the Scout chat's View PDF
+  // chip lands here). The param is dropped after handling so refreshes and
+  // tab switches don't re-trigger.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [highlightPrepId, setHighlightPrepId] = useState<string | null>(null);
+  const handledDeepLinkRef = useRef<string | null>(null);
+
   // Smart default: if preps load and user has any, jump to Library on initial mount.
   // Ref guard ensures we only auto-switch once, so manual navigation sticks.
   const hasDefaultedTabRef = useRef(false);
+
+  useEffect(() => {
+    const target = searchParams.get('prepId');
+    if (!target) {
+      handledDeepLinkRef.current = null;
+      return;
+    }
+    if (libraryLoading || handledDeepLinkRef.current === target) return;
+    handledDeepLinkRef.current = target;
+    hasDefaultedTabRef.current = true;
+    setActiveTab('coffee-library');
+    setHighlightPrepId(target);
+    // A prep that just finished (started from Scout while this page was
+    // already mounted) may not be in the list yet; refresh silently.
+    if (!preps.some((p) => p.id === target)) {
+      apiService.getAllCoffeeChatPreps().then((result) => {
+        if (!('error' in result)) setPreps(result.preps || []);
+      }).catch(() => {});
+    }
+    const scrollTimer = setTimeout(() => {
+      document
+        .querySelector(`[data-prep-id="${target}"]`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 250);
+    const clearTimer = setTimeout(() => setHighlightPrepId(null), 3000);
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete('prepId');
+      return next;
+    }, { replace: true });
+    return () => { clearTimeout(scrollTimer); clearTimeout(clearTimer); };
+  }, [searchParams, libraryLoading, setSearchParams, preps]);
   useEffect(() => {
     if (!libraryLoading && !hasDefaultedTabRef.current) {
       hasDefaultedTabRef.current = true;
@@ -799,15 +839,17 @@ const CoffeeChatPrepPage: React.FC = () => {
   const renderGridTile = (prep: CoffeeChatPrep) => (
     <div
       key={prep.id}
+      data-prep-id={prep.id}
       onClick={() => handleLibraryDownload(prep)}
       style={{
         position: 'relative',
         padding: '14px 16px',
         borderRadius: 3,
-        border: '1px solid var(--line)',
+        border: `1px solid ${highlightPrepId === prep.id ? 'var(--brand-blue, #3B82F6)' : 'var(--line)'}`,
+        boxShadow: highlightPrepId === prep.id ? '0 0 0 3px rgba(59,130,246,0.2)' : undefined,
         background: '#FFFFFF',
         cursor: 'pointer',
-        transition: 'border-color .15s',
+        transition: 'border-color .15s, box-shadow .3s',
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLDivElement).style.borderColor = 'var(--brand-blue, #3B82F6)';
@@ -1332,7 +1374,8 @@ const CoffeeChatPrepPage: React.FC = () => {
                                 {groupedPreps.inProgress.map((prep) => (
                                   <div
                                     key={prep.id}
-                                    style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--paper-2)', border: '1px solid var(--line)', borderRadius: 3 }}
+                                    data-prep-id={prep.id}
+                                    style={{ padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--paper-2)', border: `1px solid ${highlightPrepId === prep.id ? 'var(--brand-blue, #3B82F6)' : 'var(--line)'}`, boxShadow: highlightPrepId === prep.id ? '0 0 0 3px rgba(59,130,246,0.2)' : undefined, borderRadius: 3 }}
                                   >
                                     <div>
                                       <p style={{ fontWeight: 500, color: 'var(--ink)' }}>{prep.contactName}</p>
@@ -1408,8 +1451,9 @@ const CoffeeChatPrepPage: React.FC = () => {
                                   {groupedPreps.completed.map((prep) => (
                                     <div
                                       key={prep.id}
+                                      data-prep-id={prep.id}
                                       className="flex flex-col md:flex-row md:items-center md:justify-between gap-4"
-                                      style={{ padding: '16px 18px', background: '#FFFFFF', border: '1px solid var(--line)', borderRadius: 3 }}
+                                      style={{ padding: '16px 18px', background: '#FFFFFF', border: `1px solid ${highlightPrepId === prep.id ? 'var(--brand-blue, #3B82F6)' : 'var(--line)'}`, boxShadow: highlightPrepId === prep.id ? '0 0 0 3px rgba(59,130,246,0.2)' : undefined, borderRadius: 3 }}
                                     >
                                       <div className="flex items-start gap-3">
                                         <CompanyLogo company={prep.company} size={36} rounded={9} />
