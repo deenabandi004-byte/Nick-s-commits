@@ -23,7 +23,7 @@ import {
   Loader2,
   MessageSquare,
   Send,
-  Sparkles,
+  SlidersHorizontal,
   Target,
   UserSearch,
   type LucideIcon,
@@ -55,25 +55,23 @@ interface ScoutChatThreadProps {
 
 // ---------------------------------------------------------------------------
 // Scout home (page variant, empty state) — design "1a: Ability grid".
-// Eight capability tiles that pre-fill the composer; tiles 1-2 are the lead
-// capabilities and get the orange icon-chip treatment.
+// Eight capability tiles that pre-fill the composer.
 // ---------------------------------------------------------------------------
 type Capability = {
   icon: LucideIcon;
   title: string;
   sub: string;
   prompt: string;
-  lead?: boolean;
 };
 
 const CAPABILITIES: Capability[] = [
-  { icon: Briefcase, title: 'Apply to jobs', sub: 'Find roles that fit & apply', prompt: 'Find software roles I should apply to this week', lead: true },
-  { icon: UserSearch, title: 'Find people at companies', sub: 'Names + verified emails', prompt: 'Find 10 people at Stripe I could email', lead: true },
+  { icon: Briefcase, title: 'Apply to jobs', sub: 'Find roles that fit & apply', prompt: 'Find software roles I should apply to this week' },
+  { icon: UserSearch, title: 'Find people at companies', sub: 'Names + verified emails', prompt: 'Find 10 people at Stripe I could email' },
   { icon: Target, title: 'Reach the hiring manager', sub: 'Find who owns the role', prompt: "Who's the hiring manager for this role?" },
   { icon: Building2, title: 'Research companies', sub: 'Know them before you reach out', prompt: 'Give me a briefing on McKinsey before I reach out' },
   { icon: MessageSquare, title: 'Prep for meetings', sub: 'Walk in confident', prompt: 'Prep me for my coffee chat with a Bain consultant' },
   { icon: FileText, title: 'Write a cover letter', sub: 'Personalized in seconds', prompt: 'Write a cover letter for this job posting' },
-  { icon: Sparkles, title: 'Tailor your resume', sub: 'Match any job description', prompt: 'Tailor my resume to this job description' },
+  { icon: SlidersHorizontal, title: 'Tailor your resume', sub: 'Match any job description', prompt: 'Tailor my resume to this job description' },
   { icon: KanbanSquare, title: 'Track everything', sub: 'Contacts & conversations', prompt: 'Show me what’s waiting on me right now' },
 ];
 
@@ -91,11 +89,10 @@ const HERO_PLACEHOLDERS = [
 const HERO_CSS = `
 .sh-send{flex:none;width:46px;height:46px;border-radius:50%;border:none;background:var(--accent,#4A60A8);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 8px rgba(74,96,168,.20);transition:background .2s}
 .sh-send:hover{background:#3C4F8E}
-.sh-send:disabled{opacity:.5;cursor:not-allowed}
+.sh-send:disabled{cursor:default}
 .sh-chip{display:flex;align-items:center;gap:12px;padding:13px 15px;background:#fff;border:1px solid #E5E7EC;border-radius:12px;cursor:pointer;text-align:left;transition:transform .2s cubic-bezier(0.16,1,0.3,1),box-shadow .2s,border-color .2s}
 .sh-chip:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(26,26,26,.06);border-color:var(--primary-200,#B6C3E8)}
 .sh-chip-ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#fff;border:1px solid rgba(15,37,69,0.08);color:var(--accent,#4A60A8)}
-.sh-chip.lead .sh-chip-ic{color:#C9652C}
 .sh-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .sh-caret{display:inline-block;width:1px;height:1em;margin-left:1px;background:currentColor;vertical-align:text-bottom;animation:sh-caret-blink 1s steps(2) infinite}
 @keyframes sh-caret-blink{50%{opacity:0}}
@@ -213,7 +210,7 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
           className="hidden lg:block"
           style={{
             position: 'absolute', top: 330, right: '4.5%',
-            width: 130, height: 'auto', transform: 'rotate(6deg)',
+            width: 130, height: 'auto', transform: 'scaleX(-1) rotate(8deg)',
             opacity: 0.5, pointerEvents: 'none',
           }}
         />
@@ -313,7 +310,7 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                   <button
                     key={c.title}
                     type="button"
-                    className={'sh-chip' + (c.lead ? ' lead' : '')}
+                    className="sh-chip"
                     onClick={() => fillFromTile(c.prompt)}
                   >
                     <span className="sh-chip-ic">

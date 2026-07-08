@@ -4,6 +4,10 @@ import { cn } from '@/lib/utils';
 interface MainContentWrapperProps {
   children: React.ReactNode;
   className?: string;
+  /** Drop the gutter + rounded-card chrome so the page surface runs edge to
+   *  edge against the sidebar (used by full-bleed pages like Getting
+   *  Started, where the mountain backdrop should span the whole area). */
+  flush?: boolean;
 }
 
 /**
@@ -15,12 +19,13 @@ interface MainContentWrapperProps {
  * - Subtle shadow for elevation
  * - Proper spacing from viewport edges
  */
-export function MainContentWrapper({ children, className }: MainContentWrapperProps) {
+export function MainContentWrapper({ children, className, flush = false }: MainContentWrapperProps) {
   return (
-    <div className="flex-1 flex flex-col p-1.5 sm:p-3 min-h-0">
+    <div className={cn("flex-1 flex flex-col min-h-0", !flush && "p-1.5 sm:p-3")}>
       <div
         className={cn(
-          "flex-1 flex flex-col rounded-2xl shadow-sm overflow-hidden min-h-0",
+          "flex-1 flex flex-col overflow-hidden min-h-0",
+          !flush && "rounded-2xl shadow-sm",
           className
         )}
         style={{ background: 'var(--elev, #FFFFFF)' }}

@@ -34,7 +34,7 @@ export default function DashboardPage() {
           so its message list scrolls and the composer pins to the bottom. */}
       <div className="flex h-screen w-full font-sans" style={{ color: "var(--brand-ink)" }}>
         <AppSidebar />
-        <MainContentWrapper>
+        <MainContentWrapper flush>
           <AppHeader title="Getting Started" />
 
           {/* Cool-paper canvas with a faint slate-blue radial glow at
