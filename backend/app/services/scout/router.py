@@ -213,7 +213,13 @@ def _rule_find_people(message: str) -> Optional[Dict[str, Any]]:
 # prep, a cover letter, or a recruiter lookup; the right page is genuinely
 # ambiguous, so these fall through to the LLM, which has the parse_job_url
 # helper tool to disambiguate. There is intentionally no rule for them.
-_RULES = (_rule_linkedin_url, _rule_route_mention, _rule_find_people)
+#
+# _rule_find_people is retired from the active set: "find me 3 SWEs at
+# Spotify" is now an in-chat execute (the find_contacts tool surfaces the
+# results in the panel and saves them to My Network), so it must reach the
+# LLM instead of being short-circuited into a /find navigate. The function
+# stays for reference / quick revert.
+_RULES = (_rule_linkedin_url, _rule_route_mention)
 
 
 def try_pre_llm(

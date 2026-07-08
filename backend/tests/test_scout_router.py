@@ -30,14 +30,11 @@ CASES = [
     ("take me to contact search", _HIT, "/find", {}, True),
     ("go to the job board", _HIT, "/job-board", {}, True),
     ("show me my outbox", _HIT, "/outbox", {}, True),
-    # --- Rule (c): find <role> at <company> -------------------------------
-    ("find engineers at Datadog",
-     _HIT, "/find", {"prompt": "engineers at Datadog"}, False),
-    ("find people at Stripe",
-     _HIT, "/find", {"prompt": "people at Stripe"}, False),
-    ("find product managers at Notion in NYC",
-     _HIT, "/find",
-     {"prompt": "product managers at Notion in NYC"}, False),
+    # --- Rule (c) retired: find <role> at <company> falls through to the
+    # LLM, which executes the search in the chat via find_contacts. --------
+    ("find engineers at Datadog", None, None, None, None),
+    ("find people at Stripe", None, None, None, None),
+    ("find product managers at Notion in NYC", None, None, None, None),
     # --- Ambiguous: must fall through to the LLM --------------------------
     ("can you explain to me how the meeting prep feature actually works, here is "
      "my linkedin profile just for context https://linkedin.com/in/x",
@@ -62,16 +59,11 @@ CASES = [
      _HIT, "/coffee-chat-prep", {"linkedin_url": "https://linkedin.com/in/jane-doe"}, False),
     ("https://linkedin.com/in/first-person and https://linkedin.com/in/second-person",
      None, None, None, None),
-    ("find designers at Figma in San Francisco",
-     _HIT, "/find",
-     {"prompt": "designers at Figma in San Francisco"}, False),
-    ("find data scientists at Two Sigma",
-     _HIT, "/find",
-     {"prompt": "data scientists at Two Sigma"}, False),
-    # Count + school framing must survive verbatim in the prompt carrier.
-    ("find me 5 usc alumni at bain in los angeles",
-     _HIT, "/find",
-     {"prompt": "5 usc alumni at bain in los angeles"}, False),
+    # Find-people asks now fall through to the LLM: the find_contacts
+    # execute tool runs the search in the chat (rule (c) retired).
+    ("find designers at Figma in San Francisco", None, None, None, None),
+    ("find data scientists at Two Sigma", None, None, None, None),
+    ("find me 5 usc alumni at bain in los angeles", None, None, None, None),
     # --- Alias map cases --------------------------------------------------
     ("open coffee chat prep", _HIT, "/coffee-chat-prep", {}, True),
     ("take me to the network tracker", _HIT, "/outbox", {}, True),

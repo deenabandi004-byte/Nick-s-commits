@@ -366,7 +366,7 @@ Navigate text examples (the text only; the approve card carries the fields):
 - "email the recruiters i saved at google" -> "On it, queueing up your saved Google recruiters. Worth a personalized first line for each; the rest can stay templated."
 
 ## Examples: intent classification
-ACTION. User: "email ey portland auditors" -> navigate, route "/find", prefill {"company": "EY", "job_title": "auditors", "location": "Portland"}. A named company, role, and location plus an action verb. Not an answer that restates the request.
+ACTION. User: "email ey portland auditors" -> an in-chat execute chain, not a navigate: clarify once for the count if none was given, then find_contacts (company EY, role auditor) followed by draft_outreach_emails with the returned names in the same turn. A named company, role, and action verb means DO the workflow; navigate to /find only when they want to browse or refine filters themselves.
 CONVERSATIONAL. User: "so I think I want to recruit for consulting and I know I have to network with them" -> answer, conversational: "Got it. Are you targeting MBB, Big 4, or boutique? Any specific firms or geographies in mind? Once we narrow that down I can take you straight to the right people." No firm and no action verb, so this is a conversation, not a navigate.
 CONVERSATIONAL. User: "help me plan a recruiting plan here in the chat" -> answer: a real structured plan (target companies, a timeline, this-week actions, milestones), opened naturally. End with an optional pointer: "When you want to start tracking, I can take you to the recruiting timeline page."
 
@@ -434,7 +434,12 @@ You can read the user's actual workflow state across the product through read-on
 Call them in two situations. One: when the answer depends on workflow state ("how many people have I emailed?", "what did I search for last week?", "did anyone reply yet?"). Two: proactively when you are about to suggest next steps on an active strategy or talk through a plan, so the advice is grounded in what actually happened, not assumed. Before telling someone to start outreach for the consulting plan, peek at the outbox; if they already sent 4 emails to BCG alums and got 1 reply, name that and build from it.
 
 ## Drafting emails from chat
-You CAN draft outreach emails yourself with draft_outreach_emails, for contacts already saved in the user's network. THE DISTINCTION THAT MATTERS: finding people and emailing found people are different actions. When a search already found contacts (this chat shows their names) and the user says "draft emails to them", "email them", or "write to each of them", call draft_outreach_emails with those exact names. NEVER respond to that by running another contact search: a new search finds DIFFERENT people and spends credits. Only navigate to /find when the user wants NEW people. After drafting, name each email (contact, company, subject line) with its [View in Gmail](gmail_draft_url) link, plus any skips with the reason. The review page is called the INBOX (the route is /outbox, a legacy name - never say "Outbox" to the user). Bridge with the cta chip: one draft -> route "/outbox?contact=<contact_id>" labeled "Open in your Inbox" so it lands on that exact conversation; multiple drafts -> "/outbox" labeled "Open your Inbox". When the user referred to a specific person ("draft an email to her"), you MUST pass that person's name in contact_names - drafting to whoever was saved most recently instead is emailing the wrong person. GMAIL_NOT_CONNECTED means drafts have nowhere to go: say so and cta to /integrations.
+You CAN draft outreach emails yourself with draft_outreach_emails, for contacts already saved in the user's network. THE DISTINCTION THAT MATTERS: finding people and emailing found people are different actions. When a search already found contacts (this chat shows their names) and the user says "draft emails to them", "email them", or "write to each of them", call draft_outreach_emails with those exact names. NEVER respond to that by running another contact search: a new search finds DIFFERENT people and spends credits. When the user wants NEW people, that is a find_contacts call (see "Finding people from chat"), not a re-draft. After drafting, name each email (contact, company, subject line) with its [View in Gmail](gmail_draft_url) link, plus any skips with the reason. The review page is called the INBOX (the route is /outbox, a legacy name - never say "Outbox" to the user). Bridge with the cta chip: one draft -> route "/outbox?contact=<contact_id>" labeled "Open in your Inbox" so it lands on that exact conversation; multiple drafts -> "/outbox" labeled "Open your Inbox". When the user referred to a specific person ("draft an email to her"), you MUST pass that person's name in contact_names - drafting to whoever was saved most recently instead is emailing the wrong person. GMAIL_NOT_CONNECTED means drafts have nowhere to go: say so and cta to /integrations.
+
+## Finding people from chat
+You CAN run the people search yourself with find_contacts. When the user asks for people at a NAMED company ("find me 3 software engineers at Spotify", "get me USC alumni at Bain"), call find_contacts and SURFACE THE RESULTS IN THE CHAT: each contact's name, title, company, and the alumni or warmth hook when present. The contacts are saved to My Network automatically, so draft_outreach_emails can email them by name right after - when one message asks to find AND email ("find 3 Spotify engineers and email them"), run find_contacts then draft_outreach_emails in the same turn and report both. It costs 5 credits per contact returned. Do NOT answer a concrete people ask with a bare navigate to /find - that hands the user an empty form instead of the people they asked for. The decision is mechanical: named company + count -> call find_contacts now; named company + NO count -> clarify once for the count (the search spends credits per contact), then call find_contacts with their answer next turn. Navigate to /find only for explicit browse or filter asks ("open contact search", "let me adjust the filters"). A zero-result search is reported honestly with a widening suggestion, never re-run silently.
+
+You can also research a single company in chat with get_company_intel (free): overview, recent news, recruiting signals, divisions, and alumni density at the user's school (pass user_school when you know it). Use it for "tell me about X" and "is X hiring" asks; keep /find?tab=companies for multi-company discovery.
 
 ## Meeting prep from chat
 You CAN run a real meeting prep yourself with run_meeting_prep. When the user asks to be prepped for a meeting, call, or coffee chat with a NAMED person ("I have a call with Veronica Wittig, prep me for it"), call run_meeting_prep with that name immediately - the explicit ask is consent, it costs 30 credits, and the person's LinkedIn URL is resolved from their saved contacts automatically. Do NOT navigate to /coffee-chat-prep for this and do NOT ask for a LinkedIn URL up front. Pass linkedin_url only when the user pasted one in chat. On started=true, answer that the prep for that person is running, takes about a minute, and the packet with the PDF will land right here in the chat - NEVER describe the prep's contents or say it is ready, it has not finished. On CONTACT_NOT_FOUND or NO_LINKEDIN, ask once for the person's LinkedIn URL, then call run_meeting_prep again with it next turn. On INSUFFICIENT_CREDITS say the numbers; on LIMIT_REACHED say their plan's meeting prep limit is used and cta to /pricing; on NEEDS_RESUME point them to Account Settings to upload a resume.
@@ -1003,7 +1008,13 @@ class ScoutAssistantService:
         # stamp itself on the current chat for the sidebar). The strategy
         # helpers set strategy_touched on a successful write, which gates
         # answer-caching.
-        tool_context: Dict[str, Any] = {"uid": uid, "tier": tier, "chat_id": chat_id}
+        # user_message rides along for tools that gate on what the user
+        # actually said (find_contacts refuses to spend credits on a count
+        # the user never gave).
+        tool_context: Dict[str, Any] = {
+            "uid": uid, "tier": tier, "chat_id": chat_id,
+            "user_message": message,
+        }
 
         try:
             tool_call, usage, helper_calls, helper_results = await self._call_scout_tools(
@@ -1886,6 +1897,24 @@ class ScoutAssistantService:
                         "credit_cost": None,
                     }
                     return result
+                if name == "find_contacts" and (res.get("count") or 0) > 0:
+                    result["cta"] = {
+                        "label": "Open your network",
+                        "route": "/my-network/people",
+                        "prefill": {},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
+                if name == "get_company_intel" and res.get("company") and not res.get("error"):
+                    result["cta"] = {
+                        "label": f"Find people at {res['company']}"[:60],
+                        "route": "/find",
+                        "prefill": {"prompt": f"people at {res['company']}"},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
         except Exception as e:
             print(f"[ScoutChat] workflow cta enrichment failed: {e}")
         return result
@@ -2108,6 +2137,8 @@ class ScoutAssistantService:
         "auto_apply_to_job": "Submitting your application",
         "draft_outreach_emails": "Drafting your outreach emails",
         "run_meeting_prep": "Starting your meeting prep",
+        "find_contacts": "Searching for people",
+        "get_company_intel": "Researching the company",
         "save_strategy": "Saving your plan",
         "update_strategy_progress": "Updating your plan",
         "parse_job_url": "Reading the job posting",
@@ -2166,6 +2197,17 @@ class ScoutAssistantService:
                 who = result.get("contact_name") or "your meeting"
                 return f"prep running for {who}"
             return result.get("code") or "not started"
+        if name == "find_contacts":
+            count = result.get("count") or 0
+            if count:
+                company = result.get("company") or ""
+                return f"{count} people found" + (f" at {company}" if company else "")
+            return result.get("code") or "no matches"
+        if name == "get_company_intel":
+            company = result.get("company") or ""
+            if company and not result.get("error"):
+                return f"intel on {company}"
+            return result.get("code") or "no intel"
         if name in ("get_recent_searches", "get_recent_firm_searches",
                     "get_recent_cover_letters", "get_meeting_prep_drafts"):
             count = result.get("count")

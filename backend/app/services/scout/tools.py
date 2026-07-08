@@ -17,6 +17,7 @@ for the OpenAI fallback path (and for local testing without an Anthropic key).
 from __future__ import annotations
 
 import asyncio
+import re
 from typing import Any, Dict, List, Optional
 
 NAVIGATE_TOOL: Dict[str, Any] = {
@@ -565,6 +566,84 @@ DRAFT_OUTREACH_EMAILS_TOOL: Dict[str, Any] = {
     },
 }
 
+FIND_CONTACTS_TOOL: Dict[str, Any] = {
+    "name": "find_contacts",
+    "description": (
+        "EXECUTE ACTION - runs a live people search, saves the results to "
+        "the user's My Network, and spends 5 credits per contact returned. "
+        "Use this when the user asks for people at a NAMED company ('find "
+        "me 3 software engineers at Spotify', 'get me USC alumni at Bain') "
+        "- surface the results IN THE CHAT: name, title, company, and the "
+        "alumni/warmth hook when present. COUNT IS REQUIRED: if the user "
+        "gave no number, clarify once for it before calling (this search "
+        "spends credits per contact). CHAIN WHEN ASKED: if the same message "
+        "asks to find AND email people ('find 3 Spotify engineers and email "
+        "them'), call find_contacts first, then draft_outreach_emails with "
+        "the returned names, in the SAME turn. Navigate to /find only when "
+        "the user wants to browse or refine filters themselves, not when "
+        "they asked for people. Error codes: COUNT_REQUIRED -> the user "
+        "never said how many, ask them for a count (once) and call again "
+        "next turn; INSUFFICIENT_CREDITS -> say "
+        "what the search costs vs their balance; a zero-count result means "
+        "the search genuinely found nobody - say so and suggest widening "
+        "(different title wording, drop the school filter), never pretend."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "company": {
+                "type": "string",
+                "description": "Target company name, exactly as the user gave it.",
+            },
+            "role": {
+                "type": "string",
+                "description": "Role or function, e.g. 'software engineer'. Omit if not given.",
+            },
+            "school": {
+                "type": "string",
+                "description": "School for the alumni filter, ONLY if the user asked for alumni.",
+            },
+            "count": {
+                "type": "integer",
+                "description": "How many contacts the user asked for (required by the count rule).",
+            },
+        },
+        "required": ["company", "count"],
+    },
+}
+
+GET_COMPANY_INTEL_TOOL: Dict[str, Any] = {
+    "name": "get_company_intel",
+    "description": (
+        "Read-only, free. Live research on one NAMED company: overview, "
+        "recent news, recruiting signals, divisions, and how many alumni "
+        "from the user's school work there (pass user_school when known "
+        "from context). Use it when the user asks about a specific firm "
+        "('tell me about Jane Street', 'is Databricks hiring new grads?') "
+        "and answer IN THE CHAT with the specifics. Only navigate to "
+        "/find?tab=companies when the user wants to discover or compare "
+        "multiple companies rather than research one."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "company": {
+                "type": "string",
+                "description": "The company to research.",
+            },
+            "user_school": {
+                "type": "string",
+                "description": "The user's school, when known, for alumni density.",
+            },
+            "career_field": {
+                "type": "string",
+                "description": "Career field filter for the alumni count, e.g. 'investment banking'.",
+            },
+        },
+        "required": ["company"],
+    },
+}
+
 RUN_MEETING_PREP_TOOL: Dict[str, Any] = {
     "name": "run_meeting_prep",
     "description": (
@@ -625,6 +704,8 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     AUTO_APPLY_TOOL,
     DRAFT_OUTREACH_EMAILS_TOOL,
     RUN_MEETING_PREP_TOOL,
+    FIND_CONTACTS_TOOL,
+    GET_COMPANY_INTEL_TOOL,
 ]
 SCOUT_TOOLS: List[Dict[str, Any]] = TERMINAL_TOOLS + HELPER_TOOLS
 
@@ -815,7 +896,79 @@ async def run_helper_tool(
         return await _run_draft_outreach(args, ctx)
     if name == "run_meeting_prep":
         return await _run_meeting_prep(args, ctx)
+    if name == "find_contacts":
+        return await _run_find_contacts(args, ctx)
+    if name == "get_company_intel":
+        return await _run_company_intel(args, ctx)
     return {"error": f"unknown helper tool: {name}"}
+
+
+# A people search spends credits per contact, so the count must come from
+# the user, not the model. Digits (but not years), small number words, and
+# "a couple / a few" all count as the user naming a quantity.
+_COUNT_TOKEN_RE = re.compile(
+    r"\b(\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten"
+    r"|a couple|couple|a few|few|all|every|each)\b",
+    re.I,
+)
+
+
+async def _run_find_contacts(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """Live people search saved to My Network. Marks workflow_state_touched
+    so the turn is never cached or served cross-user."""
+    uid = context.get("uid")
+    if not uid:
+        return {"count": 0, "contacts": [],
+                "error": "sign in required", "code": "AUTH_REQUIRED"}
+    # Harness-enforced count rule: gpt-5-mini invents a count when the user
+    # gave none, silently spending credits. If the triggering message names
+    # no quantity, refuse and make the model ask (one clarify, ever).
+    user_message = str(context.get("user_message") or "")
+    if user_message and not _COUNT_TOKEN_RE.search(user_message):
+        return {
+            "count": 0, "contacts": [],
+            "error": ("the user has not said how many contacts to pull; "
+                      "this search costs 5 credits per contact, so ask them "
+                      "for a count before searching"),
+            "code": "COUNT_REQUIRED",
+        }
+    try:
+        from app.services.scout.contact_actions import find_contacts_for_chat
+        result = await asyncio.to_thread(
+            find_contacts_for_chat,
+            uid,
+            context.get("tier"),
+            str(args.get("company") or ""),
+            str(args.get("role") or ""),
+            str(args.get("school") or ""),
+            args.get("count") or 5,
+        )
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] find_contacts failed: {e}")
+        return {"count": 0, "contacts": [],
+                "error": "contact search failed", "code": "INTERNAL"}
+
+
+async def _run_company_intel(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """Company research in chat. Marks workflow_state_touched: the alumni
+    density is grounded in the asking user's school."""
+    try:
+        from app.services.scout.contact_actions import company_intel_for_chat
+        result = await asyncio.to_thread(
+            company_intel_for_chat,
+            context.get("uid") or "",
+            context.get("tier"),
+            str(args.get("company") or ""),
+            str(args.get("user_school") or ""),
+            str(args.get("career_field") or ""),
+        )
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] get_company_intel failed: {e}")
+        return {"error": "company research failed", "code": "INTERNAL"}
 
 
 async def _run_meeting_prep(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
