@@ -217,6 +217,9 @@ export interface ChatMessage {
   mode?: ScoutMode | null;
   intentDetail?: ScoutIntent | null;
   cta?: ScoutCta | null;
+  // Multi-chip turns (e.g. drafts created: Inbox + My Network). When present
+  // it supersedes `cta` in rendering; `cta` stays the primary for back-compat.
+  ctas?: ScoutCta[] | null;
   plan?: ScoutPlan | null;
   toolEvents?: ScoutToolEvent[];
   // A meeting prep Scout kicked off this turn; drives the status poller.
@@ -545,6 +548,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
                     mode: (data.mode as ScoutMode) || m.mode || 'chat',
                     intentDetail: data.intent || m.intentDetail || null,
                     cta: data.cta || null,
+                    ctas: data.ctas || null,
                     plan: data.plan || null,
                     prepJob: (data.prep_job as ScoutPrepJob) || null,
                   } : m
@@ -634,6 +638,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
         mode: (data.mode as ScoutMode) || 'chat',
         intentDetail: data.intent || null,
         cta: data.cta || null,
+        ctas: data.ctas || null,
         plan: data.plan || null,
         prepJob: (data.prep_job as ScoutPrepJob) || null,
       };

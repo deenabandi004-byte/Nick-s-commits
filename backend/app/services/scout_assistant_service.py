@@ -1069,6 +1069,7 @@ class ScoutAssistantService:
             result = self._enrich_prep_report(result, helper_results)
             result = self._enrich_cover_letter_report(result, helper_results)
             result = self._enrich_workflow_ctas(result, helper_results)
+            result = self._enrich_network_ctas(result, helper_results)
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
             # the active strategy this turn (strategy_touched), AND any
@@ -1853,6 +1854,57 @@ class ScoutAssistantService:
             print(f"[ScoutChat] draft report enrichment failed: {e}")
         return result
 
+    _NETWORK_CHIP: Dict[str, Any] = {
+        "label": "View in My Network",
+        "route": "/my-network/people",
+        "prefill": {},
+        "credit_spending": False,
+        "credit_cost": None,
+    }
+
+    def _enrich_network_ctas(
+        self,
+        result: Dict[str, Any],
+        helper_results: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Chip correctness after contact workflows (runs LAST, after the
+        other enrichments have settled `cta`).
+
+        - Find-only turn (contacts found, nothing drafted): the chip is View
+          in My Network, where the saved contacts actually are. An Inbox chip
+          here is a false promise - nothing new landed in the Inbox - so a
+          model-authored /outbox chip gets replaced, not respected.
+        - Drafts created this turn: BOTH chips via `ctas` - the Inbox chip
+          first (deep link preserved), View in My Network second. `cta` keeps
+          the primary chip so older clients render exactly what they did.
+        """
+        try:
+            if result.get("tool") != "answer":
+                return result
+
+            def _ran(name: str) -> bool:
+                return any(
+                    h.get("name") == name
+                    and isinstance(h.get("result"), dict)
+                    and (h["result"].get("count") or 0) > 0
+                    for h in (helper_results or [])
+                )
+
+            found = _ran("find_contacts")
+            drafted = _ran("draft_outreach_emails")
+            cta = result.get("cta")
+            if drafted:
+                # _enrich_draft_report guarantees an Inbox cta after drafts.
+                primary = cta or dict(self._NETWORK_CHIP)
+                if (primary.get("route") or "").startswith("/outbox"):
+                    result["ctas"] = [primary, dict(self._NETWORK_CHIP)]
+            elif found:
+                if not cta or (cta.get("route") or "").startswith("/outbox"):
+                    result["cta"] = dict(self._NETWORK_CHIP)
+        except Exception as e:
+            print(f"[ScoutChat] network cta enrichment failed: {e}")
+        return result
+
     def _enrich_prep_report(
         self,
         result: Dict[str, Any],
@@ -1964,13 +2016,7 @@ class ScoutAssistantService:
                     }
                     return result
                 if name == "find_contacts" and (res.get("count") or 0) > 0:
-                    result["cta"] = {
-                        "label": "Open your network",
-                        "route": "/my-network/people",
-                        "prefill": {},
-                        "credit_spending": False,
-                        "credit_cost": None,
-                    }
+                    result["cta"] = dict(self._NETWORK_CHIP)
                     return result
                 if name == "discover_companies" and (res.get("count") or 0) > 0:
                     query = str(res.get("query") or "").strip()

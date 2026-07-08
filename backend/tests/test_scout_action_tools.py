@@ -243,6 +243,49 @@ def test_gate_open_without_chat_context():
 
 
 # ---------------------------------------------------------------------------
+# Network cta normalization: find-only turns chip to My Network (an Inbox
+# chip is a false promise); draft turns carry BOTH chips via `ctas`.
+# ---------------------------------------------------------------------------
+
+_NETWORK_ROUTE = "/my-network/people"
+
+
+@pytest.mark.unit
+def test_find_only_outbox_chip_is_replaced_with_network():
+    result = {"tool": "answer", "message": "found 3", "cta": {
+        "label": "Open your Inbox", "route": "/outbox", "prefill": {},
+        "credit_spending": False, "credit_cost": None}}
+    helpers = [{"name": "find_contacts", "result": {"count": 3, "contacts": []}}]
+    out = _svc()._enrich_network_ctas(result, helpers)
+    assert out["cta"]["route"] == _NETWORK_ROUTE
+    assert "ctas" not in out
+
+
+@pytest.mark.unit
+def test_find_only_non_outbox_chip_is_respected():
+    chip = {"label": "Open the Job Board", "route": "/job-board", "prefill": {}}
+    result = {"tool": "answer", "message": "found 3", "cta": chip}
+    helpers = [{"name": "find_contacts", "result": {"count": 3, "contacts": []}}]
+    out = _svc()._enrich_network_ctas(result, helpers)
+    assert out["cta"] is chip
+
+
+@pytest.mark.unit
+def test_draft_turn_gets_both_chips():
+    inbox = {"label": "Open in your Inbox", "route": "/outbox?contact=c1",
+             "prefill": {}, "credit_spending": False, "credit_cost": None}
+    result = {"tool": "answer", "message": "drafted", "cta": inbox}
+    helpers = [
+        {"name": "find_contacts", "result": {"count": 3, "contacts": []}},
+        {"name": "draft_outreach_emails", "result": {"count": 3, "drafted": [{}]}},
+    ]
+    out = _svc()._enrich_network_ctas(result, helpers)
+    assert out["ctas"][0] is inbox
+    assert out["ctas"][1]["route"] == _NETWORK_ROUTE
+    assert out["cta"] is inbox
+
+
+# ---------------------------------------------------------------------------
 # discover_companies: multi-company discovery executes in chat. Same gates
 # as find_contacts (auth + harness-enforced count), same credit rules as the
 # Companies tab (2 credits per company returned, none on a zero result).

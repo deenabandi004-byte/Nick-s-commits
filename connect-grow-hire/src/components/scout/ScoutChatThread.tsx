@@ -575,14 +575,26 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                               onStepAction={handlePlanStep}
                             />
                           )}
-                          {/* CTA chip - single bridge, never paragraphed
-                              prose. */}
-                          {message.cta && (
+                          {/* CTA chips - chip bridges, never paragraphed
+                              prose. `ctas` (multi-chip turns, e.g. Inbox +
+                              My Network after drafting) supersedes the
+                              single `cta`. */}
+                          {message.ctas && message.ctas.length > 0 ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              {message.ctas.map((chip, i) => (
+                                <ScoutCtaChip
+                                  key={`${chip.route}-${i}`}
+                                  cta={chip}
+                                  onAction={handleCtaAction}
+                                />
+                              ))}
+                            </div>
+                          ) : message.cta ? (
                             <ScoutCtaChip
                               cta={message.cta}
                               onAction={handleCtaAction}
                             />
-                          )}
+                          ) : null}
                           {showCard && message.navigate && (
                             <ScoutApproveCard
                               navigate={message.navigate}
