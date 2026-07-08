@@ -684,6 +684,85 @@ RUN_MEETING_PREP_TOOL: Dict[str, Any] = {
     },
 }
 
+FIND_HIRING_MANAGERS_TOOL: Dict[str, Any] = {
+    "name": "find_hiring_managers",
+    "description": (
+        "EXECUTE ACTION - finds hiring managers / recruiters for a role at "
+        "a NAMED company and saves them to the user's Hiring Manager "
+        "tracker. Costs 5 credits per manager found (default 3, max 5 - "
+        "honor a count the user gives). Use for 'who's the hiring manager "
+        "for X at Y', 'find recruiters at Stripe for the PM role'. Surface "
+        "results IN THE CHAT: name, title, and email when available. "
+        "Navigate to /find?tab=hiring-managers only for browsing the "
+        "tracker. A zero result means none were found - say so honestly. "
+        "INSUFFICIENT_CREDITS -> state cost vs balance."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "company": {"type": "string", "description": "Target company name."},
+            "job_title": {"type": "string", "description": "The role they're recruiting for, when given."},
+            "location": {"type": "string", "description": "Office/location, when given."},
+            "count": {"type": "integer", "description": "How many managers (default 3, max 5)."},
+        },
+        "required": ["company"],
+    },
+}
+
+GENERATE_COVER_LETTER_TOOL: Dict[str, Any] = {
+    "name": "generate_cover_letter",
+    "description": (
+        "EXECUTE ACTION - writes a personalized cover letter for one "
+        "specific job using the user's stored resume. Costs 5 credits. "
+        "Job context, best first: job_id from a find_jobs result in this "
+        "conversation; else job_url the user pasted; else job_title + "
+        "company + job_description they provided. After calling, put the "
+        "FULL letter text in your answer so the user can read and copy it. "
+        "NEEDS_JOB_DESCRIPTION -> ask for the posting URL or description "
+        "(once); NEEDS_RESUME -> they must upload a resume in Account "
+        "Settings; INSUFFICIENT_CREDITS -> state cost vs balance. On "
+        "generation failure credits auto-refund - say so."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "job_id": {"type": "string", "description": "job_id from a find_jobs result in this chat."},
+            "job_url": {"type": "string", "description": "Posting URL the user pasted."},
+            "job_title": {"type": "string", "description": "Role title, when given."},
+            "company": {"type": "string", "description": "Company, when given."},
+            "job_description": {"type": "string", "description": "Posting text the user pasted."},
+        },
+        "required": [],
+    },
+}
+
+TAILOR_RESUME_TOOL: Dict[str, Any] = {
+    "name": "tailor_resume_to_job",
+    "description": (
+        "Free. Scores the user's stored resume against one specific job "
+        "and returns concrete edit suggestions. Use for 'how does my "
+        "resume stack up against this role', 'tailor my resume to the "
+        "Stripe PM job'. Job context resolution is the same as "
+        "generate_cover_letter (job_id from this chat's find_jobs results, "
+        "else job_url, else pasted description). Present IN THE CHAT: the "
+        "fit score and verdict, the strengths, the gaps, and each "
+        "suggested edit (what it says now -> what to write instead). "
+        "NEEDS_JOB_DESCRIPTION -> ask once for the posting URL or text; "
+        "NEEDS_RESUME -> point to Account Settings."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "job_id": {"type": "string", "description": "job_id from a find_jobs result in this chat."},
+            "job_url": {"type": "string", "description": "Posting URL the user pasted."},
+            "job_title": {"type": "string", "description": "Role title, when given."},
+            "company": {"type": "string", "description": "Company, when given."},
+            "job_description": {"type": "string", "description": "Posting text the user pasted."},
+        },
+        "required": [],
+    },
+}
+
 # Terminal tools end a turn (exactly one per turn). Helper tools gather data
 # or write memory mid-turn and the model keeps going. parallel_tool_calls=False
 # caps each step at one tool; the caller offers only terminal tools on the
@@ -706,6 +785,9 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     RUN_MEETING_PREP_TOOL,
     FIND_CONTACTS_TOOL,
     GET_COMPANY_INTEL_TOOL,
+    FIND_HIRING_MANAGERS_TOOL,
+    GENERATE_COVER_LETTER_TOOL,
+    TAILOR_RESUME_TOOL,
 ]
 SCOUT_TOOLS: List[Dict[str, Any]] = TERMINAL_TOOLS + HELPER_TOOLS
 
@@ -900,7 +982,78 @@ async def run_helper_tool(
         return await _run_find_contacts(args, ctx)
     if name == "get_company_intel":
         return await _run_company_intel(args, ctx)
+    if name == "find_hiring_managers":
+        return await _run_find_hiring_managers(args, ctx)
+    if name == "generate_cover_letter":
+        return await _run_generate_cover_letter(args, ctx)
+    if name == "tailor_resume_to_job":
+        return await _run_tailor_resume(args, ctx)
     return {"error": f"unknown helper tool: {name}"}
+
+
+def _job_context_args(args: Dict[str, Any]) -> Dict[str, str]:
+    """Shared kwargs for the job-context tools (cover letter, tailoring)."""
+    return {
+        "job_id": str(args.get("job_id") or ""),
+        "job_url": str(args.get("job_url") or ""),
+        "job_title": str(args.get("job_title") or ""),
+        "company": str(args.get("company") or ""),
+        "job_description": str(args.get("job_description") or ""),
+    }
+
+
+async def _run_find_hiring_managers(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """Hiring manager discovery saved to the tracker. Marks
+    workflow_state_touched so the turn is never cached or served cross-user."""
+    uid = context.get("uid")
+    if not uid:
+        return {"count": 0, "managers": [],
+                "error": "sign in required", "code": "AUTH_REQUIRED"}
+    try:
+        from app.services.scout.job_actions import find_hiring_managers_for_chat
+        result = await asyncio.to_thread(
+            find_hiring_managers_for_chat,
+            uid,
+            str(args.get("company") or ""),
+            str(args.get("job_title") or ""),
+            str(args.get("location") or ""),
+            args.get("count") or 3,
+        )
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] find_hiring_managers failed: {e}")
+        return {"count": 0, "managers": [],
+                "error": "hiring manager search failed", "code": "INTERNAL"}
+
+
+async def _run_generate_cover_letter(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    uid = context.get("uid")
+    if not uid:
+        return {"error": "sign in required", "code": "AUTH_REQUIRED"}
+    try:
+        from app.services.scout.job_actions import cover_letter_for_chat
+        result = await cover_letter_for_chat(uid, **_job_context_args(args))
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] generate_cover_letter failed: {e}")
+        return {"error": "cover letter generation failed", "code": "INTERNAL"}
+
+
+async def _run_tailor_resume(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    uid = context.get("uid")
+    if not uid:
+        return {"error": "sign in required", "code": "AUTH_REQUIRED"}
+    try:
+        from app.services.scout.job_actions import tailor_resume_for_chat
+        result = await asyncio.to_thread(
+            tailor_resume_for_chat, uid, **_job_context_args(args))
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] tailor_resume_to_job failed: {e}")
+        return {"error": "resume analysis failed", "code": "INTERNAL"}
 
 
 # A people search spends credits per contact, so the count must come from

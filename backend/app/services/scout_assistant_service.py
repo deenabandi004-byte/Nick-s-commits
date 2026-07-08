@@ -441,6 +441,11 @@ You CAN run the people search yourself with find_contacts. When the user asks fo
 
 You can also research a single company in chat with get_company_intel (free): overview, recent news, recruiting signals, divisions, and alumni density at the user's school (pass user_school when you know it). Use it for "tell me about X" and "is X hiring" asks; keep /find?tab=companies for multi-company discovery.
 
+You CAN find hiring managers yourself with find_hiring_managers. "Who's the hiring manager for the PM role at Stripe", "find recruiters at Google for SWE" - call it with the company (plus role/location when given), surface each manager IN THE CHAT (name, title, email when available), and mention they were saved to the Hiring Manager tracker. Costs 5 credits per manager, default 3. Navigate to /find?tab=hiring-managers only to browse the tracker.
+
+## Resume and cover letters from chat
+You CAN write a cover letter with generate_cover_letter (5 credits) and score/tailor the user's resume against a job with tailor_resume_to_job (free). Both need job context, resolved in this order: a job_id from this chat's find_jobs results; a job posting URL the user pasted; or a pasted description. A named role at a named company with no job_id in this chat is NOT a reason to ask for a URL: call find_jobs with those role words FIRST, then chain into the letter or tailoring with the best match's job_id in the same turn. Ask for the posting URL only AFTER find_jobs returns nothing or the tool comes back NEEDS_JOB_DESCRIPTION - asking first is a failure. For cover letters, put the FULL letter text in your answer - the letter IS the deliverable. For tailoring, present the fit score, verdict, strengths, gaps, and each suggested edit as what-it-says-now -> what-to-write-instead. NEEDS_JOB_DESCRIPTION means the job could not be resolved: ask once for the posting URL. Never invent experience in either flow.
+
 ## Meeting prep from chat
 You CAN run a real meeting prep yourself with run_meeting_prep. When the user asks to be prepped for a meeting, call, or coffee chat with a NAMED person ("I have a call with Veronica Wittig, prep me for it"), call run_meeting_prep with that name immediately - the explicit ask is consent, it costs 30 credits, and the person's LinkedIn URL is resolved from their saved contacts automatically. Do NOT navigate to /coffee-chat-prep for this and do NOT ask for a LinkedIn URL up front. Pass linkedin_url only when the user pasted one in chat. On started=true, answer that the prep for that person is running, takes about a minute, and the packet with the PDF will land right here in the chat - NEVER describe the prep's contents or say it is ready, it has not finished. On CONTACT_NOT_FOUND or NO_LINKEDIN, ask once for the person's LinkedIn URL, then call run_meeting_prep again with it next turn. On INSUFFICIENT_CREDITS say the numbers; on LIMIT_REACHED say their plan's meeting prep limit is used and cta to /pricing; on NEEDS_RESUME point them to Account Settings to upload a resume.
 
@@ -1037,6 +1042,7 @@ class ScoutAssistantService:
             )
             result = self._enrich_draft_report(result, helper_results)
             result = self._enrich_prep_report(result, helper_results)
+            result = self._enrich_cover_letter_report(result, helper_results)
             result = self._enrich_workflow_ctas(result, helper_results)
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
@@ -1857,6 +1863,41 @@ class ScoutAssistantService:
             print(f"[ScoutChat] prep report enrichment failed: {e}")
         return result
 
+    def _enrich_cover_letter_report(
+        self,
+        result: Dict[str, Any],
+        helper_results: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Guarantee the generated cover letter appears VERBATIM in the answer.
+
+        The letter is the deliverable; gpt-5-mini sometimes paraphrases or
+        trims it. If the generator's text is not present in the message
+        (whitespace-normalized prefix check), append the real letter.
+        """
+        try:
+            if result.get("tool") != "answer":
+                return result
+            entry = next(
+                (
+                    h.get("result") for h in reversed(helper_results or [])
+                    if h.get("name") == "generate_cover_letter"
+                    and isinstance(h.get("result"), dict)
+                    and h["result"].get("cover_letter")
+                ),
+                None,
+            )
+            if not entry:
+                return result
+            letter = str(entry["cover_letter"]).strip()
+            norm = lambda s: " ".join(s.split())
+            if norm(letter)[:60] not in norm(result.get("message") or ""):
+                result["message"] = (
+                    f"{(result.get('message') or '').strip()}\n\n{letter}".strip()
+                )
+        except Exception as e:
+            print(f"[ScoutChat] cover letter enrichment failed: {e}")
+        return result
+
     def _enrich_workflow_ctas(
         self,
         result: Dict[str, Any],
@@ -1911,6 +1952,38 @@ class ScoutAssistantService:
                         "label": f"Find people at {res['company']}"[:60],
                         "route": "/find",
                         "prefill": {"prompt": f"people at {res['company']}"},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
+                if name == "find_hiring_managers" and (res.get("count") or 0) > 0:
+                    result["cta"] = {
+                        "label": "Open your Hiring Managers",
+                        "route": "/find?tab=hiring-managers",
+                        "prefill": {},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
+                if name == "generate_cover_letter" and res.get("cover_letter"):
+                    prefill = {}
+                    if res.get("job_title"):
+                        prefill["job_title"] = str(res["job_title"])
+                    if res.get("company"):
+                        prefill["company"] = str(res["company"])
+                    result["cta"] = {
+                        "label": "Open the Cover Letter workshop",
+                        "route": "/cover-letter",
+                        "prefill": prefill,
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
+                if name == "tailor_resume_to_job" and res.get("fit_score") is not None:
+                    result["cta"] = {
+                        "label": "Open your resume",
+                        "route": "/resume",
+                        "prefill": {},
                         "credit_spending": False,
                         "credit_cost": None,
                     }
@@ -2139,6 +2212,9 @@ class ScoutAssistantService:
         "run_meeting_prep": "Starting your meeting prep",
         "find_contacts": "Searching for people",
         "get_company_intel": "Researching the company",
+        "find_hiring_managers": "Finding hiring managers",
+        "generate_cover_letter": "Writing your cover letter",
+        "tailor_resume_to_job": "Scoring your resume against the job",
         "save_strategy": "Saving your plan",
         "update_strategy_progress": "Updating your plan",
         "parse_job_url": "Reading the job posting",
@@ -2208,6 +2284,21 @@ class ScoutAssistantService:
             if company and not result.get("error"):
                 return f"intel on {company}"
             return result.get("code") or "no intel"
+        if name == "find_hiring_managers":
+            count = result.get("count") or 0
+            if count:
+                return f"{count} hiring managers found"
+            return result.get("code") or "none found"
+        if name == "generate_cover_letter":
+            if result.get("cover_letter"):
+                target = result.get("company") or result.get("job_title") or "the job"
+                return f"letter drafted for {target}"
+            return result.get("code") or "not generated"
+        if name == "tailor_resume_to_job":
+            score = result.get("fit_score")
+            if score is not None:
+                return f"fit score {score}/100"
+            return result.get("code") or "no analysis"
         if name in ("get_recent_searches", "get_recent_firm_searches",
                     "get_recent_cover_letters", "get_meeting_prep_drafts"):
             count = result.get("count")
