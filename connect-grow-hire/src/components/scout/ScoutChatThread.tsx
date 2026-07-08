@@ -12,9 +12,22 @@
  *           suggestion chips centered mid-page); once messages exist, a
  *           centered column with the composer pinned at the bottom.
  */
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ArrowUp, Loader2, Send } from 'lucide-react';
+import {
+  ArrowUp,
+  Briefcase,
+  Building2,
+  FileText,
+  KanbanSquare,
+  Loader2,
+  MessageSquare,
+  Send,
+  Sparkles,
+  Target,
+  UserSearch,
+  type LucideIcon,
+} from 'lucide-react';
 import { formatMessage } from '@/hooks/useScoutChat';
 import { useScoutChatShared, decideNavAction } from '@/contexts/ScoutChatContext';
 import { BriefingButton } from '@/components/scout/BriefingButton';
@@ -36,6 +49,53 @@ interface ScoutChatThreadProps {
    *  tried-and-failed hint. */
   emptyStateExtra?: React.ReactNode;
 }
+
+// ---------------------------------------------------------------------------
+// Scout home (page variant, empty state) — design "1a: Ability grid".
+// Eight capability tiles that pre-fill the composer; tiles 1-2 are the lead
+// capabilities and get the orange icon-chip treatment.
+// ---------------------------------------------------------------------------
+type Capability = {
+  icon: LucideIcon;
+  title: string;
+  sub: string;
+  prompt: string;
+  lead?: boolean;
+};
+
+const CAPABILITIES: Capability[] = [
+  { icon: Briefcase, title: 'Apply to jobs', sub: 'Find roles that fit & apply', prompt: 'Find software roles I should apply to this week', lead: true },
+  { icon: UserSearch, title: 'Find people at companies', sub: 'Names + verified emails', prompt: 'Find 10 people at Stripe I could email', lead: true },
+  { icon: Target, title: 'Reach the hiring manager', sub: 'Find who owns the role', prompt: "Who's the hiring manager for this role?" },
+  { icon: Building2, title: 'Research companies', sub: 'Know them before you reach out', prompt: 'Give me a briefing on McKinsey before I reach out' },
+  { icon: MessageSquare, title: 'Prep for meetings', sub: 'Walk in confident', prompt: 'Prep me for my coffee chat with a Bain consultant' },
+  { icon: FileText, title: 'Write a cover letter', sub: 'Personalized in seconds', prompt: 'Write a cover letter for this job posting' },
+  { icon: Sparkles, title: 'Tailor your resume', sub: 'Match any job description', prompt: 'Tailor my resume to this job description' },
+  { icon: KanbanSquare, title: 'Track everything', sub: 'Contacts & conversations', prompt: 'Show me what’s waiting on me right now' },
+];
+
+// Composer placeholder rotation (2.8s cadence while the box is empty).
+const HERO_PLACEHOLDERS = [
+  'Find software roles I should apply to this week…',
+  'Find 10 people at Google I could email…',
+  "Who's the hiring manager for this job?…",
+  'Give me a briefing on a company before I reach out…',
+];
+
+// Scoped styles for the hero's hover states (inline styles can't express
+// them). Class names are sh-* and only used inside the page hero.
+const HERO_CSS = `
+.sh-send{flex:none;width:46px;height:46px;border-radius:50%;border:none;background:var(--accent,#4A60A8);color:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 8px rgba(74,96,168,.20);transition:background .2s}
+.sh-send:hover{background:#3C4F8E}
+.sh-send:disabled{opacity:.5;cursor:not-allowed}
+.sh-chip{display:flex;align-items:center;gap:12px;padding:13px 15px;background:#fff;border:1px solid #E5E7EC;border-radius:12px;cursor:pointer;text-align:left;transition:transform .2s cubic-bezier(0.16,1,0.3,1),box-shadow .2s,border-color .2s}
+.sh-chip:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(26,26,26,.06);border-color:var(--primary-200,#B6C3E8)}
+.sh-chip-ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--primary-100,#E4E9F5);color:var(--accent,#4A60A8)}
+.sh-chip.lead .sh-chip-ic{background:var(--action-bg,#FBE6D6);color:#C9652C}
+.sh-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:960px){.sh-grid{grid-template-columns:repeat(2,1fr)}}
+@media (prefers-reduced-motion:reduce){.sh-chip:hover{transform:none}}
+`;
 
 export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadProps) {
   const {
@@ -84,75 +144,131 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
     }
   };
 
+  // Hero composer (page variant, empty state): rotating placeholder +
+  // capability tiles that pre-fill the box.
+  const heroTaRef = useRef<HTMLTextAreaElement>(null);
+  const [phIndex, setPhIndex] = useState(0);
+  useEffect(() => {
+    if (variant !== 'page') return;
+    // Respect prefers-reduced-motion: no placeholder rotation.
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+    const t = setInterval(() => setPhIndex((i) => i + 1), 2800);
+    return () => clearInterval(t);
+  }, [variant]);
+
+  const fillFromTile = (prompt: string) => {
+    setInput(prompt);
+    heroTaRef.current?.focus();
+  };
+
   // ------------------------------------------------------------------
-  // Page hero: Lovable-style empty state (heading + big box + chips)
+  // Page hero: Scout home empty state (design 1a "Ability grid") —
+  // headline, subhead, composer with rotating placeholder, capability grid.
   // ------------------------------------------------------------------
   if (variant === 'page' && messages.length === 0) {
     return (
       <div className="flex-1 overflow-y-auto">
+        <style>{HERO_CSS}</style>
         <div
-          className="mx-auto flex w-full max-w-[760px] flex-col px-5"
-          style={{ paddingTop: '12vh', paddingBottom: 48 }}
+          className="mx-auto flex w-full max-w-[900px] flex-col px-7 sm:px-16"
+          style={{ paddingTop: 64, paddingBottom: 80, fontFamily: 'var(--font-body)' }}
         >
-          <h1
-            className="mb-6 text-center text-3xl sm:text-4xl"
-            style={{ fontFamily: "var(--font-display, 'Instrument Serif', Georgia, serif)", fontWeight: 400 }}
-          >
-            What can Scout do for you?
-          </h1>
+          {/* Headline + subhead */}
+          <div className="mx-auto mb-[26px] flex max-w-[720px] flex-col items-center text-center" style={{ marginTop: 32 }}>
+            <h1
+              style={{
+                fontFamily: "'Lora', Georgia, serif",
+                fontWeight: 600,
+                fontSize: 46,
+                lineHeight: 1.08,
+                letterSpacing: '-0.025em',
+                color: 'var(--heading, #1E2D4D)',
+                margin: '0 0 12px',
+              }}
+            >
+              What should we <em style={{ fontStyle: 'italic', color: 'var(--accent, #4A60A8)' }}>work on</em> today?
+            </h1>
+            <p style={{ font: "400 17px/1.6 var(--font-body, 'Inter', sans-serif)", color: '#64748B', margin: 0, maxWidth: 560 }}>
+              Tell Scout what you're after and it handles the busywork: finding the
+              people, writing the outreach, and tracking every conversation, so you
+              can focus on landing the offer.
+            </p>
+          </div>
+
+          {/* Composer */}
           <div
-            className="relative w-full bg-white"
+            className="mx-auto flex w-full max-w-[760px] flex-col gap-3"
             style={{
-              border: '1px solid var(--brand-border)',
-              borderRadius: 12,
-              padding: '14px 16px',
-              minHeight: 120,
-              boxShadow: '0 4px 20px rgba(15,23,42,0.06)',
+              background: '#fff',
+              border: '1px solid #E5E7EC',
+              borderRadius: 16,
+              boxShadow: '0 4px 16px rgba(26,26,26,0.06)',
+              padding: '18px 18px 16px',
+              marginBottom: 22,
             }}
           >
             <textarea
+              ref={heroTaRef}
               autoFocus
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ask Scout anything - find people, research companies, build a plan..."
+              placeholder={HERO_PLACEHOLDERS[phIndex % HERO_PLACEHOLDERS.length]}
               aria-label="Ask Scout"
               rows={2}
               disabled={isLoading}
               className="w-full resize-none bg-transparent outline-none"
-              style={{ border: 'none', fontSize: 14, lineHeight: 1.5, color: 'var(--brand-ink)', paddingRight: 44, minHeight: 72 }}
+              style={{ border: 'none', font: "400 17px/1.5 var(--font-body, 'Inter', sans-serif)", color: 'var(--ink, #0A0A0A)' }}
             />
-            <button
-              type="button"
-              onClick={() => sendMessage()}
-              disabled={!input.trim() || isLoading}
-              aria-label="Send message"
-              style={{
-                position: 'absolute', right: 12, bottom: 12,
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'var(--accent, #4A60A8)', color: '#fff', border: 'none',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', transition: 'background .25s ease',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--brand-blue, #3B82F6)')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent, #4A60A8)')}
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-            </button>
-          </div>
-          <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {chips.map((question, idx) => (
+            <div className="flex items-center justify-between">
+              <span style={{ font: "400 13px var(--font-body, 'Inter', sans-serif)", color: '#94A3B8' }}>
+                Pick a task below, or just start typing
+              </span>
               <button
-                key={idx}
-                onClick={() => sendMessage(question)}
-                className="text-left px-3 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-[#3B82F6] hover:bg-[#FAFBFF]/50 text-sm text-gray-700 transition-colors"
+                type="button"
+                className="sh-send"
+                onClick={() => sendMessage()}
+                disabled={!input.trim() || isLoading}
+                aria-label="Send message"
               >
-                {question}
+                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp size={20} strokeWidth={1.8} />}
               </button>
-            ))}
+            </div>
           </div>
-          <div className="mt-4 flex justify-center">
-            <BriefingButton onClick={() => void requestBriefing()} isLoading={isLoading} />
+
+          {/* "Scout can" divider + capability grid */}
+          <div className="mx-auto w-full max-w-[900px]">
+            <div className="mb-3.5 flex items-center gap-2.5">
+              <span style={{ font: "600 12px var(--font-body, 'Inter', sans-serif)", letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent, #4A60A8)' }}>
+                Scout can
+              </span>
+              <div style={{ flex: 1, height: 1, background: '#E5E7EC' }} />
+            </div>
+            <div className="sh-grid">
+              {CAPABILITIES.map((c) => {
+                const Icon = c.icon;
+                return (
+                  <button
+                    key={c.title}
+                    type="button"
+                    className={'sh-chip' + (c.lead ? ' lead' : '')}
+                    onClick={() => fillFromTile(c.prompt)}
+                  >
+                    <span className="sh-chip-ic">
+                      <Icon size={20} strokeWidth={1.6} />
+                    </span>
+                    <span>
+                      <span style={{ display: 'block', font: "600 14px var(--font-body, 'Inter', sans-serif)", color: 'var(--ink, #0A0A0A)' }}>
+                        {c.title}
+                      </span>
+                      <span style={{ display: 'block', font: "400 12px var(--font-body, 'Inter', sans-serif)", color: '#64748B' }}>
+                        {c.sub}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>

@@ -7,7 +7,6 @@
 // User-facing name is "Getting Started"; the route stays /dashboard (see
 // docs/getting-started-route-note.md for why the label and route differ).
 
-import React from "react";
 import { Loader2 } from "lucide-react";
 
 import { AppSidebar } from "@/components/AppSidebar";
@@ -37,21 +36,16 @@ export default function DashboardPage() {
         <MainContentWrapper>
           <AppHeader title="Getting Started" />
 
-          <div className="relative flex flex-1 flex-col overflow-hidden" style={{ background: "#FBFCFE" }}>
-            {/* Brand watercolor backdrop, fixed to the viewport bottom. */}
-            <img
-              src="/mountains-lake.png"
-              alt=""
-              aria-hidden
-              draggable={false}
-              style={{
-                position: "fixed", bottom: 0, left: 0, width: "100%", height: "70vh",
-                objectFit: "cover", objectPosition: "bottom center", opacity: 0.9,
-                zIndex: 0, pointerEvents: "none", userSelect: "none",
-              }}
-            />
-
-            <div className="relative flex min-h-0 flex-1 flex-col" style={{ zIndex: 1 }}>
+          {/* Cool-paper canvas with a faint slate-blue radial glow at
+              top-center (design: Scout home direction 1a). */}
+          <div
+            className="relative flex flex-1 flex-col overflow-hidden"
+            style={{
+              background: "#F5F6F8",
+              backgroundImage: "radial-gradient(1200px 380px at 50% -140px, rgba(74,96,168,.10), transparent)",
+            }}
+          >
+            <div className="relative flex min-h-0 flex-1 flex-col">
               <ScoutChatThread variant="page" />
             </div>
           </div>
