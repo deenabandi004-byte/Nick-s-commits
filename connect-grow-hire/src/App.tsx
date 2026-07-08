@@ -10,6 +10,7 @@ import posthog from "./lib/posthog";
 import { FirebaseAuthProvider, useFirebaseAuth } from "./contexts/FirebaseAuthContext";
 import PendingShareModal from "@/components/shares/PendingShareModal";
 import { ScoutProvider, useScout } from "./contexts/ScoutContext";
+import { ScoutChatProvider } from "./contexts/ScoutChatContext";
 import { TourProvider } from "./contexts/TourContext";
 import { HelmetProvider } from "react-helmet-async";
 import { ErrorBoundary } from "./components/ErrorBoundary";
@@ -51,6 +52,7 @@ const TermsOfService = React.lazy(() => import("./pages/TermsOfService"));
 const AccountSettings = React.lazy(() => import("./pages/AccountSettings"));
 const IntegrationsPage = React.lazy(() => import("./pages/IntegrationsPage"));
 const McpServerPage = React.lazy(() => import("./pages/McpServerPage"));
+const McpChatGptSetupPage = React.lazy(() => import("./pages/McpChatGptSetupPage"));
 const UploadListPage = React.lazy(() => import("./pages/UploadListPage"));
 const ApplicationsPage = React.lazy(() => import("./pages/ApplicationsPage"));
 const ResumePage = React.lazy(() => import("./pages/ResumePage"));
@@ -396,6 +398,7 @@ const AppRoutes: React.FC = () => {
       <Route path="/account-settings" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><AccountSettings /></Suspense></ProtectedRoute>} />
       <Route path="/integrations" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><IntegrationsPage /></Suspense></ProtectedRoute>} />
       <Route path="/mcp-server" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><McpServerPage /></Suspense></ProtectedRoute>} />
+      <Route path="/mcp-server/chatgpt" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><McpChatGptSetupPage /></Suspense></ProtectedRoute>} />
       <Route path="/upload-list" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><UploadListPage /></Suspense></ProtectedRoute>} />
       <Route path="/applications" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><ApplicationsPage /></Suspense></ProtectedRoute>} />
       <Route path="/resume" element={<ProtectedRoute><Suspense fallback={<PageLoader />}><ResumePage /></Suspense></ProtectedRoute>} />
@@ -687,18 +690,20 @@ const App: React.FC = () => {
                 <Toaster />
                 <Sonner />
                 <ScoutProvider>
-                  <TourProvider>
-                    <KeyboardShortcutHandler />
-                    <PageviewTracker />
-                    <AgentNotifierMount />
-                    <LoginNotification />
-                    <PendingShareModal />
-                    <AppRoutes />
-                    <NotOnPromo>
-                      <ScoutSidePanel />
-                      <FloatingAskScoutButton />
-                    </NotOnPromo>
-                  </TourProvider>
+                  <ScoutChatProvider>
+                    <TourProvider>
+                      <KeyboardShortcutHandler />
+                      <PageviewTracker />
+                      <AgentNotifierMount />
+                      <LoginNotification />
+                      <PendingShareModal />
+                      <AppRoutes />
+                      <NotOnPromo>
+                        <ScoutSidePanel />
+                        <FloatingAskScoutButton />
+                      </NotOnPromo>
+                    </TourProvider>
+                  </ScoutChatProvider>
                 </ScoutProvider>
               </ConditionalBackground>
             </BrowserRouter>
