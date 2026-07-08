@@ -59,6 +59,68 @@ def _upload_pdf_to_storage(user_id: str, prep_id: str, pdf_bytes: bytes) -> dict
     return {"pdf_storage_path": blob_path, "pdf_url": pdf_url}
 
 
+# A prep normally completes in about a minute; one still in-flight this long
+# after creation is orphaned (the worker is a daemon thread, so a dev-server
+# auto-reload or a deploy restart kills it mid-job with no exception handler,
+# freezing the doc at its last stage and keeping the credits). The status
+# read path reaps those: mark failed + refund once. Must stay below the
+# Scout panel's 5-minute poll timeout so the chat reports the failure
+# honestly instead of giving up.
+PREP_STALE_AFTER_SECONDS = 240
+
+
+def _is_stale_prep(prep_data: dict) -> bool:
+    """True when a prep is still non-terminal long past the normal runtime."""
+    if prep_data.get("status") in ("completed", "failed"):
+        return False
+    created_raw = prep_data.get("createdAt")
+    if not created_raw:
+        return False
+    try:
+        created = datetime.fromisoformat(str(created_raw))
+        if created.tzinfo is None:
+            created = created.replace(tzinfo=timezone.utc)
+    except (ValueError, TypeError):
+        return False
+    age = (datetime.now(timezone.utc) - created).total_seconds()
+    return age > PREP_STALE_AFTER_SECONDS
+
+
+def _maybe_reap_stale_prep(prep_ref, prep_data: dict, user_id: str) -> dict:
+    """Reap an orphaned in-flight prep: mark failed, refund once.
+
+    Returns the (possibly updated) prep dict the caller should serve. Any
+    error degrades to returning the data unchanged; the next poll retries.
+    """
+    try:
+        if not _is_stale_prep(prep_data):
+            return prep_data
+        updates = {
+            "status": "failed",
+            "stage": "failed",
+            "stageLabel": "Interrupted",
+            "error": (
+                "This prep was interrupted by a server restart and could "
+                "not finish. Your credits were refunded."
+            ),
+            "reapedAt": datetime.now(timezone.utc).isoformat(),
+            "creditsRefunded": True,
+        }
+        if not prep_data.get("creditsRefunded"):
+            refund_credits_atomic(
+                user_id, COFFEE_CHAT_CREDITS, "coffee_chat_prep_interrupted"
+            )
+        prep_ref.update(updates)
+        logger.warning(
+            "Reaped stale coffee chat prep %s for user %s (stage was %s)",
+            getattr(prep_ref, "id", "?"), user_id, prep_data.get("stage"),
+        )
+        return {**prep_data, **updates}
+    except Exception as e:
+        logger.error(f"Stale prep reap failed: {e}")
+        return prep_data
+
+
 def _update_stage(prep_ref, stage, label, pct):
     """Update processing stage for frontend progress display."""
     try:
@@ -537,6 +599,9 @@ def get_all_coffee_chat_preps():
         all_preps = []
         for prep in preps:
             prep_data = prep.to_dict()
+            # Heal orphaned in-flight preps so the library never shows a
+            # forever-spinning "Processing..." card for a dead job.
+            prep_data = _maybe_reap_stale_prep(prep.reference, prep_data, user_id)
             contact_data = prep_data.get("contactData", {})
 
             all_preps.append({
@@ -624,6 +689,7 @@ def get_coffee_chat_prep(prep_id):
             return jsonify({"error": "Prep not found"}), 404
 
         prep_data = prep_doc.to_dict()
+        prep_data = _maybe_reap_stale_prep(prep_ref, prep_data, user_id)
         prep_data["id"] = prep_id
 
         # Ensure stage fields are present for frontend
