@@ -625,6 +625,33 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
         className="px-5 py-4 flex-shrink-0"
         style={variant === 'page' ? { borderTop: '1px solid #EFF0F3', background: '#fff' } : undefined}
       >
+        {/* "Scout can" quick actions — the capability list stays reachable
+            mid-conversation as a pill row; clicking pre-fills the composer. */}
+        {variant === 'page' && (
+          <div
+            className="mb-2.5 flex gap-1.5 overflow-x-auto pb-0.5"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {CAPABILITIES.map((c) => {
+              const Icon = c.icon;
+              return (
+                <button
+                  key={c.title}
+                  type="button"
+                  onClick={() => {
+                    setInput(c.prompt);
+                    localInputRef.current?.focus();
+                  }}
+                  className="flex flex-shrink-0 items-center gap-1.5 rounded-full border bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-[#FAFBFF] hover:text-gray-800"
+                  style={{ borderColor: '#E5E7EC' }}
+                >
+                  <Icon size={13} strokeWidth={1.7} style={{ color: 'var(--accent, #4A60A8)' }} />
+                  {c.title}
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="relative">
           <input
             ref={localInputRef}
