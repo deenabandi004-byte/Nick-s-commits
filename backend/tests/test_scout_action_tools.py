@@ -170,3 +170,73 @@ def test_workflow_cta_respects_model_chip():
     helpers = [{"name": "find_jobs", "result": {"count": 5, "jobs": [], "query": "swe"}}]
     out = _svc()._enrich_workflow_ctas(result, helpers)
     assert out["cta"] is chip
+
+
+# ---------------------------------------------------------------------------
+# Consent gates: execute tools refuse workflows the user never asked for.
+# Regression for the bare "1" count reply that triggered an unrequested
+# draft AND an unrequested 30-credit meeting prep.
+# ---------------------------------------------------------------------------
+
+def _count_reply_ctx():
+    return {
+        "uid": "u1", "tier": "elite",
+        "user_message": "1",
+        "recent_user_text": "find me a software engineer at cluely \n1",
+        "last_assistant_text": "How many software engineers at Cluely should I pull?",
+    }
+
+
+@pytest.mark.unit
+def test_draft_refused_without_user_ask():
+    out = _run("draft_outreach_emails", {}, _count_reply_ctx())
+    assert out["code"] == "CONSENT_REQUIRED"
+
+
+@pytest.mark.unit
+def test_meeting_prep_refused_without_user_ask():
+    out = _run("run_meeting_prep", {"contact_name": "Yash"}, _count_reply_ctx())
+    assert out["code"] == "CONSENT_REQUIRED"
+    assert out["started"] is False
+
+
+@pytest.mark.unit
+def test_auto_apply_refused_without_user_ask():
+    out = _run("auto_apply_to_job", {"job_id": "j1"}, _count_reply_ctx())
+    assert out["code"] == "CONSENT_REQUIRED"
+
+
+@pytest.mark.unit
+def test_draft_allowed_when_user_asked():
+    from unittest.mock import patch
+    ctx = {"uid": "u1", "tier": "pro",
+           "user_message": "draft emails to them",
+           "recent_user_text": "find me 3 people at stripe \ndraft emails to them",
+           "last_assistant_text": "Found 3 people."}
+    with patch("app.services.scout.outreach_actions.draft_emails_to_contacts",
+               return_value={"drafted": [], "skipped": [], "count": 0}) as m:
+        out = _run("draft_outreach_emails", {}, ctx)
+    assert m.called
+    assert out.get("code") != "CONSENT_REQUIRED"
+
+
+@pytest.mark.unit
+def test_offer_acceptance_counts_as_consent():
+    from unittest.mock import patch
+    ctx = {"uid": "u1", "tier": "pro",
+           "user_message": "yes please",
+           "recent_user_text": "find me 3 people at stripe \nyes please",
+           "last_assistant_text": "Found 3 people. Want me to draft emails to them?"}
+    with patch("app.services.scout.outreach_actions.draft_emails_to_contacts",
+               return_value={"drafted": [], "skipped": [], "count": 0}) as m:
+        out = _run("draft_outreach_emails", {}, ctx)
+    assert m.called
+    assert out.get("code") != "CONSENT_REQUIRED"
+
+
+@pytest.mark.unit
+def test_gate_open_without_chat_context():
+    """Direct callers (tests, future API surfaces) without recent_user_text
+    are not gated; the gate protects the chat loop."""
+    from app.services.scout.tools import _user_authorized, _DRAFT_KEYWORDS
+    assert _user_authorized({"uid": "u1"}, _DRAFT_KEYWORDS) is True

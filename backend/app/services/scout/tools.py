@@ -1009,6 +1009,9 @@ async def _run_find_hiring_managers(args: Dict[str, Any], context: Dict[str, Any
     if not uid:
         return {"count": 0, "managers": [],
                 "error": "sign in required", "code": "AUTH_REQUIRED"}
+    if not _user_authorized(context, _HM_KEYWORDS):
+        return {"count": 0, "managers": [],
+                **_consent_refusal("a hiring manager search")}
     try:
         from app.services.scout.job_actions import find_hiring_managers_for_chat
         result = await asyncio.to_thread(
@@ -1031,6 +1034,8 @@ async def _run_generate_cover_letter(args: Dict[str, Any], context: Dict[str, An
     uid = context.get("uid")
     if not uid:
         return {"error": "sign in required", "code": "AUTH_REQUIRED"}
+    if not _user_authorized(context, _COVER_LETTER_KEYWORDS):
+        return _consent_refusal("a cover letter")
     try:
         from app.services.scout.job_actions import cover_letter_for_chat
         result = await cover_letter_for_chat(uid, **_job_context_args(args))
@@ -1054,6 +1059,61 @@ async def _run_tailor_resume(args: Dict[str, Any], context: Dict[str, Any]) -> D
     except Exception as e:
         print(f"[ScoutTools] tailor_resume_to_job failed: {e}")
         return {"error": "resume analysis failed", "code": "INTERNAL"}
+
+
+# ---------------------------------------------------------------------------
+# Consent gates. Execute tools spend credits or write to the user's Gmail /
+# trackers, so the ASK must come from the user, not the model: gpt-5-mini
+# once answered a bare count reply by running the pending search AND an
+# unrequested draft AND an unrequested 30-credit meeting prep. Each execute
+# tool requires one of its trigger words in the user's recent messages, or
+# an affirmation directly answering an assistant message that offered it
+# ("Want me to draft emails?" -> "yes").
+# ---------------------------------------------------------------------------
+
+_AFFIRMATION_RE = re.compile(
+    r"^(yes|yeah|yep|yup|sure|ok|okay|please do|do it|go ahead|go for it"
+    r"|sounds good|yes please|do that|please)\b",
+    re.I,
+)
+
+
+def _user_authorized(context: Dict[str, Any], keywords: tuple) -> bool:
+    """True when the user's own words ask for this workflow.
+
+    Empty recent_user_text (direct/test callers without chat context) passes:
+    the gate protects the chat loop, not the API surface.
+    """
+    recent_user = str(context.get("recent_user_text") or "")
+    if not recent_user.strip():
+        return True
+    lowered = recent_user.lower()
+    if any(k in lowered for k in keywords):
+        return True
+    last_assistant = str(context.get("last_assistant_text") or "").lower()
+    current = str(context.get("user_message") or "").strip()
+    if any(k in last_assistant for k in keywords) and _AFFIRMATION_RE.match(current):
+        return True
+    return False
+
+
+def _consent_refusal(workflow: str) -> Dict[str, Any]:
+    return {
+        "error": (
+            f"the user has not asked for {workflow} in this conversation; "
+            "do not run it - if it would help, offer it and wait for them "
+            "to say yes"
+        ),
+        "code": "CONSENT_REQUIRED",
+    }
+
+
+_DRAFT_KEYWORDS = ("draft", "email", "e-mail", "outreach", "write to",
+                   "reach out", "message them", "send", "follow up")
+_PREP_KEYWORDS = ("prep", "meeting", "call", "coffee", "interview", "meet")
+_APPLY_KEYWORDS = ("apply", "application")
+_HM_KEYWORDS = ("hiring manager", "recruiter", "hiring", "manager")
+_COVER_LETTER_KEYWORDS = ("cover letter", "coverletter", "letter")
 
 
 # A people search spends credits per contact, so the count must come from
@@ -1130,6 +1190,8 @@ async def _run_meeting_prep(args: Dict[str, Any], context: Dict[str, Any]) -> Di
     uid = context.get("uid")
     if not uid:
         return {"started": False, "error": "sign in required", "code": "AUTH_REQUIRED"}
+    if not _user_authorized(context, _PREP_KEYWORDS):
+        return {"started": False, **_consent_refusal("a meeting prep")}
     try:
         from app.services.scout.prep_actions import start_meeting_prep
         result = await asyncio.to_thread(
@@ -1152,6 +1214,9 @@ async def _run_draft_outreach(args: Dict[str, Any], context: Dict[str, Any]) -> 
     if not uid:
         return {"drafted": [], "skipped": [], "count": 0,
                 "error": "sign in required", "code": "AUTH_REQUIRED"}
+    if not _user_authorized(context, _DRAFT_KEYWORDS):
+        return {"drafted": [], "skipped": [], "count": 0,
+                **_consent_refusal("email drafts")}
     names = args.get("contact_names")
     if not isinstance(names, list):
         names = None
@@ -1259,6 +1324,8 @@ async def _run_auto_apply(args: Dict[str, Any], context: Dict[str, Any]) -> Dict
             "error": "auto-apply requires Pro or Elite",
             "code": "TIER_REQUIRED",
         }
+    if not _user_authorized(context, _APPLY_KEYWORDS):
+        return _consent_refusal("an auto-apply submission")
     job_id = str(args.get("job_id") or "").strip()
     if not job_id:
         return {"error": "job_id required", "code": "BAD_REQUEST"}

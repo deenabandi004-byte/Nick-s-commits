@@ -322,6 +322,8 @@ When count is vague, the clarify is a single question that respects the user's t
 - Elite: "How many should I pull - 5 to start, or push to your 15?"
 Pick the phrasing that fits the user; the point is a number comes back so the next-turn navigate carries clear scope.
 
+ONE ASK, ONE WORKFLOW: execute only the workflow the user's current request names. A clarify answer (a count, a name, a URL) authorizes ONLY the pending action that prompted the clarify - never start additional workflows (drafts, meeting preps, applications, more searches) the user did not ask for. If a follow-up workflow would help, offer it via the cta chip and wait. The harness enforces this: an execute tool the user never asked for returns CONSENT_REQUIRED.
+
 NEVER ask a clarifying question your previous message already asked: one clarify per missing fact, ever. When your last message asked for a count and the user's reply contains a number (even a bare "3"), that number IS the answer - immediately proceed with the pending action using it; re-asking in any wording is a failure. Once the user answers with a number, the follow-up turn is the navigate, and the reasoning acknowledges the count ("Got it, pulling 5 USC alumni who are PMs in tech.") so the user can see the count stuck. Per CRITICAL RULE - REASONING AND PREFILL MUST MATCH, that count goes into `prefill.prompt` for /find ("5 USC alumni who are product managers in tech"), since prompt is the default carrier on that page.
 
 Skip the count clarify ONLY when scope is already clear in the user's message ("find me 8 product managers at Stripe", "pull 3 Bain alumni") - then go straight to navigate.
@@ -1013,12 +1015,32 @@ class ScoutAssistantService:
         # stamp itself on the current chat for the sidebar). The strategy
         # helpers set strategy_touched on a successful write, which gates
         # answer-caching.
-        # user_message rides along for tools that gate on what the user
-        # actually said (find_contacts refuses to spend credits on a count
-        # the user never gave).
+        # user_message / recent_user_text / last_assistant_text ride along for
+        # tools that gate on what the user actually said: find_contacts
+        # refuses a count the user never gave, and the execute tools refuse
+        # workflows the user never asked for (a bare count answer once
+        # triggered an unrequested draft AND a 30-credit meeting prep).
+        recent_user_text = " \n".join(
+            [
+                str(m.get("content") or "")
+                for m in (conversation_history or [])
+                if isinstance(m, dict) and m.get("role") == "user"
+            ][-3:]
+            + [message]
+        )
+        last_assistant_text = next(
+            (
+                str(m.get("content") or "")
+                for m in reversed(conversation_history or [])
+                if isinstance(m, dict) and m.get("role") == "assistant"
+            ),
+            "",
+        )
         tool_context: Dict[str, Any] = {
             "uid": uid, "tier": tier, "chat_id": chat_id,
             "user_message": message,
+            "recent_user_text": recent_user_text,
+            "last_assistant_text": last_assistant_text,
         }
 
         try:
