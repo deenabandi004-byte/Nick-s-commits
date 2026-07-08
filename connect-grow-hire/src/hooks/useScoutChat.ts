@@ -117,6 +117,10 @@ export interface ScoutCta {
   prefill: Record<string, string>;
   credit_spending: boolean;
   credit_cost: number | null;
+  // Chat-action chip: clicking sends this text as the user's next message in
+  // the same conversation instead of navigating to `route` (which is kept as
+  // a fallback for clients that predate chat chips).
+  chat_message?: string | null;
 }
 
 /** A multi-step plan rendered inline as a checklist (Change 5). Produced when

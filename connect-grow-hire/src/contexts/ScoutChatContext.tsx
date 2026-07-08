@@ -191,6 +191,13 @@ export function ScoutChatProvider({ children }: { children: React.ReactNode }) {
 
   /** CTA chip click (Change 6): single-chip bridge to a workflow. */
   const handleCtaAction = useCallback((cta: ScoutCta) => {
+    // Chat-action chips stay in the conversation: clicking one sends the
+    // chip's message as the user's next turn (e.g. "Find people at
+    // Databricks" runs the find in chat) instead of navigating away.
+    if (cta.chat_message) {
+      sendMessage(cta.chat_message);
+      return;
+    }
     writeScoutPrefill(cta.route, cta.prefill || {});
     // A route carrying query params beyond `tab` is a deep link the
     // destination page reads from the URL; those must always navigate, even
@@ -204,7 +211,7 @@ export function ScoutChatProvider({ children }: { children: React.ReactNode }) {
       navigate(cta.route);
     }
     closePanel();
-  }, [location.pathname, location.search, navigate, closePanel]);
+  }, [location.pathname, location.search, navigate, closePanel, sendMessage]);
 
   /** Plan-checklist "Do this" click (Change 5): take a single step to its
    *  page. The step's route is the same shape as a navigate route. */

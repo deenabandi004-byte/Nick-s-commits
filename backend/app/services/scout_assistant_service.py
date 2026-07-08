@@ -2029,8 +2029,13 @@ class ScoutAssistantService:
                     }
                     return result
                 if name == "get_company_intel" and res.get("company") and not res.get("error"):
+                    # Chat-action chip: the click sends the find ask as the
+                    # user's next turn so the search runs IN the chat
+                    # (Scout clarifies the count, then find_contacts).
+                    # route+prefill stay as the fallback for older clients.
                     result["cta"] = {
                         "label": f"Find people at {res['company']}"[:60],
+                        "chat_message": f"find people at {res['company']}",
                         "route": "/find",
                         "prefill": {"prompt": f"people at {res['company']}"},
                         "credit_spending": False,
