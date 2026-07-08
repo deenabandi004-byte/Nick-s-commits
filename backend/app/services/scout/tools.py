@@ -733,9 +733,10 @@ FIND_HIRING_MANAGERS_TOOL: Dict[str, Any] = {
         "tracker. Costs 5 credits per manager found (default 3, max 5 - "
         "honor a count the user gives). Use for 'who's the hiring manager "
         "for X at Y', 'find recruiters at Stripe for the PM role'. Surface "
-        "results IN THE CHAT: name, title, and email when available. "
-        "Navigate to /find?tab=hiring-managers only for browsing the "
-        "tracker. A zero result means none were found - say so honestly. "
+        "results IN THE CHAT: name, title, and email when available. Saved "
+        "managers are browsed at /my-network/managers; navigate to "
+        "/find?tab=hiring-managers only to run a new search by hand. A zero "
+        "result means none were found - say so honestly. "
         "INSUFFICIENT_CREDITS -> state cost vs balance."
     ),
     "input_schema": {

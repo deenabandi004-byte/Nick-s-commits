@@ -122,6 +122,15 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
         "tier_required": None,
     },
     {
+        "route": "/my-network/managers",
+        "purpose": "The Hiring Managers tab of My Network: every hiring manager and recruiter the user has saved, with outreach in place.",
+        "inputs": [],
+        "required_inputs": [],
+        "send_user_here_when": "the user wants to see or manage the hiring managers or recruiters they have already saved",
+        "credit_cost": None,
+        "tier_required": None,
+    },
+    {
         "route": "/job-board",
         "purpose": "Browse job listings: a personalized ranked feed (List view) and a browse-everything gallery. Save jobs, see match scores, find the hiring manager or team for a job, and auto-apply on supported postings.",
         "inputs": ["query"],
@@ -277,7 +286,9 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
 # is how a registry change invalidates the caches without a manual flush.
 # v4: discover_companies executes multi-company discovery in chat; cached
 # navigate answers for those phrasings must not serve.
-REGISTRY_VERSION = 4
+# v5: /my-network/managers added; hiring-manager tracker aliases moved off
+# the search tab.
+REGISTRY_VERSION = 5
 
 
 # ---------------------------------------------------------------------------
@@ -301,7 +312,7 @@ ROUTE_ALIASES: Dict[str, str] = {
     "company search": "/find?tab=companies",
     "find companies": "/find?tab=companies",
     "recruiter spreadsheet": "/find?tab=hiring-managers",
-    "hiring managers": "/find?tab=hiring-managers",
+    "hiring managers": "/my-network/managers",
     "hiring manager search": "/find?tab=hiring-managers",
     "find recruiters": "/find?tab=hiring-managers",
     "email templates": "/find/templates",
@@ -339,7 +350,10 @@ ROUTE_ALIASES: Dict[str, str] = {
     "saved contacts": "/my-network/people",
     "my contacts": "/my-network/people",
     "my network": "/my-network/people",
-    "hiring manager tracker": "/find?tab=hiring-managers",
+    "hiring manager tracker": "/my-network/managers",
+    "my hiring managers": "/my-network/managers",
+    "saved hiring managers": "/my-network/managers",
+    "saved recruiters": "/my-network/managers",
     "company tracker": "/my-network/companies",
     "companies tab": "/my-network/companies",
     "saved companies": "/my-network/companies",

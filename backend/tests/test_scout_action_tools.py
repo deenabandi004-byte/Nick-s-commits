@@ -292,6 +292,16 @@ def test_prompt_advertises_discover_companies():
 
 
 @pytest.mark.unit
+def test_workflow_cta_for_hiring_managers_opens_saved_view():
+    """The chip after a hiring manager find opens My Network's Managers tab
+    (where the saved people are), not the search page."""
+    result = {"tool": "answer", "message": "found 1", "cta": None}
+    helpers = [{"name": "find_hiring_managers", "result": {"count": 1, "managers": []}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["route"] == "/my-network/managers"
+
+
+@pytest.mark.unit
 def test_workflow_cta_fallback_for_discovered_companies():
     result = {"tool": "answer", "message": "10 companies", "cta": None}
     helpers = [{"name": "discover_companies",

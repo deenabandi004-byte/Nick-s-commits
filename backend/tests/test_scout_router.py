@@ -67,7 +67,9 @@ CASES = [
     # --- Alias map cases --------------------------------------------------
     ("open coffee chat prep", _HIT, "/coffee-chat-prep", {}, True),
     ("take me to the network tracker", _HIT, "/outbox", {}, True),
-    ("go to hiring managers", _HIT, "/find?tab=hiring-managers", {}, True),
+    # Bare "hiring managers" means the saved people (My Network Managers
+    # tab), not the search form; "hiring manager search" still hits /find.
+    ("go to hiring managers", _HIT, "/my-network/managers", {}, True),
     ("pull up pricing", _HIT, "/pricing", {}, True),
 ]
 
