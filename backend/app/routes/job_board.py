@@ -5976,20 +5976,10 @@ async def generate_cover_letter_with_ai(
     # Truncate job description to prevent overly long prompts
     job_desc_truncated = job_description[:3000] if len(job_description) > 3000 else job_description
     
-    prompt = f"""SYSTEM PROMPT — End-to-End Elite Cover Letter Generator
-
-You are an expert career writer whose goal is to maximize interview conversion by producing cover letters that are:
-
-clearly human-written
-
-role-specific and company-specific
-
-grounded in how work is actually done
-
-free of generic or AI-sounding language
-
-You do not write before reasoning.
-You do not rely on marketing language or mission statements.
+    # Prompt rules distilled from the human-cover-letters skill
+    # (~/.claude/skills/human-cover-letters/SKILL.md): recruiter research on
+    # structure, paragraph openers, banned AI-tell phrases, voice, and rhythm.
+    prompt = f"""You write cover letters that read as if a sharp student or early-career professional wrote them for one specific job. Recruiters skim hundreds of AI-generated letters; yours must not smell like one. That means: specific over eloquent, evidence over adjectives, varied rhythm over polish.
 
 INPUTS
 
@@ -6001,232 +5991,50 @@ Job description: {job_desc_truncated}
 Candidate resume (JSON or text): {resume_json}
 Candidate seniority: {seniority_level}
 
-INTERNAL WORKFLOW (MANDATORY)
+BEFORE WRITING (internal, never shown)
 
-You must complete Stages 1–3 internally before producing the final output.
-Only the final cover letter text is returned.
+1. From the job description, extract what this role actually does day to day and what strong performance looks like. Ignore marketing language and mission statements.
+2. Pick the candidate's ONE strongest proof point for this role from the resume, plus one secondary angle. Do not try to cover everything.
 
-🔍 STAGE 1 — ROLE & COMPANY REALITY EXTRACTION
+STRUCTURE (3-4 short paragraphs, 250-320 words total)
 
-From the job description and general public knowledge, infer the work realities of this role.
+Paragraph 1, the hook (3-4 sentences). The first sentence must reference something specific about this company's actual work, product, or the problem this role solves, tied to how the candidate operates. Name the role and company naturally inside the paragraph, not as a form field. This paragraph must break if the company name is swapped with a competitor.
 
-Extract:
+Paragraph 2, the story. A topic sentence maps one real job requirement to the candidate's strongest proof point. Then tell it as one short story: the situation, what they did, a real constraint (deadline, ambiguity, scale, accuracy), and the result. Use ownership verbs: built, led, ran, wrote, shipped, fixed, solved.
 
-A. Operating Model
+Paragraph 3 (optional), a different dimension of fit: collaboration, domain knowledge, or how the team works. At least one sentence must reference a concrete work mechanic (team structure, feedback loop, ownership model, iteration cadence). Values words like impact or excellence do not count.
 
-How work is executed day to day
+Closing (1-2 sentences). Name the specific area the candidate would like to discuss, then a plain thanks. Confident, not deferential.
 
-Ownership level and autonomy
+BANNED (never use any of these)
 
-Pace and pressure
+Openers: "I am writing to", "I am excited to apply", "I am thrilled", "Please accept my application", "My name is".
+Buzzwords: leverage, utilize, spearhead, foster, showcase, synergy, dynamic, results-oriented, detail-oriented, highly motivated, team player, fast-paced environment, proven track record, unique blend, valuable addition, esteemed, renowned.
+Company flattery: "commitment to excellence", "reputation for innovation", "aligns with my values", "resonates with me".
+Transitions: Furthermore, Moreover, Additionally, In addition, As such, Consequently. Use "Also", "Beyond that", or no connector.
+Filler: "I am confident that", "This experience has allowed me to", "I believe that" more than once.
+Punctuation: em dashes, bullet points, parentheses, exclamation marks.
 
-Team or client interaction model
+VOICE AND RHYTHM
 
-Degree of ambiguity
+Write like a sharp student emailing a manager they respect. Contractions are fine. Vary sentence length hard: include at least two sentences under 8 words. Do not start consecutive paragraphs with "I". Paragraphs do not need to be the same length. Active voice only. Recruiters distrust flawless-but-bland prose more than specific prose with natural rhythm.
 
-B. Success Criteria
+TRUTHFULNESS (non-negotiable)
 
-What strong performance looks like in the first 3–6 months
+Never invent employers, titles, metrics, tools, or outcomes that are not in the resume. Use numbers only if they appear in the resume. A polished claim the candidate cannot defend in an interview is worse than a modest one.
 
-What outputs actually matter
+FINAL CHECK (revise until all pass)
 
-C. Risk Factors
-
-Common mistakes
-
-What underperformance looks like
-
-What the role must avoid
-
-Rules
-
-Do not copy job description language
-
-Do not use marketing or mission statements
-
-Focus on execution reality
-
-🧠 STAGE 2 — OPERATING MODEL COMPRESSION
-
-Compress Stage 1 into 3–5 operating traits.
-
-Each trait must describe how work is actually done, not values.
-
-Examples of acceptable traits:
-
-high ownership with limited direction
-
-execution under tight deadlines
-
-hypothesis-driven problem solving
-
-reliability-first engineering
-
-frequent client or user interaction
-
-These traits will act as anchors for the letter.
-
-✍️ STAGE 3 — COVER LETTER GENERATION
-
-Write a 3–4 paragraph cover letter using the operating traits as constraints.
-
-Paragraph 1 — Intentional, Company-Specific Hook
-
-OPENING CONSTRAINT
-
-Do not begin the cover letter with phrases such as:
-
-"I am writing to apply"
-
-"I am writing to express my interest"
-
-"I am excited to apply"
-
-The opening sentence must instead:
-
-Reference how work is done in this role or company
-
-Explain why this environment is a strong fit for how the candidate operates
-
-The opening should read as motivation-driven, not application-driven.
-
-Explain why this role at this company
-
-Reference how the organization operates, not just what it does
-
-This paragraph must fail if the company name is swapped with a competitor
-
-Paragraph 2 — Ownership + Evidence
-
-Highlight 2–3 concrete experiences
-
-Use ownership verbs (built, led, owned, designed, shipped)
-
-Include at least one real constraint (ambiguity, scale, deadlines, accuracy)
-
-Frame as: action → result → impact
-
-Paragraph 3 — Role Alignment via Operating Traits
-
-Align the candidate's behavior and experience to the operating traits
-
-ANALYTICAL SPIKE FRAMING
-
-When including a technical or analytical example, frame it around:
-
-how options were evaluated
-
-tradeoffs considered
-
-decisions made under constraints
-
-Do not focus solely on performance improvements or technical elegance.
-
-Include one concrete analytical or technical spike:
-
-a specific task or analysis
-
-the method used
-
-the decision or outcome it supported
-
-Avoid abstract skill claims.
-
-OPERATING MECHANICS RULE
-
-At least one sentence in the letter must reference a concrete work mechanic, such as:
-
-team structure
-
-feedback or learning loop
-
-ownership model
-
-iteration cadence
-
-decision-making process
-
-Values alone (impact, excellence, innovation) do not satisfy this requirement.
-
-Paragraph 4 — Confident Close
-
-CLOSING CONSTRAINT
-
-The closing paragraph must:
-
-Signal readiness to contribute
-
-Invite a conversation about impact or fit
-
-Avoid phrases that only express gratitude or excitement
-
-The tone should be confident and forward-looking, not deferential.
-
-Forward-looking
-
-Invites conversation
-
-No over-gratitude or insecurity
-
-✂️ STYLE CONSTRAINTS (ANTI-AI, STRICT)
-
-Do NOT use:
-
-em dashes or hyphens
-
-parentheses
-
-bullet points
-
-overly balanced or mirrored sentences
-
-Prefer:
-
-commas and periods
-
-natural sentence variation
-
-clear, direct language
-
-mild repetition if it improves clarity
-
-The writing should resemble a strong, thoughtful student or early-career professional, not optimized AI prose.
-
-✅ FINAL QUALITY CHECK (MANDATORY)
-
-Before returning the letter, verify:
-
-At least two company-specific operating references
-
-At least one concrete analytical or technical detail
-
-At least two ownership verbs
-
-Language matches how work is done in this role
-
-HARD SWAP TEST
-
-Replace the company name with a direct competitor and reread the letter.
-
-If the letter still reads naturally without revision, it fails.
-
-Revise until at least one paragraph becomes inaccurate or awkward when swapped.
-
-No AI punctuation or stylistic tells
-
-INEVITABILITY CHECK
-
-After writing, ask:
-"Does this letter make it clear why this candidate belongs in this environment specifically?"
-
-If the answer is no, revise to strengthen operating-model alignment.
-
-If any condition fails, revise.
+1. 250-320 words, 3-4 paragraphs.
+2. Swap test: replace the company with a competitor; at least one paragraph must become wrong or awkward.
+3. Every adjective about the candidate is backed by a concrete example.
+4. Zero banned phrases. No metronome rhythm: sentence lengths visibly vary.
+5. Read-aloud test: nothing the candidate would never say out loud to a manager.
+6. Every fact traceable to the resume.
 
 FINAL OUTPUT
 
-Return only the finalized cover letter text.
-No explanations. No internal reasoning. No formatting notes.
+Return only the finalized cover letter text. No explanations, no formatting notes.
 Include a proper greeting (Dear [Hiring Manager/Team]) and closing with signature (Sincerely, {user_name})."""
 
     # Use fresh OpenAI client per request to avoid connection pool issues
@@ -6257,11 +6065,11 @@ Include a proper greeting (Dear [Hiring Manager/Team]) and closing with signatur
             api_call = openai_client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are an expert cover letter writer whose goal is to maximize interview conversion. Return only the finalized cover letter text, with no explanations or metadata."},
+                    {"role": "system", "content": "You write short, specific, human-sounding cover letters that a recruiter would never flag as AI-generated. Return only the finalized cover letter text, with no explanations or metadata."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=0.7,  # Reduced from 0.8 for slightly faster, more deterministic responses
-                max_tokens=1200,  # Reduced from 2000 (cover letters are typically 400-600 words)
+                max_tokens=700,  # Target letter is 250-320 words plus greeting/signature
                 timeout=timeout,
             )
             
@@ -6276,7 +6084,13 @@ Include a proper greeting (Dear [Hiring Manager/Team]) and closing with signatur
                 content = re.sub(r"```[a-z]*\n?", "", content)
                 content = re.sub(r"\n?```", "", content)
                 content = content.strip()
-            
+
+            # Hard guarantee: no em dash ever ships in a cover letter (the
+            # prompt bans them, but models leak them).
+            from app.utils.em_dash import strip_em_dashes
+            content = strip_em_dashes(content)
+
+
             # Ensure proper signature is included if name is available
             if user_name and not content.lower().endswith(user_name.lower()):
                 # Check if there's already a "Sincerely" or similar closing

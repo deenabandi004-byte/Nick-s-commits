@@ -77,6 +77,35 @@ export const useFirebaseAuth = () => {
   return context;
 };
 
+// Stale-while-revalidate auth cache. We persist the last fully-loaded user
+// profile per-uid so that on the next sign-in (or page load) we can hydrate the
+// app instantly from cache and render the dashboard, instead of flashing a
+// full-screen "Loading Offerloop" card for the duration of the Firestore
+// getDoc. The real profile is always re-fetched right after and merged in, so a
+// slightly stale cached value (e.g. credits) self-corrects within a moment.
+const authHintKey = (uid: string) => `offerloop_auth_hint_${uid}`;
+
+const readAuthHint = (uid: string): User | null => {
+  try {
+    const raw = localStorage.getItem(authHintKey(uid));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as User;
+    // Only trust the cache to skip the loader for users we KNOW are onboarded.
+    // For anyone mid-onboarding we fall back to the blocking fetch so we never
+    // flash the dashboard to a user who should be on /onboarding.
+    if (!parsed || parsed.uid !== uid || parsed.needsOnboarding) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const writeAuthHint = (u: User) => {
+  try {
+    localStorage.setItem(authHintKey(u.uid), JSON.stringify(u));
+  } catch {}
+};
+
 export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -105,6 +134,16 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
             // refresh for the same user must not re-fetch the doc or churn state.
             if (lastLoadedUidRef.current !== firebaseUser.uid) {
               lastLoadedUidRef.current = firebaseUser.uid;
+              // Optimistic hydrate: if we have a cached profile for this uid and
+              // know they're onboarded, render the app immediately from cache so
+              // the dashboard appears with no white loader flash. loadUserData
+              // below still runs and merges the fresh profile in.
+              const hint = readAuthHint(firebaseUser.uid);
+              if (hint) {
+                console.log("🔐 [AUTH CONTEXT] Optimistic hydrate from cache");
+                setUser(hint);
+                setIsLoading(false);
+              }
               console.log("[AUTH CONTEXT] Loading user data");
               await loadUserData(firebaseUser);
               console.log("🔐 [AUTH CONTEXT] User data loaded");
@@ -196,6 +235,8 @@ export const FirebaseAuthProvider: React.FC<React.PropsWithChildren> = ({ childr
           careerTrack: d.careerTrack || (d as any).goals?.careerTrack || (d as any).professionalInfo?.careerTrack,
         };
         setUser(userData);
+        // Cache the fresh profile so the next sign-in can hydrate instantly.
+        writeAuthHint(userData);
         // Identify user after data is loaded
         identifyUser(userData, d);
       } else {

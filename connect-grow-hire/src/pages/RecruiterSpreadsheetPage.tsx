@@ -18,15 +18,15 @@ import { ProGate } from "@/components/ProGate";
 import { apiService, type Recruiter, type FeedJob } from "@/services/api";
 import { firebaseApi, type Recruiter as FirebaseRecruiter } from "../services/firebaseApi";
 import {
-  Users, Link, CheckCircle, ArrowUp,
+  Link, CheckCircle, ArrowUp,
   ArrowRight, Loader2, Upload, ChevronDown, ChevronUp,
-  Mail, Inbox, Linkedin
+  Mail, Inbox, Linkedin, Lock, Send, Info,
+  Sparkles, Table2, ChevronRight
 } from "lucide-react";
-import { ResultActionButton } from "@/components/find/ResultActionButton";
 import { SearchPromptBox } from "@/components/find/SearchPromptBox";
-import { SearchModeSelector } from "@/components/find/SearchModeSelector";
 import { SendConfirmDialog } from "@/components/SendConfirmDialog";
-import { type OutreachMode, getDefaultOutreachMode, canUseOutreachMode } from "@/utils/featureAccess";
+import { canUseOutreachMode } from "@/utils/featureAccess";
+import { UpgradeModal } from "@/components/gates/UpgradeModal";
 import {
   getCompanyLogoUrl, getRecommendedCompanies,
   type RecommendedCompany, type UserContext, isContextEmpty,
@@ -49,6 +49,20 @@ function locationToText(loc: unknown): string {
   }
   return String(loc);
 }
+
+// Rotating status lines shown under the action buttons while drafting/sending.
+const DRAFT_PROGRESS_STEPS = [
+  "Reading your profile",
+  "Finding what you have in common with each person",
+  "Writing personalized emails",
+  "Placing drafts in your Gmail",
+];
+const SEND_PROGRESS_STEPS = [
+  "Reading your profile",
+  "Finding what you have in common with each person",
+  "Writing personalized emails",
+  "Sending from your Gmail",
+];
 
 const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: boolean }> = ({ embedded = false, isDevPreview = false }) => {
   const { user: authUser } = useFirebaseAuth();
@@ -163,19 +177,31 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hmDemoActive]);
 
-  // Outreach mode (preview / draft / send), same contract as the People tab.
-  // Backend re-validates against tier; this drives the UI. Free lands on
-  // preview, Pro and Elite on draft.
   const userTier: "free" | "pro" | "elite" =
     user?.tier === "pro" || user?.tier === "elite" ? user.tier : "free";
-  const [outreachMode, setOutreachMode] = useState<OutreachMode>(() => getDefaultOutreachMode(userTier));
+  // Outreach is decoupled from search: search returns managers (preview), then
+  // the user clicks Draft Outreach / Send Emails to act on ALL of them.
+  const [draftingAll, setDraftingAll] = useState(false);
+  const [sendingAll, setSendingAll] = useState(false);
+  // Hard confirm gate shown before a batch send (send is irreversible).
+  const [showSendAllConfirm, setShowSendAllConfirm] = useState(false);
+  // Upgrade/trial prompt shown when a locked outreach action is clicked.
+  const [upgradeGate, setUpgradeGate] = useState<
+    { feature: string; label: string; requiredTier: 'pro' | 'elite'; reason: string } | null
+  >(null);
+  // Hover state for the Draft Emails info tooltip.
+  const [showDraftInfo, setShowDraftInfo] = useState(false);
+  // Rotating progress step shown under the buttons while drafting/sending.
+  const [progressStep, setProgressStep] = useState(0);
   useEffect(() => {
-    if (!canUseOutreachMode(userTier, outreachMode)) {
-      setOutreachMode(getDefaultOutreachMode(userTier));
-    }
-  }, [userTier, outreachMode]);
-  // Hard confirm gate shown before any send (send is irreversible).
-  const [showSendConfirm, setShowSendConfirm] = useState(false);
+    if (!draftingAll && !sendingAll) { setProgressStep(0); return; }
+    const steps = sendingAll ? SEND_PROGRESS_STEPS : DRAFT_PROGRESS_STEPS;
+    setProgressStep(0);
+    const id = setInterval(() => {
+      setProgressStep((s) => Math.min(s + 1, steps.length - 1));
+    }, 2400);
+    return () => clearInterval(id);
+  }, [draftingAll, sendingAll]);
 
 
   // Ref for original button to track visibility
@@ -336,21 +362,133 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
   const hasValidInput = jobPostingUrl.trim() || jobDescription.trim();
   const canSearch = savedResumeUrl && hasValidInput && !isSearching;
 
+  // Create Gmail drafts for any found manager that doesn't have one yet, merging
+  // subject/body/draftId back onto foundManagers (matched by email). Returns the
+  // merged array, or null on failure.
+  const ensureDraftsForAll = async (): Promise<any[] | null> => {
+    const toDraft = foundManagers.filter(
+      (m: any) => !m.demo && !(m.gmailDraftId || m.emailSubject || m.emailBody) && m.email
+    );
+    if (toDraft.length === 0) return foundManagers;
+
+    const contacts = toDraft.map((m: any) => ({
+      Name: m.name,
+      Email: m.email,
+      Company: m.company,
+      Title: m.title,
+    }));
+    const res = await apiService.generateAndDraftEmails({ contacts });
+    if (!res || (res as any).error) {
+      toast({
+        title: 'Couldn’t create drafts',
+        description: (res as any)?.message || (res as any)?.error || 'Reconnect your Gmail account and try again.',
+        variant: 'destructive',
+      });
+      return null;
+    }
+
+    const byEmail = new Map<string, any>();
+    ((res as any).drafts || []).forEach((d: any) => {
+      if (d?.to) byEmail.set(String(d.to).toLowerCase(), d);
+    });
+    const merged = foundManagers.map((m: any) => {
+      const key = String(m.email || '').toLowerCase();
+      const d = key ? byEmail.get(key) : undefined;
+      if (!d) return m;
+      return {
+        ...m,
+        gmailDraftId: d.draftId ?? m.gmailDraftId,
+        gmailDraftUrl: d.gmailUrl ?? m.gmailDraftUrl,
+        emailSubject: d.subject ?? m.emailSubject,
+        emailBody: d.body ?? m.emailBody,
+      };
+    });
+    setFoundManagers(merged);
+    return merged;
+  };
+
+  // Draft Outreach button: draft personalized emails to every found manager.
+  const handleDraftAll = async () => {
+    if (!canUseOutreachMode(userTier, 'draft')) {
+      setUpgradeGate({
+        feature: 'bulkDrafting',
+        label: 'Draft Outreach',
+        requiredTier: 'pro',
+        reason: 'Draft a personalized email to every hiring manager you find — in one click.',
+      });
+      return;
+    }
+    if (foundManagers.length === 0) return;
+    setDraftingAll(true);
+    try {
+      const merged = await ensureDraftsForAll();
+      if (merged) {
+        const drafted = merged.filter((m: any) => m.gmailDraftId || m.emailSubject).length;
+        toast({ title: 'Drafts ready', description: `${drafted} draft${drafted === 1 ? '' : 's'} created in your Gmail.` });
+      }
+    } catch (err: any) {
+      console.error('[DraftAll] failed', err);
+      toast({ title: 'Couldn’t create drafts', description: err?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setDraftingAll(false);
+    }
+  };
+
+  // Send Emails button: draft (if needed) then send to every found manager.
+  const handleSendAll = async (confirmed = false) => {
+    if (!canUseOutreachMode(userTier, 'send')) {
+      setUpgradeGate({
+        feature: 'prioritySend',
+        label: 'Send Emails',
+        requiredTier: 'elite',
+        reason: 'Send personalized emails to every hiring manager you find — automatically.',
+      });
+      return;
+    }
+    if (foundManagers.length === 0) return;
+    if (!confirmed) {
+      setShowSendAllConfirm(true);
+      return;
+    }
+    setSendingAll(true);
+    try {
+      const merged = await ensureDraftsForAll();
+      if (!merged) return;
+      const draftIds = merged.map((m: any) => m.gmailDraftId).filter(Boolean);
+      if (draftIds.length === 0) {
+        toast({ description: 'No drafts available to send.' });
+        return;
+      }
+      let sent = 0;
+      for (const id of draftIds) {
+        try {
+          const r = await apiService.sendDraft(id);
+          if (r?.success || r?.error === 'draft_not_found') sent++;
+        } catch (e) {
+          console.error('[SendAll] send failed', e);
+        }
+      }
+      setFoundManagers((prev) => prev.map((m: any) => (m.gmailDraftId ? { ...m, emailSent: true } : m)));
+      toast({
+        title: sent > 0 ? 'Emails sent' : 'Send failed',
+        description: `${sent} of ${draftIds.length} sent from your Gmail.`,
+        variant: sent > 0 ? undefined : 'destructive',
+      });
+    } catch (err: any) {
+      console.error('[SendAll] failed', err);
+      toast({ title: 'Send failed', description: err?.message || 'Please try again.', variant: 'destructive' });
+    } finally {
+      setSendingAll(false);
+    }
+  };
+
   // Handle search
-  const handleFindHiringManagers = async (confirmedSend = false) => {
+  const handleFindHiringManagers = async () => {
     // Hard short-circuit while the tour's demo is active on this surface.
     // Catches button click, form submit, and the chip-driven pendingAutoSearch
     // path with a single guard. No API call fires.
     if (hmDemoActive) return;
     if (!canSearch || !user) return;
-    // Send is irreversible: gate it behind the hard confirm dialog. The dialog's
-    // confirm handler re-invokes this with confirmedSend=true. This also covers
-    // the job-board card auto-search path, which calls this same function.
-    // Strict === true so a stray click-event argument cannot bypass the gate.
-    if (outreachMode === "send" && confirmedSend !== true) {
-      setShowSendConfirm(true);
-      return;
-    }
     setIsSearching(true);
     setProgress(0);
     setHmSuggestions([]);
@@ -430,7 +568,7 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
         location: locationValue,
         jobUrl: jobPostingUrl || undefined,
         maxResults: estimatedManagers,
-        mode: outreachMode,
+        mode: 'preview',
       });
 
       console.log('🔍 API Response:', JSON.stringify(response, null, 2));
@@ -542,21 +680,39 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
             return recruiter;
           });
 
-          // Build the result-card display list from every found manager (not
-          // just the deduped ones) so the cards mirror the People result view.
+          // Look up existing recruiters up front so we can both (a) split the
+          // result cards into "new" vs "already in your inbox" — mirroring the
+          // People new/already-saved split — and (b) skip duplicate writes below.
+          const existingRecruiters = await firebaseApi.getRecruiters(user.uid);
+          const existingEmails = new Set(existingRecruiters.map(r => (r.email || '').toLowerCase()).filter(Boolean));
+          const existingLinkedIns = new Set(existingRecruiters.map(r => r.linkedinUrl).filter(Boolean));
+
+          // Build the result-card display list from every found manager so the
+          // cards mirror the People result view, tagging which are already saved.
           const managerCards = response.hiringManagers.map((manager: any) => {
-            const managerEmail = manager.Email || manager.email || manager.WorkEmail || manager.work_email || '';
+            // The backend sets Email to the literal string "Not available" when no
+            // email resolved, and Title can come back empty or "unknown". Treat
+            // both as absent so the card never shows a fake email or bogus title.
+            const rawEmail = (manager.Email || manager.email || manager.WorkEmail || manager.work_email || '').trim();
+            const managerEmail = rawEmail.toLowerCase() === 'not available' ? '' : rawEmail;
+            const rawTitle = (manager.Title || manager.title || manager.jobTitle || manager.job_title || '').trim();
+            const managerTitle = rawTitle.toLowerCase() === 'unknown' ? '' : rawTitle;
             const key = managerEmail.toLowerCase();
             const draftInfo = key ? draftMap.get(key) : undefined;
             const emailInfo = key ? emailMap.get(key) : undefined;
             const sentInfo = key ? sentMap.get(key) : undefined;
+            const linkedinUrl = manager.LinkedIn || manager.linkedin || manager.linkedinUrl || manager.linkedin_url || '';
             const fullName = `${manager.FirstName || manager.firstName || manager.first_name || ''} ${manager.LastName || manager.lastName || manager.last_name || ''}`.trim();
+            const alreadySaved = !!((key && existingEmails.has(key)) || (linkedinUrl && existingLinkedIns.has(linkedinUrl)));
             return {
               name: fullName || managerEmail || 'Hiring manager',
-              title: manager.Title || manager.title || manager.jobTitle || manager.job_title || '',
+              title: managerTitle,
               company: manager.Company || manager.company || companyName,
               email: managerEmail,
-              linkedin: manager.LinkedIn || manager.linkedin || manager.linkedinUrl || manager.linkedin_url || '',
+              linkedin: linkedinUrl,
+              // "Why this person" line for the sparkle row, mirroring People.
+              briefing: jobTitleValue ? `Hiring for ${jobTitleValue}` : '',
+              alreadySaved,
               gmailDraftUrl: draftInfo?.draft_url || '',
               gmailDraftId: draftInfo?.draft_id || '',
               emailSubject: emailInfo?.subject || '',
@@ -567,13 +723,8 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
           console.log('📋 Converted to Firebase format:', JSON.stringify(firebaseRecruiters, null, 2));
 
-          // Check for duplicates before saving
-          const existingRecruiters = await firebaseApi.getRecruiters(user.uid);
-          const existingEmails = new Set(existingRecruiters.map(r => r.email).filter(Boolean));
-          const existingLinkedIns = new Set(existingRecruiters.map(r => r.linkedinUrl).filter(Boolean));
-
           const newRecruiters = firebaseRecruiters.filter(r => {
-            const hasEmail = r.email && existingEmails.has(r.email);
+            const hasEmail = r.email && existingEmails.has((r.email || '').toLowerCase());
             const hasLinkedIn = r.linkedinUrl && existingLinkedIns.has(r.linkedinUrl);
             return !hasEmail && !hasLinkedIn;
           });
@@ -695,25 +846,16 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
 
                       {/* Job URL input — shared search-box shell (matches Find People) */}
                       <div style={{ marginTop: 20, marginBottom: 16 }}>
-                        {/* Outreach mode picker, same component and contract as
-                            the People tab. Governs both entry points (paste-URL
-                            here and job-board card auto-search). */}
-                        <div style={{ marginBottom: 10, display: 'flex', justifyContent: 'flex-start' }}>
-                          <SearchModeSelector
-                            tier={userTier}
-                            value={outreachMode}
-                            onChange={setOutreachMode}
-                            disabled={isSearching}
-                          />
-                        </div>
+                        {/* Batch send confirm. Fires from the Send Emails
+                            result-action button; send is irreversible. */}
                         <SendConfirmDialog
-                          open={showSendConfirm}
-                          count={estimatedManagers}
-                          loading={isSearching}
-                          onCancel={() => setShowSendConfirm(false)}
+                          open={showSendAllConfirm}
+                          count={foundManagers.length}
+                          loading={sendingAll}
+                          onCancel={() => setShowSendAllConfirm(false)}
                           onConfirm={() => {
-                            setShowSendConfirm(false);
-                            handleFindHiringManagers(true);
+                            setShowSendAllConfirm(false);
+                            handleSendAll(true);
                           }}
                         />
                         <SearchPromptBox
@@ -756,85 +898,227 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                         </SearchPromptBox>
                       </div>
 
-                      {/* Found hiring managers, rendered as Find-People-style
-                          result cards. Mirrors the People result view: an
-                          identity row with a per-card Gmail action, plus a
-                          shared footer trio (Open Gmail drafts / See in inbox /
-                          See in spreadsheet). */}
+                      {/* Inline search progress — thin bar, mirrors the People
+                          tab. Replaces the old blocking "Finding..." modal. */}
+                      {isSearching && (
+                        <div style={{ marginTop: 4, marginBottom: 16 }}>
+                          <div style={{ height: 2, background: '#E2E8F0', borderRadius: 100, overflow: 'hidden' }}>
+                            <div style={{ width: `${progress}%`, height: '100%', background: 'var(--accent, #4A60A8)', transition: 'width .3s ease' }} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Found hiring managers, rendered with the exact Find-People
+                          success UI: a serif headline, a NEW · READY FOR OUTREACH
+                          group of cards, an ALREADY IN YOUR INBOX group, and a
+                          WHERE EVERYTHING LIVES footer. */}
                       {foundManagers.length > 0 && (
-                        <div ref={resultsRef} style={{ marginTop: 8, marginBottom: 16 }}>
-                          {foundManagers.map((m: any, i: number) => {
-                            const initials = (m.name || '').split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
-                            const linkedinHref = m.linkedin
-                              ? (m.linkedin.startsWith('http') ? m.linkedin : `https://${m.linkedin}`)
-                              : '';
-                            const gmailHref = m.gmailDraftUrl || 'https://mail.google.com/mail/u/0/#drafts';
+                        <div ref={resultsRef} style={{ marginTop: 24, paddingTop: 24, borderTop: '0.5px solid #EEF2F8', marginBottom: 16 }}>
+                          {/* Success header — just the centered count pill. */}
+                          {(() => {
+                            const total = foundManagers.length;
                             return (
-                              <div
-                                key={i}
-                                style={{
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  padding: '11px 13px',
-                                  background: '#fff',
-                                  border: '0.5px solid #E2E8F0',
-                                  borderRadius: 3,
-                                  marginBottom: 6,
-                                  transition: 'all .12s',
-                                }}
-                              >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: 18 }}>
+                                <div style={{
+                                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                                  padding: '5px 12px',
+                                  background: '#DCFCE7', color: '#15803D',
+                                  border: '0.5px solid #BBF7D0', borderRadius: 100,
+                                  fontSize: 12, fontWeight: 600,
+                                }}>
+                                  <CheckCircle style={{ width: 13, height: 13 }} />
+                                  {total} {total === 1 ? 'person' : 'people'} found
+                                </div>
+                              </div>
+                            );
+                          })()}
+                          {/* Outreach actions — act on ALL found managers. Locked
+                              buttons stay clickable so the click surfaces the
+                              upgrade/trial prompt. Hidden during the tour demo. */}
+                          {!foundManagers.some((m: any) => m.demo) && (() => {
+                            const canDraftTier = canUseOutreachMode(userTier, 'draft');
+                            const canSendTier = canUseOutreachMode(userTier, 'send');
+                            const busy = draftingAll || sendingAll;
+                            const allSent = foundManagers.every((m: any) => m.emailSent);
+                            // Count every found person you can still draft to (not just
+                            // the brand-new ones), so 2 people found reads "Draft 2 emails"
+                            // even when both were already in your inbox.
+                            const newCount = foundManagers.filter((m: any) => !m.demo && !m.emailSent).length;
+                            const draftShadow = '0 1px 2px rgba(74,96,168,0.18), 0 8px 20px rgba(74,96,168,0.26)';
+                            const draftShadowHover = '0 2px 4px rgba(74,96,168,0.22), 0 12px 26px rgba(74,96,168,0.34)';
+                            return (
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginTop: 4, marginBottom: 18 }}>
+                                {/* Draft Emails — primary, dark-blue hero gradient */}
+                                <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                  <button
+                                    type="button"
+                                    disabled={busy}
+                                    onClick={handleDraftAll}
+                                    style={{
+                                      display: 'inline-flex', alignItems: 'center', gap: 9,
+                                      padding: '13px 28px', borderRadius: 10,
+                                      background: 'var(--accent, #4A60A8)',
+                                      color: '#fff', border: 'none', fontSize: 15, fontWeight: 600,
+                                      cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.75 : 1,
+                                      boxShadow: draftShadow,
+                                      transition: 'transform .12s, box-shadow .12s, opacity .12s',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                      if (busy) return;
+                                      (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)';
+                                      (e.currentTarget as HTMLButtonElement).style.boxShadow = draftShadowHover;
+                                    }}
+                                    onMouseLeave={(e) => {
+                                      (e.currentTarget as HTMLButtonElement).style.transform = 'none';
+                                      (e.currentTarget as HTMLButtonElement).style.boxShadow = draftShadow;
+                                    }}
+                                  >
+                                    {draftingAll
+                                      ? <Loader2 style={{ width: 17, height: 17 }} className="animate-spin" />
+                                      : <Mail style={{ width: 17, height: 17 }} />}
+                                    Draft {newCount} {newCount === 1 ? 'email' : 'emails'}
+                                    {!canDraftTier && <Lock style={{ width: 13, height: 13 }} />}
+                                  </button>
+
+                                  {/* Info tooltip — explains what Draft Emails does */}
+                                  <span
+                                    style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}
+                                    onMouseEnter={() => setShowDraftInfo(true)}
+                                    onMouseLeave={() => setShowDraftInfo(false)}
+                                  >
+                                    <Info style={{ width: 18, height: 18, color: '#94A3B8', cursor: 'help' }} />
+                                    {showDraftInfo && (
+                                      <div style={{
+                                        position: 'absolute', bottom: 'calc(100% + 10px)', left: '50%', transform: 'translateX(-50%)',
+                                        width: 244, padding: '10px 13px',
+                                        background: '#0F172A', color: '#F8FAFC',
+                                        fontSize: 12.5, lineHeight: 1.45, fontWeight: 400,
+                                        borderRadius: 9, boxShadow: '0 10px 28px rgba(15,23,42,0.30)',
+                                        zIndex: 60, textAlign: 'left', pointerEvents: 'none',
+                                      }}>
+                                        Writes a personalized email to each person using your selected email template — Networking by default.
+                                        <span style={{
+                                          position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
+                                          width: 0, height: 0,
+                                          borderLeft: '6px solid transparent', borderRight: '6px solid transparent',
+                                          borderTop: '6px solid #0F172A',
+                                        }} />
+                                      </div>
+                                    )}
+                                  </span>
+                                </div>
+
+                                {/* Send Emails — bigger, secondary */}
+                                <button
+                                  type="button"
+                                  disabled={busy || allSent}
+                                  onClick={() => handleSendAll(false)}
+                                  style={{
+                                    display: 'inline-flex', alignItems: 'center', gap: 9,
+                                    padding: '13px 28px', borderRadius: 10,
+                                    background: '#fff', color: '#0F172A',
+                                    border: '1px solid #E2E8F0', fontSize: 15, fontWeight: 600,
+                                    cursor: (busy || allSent) ? 'default' : 'pointer',
+                                    opacity: (busy || allSent) ? 0.6 : 1,
+                                    boxShadow: '0 1px 2px rgba(15,37,69,0.05)',
+                                    transition: 'all .12s',
+                                  }}
+                                >
+                                  {sendingAll
+                                    ? <Loader2 style={{ width: 17, height: 17 }} className="animate-spin" />
+                                    : <Send style={{ width: 17, height: 17 }} />}
+                                  {allSent ? 'Emails sent' : 'Send emails'}
+                                  {!canSendTier && <Lock style={{ width: 13, height: 13 }} />}
+                                </button>
+                              </div>
+                            );
+                          })()}
+
+                          {/* Live progress — narrates drafting/sending work. */}
+                          {(draftingAll || sendingAll) && (() => {
+                            const steps = sendingAll ? SEND_PROGRESS_STEPS : DRAFT_PROGRESS_STEPS;
+                            const idx = Math.min(progressStep, steps.length - 1);
+                            return (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, marginTop: -4, marginBottom: 16 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: '#334155' }}>
+                                  <Loader2 className="animate-spin" style={{ width: 14, height: 14, color: '#102E5C' }} />
+                                  <span>{steps[idx]}…</span>
+                                </div>
+                                <div style={{ width: 240, height: 3, background: '#E2E8F0', borderRadius: 100, overflow: 'hidden' }}>
                                   <div style={{
-                                    width: 34,
-                                    height: 34,
-                                    borderRadius: '50%',
-                                    background: 'rgba(74,96,168,0.10)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    color: '#0F172A',
-                                    flexShrink: 0,
-                                  }}>
+                                    width: `${((idx + 1) / steps.length) * 100}%`,
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, #102E5C, #2563EB)',
+                                    borderRadius: 100,
+                                    transition: 'width .7s ease',
+                                  }} />
+                                </div>
+                              </div>
+                            );
+                          })()}
+
+                          {/* NEW · READY FOR OUTREACH — the fresh managers */}
+                          {foundManagers.some((m: any) => !m.alreadySaved) && (
+                            <div style={{
+                              fontSize: 11, fontWeight: 700, letterSpacing: '0.08em',
+                              color: 'var(--accent, #4A60A8)', textTransform: 'uppercase',
+                              marginBottom: 12,
+                            }}>
+                              New · Ready for outreach
+                            </div>
+                          )}
+                          {foundManagers.filter((m: any) => !m.alreadySaved).map((m: any, i: number) => {
+                            const initials = (m.name || '').split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+                            const linkedinHref = m.linkedin ? (m.linkedin.startsWith('http') ? m.linkedin : `https://${m.linkedin}`) : '';
+                            const gmailHref = m.gmailDraftUrl || 'https://mail.google.com/mail/u/0/#drafts';
+                            const hasDraft = !!(m.gmailDraftUrl || m.gmailDraftId);
+                            const avatarColors = ['#5965D8', '#8B5CF6', '#0D9488', '#D97706', '#DB2777', '#2563EB'];
+                            const avatarBg = avatarColors[i % avatarColors.length];
+                            return (
+                              <div key={i} style={{ display: 'flex', flexDirection: 'column', padding: '16px 18px', background: '#FFFFFF', border: '1px solid #ECEEF3', borderRadius: 16, marginBottom: 10, boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                                  <div style={{ width: 42, height: 42, borderRadius: '50%', background: avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#FFFFFF', flexShrink: 0 }}>
                                     {initials}
                                   </div>
                                   <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 13, fontWeight: 500, color: '#0F172A' }}>{m.name}</div>
-                                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>
-                                      {[m.title, m.company].filter(Boolean).join(' at ')}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                                      <span style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
+                                      <span style={{ padding: '2px 9px', borderRadius: 100, background: 'rgba(74,96,168,0.12)', color: 'var(--accent, #4A60A8)', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>Hiring manager</span>
                                     </div>
-                                    {m.email && (
-                                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 2 }}>{m.email}</div>
-                                    )}
-                                    {m.emailSubject && (
-                                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3, lineHeight: 1.3 }}>{m.emailSubject}</div>
+                                    <div style={{ fontSize: 13, color: '#64748B', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {m.title}
+                                      {m.title && m.company && <span style={{ color: '#CBD5E1' }}> · </span>}
+                                      {m.company && <span style={{ color: '#334155', fontWeight: 600 }}>{m.company}</span>}
+                                      {(m.title || m.company) && <span style={{ color: '#CBD5E1' }}> · </span>}
+                                      {m.email
+                                        ? <span style={{ color: '#94A3B8' }}>{m.email}</span>
+                                        : <span style={{ color: '#B45309', fontStyle: 'italic' }}>No email found</span>}
+                                    </div>
+                                    {m.briefing && (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, minWidth: 0 }}>
+                                        <Sparkles style={{ width: 13, height: 13, color: 'var(--accent, #4A60A8)', flexShrink: 0 }} />
+                                        <span style={{ fontSize: 13, color: '#64748B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.briefing}</span>
+                                      </div>
                                     )}
                                   </div>
-                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6, flexShrink: 0 }}>
-                                    <ResultActionButton
-                                      variant="secondary"
-                                      size="sm"
-                                      className="text-st-accent hover:text-st-accent font-semibold"
-                                      href={m.demo ? undefined : gmailHref}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      onClick={(e: React.MouseEvent) => {
-                                        if (m.demo) e.preventDefault();
-                                      }}
-                                    >
-                                      <Mail style={{ width: 13, height: 13 }} /> View in Gmail
-                                    </ResultActionButton>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, alignSelf: 'center' }}>
                                     {linkedinHref && (
-                                      <ResultActionButton
-                                        variant="secondary"
-                                        size="sm"
-                                        href={linkedinHref}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                      >
-                                        <Linkedin style={{ width: 14, height: 14 }} /> LinkedIn
-                                      </ResultActionButton>
+                                      <a href={linkedinHref} target="_blank" rel="noopener noreferrer" title="View LinkedIn profile" aria-label="View LinkedIn profile" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 38, height: 38, borderRadius: 9, background: '#fff', border: '1px solid #E2E8F0', color: '#0A66C2', flexShrink: 0 }}>
+                                        <Linkedin style={{ width: 16, height: 16 }} />
+                                      </a>
+                                    )}
+                                    {m.emailSent ? (
+                                      <a href="https://mail.google.com/mail/u/0/#sent" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 38, padding: '0 14px', borderRadius: 9, background: '#fff', border: '1px solid #BBF7D0', color: '#15803D', fontSize: 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                        <CheckCircle style={{ width: 15, height: 15 }} /> Sent
+                                      </a>
+                                    ) : hasDraft ? (
+                                      <a href={m.demo ? undefined : gmailHref} target="_blank" rel="noopener noreferrer" onClick={(e: React.MouseEvent) => { if (m.demo) e.preventDefault(); }} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 38, padding: '0 16px', borderRadius: 9, background: '#fff', border: '1px solid #C7CCF0', color: 'var(--accent, #4A60A8)', fontSize: 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                        <Mail style={{ width: 15, height: 15 }} /> View draft
+                                      </a>
+                                    ) : (
+                                      <button type="button" onClick={() => { if (m.demo) return; handleDraftAll(); }} disabled={draftingAll || sendingAll} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 38, padding: '0 16px', borderRadius: 9, background: '#fff', border: '1px solid #C7CCF0', color: 'var(--accent, #4A60A8)', fontSize: 13.5, fontWeight: 600, cursor: (draftingAll || sendingAll) ? 'default' : 'pointer', opacity: (draftingAll || sendingAll) ? 0.6 : 1, fontFamily: 'inherit', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                        <Mail style={{ width: 15, height: 15 }} /> Draft
+                                      </button>
                                     )}
                                   </div>
                                 </div>
@@ -842,53 +1126,78 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
                             );
                           })}
 
-                          {/* Shared footer trio, mirroring the People result view. */}
-                          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-                            {foundManagers.some((m: any) => m.gmailDraftUrl && !m.emailSent) && (
-                              <ResultActionButton
-                                variant="primary"
-                                href="https://mail.google.com/mail/u/0/#drafts"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex-1"
-                              >
-                                <Mail className="w-3.5 h-3.5" />
-                                Open Gmail drafts
-                              </ResultActionButton>
-                            )}
-                            <ResultActionButton
-                              variant="secondary"
-                              onClick={() => {
-                                // Inert during the tour's hiring-manager demo —
-                                // the seeded card isn't a real contact, so
-                                // navigating to /outbox would land on nothing.
-                                if (foundManagers.some((m: any) => m.demo)) return;
-                                // Same deep-link mechanism as the People card.
-                                // Manually drafted HMs are now logged to the
-                                // outbox at draft time by find_hiring_manager_endpoint
-                                // (shared upsert_hm_outbox_contact), so the target
-                                // contact exists and the segment switch + refetch
-                                // land on it.
-                                const focusEmail = foundManagers.find((m: any) => m.email)?.email || undefined;
-                                navigate('/outbox', { state: { focusEmail, segment: 'hiringManagers' } });
-                              }}
-                              className="flex-1"
-                            >
-                              <Inbox className="w-3.5 h-3.5" />
-                              See in inbox
-                            </ResultActionButton>
-                            <ResultActionButton
-                              variant="secondary"
-                              onClick={() => {
-                                if (foundManagers.some((m: any) => m.demo)) return;
-                                navigate('/my-network/managers');
-                              }}
-                              className="flex-1"
-                            >
-                              <Users className="w-3.5 h-3.5" />
-                              See in spreadsheet
-                            </ResultActionButton>
-                          </div>
+                          {/* ALREADY IN YOUR INBOX — managers the search re-surfaced */}
+                          {foundManagers.some((m: any) => m.alreadySaved) && (
+                            <>
+                              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#94A3B8', textTransform: 'uppercase', marginTop: 22, marginBottom: 12 }}>
+                                Already in your inbox · {foundManagers.filter((m: any) => m.alreadySaved).length}
+                              </div>
+                              {foundManagers.filter((m: any) => m.alreadySaved).map((m: any, i: number) => {
+                                const initials = (m.name || '').split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+                                const linkedinHref = m.linkedin ? (m.linkedin.startsWith('http') ? m.linkedin : `https://${m.linkedin}`) : '';
+                                return (
+                                  <div key={`saved-${i}`} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '13px 18px', background: '#F8FAFC', border: '1px solid #ECEEF3', borderRadius: 16, marginBottom: 8, opacity: 0.82 }}>
+                                    <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(148,163,184,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#94A3B8', flexShrink: 0 }}>
+                                      {initials}
+                                    </div>
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                                        <span style={{ fontSize: 15, fontWeight: 600, color: '#475569', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{m.name}</span>
+                                        <span style={{ padding: '2px 9px', borderRadius: 100, background: 'rgba(148,163,184,0.16)', color: '#94A3B8', fontSize: 11, fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>Already saved</span>
+                                      </div>
+                                      <div style={{ fontSize: 13, color: '#94A3B8', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                        {m.title}
+                                        {m.title && m.company && <span style={{ color: '#CBD5E1' }}> · </span>}
+                                        {m.company}
+                                      </div>
+                                    </div>
+                                    {linkedinHref && (
+                                      <a href={linkedinHref} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 38, padding: '0 14px', borderRadius: 9, background: '#fff', border: '1px solid #E2E8F0', color: '#334155', fontSize: 13.5, fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                                        <Linkedin style={{ width: 16, height: 16, color: '#0A66C2' }} /> LinkedIn
+                                      </a>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </>
+                          )}
+
+                          {/* WHERE EVERYTHING LIVES — destination cards. Hidden in the
+                              tour demo (the seeded card has no real home). */}
+                          {!foundManagers.some((m: any) => m.demo) && (() => {
+                            const cardBase: React.CSSProperties = { flex: 1, display: 'flex', alignItems: 'center', gap: 14, padding: '18px 20px', borderRadius: 16, cursor: 'pointer', textDecoration: 'none', textAlign: 'left', fontFamily: 'inherit', border: 'none', transition: 'transform .12s, box-shadow .12s' };
+                            const iconBox = (bg: string, color: string): React.CSSProperties => ({ width: 44, height: 44, borderRadius: 12, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: bg, color });
+                            const totalContacts = foundManagers.length;
+                            const goToInbox = () => {
+                              const focusEmail = foundManagers.find((m: any) => m.email)?.email || undefined;
+                              navigate('/outbox', { state: { focusEmail, segment: 'hiringManagers' } });
+                            };
+                            return (
+                              <div style={{ marginTop: 26 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', color: '#94A3B8', textTransform: 'uppercase', marginBottom: 12 }}>
+                                  Where everything lives
+                                </div>
+                                <div style={{ display: 'flex', gap: 12 }}>
+                                  <button type="button" onClick={() => navigate('/my-network/managers')} style={{ ...cardBase, background: 'var(--accent, #4A60A8)', color: '#fff', boxShadow: '0 1px 2px rgba(74,96,168,0.18), 0 8px 20px rgba(74,96,168,0.24)' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none'; }}>
+                                    <span style={iconBox('rgba(255,255,255,0.18)', '#fff')}><Table2 style={{ width: 20, height: 20 }} /></span>
+                                    <span style={{ flex: 1, minWidth: 0 }}>
+                                      <span style={{ display: 'block', fontSize: 16, fontWeight: 700 }}>View in spreadsheet</span>
+                                      <span style={{ display: 'block', fontSize: 13, color: 'rgba(255,255,255,0.82)', marginTop: 2 }}>All {totalContacts} {totalContacts === 1 ? 'contact' : 'contacts'} in a sortable table</span>
+                                    </span>
+                                    <ChevronRight style={{ width: 20, height: 20, color: 'rgba(255,255,255,0.85)', flexShrink: 0 }} />
+                                  </button>
+                                  <button type="button" onClick={goToInbox} style={{ ...cardBase, background: '#fff', color: '#0F172A', border: '1px solid #ECEEF3', boxShadow: '0 1px 2px rgba(15,23,42,0.04)' }} onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-1px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 14px rgba(15,23,42,0.08)'; }} onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.transform = 'none'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 1px 2px rgba(15,23,42,0.04)'; }}>
+                                    <span style={iconBox('rgba(74,96,168,0.10)', 'var(--accent, #4A60A8)')}><Inbox style={{ width: 20, height: 20 }} /></span>
+                                    <span style={{ flex: 1, minWidth: 0 }}>
+                                      <span style={{ display: 'block', fontSize: 16, fontWeight: 700 }}>Open inbox</span>
+                                      <span style={{ display: 'block', fontSize: 13, color: '#64748B', marginTop: 2 }}>Read &amp; manage your drafted emails</span>
+                                    </span>
+                                    <ChevronRight style={{ width: 20, height: 20, color: '#CBD5E1', flexShrink: 0 }} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       )}
 
@@ -1417,30 +1726,8 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
           </main>
           </ProGate>
 
-        {/* Loading Modal */}
-        {isSearching && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-[3px] p-8 max-w-md text-center">
-              <div className="w-16 h-16 bg-[#FAFBFF] rounded-[3px] flex items-center justify-center mx-auto mb-4">
-                <Users className="w-8 h-8 text-[#0F172A] animate-pulse" />
-              </div>
-              <h3 className="text-xl font-semibold text-[#0F172A] mb-2" style={{ fontFamily: "'Lora', Georgia, serif" }}>Finding hiring managers...</h3>
-              <p className="text-[#6B7280] mb-4">
-                {jobPostingUrl
-                  ? "Analyzing the job posting and identifying decision makers"
-                  : `Searching for hiring managers at ${company}`
-                }
-              </p>
-              <div className="w-full bg-[#E2E8F0] rounded-[3px] h-2">
-                <div
-                  className="bg-[#3B82F6] h-2 rounded-[3px] transition-all duration-300"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              <p className="text-sm text-[#6B7280] mt-3">This usually takes 15-30 seconds</p>
-            </div>
-          </div>
-        )}
+        {/* Loading is shown inline as a thin progress bar under the search box
+            (mirrors the People tab) — no blocking modal. */}
 
         {/* Fallback suggestions when no HMs found */}
         {searchComplete && managersFound === 0 && hmSuggestions.length > 0 && (
@@ -1581,6 +1868,16 @@ const RecruiterSpreadsheetPage: React.FC<{ embedded?: boolean; isDevPreview?: bo
         }
       `}</style>
 
+      {/* Upgrade/trial prompt for locked outreach actions (Draft Outreach / Send Emails). */}
+      <UpgradeModal
+        open={upgradeGate !== null}
+        onOpenChange={(o) => { if (!o) setUpgradeGate(null); }}
+        feature={upgradeGate?.feature || ''}
+        featureLabel={upgradeGate?.label}
+        requiredTier={upgradeGate?.requiredTier}
+        reason={upgradeGate?.reason}
+        currentTier={userTier}
+      />
     </>
   );
 

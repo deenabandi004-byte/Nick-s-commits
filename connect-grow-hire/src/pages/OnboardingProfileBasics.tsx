@@ -18,6 +18,7 @@ export const OnboardingProfileBasics = ({ onNext, initial }: OnboardingProfileBa
   const [fullName, setFullName] = useState(initial?.fullName || "");
   const [email, setEmail] = useState(initial?.email || "");
   const [phone, setPhone] = useState(initial?.phone || "");
+  const [promoDismissed, setPromoDismissed] = useState(false);
 
   const valid = !!fullName.trim() && !!email.trim();
   const isEdu = email.toLowerCase().trim().endsWith(".edu");
@@ -46,18 +47,26 @@ export const OnboardingProfileBasics = ({ onNext, initial }: OnboardingProfileBa
           <Input className="focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]" id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Doe" required />
         </div>
         <div>
-          <Label htmlFor="email">
-            Email <span className="font-semibold" style={{ color: "#DB2777" }}>· use your .edu*</span>
-          </Label>
+          <Label htmlFor="email">Email</Label>
           <Input className="focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]" id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="jane@university.edu" required />
           {isEdu ? (
             <p className="mt-1.5 text-xs font-medium flex items-center gap-1" style={{ color: "#15803D" }}>
-              🎓 Nice — your .edu unlocks ~50% off and makes your outreach land better.
+              🎓 Nice — your .edu unlocks ~50% off.
             </p>
           ) : (
-            <p className="mt-1.5 text-xs" style={{ color: "#DB2777" }}>
-              <span className="font-semibold">*Recommended:</span> a <strong>.edu</strong> email unlocks ~50% student pricing and lets your drafted outreach lead with your school.
-            </p>
+            !promoDismissed && (
+              <p className="mt-1.5 text-xs flex items-center justify-between gap-2" style={{ color: "#94A3B8" }}>
+                <span>🎓 Have a <strong className="font-medium">.edu</strong>? Use it for ~50% student pricing.</span>
+                <button
+                  type="button"
+                  onClick={() => setPromoDismissed(true)}
+                  className="shrink-0 text-[#CBD5E1] hover:text-[#64748B] transition-colors leading-none"
+                  aria-label="Dismiss"
+                >
+                  ✕
+                </button>
+              </p>
+            )
           )}
         </div>
         <div>

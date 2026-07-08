@@ -278,9 +278,48 @@ def _derive_match_signals(
 @jobs_bp.route("/api/jobs/feed", methods=["GET"])
 @require_firebase_auth
 def get_feed():
+    """Timing wrapper around _get_feed_impl.
+
+    Emits a single `[FeedPerf] total=...` line per request so cold vs warm
+    latency is visible in the server logs without external profiling. The
+    per-phase laps inside _get_feed_impl (prefs_signals / top_query_stream /
+    new_matches_stream / serialize) attribute the wall-clock to each stage.
+    Set JOBS_FEED_PERF=0 to silence.
+    """
+    import time as _time
+    import os as _os
+    _perf_on = _os.getenv("JOBS_FEED_PERF", "1") != "0"
+    _t0 = _time.perf_counter()
+    try:
+        return _get_feed_impl(_t0 if _perf_on else None)
+    finally:
+        if _perf_on:
+            try:
+                logger.info(
+                    "[FeedPerf] total=%.0fms uid=%s",
+                    (_time.perf_counter() - _t0) * 1000.0,
+                    request.firebase_user.get("uid"),
+                )
+            except Exception:
+                pass
+
+
+def _get_feed_impl(_perf_t0=None):
+    import time as _time
     uid = request.firebase_user["uid"]
     db = get_db()
     now = datetime.now(timezone.utc)
+
+    # Per-phase timing. `_lap(label)` logs ms elapsed since the previous lap.
+    # No-op when perf logging is disabled so the hot path stays clean.
+    _perf = {"t": _time.perf_counter()} if _perf_t0 is not None else None
+
+    def _lap(label):
+        if _perf is None:
+            return
+        _now = _time.perf_counter()
+        logger.info("[FeedPerf] %s=%.0fms uid=%s", label, (_now - _perf["t"]) * 1000.0, uid)
+        _perf["t"] = _now
     refresh = request.args.get("refresh", "").lower() == "true"
     # Phase 2 escape hatch: ?ungated=true skips hard intent gates even when
     # the feature flag is on for this user. Useful for "Show all" toggle.
@@ -378,6 +417,9 @@ def get_feed():
         user_signals = None
         logger.exception("[JobsFeed] load_user_signals failed for uid=%s", uid)
 
+    # Covers user_doc.get + dismissed/saved streams + load_user_signals.
+    _lap("prefs_signals")
+
     def _enrich(jobs: list[dict]) -> list[dict]:
         """Filter dismissed jobs and attach the editorial match_signals array."""
         out: list[dict] = []
@@ -445,7 +487,13 @@ def get_feed():
             nm_age = (now - nm_cached_at).total_seconds()
         else:
             nm_age = float("inf")
-        nm_valid = nm_age < 300  # 5 minutes
+        # Align with the main feed cache TTL (1800s). Previously 300s, which
+        # forced warm loads to re-stream the 24h `new_matches` window every
+        # 5 min even while the main ranked cache (30 min TTL) was still served
+        # from cache. The 24h window barely changes inside 30 min and the
+        # background ingestion daemons keep it fresh, so a 30-min snapshot is
+        # the same product surface with none of the per-load re-stream cost.
+        nm_valid = nm_age < 1800  # 30 minutes (was 300s — matched to main cache)
 
     twenty_four_hours_ago = now - timedelta(hours=24)
 
@@ -456,11 +504,16 @@ def get_feed():
         # Pull a wider window so dedup + cap_per_company have headroom for the
         # display cap. Without this slack a few high-volume employers would
         # saturate the window before the cap_per_company stage.
+        # 400 is ~2.6x the 150-job display cap after dedup + cap_per_company(8),
+        # which is ample headroom for high-volume employers in the 24h window.
+        # Was 800 — pure over-fetch: the extra 400 docs were streamed,
+        # deserialized, then discarded by the [:150] slice. Recency order is
+        # preserved, so the surfaced set is unchanged in practice.
         new_query = (
             db.collection("jobs")
             .where("posted_at", ">=", twenty_four_hours_ago)
             .order_by("posted_at", direction="DESCENDING")
-            .limit(800)
+            .limit(400)
         )
         raw = []
         for d in new_query.stream():
@@ -477,6 +530,8 @@ def get_feed():
                 j["match_reason"] = None
                 j["ranked"] = False
             raw.append(j)
+
+        _lap("new_matches_stream")
 
         # Collapse title variants ("Teller (Full Time)" + "Teller (Part Time)" → one),
         # then cap per company so a single batch poster can't fill the feed.
@@ -611,12 +666,15 @@ def get_feed():
     if not has_resume:
         new_matches_raw, nm_from_cache = _fetch_new_matches()
         new_matches = _enrich(new_matches_raw)
+        # 500 is a generous buffer over the 300-job cap_per_company(10)[:300]
+        # slice; was 1000 (over-fetch — extra docs streamed then discarded).
         top_query = (
             db.collection("jobs")
             .order_by("posted_at", direction="DESCENDING")
-            .limit(1000)
+            .limit(500)
         )
         top_jobs = [d.to_dict() for d in top_query.stream()]
+        _lap("top_query_stream")
         top_jobs = [j for j in top_jobs if not _is_international_job(j) and not _is_excluded_job(j)]
         top_jobs = cap_per_company(top_jobs, max_per_company=10)[:300]
         for j in top_jobs:
@@ -626,9 +684,12 @@ def get_feed():
         top_jobs = _enrich(top_jobs)
         new_matches, top_jobs, gated_info = _apply_gates(new_matches, top_jobs)
 
+        _serialized_new = _serialize_jobs(new_matches) if not nm_from_cache else new_matches
+        _serialized_top = _serialize_jobs(top_jobs)
+        _lap("serialize")
         return jsonify({
-            "new_matches": _serialize_jobs(new_matches) if not nm_from_cache else new_matches,
-            "top_jobs": _serialize_jobs(top_jobs),
+            "new_matches": _serialized_new,
+            "top_jobs": _serialized_top,
             "new_matches_count": len(new_matches),
             "top_jobs_count": len(top_jobs),
             "ranked": False,
@@ -638,13 +699,19 @@ def get_feed():
             "gated": gated_info,
         })
 
-    # Has resume but no cache — return unranked jobs immediately, rank in background
+    # Has resume but no cache — return unranked jobs immediately, rank in background.
+    # 500 is a generous buffer over the 300-job cap_per_company(10)[:300] slice;
+    # was 1000 (streamed + deserialized then discarded). This is a transient
+    # unranked placeholder — _background_rerank runs its own .limit(5000) scan
+    # and the next load serves the real ranked cache, so the candidate pool
+    # for ranking is untouched.
     top_query = (
         db.collection("jobs")
         .order_by("posted_at", direction="DESCENDING")
-        .limit(1000)
+        .limit(500)
     )
     top_jobs = [d.to_dict() for d in top_query.stream()]
+    _lap("top_query_stream")
     top_jobs = [j for j in top_jobs if not _is_international_job(j) and not _is_excluded_job(j)]
     top_jobs = cap_per_company(top_jobs, max_per_company=10)[:300]
     for j in top_jobs:
@@ -664,9 +731,12 @@ def get_feed():
         logger.info(f"Triggered background ranking for {uid} (first visit)")
 
     new_matches, top_jobs, gated_info = _apply_gates(new_matches, top_jobs)
+    _serialized_new = _serialize_jobs(new_matches) if not nm_from_cache else new_matches
+    _serialized_top = _serialize_jobs(top_jobs)
+    _lap("serialize")
     return jsonify({
-        "new_matches": _serialize_jobs(new_matches) if not nm_from_cache else new_matches,
-        "top_jobs": _serialize_jobs(top_jobs),
+        "new_matches": _serialized_new,
+        "top_jobs": _serialized_top,
         "new_matches_count": len(new_matches),
         "top_jobs_count": len(top_jobs),
         "ranked": False,

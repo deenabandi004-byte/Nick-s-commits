@@ -331,6 +331,13 @@ def import_from_linkedin():
         user_id = request.firebase_user['uid']
         user_resume = data.get('user_resume', '')
         user_email = request.firebase_user.get('email', 'Unknown')
+        # Preview vs draft. The website search-box paste sends create_draft=False so
+        # this behaves like a normal Find People search: find the contact + email,
+        # save it, and let the user choose to draft/send afterward. The chrome
+        # extension (and any caller that omits the flag) keeps the legacy
+        # auto-draft behavior. Skipping the draft also skips the slow enrichment +
+        # email generation, so preview returns fast.
+        create_draft = bool(data.get('create_draft', True))
         
         print(f"[LinkedInImport] Request received: resume_provided={bool(user_resume)}")
         
@@ -516,59 +523,66 @@ def import_from_linkedin():
         else:
             print(f"[LinkedInImport] No resume text available — email will skip resume context")
 
-        # Step 4d: Perplexity + Apify enrichment (same pipeline as website prompt-search)
-        contacts_for_enrich = [contact_for_email]
-        enrichment_data = {}
-        try:
-            from app.services.perplexity_client import batch_enrich_contacts
-            enrichment_data = batch_enrich_contacts(contacts_for_enrich) or {}
-            enrich = enrichment_data.get(0, {})
-            if enrich.get("talking_points"):
-                contact_for_email["enrichment_talking_points"] = enrich["talking_points"]
-            if enrich.get("recent_activity"):
-                contact_for_email["enrichment_recent_activity"] = enrich["recent_activity"]
-            if enrich.get("media_appearances"):
-                contact_for_email["perplexity_media_appearances"] = enrich["media_appearances"]
-            if enrich.get("published_writing"):
-                contact_for_email["perplexity_published_writing"] = enrich["published_writing"]
-            if enrich.get("news_mentions"):
-                contact_for_email["perplexity_news_mentions"] = enrich["news_mentions"]
-        except Exception as _pe:
-            print(f"[LinkedInImport] Perplexity contact enrichment failed (non-blocking): {_pe}")
-
-        try:
-            from app.services.apify_client import batch_enrich_linkedin_posts_via_apify
-            apify_results = batch_enrich_linkedin_posts_via_apify(contacts_for_enrich) or {}
-            payload = apify_results.get(0, {})
-            if payload.get("linkedin_recent_posts"):
-                contact_for_email["linkedin_recent_posts"] = payload["linkedin_recent_posts"]
-        except Exception as _ae:
-            print(f"[LinkedInImport] Apify enrichment failed (non-blocking): {_ae}")
-
-        try:
-            from app.services.perplexity_client import batch_enrich_company_news
-            company_enrichment = batch_enrich_company_news(contacts_for_enrich) or {}
-            co = company_enrichment.get(0, {})
-            if co.get("company_recent_news"):
-                contact_for_email["company_recent_news"] = co["company_recent_news"]
-            if co.get("company_description"):
-                contact_for_email["company_description"] = co["company_description"]
-        except Exception as _ce:
-            print(f"[LinkedInImport] Perplexity company enrichment failed (non-blocking): {_ce}")
-
         email_subject = None
         email_body = None
         email_personalization = None
         quality_regenerated = False
         draft_result = None
-        warmth_data = {}  # only populated when an email is generated below; keep
-                          # bound so the warmth_entry read after this block is safe
-                          # even when no email is found (has_email == False)
+        enrichment_data = {}
+        warmth_data = {}  # populated whenever we have an email (cheap), so the
+                          # result card shows the warmth/fit pill in both modes.
 
+        # Warmth scoring is cheap and drives the result-card fit pill — run it
+        # whenever an email exists, in preview and draft modes alike.
         if has_email:
+            warmth_data = score_contacts_for_email(user_data or {}, [contact_for_email])
+
+        # Preview mode (create_draft=False) stops after finding the contact + email
+        # and scoring warmth. The slow enrichment + email generation + Gmail draft
+        # only run when create_draft is true (legacy/extension path), so the
+        # website paste returns fast and the user drafts/sends on demand.
+        if has_email and create_draft:
+            # Step 4d: Perplexity + Apify enrichment (same pipeline as website prompt-search)
+            contacts_for_enrich = [contact_for_email]
+            try:
+                from app.services.perplexity_client import batch_enrich_contacts
+                enrichment_data = batch_enrich_contacts(contacts_for_enrich) or {}
+                enrich = enrichment_data.get(0, {})
+                if enrich.get("talking_points"):
+                    contact_for_email["enrichment_talking_points"] = enrich["talking_points"]
+                if enrich.get("recent_activity"):
+                    contact_for_email["enrichment_recent_activity"] = enrich["recent_activity"]
+                if enrich.get("media_appearances"):
+                    contact_for_email["perplexity_media_appearances"] = enrich["media_appearances"]
+                if enrich.get("published_writing"):
+                    contact_for_email["perplexity_published_writing"] = enrich["published_writing"]
+                if enrich.get("news_mentions"):
+                    contact_for_email["perplexity_news_mentions"] = enrich["news_mentions"]
+            except Exception as _pe:
+                print(f"[LinkedInImport] Perplexity contact enrichment failed (non-blocking): {_pe}")
+
+            try:
+                from app.services.apify_client import batch_enrich_linkedin_posts_via_apify
+                apify_results = batch_enrich_linkedin_posts_via_apify(contacts_for_enrich) or {}
+                payload = apify_results.get(0, {})
+                if payload.get("linkedin_recent_posts"):
+                    contact_for_email["linkedin_recent_posts"] = payload["linkedin_recent_posts"]
+            except Exception as _ae:
+                print(f"[LinkedInImport] Apify enrichment failed (non-blocking): {_ae}")
+
+            try:
+                from app.services.perplexity_client import batch_enrich_company_news
+                company_enrichment = batch_enrich_company_news(contacts_for_enrich) or {}
+                co = company_enrichment.get(0, {})
+                if co.get("company_recent_news"):
+                    contact_for_email["company_recent_news"] = co["company_recent_news"]
+                if co.get("company_description"):
+                    contact_for_email["company_description"] = co["company_description"]
+            except Exception as _ce:
+                print(f"[LinkedInImport] Perplexity company enrichment failed (non-blocking): {_ce}")
+
             print(f"[LinkedInImport] Step 6: Generating personalized email...")
             auth_display_name = (getattr(request, "firebase_user", None) or {}).get("name") or ""
-            warmth_data = score_contacts_for_email(user_data or {}, [contact_for_email])
 
             email_request = build_email_gen_request(
                 contacts=[contact_for_email],
@@ -812,6 +826,9 @@ def import_from_linkedin():
         # Always return 200 if contact was successfully imported, even without email
         if has_email and draft_result:
             message = f'Successfully imported {full_name}! Gmail draft created.'
+        elif has_email and not create_draft:
+            # Preview mode: contact + email found, draft is the user's next step.
+            message = f'Found {full_name}. Draft or send when you’re ready.'
         elif has_email:
             message = f'Successfully imported {full_name}, but email draft could not be created.'
         else:

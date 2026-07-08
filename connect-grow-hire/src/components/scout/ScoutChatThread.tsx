@@ -18,15 +18,19 @@ import {
   ArrowUp,
   Briefcase,
   Building2,
+  Check,
   Coffee,
+  Copy,
   FileText,
   History,
   Loader2,
   Lock,
   MessageSquarePlus,
   PenLine,
+  RotateCcw,
   Search,
   Send,
+  Square,
   Target,
   Trash2,
   Users,
@@ -116,6 +120,7 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
     setInput,
     isLoading,
     sendMessage,
+    stopGeneration,
     requestBriefing,
     scoutCurrentPage,
     activeStrategy,
@@ -155,6 +160,31 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
       sendMessage();
     }
   };
+
+  // Message hover actions (copy / edit / retry). copiedId briefly swaps the
+  // copy icon for a checkmark on the copied message.
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const handleCopyMessage = async (id: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1500);
+    } catch {
+      /* clipboard unavailable (permissions/insecure context) — do nothing */
+    }
+  };
+  const handleEditMessage = (content: string) => {
+    setInput(content);
+    localInputRef.current?.focus();
+  };
+  const handleRetryMessage = (content: string) => {
+    if (isLoading) return;
+    void sendMessage(content);
+  };
+
+  // Shared icon-button look for the hover action rows.
+  const msgActionBtn =
+    'p-1.5 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:cursor-default';
 
   // Hero composer (page variant, empty state): example prompts type
   // themselves out and delete while the box is empty, then the next one
@@ -342,11 +372,11 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
               <button
                 type="button"
                 className="sh-send"
-                onClick={() => sendMessage()}
-                disabled={!input.trim() || isLoading}
-                aria-label="Send message"
+                onClick={() => (isLoading ? stopGeneration() : sendMessage())}
+                disabled={!isLoading && !input.trim()}
+                aria-label={isLoading ? 'Stop response' : 'Send message'}
               >
-                {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowUp size={20} strokeWidth={1.8} />}
+                {isLoading ? <Square size={16} fill="currentColor" /> : <ArrowUp size={20} strokeWidth={1.8} />}
               </button>
             </div>
           </div>
@@ -513,7 +543,7 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                     className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     {message.role === 'assistant' ? (
-                      <div className="flex gap-3 max-w-[85%]">
+                      <div className="flex gap-3 max-w-[85%] group">
                         <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
                           <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
                         </div>
@@ -556,6 +586,20 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                               {message.coverage && !message.isStreaming && (
                                 <CompletenessGauge coverage={message.coverage} />
                               )}
+                            </div>
+                          )}
+                          {/* Hover copy on finished assistant prose */}
+                          {message.content && !message.isStreaming && (
+                            <div className="flex items-center gap-0.5 -mt-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                              <button
+                                type="button"
+                                className={msgActionBtn}
+                                onClick={() => handleCopyMessage(message.id, message.content)}
+                                title="Copy"
+                                aria-label="Copy message"
+                              >
+                                {copiedId === message.id ? <Check size={13} /> : <Copy size={13} />}
+                              </button>
                             </div>
                           )}
                           {/* Live tool pills (still running) - below the
@@ -605,9 +649,40 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                         </div>
                       </div>
                     ) : (
-                      <div className="max-w-[85%]">
+                      <div className="max-w-[85%] group">
                         <div className="text-white rounded-3xl rounded-br-md px-4 py-2.5" style={{ background: 'var(--accent, #4A60A8)' }}>
                           <p className="text-sm leading-relaxed">{message.content}</p>
+                        </div>
+                        {/* Hover actions: retry / edit / copy (Claude-style) */}
+                        <div className="flex items-center justify-end gap-0.5 mt-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                          <button
+                            type="button"
+                            className={msgActionBtn}
+                            onClick={() => handleRetryMessage(message.content)}
+                            disabled={isLoading}
+                            title="Retry"
+                            aria-label="Send this message again"
+                          >
+                            <RotateCcw size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            className={msgActionBtn}
+                            onClick={() => handleEditMessage(message.content)}
+                            title="Edit"
+                            aria-label="Edit this message in the composer"
+                          >
+                            <PenLine size={13} />
+                          </button>
+                          <button
+                            type="button"
+                            className={msgActionBtn}
+                            onClick={() => handleCopyMessage(message.id, message.content)}
+                            title="Copy"
+                            aria-label="Copy message"
+                          >
+                            {copiedId === message.id ? <Check size={13} /> : <Copy size={13} />}
+                          </button>
                         </div>
                       </div>
                     )}
@@ -679,15 +754,15 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
             disabled={isLoading}
           />
           <button
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || isLoading}
+            onClick={() => (isLoading ? stopGeneration() : sendMessage())}
+            disabled={!isLoading && !input.trim()}
             className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white transition-colors"
             style={{ background: 'var(--accent, #4A60A8)' }}
             onMouseEnter={(e) => (e.currentTarget.style.background = '#3C4F8E')}
             onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent, #4A60A8)')}
-            aria-label="Send message"
+            aria-label={isLoading ? 'Stop response' : 'Send message'}
           >
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {isLoading ? <Square className="h-4 w-4" fill="currentColor" /> : <Send className="h-4 w-4" />}
           </button>
         </div>
         <p className="text-xs text-gray-400 text-center mt-2">Free to chat</p>

@@ -9,7 +9,6 @@ import {
   FileText,
   Copy,
   Check,
-  Sparkles,
   ArrowRight,
   Loader2,
   Download,
@@ -825,10 +824,7 @@ export const EnhancedFitAnalysisPanel: React.FC<EnhancedFitAnalysisPanelProps> =
                       Generating...
                     </>
                   ) : (
-                    <>
-                      <Sparkles size={16} />
-                      Generate Cover Letter
-                    </>
+                    <>Generate Cover Letter</>
                   )}
                 </button>
               </div>

@@ -239,6 +239,9 @@ export interface UseScoutChatReturn {
   setInput: (value: string) => void;
   isLoading: boolean;
   sendMessage: (messageText?: string) => Promise<void>;
+  /** Abort the in-flight turn (the composer's stop button). Partial streamed
+   *  text is kept as a finished message; nothing errors, nothing falls back. */
+  stopGeneration: () => void;
   /** Trigger a strategist briefing (Phase 3B). Posts to /briefing/stream,
    *  streams the response into a new assistant message. Returns true when a
    *  terminal SSE event ('done' or 'error') was received. The "Get my game
@@ -299,6 +302,11 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  // In-flight request abort (the composer's stop button). stoppedRef flags a
+  // USER-initiated stop so the transport error it raises is treated as a
+  // delivered turn (keep partial text, no fallback, no error bubble).
+  const abortRef = useRef<AbortController | null>(null);
+  const stoppedRef = useRef(false);
 
   // One-time cleanup of chat history saved by an earlier build. Scout no longer
   // persists conversations, so wipe the legacy local cache and the Firestore
@@ -431,6 +439,10 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       isStreaming: true,
     }]);
 
+    const controller = new AbortController();
+    abortRef.current = controller;
+    let accumulatedText = '';
+
     try {
       const response = await fetch(`${BACKEND_URL}/api/scout-assistant/chat/stream`, {
         method: 'POST',
@@ -439,6 +451,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
       if (!response.ok || !response.body) {
@@ -450,7 +463,6 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
-      let accumulatedText = '';
       // Set once the backend sends a terminal SSE event (done or error). A
       // stream that connects but ends without one delivered nothing usable.
       let receivedTerminal = false;
@@ -598,10 +610,25 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       }
       return delivered;
     } catch (error) {
+      // User pressed stop: keep whatever streamed so far as a finished
+      // message (drop the bubble entirely if nothing arrived) and report
+      // delivered so no fallback runs and no error bubble shows.
+      if (stoppedRef.current) {
+        setMessages(prev =>
+          accumulatedText.trim()
+            ? prev.map(m =>
+                m.id === assistantId ? { ...m, isStreaming: false, intent: null } : m
+              )
+            : prev.filter(m => m.id !== assistantId)
+        );
+        return true;
+      }
       console.error('[Scout] Streaming error:', error);
       // Remove placeholder and signal fallback
       setMessages(prev => prev.filter(m => m.id !== assistantId));
       return false;
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
   };
 
@@ -609,6 +636,8 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
   // rendered; on any transport or HTTP failure it returns false so the caller
   // can surface an explicit error instead of failing silently.
   const sendMessageFallback = async (text: string, currentMessages: ChatMessage[]): Promise<boolean> => {
+    const controller = new AbortController();
+    abortRef.current = controller;
     try {
       const token = await getToken();
       const payload = buildPayload(text, currentMessages);
@@ -620,6 +649,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
         body: JSON.stringify(payload),
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -650,8 +680,12 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       setMessages(prev => [...prev, assistantMessage]);
       return true;
     } catch (error) {
+      // User pressed stop: a silent no-reply turn, not a transport failure.
+      if (stoppedRef.current) return true;
       console.error('[Scout] Fallback error:', error);
       return false;
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
   };
 
@@ -676,6 +710,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
+    stoppedRef.current = false;
 
     let delivered = false;
     try {
@@ -716,6 +751,14 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
       inputRef.current?.focus();
     }
   }, [input, isLoading, messages, currentPage, user, chatId]);
+
+  // Stop button: abort the in-flight request. The transport catch blocks see
+  // stoppedRef and treat the turn as delivered (partial text kept, no error).
+  const stopGeneration = useCallback(() => {
+    if (!abortRef.current) return;
+    stoppedRef.current = true;
+    abortRef.current.abort();
+  }, []);
 
   /** Push a synthetic assistant message into the chat (local-only).
    *  Useful for "the workflow you started just finished" follow-ups: a
@@ -1024,6 +1067,7 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
     setInput,
     isLoading,
     sendMessage,
+    stopGeneration,
     clearChat,
     messagesEndRef,
     inputRef,

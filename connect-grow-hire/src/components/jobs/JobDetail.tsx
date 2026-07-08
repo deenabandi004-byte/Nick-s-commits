@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import type { ProtoJob } from "@/pages/jobBoardAdapter";
-import { apiService } from "@/services/api";
 import { CompanyLogo } from "./CompanyLogo";
 import {
   IconArrowRight,
@@ -75,37 +74,11 @@ function decodeDescription(raw: string): string {
   return out.replace(/[ \t]+/g, " ").replace(/ ?\n ?/g, "\n").trim();
 }
 
-// Characters per paragraph used as the collapsed preview budget. Tuned so
-// the average detail card shows roughly the first half-screen of body copy
-// before the user has to commit to expanding.
-const PREVIEW_BUDGET = 600;
-
 function splitParagraphs(text: string): string[] {
   return text
     .split(/\n{2,}/)
     .map((p) => p.trim())
     .filter(Boolean);
-}
-
-function buildPreview(paragraphs: string[]): { preview: string[]; truncated: boolean } {
-  if (paragraphs.length === 0) return { preview: [], truncated: false };
-  const preview: string[] = [];
-  let budget = PREVIEW_BUDGET;
-  for (const p of paragraphs) {
-    if (budget <= 0) break;
-    if (p.length <= budget) {
-      preview.push(p);
-      budget -= p.length;
-    } else {
-      preview.push(p.slice(0, budget).trimEnd() + "...");
-      budget = 0;
-      break;
-    }
-  }
-  const previewLen = preview.reduce((n, p) => n + p.length, 0);
-  const fullLen = paragraphs.reduce((n, p) => n + p.length, 0);
-  const truncated = preview.length < paragraphs.length || previewLen < fullLen;
-  return { preview, truncated };
 }
 
 export function JobDetail({
@@ -123,10 +96,12 @@ export function JobDetail({
   userPlan,
   currentCredits,
 }: JobDetailProps) {
+  // Collapsed by default so FindPeoplePanel stays above the fold; the header
+  // chevron expands the full description in place.
   const [expanded, setExpanded] = useState(false);
-  // Collapse back to preview whenever the user switches jobs. Without this,
-  // jumping from a long expanded description into a short next job leaves
-  // the toggle stuck in the wrong state.
+  // Collapse again whenever the user switches jobs. Without this, jumping
+  // from a long expanded description into the next job leaves the toggle
+  // stuck open.
   useEffect(() => {
     setExpanded(false);
   }, [job.id]);
@@ -134,8 +109,6 @@ export function JobDetail({
   const decodedText =
     description.status === "loaded" ? decodeDescription(description.text) : "";
   const paragraphs = decodedText ? splitParagraphs(decodedText) : [];
-  const { preview, truncated } = buildPreview(paragraphs);
-  const paragraphsToShow = expanded ? paragraphs : preview;
 
   return (
     <>
@@ -165,138 +138,150 @@ export function JobDetail({
           </div>
         </div>
         <div className="jb-detail-actions">
-          <button
-            className={`jb-action ${isSaved ? "saved" : ""}`}
-            type="button"
-            onClick={onSave}
-          >
-            <IconBookmark filled={isSaved} color={isSaved ? "#3B82F6" : "currentColor"} />
-            {isSaved ? "Saved" : "Save"}
-          </button>
-          <button className="jb-action" type="button" onClick={onShare}>
-            <IconShare />
-            Share
-          </button>
-          {job.autoApplyEligible && onAutoApply && (
+          <div className="jb-action-row">
+            {job.autoApplyEligible && onAutoApply && (
+              <button
+                className="jb-action primary"
+                type="button"
+                onClick={onAutoApply}
+                disabled={autoApplyLoading}
+                aria-busy={autoApplyLoading}
+                style={autoApplyLoading ? { opacity: 0.7, cursor: "wait" } : undefined}
+                title="We fill the application for you using your saved profile"
+              >
+                {autoApplyLoading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: 6 }} />
+                    Applying…
+                  </>
+                ) : (
+                  <>
+                    Auto-apply
+                    <IconArrowRight />
+                  </>
+                )}
+              </button>
+            )}
             <button
-              className="jb-action primary"
+              className={`jb-action ${job.autoApplyEligible && onAutoApply ? "" : "primary"}`}
               type="button"
-              onClick={onAutoApply}
-              disabled={autoApplyLoading}
-              aria-busy={autoApplyLoading}
-              style={autoApplyLoading ? { opacity: 0.7, cursor: "wait" } : undefined}
-              title="We fill the application for you using your saved profile"
+              onClick={onApply}
             >
-              {autoApplyLoading ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" style={{ marginRight: 6 }} />
-                  Applying…
-                </>
-              ) : (
-                <>
-                  Auto-apply
-                  <IconArrowRight />
-                </>
-              )}
+              Apply
+              <IconArrowRight />
             </button>
-          )}
-          <button
-            className={`jb-action ${job.autoApplyEligible && onAutoApply ? "" : "primary"}`}
-            type="button"
-            onClick={onApply}
-          >
-            Apply
-            <IconArrowRight />
-          </button>
+          </div>
+          <div className="jb-action-row">
+            <button
+              className={`jb-action ${isSaved ? "saved" : ""}`}
+              type="button"
+              onClick={onSave}
+            >
+              <IconBookmark filled={isSaved} color={isSaved ? "#3B82F6" : "currentColor"} />
+              {isSaved ? "Saved" : "Save"}
+            </button>
+            <button className="jb-action" type="button" onClick={onShare}>
+              <IconShare />
+              Share
+            </button>
+          </div>
         </div>
       </div>
 
       <div className="jb-detail-body">
-        <div className="jb-detail-section">
-          <h3>AT A GLANCE</h3>
-          <div className="jb-glance">
-            <div className="jb-glance-row">
-              <IconLocation />
-              <span>{job.detailLocation || job.location || "Location TBD"}</span>
-            </div>
-            <div className="jb-glance-row">
-              <IconClock />
-              <span>{job.jobType}</span>
-            </div>
-            {job.salary && (
-              <div className="jb-glance-row salary">
-                <IconSalary />
-                <span>{job.salary}</span>
+        {/* At a Glance (left) and the Job Description toggle (right) share one
+            row so FindPeoplePanel stays above the fold. Expanding the
+            description renders it full-width below the row. */}
+        <div style={{ display: "flex", gap: 32, alignItems: "flex-start" }}>
+          <div className="jb-detail-section" style={{ flex: 1, minWidth: 0 }}>
+            <h3>AT A GLANCE</h3>
+            <div className="jb-glance">
+              <div className="jb-glance-row">
+                <IconLocation />
+                <span>{job.detailLocation || job.location || "Location TBD"}</span>
               </div>
-            )}
+              <div className="jb-glance-row">
+                <IconClock />
+                <span>{job.jobType}</span>
+              </div>
+              {job.salary && (
+                <div className="jb-glance-row salary">
+                  <IconSalary />
+                  <span>{job.salary}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="jb-detail-section" style={{ flex: 1, minWidth: 0 }}>
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              aria-expanded={expanded}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 4,
+                width: "100%",
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <h3 style={{ margin: 0 }}>JOB DESCRIPTION</h3>
+              <ChevronRight
+                size={14}
+                style={{
+                  color: "var(--ink-3, #94A3B8)",
+                  transform: expanded ? "rotate(90deg)" : "none",
+                  transition: "transform 0.15s ease",
+                  flexShrink: 0,
+                }}
+              />
+            </button>
           </div>
         </div>
 
-        <div className="jb-divider" />
-
-        <div className="jb-detail-section">
-          <h3>JOB DESCRIPTION</h3>
-          {description.status === "loading" && (
-            <p className="jb-detail-paragraph" style={{ color: "var(--ink-3, #94A3B8)" }}>
-              Loading description...
-            </p>
-          )}
-          {description.status === "loaded" && paragraphsToShow.length > 0 && (
-            <>
-              {paragraphsToShow.map((p, i) => (
-                <p key={`p-${i}`} className="jb-detail-paragraph">{p}</p>
-              ))}
-              {truncated && (
-                <button
-                  type="button"
-                  onClick={() => setExpanded((v) => !v)}
-                  className="jb-detail-expand"
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    marginTop: 4,
-                    color: "var(--brand, #3B82F6)",
-                    cursor: "pointer",
-                    font: "inherit",
-                    fontWeight: 500,
-                  }}
-                >
-                  {expanded ? "Show less" : "Show full description"}
-                </button>
+        {expanded && (
+          <div className="jb-detail-section">
+            {description.status === "loading" && (
+                <p className="jb-detail-paragraph" style={{ color: "var(--ink-3, #94A3B8)" }}>
+                  Loading description...
+                </p>
               )}
-            </>
-          )}
-          {description.status === "loaded" && paragraphsToShow.length === 0 && (
-            <p className="jb-detail-paragraph" style={{ color: "var(--ink-3, #94A3B8)" }}>
-              No description provided for this role.
-            </p>
-          )}
-          {description.status === "empty" && (
-            <p className="jb-detail-paragraph" style={{ color: "var(--ink-3, #94A3B8)" }}>
-              No description provided for this role.
-            </p>
-          )}
-          {description.status === "error" && (
-            <p className="jb-detail-paragraph" style={{ color: "var(--ink-3, #94A3B8)" }}>
-              Couldn't load the description.{" "}
-              <button
-                type="button"
-                onClick={onRetryDescription}
-                style={{
-                  background: "none",
-                  border: "none",
-                  padding: 0,
-                  color: "var(--brand, #3B82F6)",
-                  cursor: "pointer",
-                  font: "inherit",
-                }}
-              >
-                Try again
-              </button>
-            </p>
-          )}
-        </div>
+              {description.status === "loaded" && paragraphs.length > 0 &&
+                paragraphs.map((p, i) => (
+                  <p key={`p-${i}`} className="jb-detail-paragraph">{p}</p>
+                ))}
+              {(description.status === "empty" ||
+                (description.status === "loaded" && paragraphs.length === 0)) && (
+                <p className="jb-detail-paragraph" style={{ color: "var(--ink-3, #94A3B8)" }}>
+                  No description provided for this role.
+                </p>
+              )}
+              {description.status === "error" && (
+                <p className="jb-detail-paragraph" style={{ color: "var(--ink-3, #94A3B8)" }}>
+                  Couldn't load the description.{" "}
+                  <button
+                    type="button"
+                    onClick={onRetryDescription}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      color: "var(--brand, #3B82F6)",
+                      cursor: "pointer",
+                      font: "inherit",
+                    }}
+                  >
+                    Try again
+                  </button>
+                </p>
+              )}
+          </div>
+        )}
 
         <div className="jb-divider" />
 

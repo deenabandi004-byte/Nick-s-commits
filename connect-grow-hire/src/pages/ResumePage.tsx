@@ -22,7 +22,7 @@
 // Upload path: POST /api/parse-resume (server parses AND stores the full
 // resumeParsed) -> persist the file to Storage + resumeUrl/resumeFileName/
 // resumeUpdatedAt -> re-read the user doc so the preview repopulates.
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -32,8 +32,8 @@ import { MainContentWrapper } from "@/components/MainContentWrapper";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import RecommendedChangesPanel from "@/components/resume/RecommendedChangesPanel";
 import {
   Upload,
   Download,
@@ -207,7 +207,9 @@ const ResumePage = () => {
   // ---- Score-and-approve state ---------------------------------------------
   const [scoreState, setScoreState] = useState<ScoreState>("idle");
   const [scoreResult, setScoreResult] = useState<ResumeScoreResponse | null>(null);
-  const [selectedRecIds, setSelectedRecIds] = useState<Set<string>>(new Set());
+  // Bumped on every fresh scoring run; keys the RecommendedChangesPanel so
+  // approve/reject decisions never leak across runs (rec ids repeat: rec_1…).
+  const [scoreRunId, setScoreRunId] = useState(0);
   // Persisted last-score chip, read from the user doc and updated after every
   // successful score.
   const [resumeScore, setResumeScore] = useState<number | null>(null);
@@ -220,7 +222,7 @@ const ResumePage = () => {
   // to resumeScore/resumeScoreLabel/resumeScoredAt (those stay general-mode).
   const [fitState, setFitState] = useState<ScoreState>("idle");
   const [fitResult, setFitResult] = useState<ResumeScoreResponse | null>(null);
-  const [fitSelectedIds, setFitSelectedIds] = useState<Set<string>>(new Set());
+  const [fitRunId, setFitRunId] = useState(0);
   const [fitDelta, setFitDelta] = useState<{ prev: number; next: number } | null>(null);
   // The job context of the last fit scoring, so the post-apply auto-rescore
   // scores against the exact same posting (not re-resolved inputs).
@@ -345,7 +347,7 @@ const ResumePage = () => {
       try {
         const result = await apiService.scoreResume(resumeData);
         setScoreResult(result);
-        setSelectedRecIds(new Set(result.recommendations.map((r) => r.id)));
+        setScoreRunId((n) => n + 1);
         await persistScore(result);
         setScoreState("scored");
       } catch (e) {
@@ -362,23 +364,16 @@ const ResumePage = () => {
     }
   }, [hasStoredResume, uploading, resumeData, scoreState, fitState, persistScore]);
 
-  const toggleRec = useCallback((id: string) => {
-    setSelectedRecIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const handleApplySelected = useCallback(async () => {
+  // Commits the APPROVED recommendation ids handed up by the review panel,
+  // then auto-rescores.
+  const handleApplyApproved = useCallback(async (ids: string[]) => {
     if (busyLockRef.current) return;
     if (!scoreResult || scoreState !== "scored" || uploading || machineBusy(fitState)) return;
     busyLockRef.current = true;
     try {
-      const selected = scoreResult.recommendations.filter((r) => selectedRecIds.has(r.id));
+      const selected = scoreResult.recommendations.filter((r) => ids.includes(r.id));
       if (selected.length === 0) {
-        toast({ title: "Select at least one change to apply" });
+        toast({ title: "Approve at least one change to apply" });
         return;
       }
 
@@ -414,7 +409,7 @@ const ResumePage = () => {
           // resumeData state having settled.
           const rescored = await apiService.scoreResume(next);
           setScoreResult(rescored);
-          setSelectedRecIds(new Set(rescored.recommendations.map((r) => r.id)));
+          setScoreRunId((n) => n + 1);
           await persistScore(rescored);
           setScoreDelta({ prev: prevScore, next: rescored.score });
           setScoreState("scored");
@@ -439,18 +434,9 @@ const ResumePage = () => {
     } finally {
       busyLockRef.current = false;
     }
-  }, [scoreResult, scoreState, fitState, uploading, selectedRecIds, resumeData, persistResumeParsed, persistScore]);
+  }, [scoreResult, scoreState, fitState, uploading, resumeData, persistResumeParsed, persistScore]);
 
   // ---- Job-fit (Tailor tab) handlers ---------------------------------------
-
-  const toggleFitRec = useCallback((id: string) => {
-    setFitSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
 
   const handleFitScore = useCallback(async () => {
     if (busyLockRef.current) return;
@@ -519,7 +505,7 @@ const ResumePage = () => {
       try {
         const result = await apiService.scoreResume(resumeData, jobContext);
         setFitResult(result);
-        setFitSelectedIds(new Set(result.recommendations.map((r) => r.id)));
+        setFitRunId((n) => n + 1);
         setFitState("scored");
       } catch (e) {
         console.error("Job-fit scoring failed", e);
@@ -545,14 +531,14 @@ const ResumePage = () => {
     resumeData,
   ]);
 
-  const handleFitApplySelected = useCallback(async () => {
+  const handleFitApplyApproved = useCallback(async (ids: string[]) => {
     if (busyLockRef.current) return;
     if (!fitResult || fitState !== "scored" || uploading || machineBusy(scoreState)) return;
     busyLockRef.current = true;
     try {
-      const selected = fitResult.recommendations.filter((r) => fitSelectedIds.has(r.id));
+      const selected = fitResult.recommendations.filter((r) => ids.includes(r.id));
       if (selected.length === 0) {
-        toast({ title: "Select at least one change to apply" });
+        toast({ title: "Approve at least one change to apply" });
         return;
       }
 
@@ -592,7 +578,7 @@ const ResumePage = () => {
             fitContextRef.current ?? undefined
           );
           setFitResult(rescored);
-          setFitSelectedIds(new Set(rescored.recommendations.map((r) => r.id)));
+          setFitRunId((n) => n + 1);
           setFitDelta({ prev: prevScore, next: rescored.score });
           setFitState("scored");
         } catch (e) {
@@ -617,7 +603,7 @@ const ResumePage = () => {
     } finally {
       busyLockRef.current = false;
     }
-  }, [fitResult, fitState, scoreState, uploading, fitSelectedIds, resumeData, persistResumeParsed]);
+  }, [fitResult, fitState, scoreState, uploading, resumeData, persistResumeParsed]);
 
   const handleDownloadPdf = async () => {
     if (isDownloading) return;
@@ -721,25 +707,18 @@ const ResumePage = () => {
   const canTailor =
     isPlausibleUrl(jobUrl) || jobDescription.trim().length >= TAILOR_MIN_JD_LENGTH;
 
-  const selectedCount = useMemo(
-    () => (scoreResult ? scoreResult.recommendations.filter((r) => selectedRecIds.has(r.id)).length : 0),
-    [scoreResult, selectedRecIds]
-  );
-
-  const fitSelectedCount = useMemo(
-    () => (fitResult ? fitResult.recommendations.filter((r) => fitSelectedIds.has(r.id)).length : 0),
-    [fitResult, fitSelectedIds]
-  );
-
   // Busy if EITHER machine is mid-flight — gates uploads and both rails.
   const isBusy = machineBusy(scoreState) || machineBusy(fitState);
 
   // ---- Render -------------------------------------------------------------
 
-  // Shared left column: the live PDF preview (same page-level preview state
+  // Shared preview card: the live PDF preview (same page-level preview state
   // on both tabs, so approved tailoring is visible on the paper either way).
+  // Rendered inside each tab's left column, with the recommendations list
+  // directly underneath — the left column is NOT sticky since it now scrolls
+  // past the fold when recommendations are present.
   const previewPanel = (
-    <div className="lg:col-span-2 lg:sticky lg:top-4 self-start">
+    <div>
       <div className="rounded-xl border border-line bg-white overflow-hidden">
         <div className="px-4 py-2 border-b border-line bg-paper-2 flex items-center justify-between">
           <span className="text-[12px] font-medium text-muted-foreground uppercase tracking-wide">
@@ -772,19 +751,19 @@ const ResumePage = () => {
     </div>
   );
 
-  // Shared scored-state rail (score card + recommendation cards) for both
-  // machines; the callers pass their own state/handlers.
-  const renderScoredRail = (opts: {
+  // Shared scored-state renderers for both machines; the callers pass their
+  // own state/handlers. The score card lives in the right rail; the
+  // recommendations render as a RecommendedChangesPanel in the left column
+  // directly under the PDF preview (keeping it in the rail pushed it below
+  // the fold).
+  type ScoredRailOpts = {
     result: ResumeScoreResponse;
     delta: { prev: number; next: number } | null;
     state: ScoreState;
-    selectedIds: Set<string>;
-    count: number;
-    onToggle: (id: string) => void;
     onRescore: () => void;
-    onApply: () => void;
-  }) => (
-    <>
+  };
+
+  const renderScoreCard = (opts: ScoredRailOpts) => (
       <div className="rounded-xl border border-line bg-white p-5">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-baseline gap-2">
@@ -843,64 +822,41 @@ const ResumePage = () => {
           ))}
         </div>
       </div>
-
-      {opts.result.recommendations.length > 0 && (
-        <div className="rounded-xl border border-line bg-white p-5">
-          <h3 className="text-[13px] font-semibold text-ink mb-3">
-            Recommended changes ({opts.result.recommendations.length})
-          </h3>
-          <div className="space-y-3 max-h-[420px] overflow-y-auto pr-1">
-            {opts.result.recommendations.map((rec) => (
-              <label
-                key={rec.id}
-                className="flex gap-2.5 items-start rounded-lg border border-line p-3 cursor-pointer hover:bg-paper-2"
-              >
-                <Checkbox
-                  checked={opts.selectedIds.has(rec.id)}
-                  onCheckedChange={() => opts.onToggle(rec.id)}
-                  disabled={isBusy}
-                  className="mt-0.5"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="inline-block text-[10.5px] font-semibold uppercase tracking-wide text-[#3B82F6] bg-[#EFF6FF] rounded px-1.5 py-0.5">
-                      {rec.category}
-                    </span>
-                  </div>
-                  <p className="text-[11.5px] text-muted-foreground mb-1.5">{rec.reason}</p>
-                  <p className="text-[12px] text-red-700 bg-red-50 rounded px-2 py-1 line-through decoration-red-400 mb-1">
-                    {rec.current}
-                  </p>
-                  <p className="text-[12px] text-green-800 bg-green-50 rounded px-2 py-1">
-                    {rec.proposed}
-                  </p>
-                </div>
-              </label>
-            ))}
-          </div>
-          <Button
-            className="w-full mt-4"
-            disabled={opts.count === 0 || isBusy}
-            onClick={opts.onApply}
-          >
-            {opts.state === "applying" ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                Applying…
-              </>
-            ) : opts.state === "rescoring" ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
-                Rescoring…
-              </>
-            ) : (
-              `Apply ${opts.count} selected change${opts.count === 1 ? "" : "s"}`
-            )}
-          </Button>
-        </div>
-      )}
-    </>
   );
+
+  // Apply-bar busy label while a machine commits (panel shows a spinner).
+  const busyLabelFor = (state: ScoreState): string | null =>
+    state === "applying" ? "Applying…" : state === "rescoring" ? "Rescoring…" : null;
+
+  // Per-machine opts for the score card (right rail).
+  const editScored =
+    scoreState === "scored" || scoreState === "applying" || scoreState === "rescoring";
+  const editRail: ScoredRailOpts | null = scoreResult
+    ? {
+        result: scoreResult,
+        delta: scoreDelta,
+        state: scoreState,
+        onRescore: handleScore,
+      }
+    : null;
+  const fitScored =
+    fitState === "scored" || fitState === "applying" || fitState === "rescoring";
+  const fitRail: ScoredRailOpts | null = fitResult
+    ? {
+        result: fitResult,
+        delta: fitDelta,
+        state: fitState,
+        onRescore: handleFitScore,
+      }
+    : null;
+
+  // Tab-specific subtitle for the Recommended Changes panel.
+  const fitCompany = fitContextRef.current?.company?.trim();
+  const fitSubtitle = fitCompany
+    ? `Approve or reject each edit tailored to the ${fitCompany} posting, one at a time.`
+    : "Approve or reject each edit tailored to this job posting, one at a time.";
+  const editSubtitle =
+    "Approve or reject each edit from your Harvard-rubric review, one at a time.";
 
   return (
     <SidebarProvider>
@@ -1020,8 +976,21 @@ const ResumePage = () => {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                     {/* Left/main: live PDF preview — the real document,
                         rendered by the browser's PDF viewer so it looks like
-                        the paper page you'd actually submit. */}
-                    {previewPanel}
+                        the paper page you'd actually submit — with the
+                        recommendation cards directly underneath it. */}
+                    <div className="lg:col-span-2 space-y-6">
+                      {previewPanel}
+                      {editScored && scoreResult && (
+                        <RecommendedChangesPanel
+                          key={`edit-run-${scoreRunId}`}
+                          recommendations={scoreResult.recommendations}
+                          subtitle={editSubtitle}
+                          disabled={isBusy}
+                          busyLabel={busyLabelFor(scoreState)}
+                          onApply={handleApplyApproved}
+                        />
+                      )}
+                    </div>
 
                     {/* Right: score rail */}
                     <div className="lg:sticky lg:top-4 self-start space-y-4">
@@ -1080,27 +1049,27 @@ const ResumePage = () => {
                         </div>
                       )}
 
-                      {(scoreState === "scored" ||
-                        scoreState === "applying" ||
-                        scoreState === "rescoring") &&
-                        scoreResult &&
-                        renderScoredRail({
-                          result: scoreResult,
-                          delta: scoreDelta,
-                          state: scoreState,
-                          selectedIds: selectedRecIds,
-                          count: selectedCount,
-                          onToggle: toggleRec,
-                          onRescore: handleScore,
-                          onApply: handleApplySelected,
-                        })}
+                      {editScored && editRail && renderScoreCard(editRail)}
                     </div>
                   </div>
                 </>
               ) : (
-                /* Tailor tab: same PDF preview, job-fit score rail */
+                /* Tailor tab: same PDF preview + recommendations underneath,
+                   job-fit score rail on the right */
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                  {previewPanel}
+                  <div className="lg:col-span-2 space-y-6">
+                    {previewPanel}
+                    {fitScored && fitResult && (
+                      <RecommendedChangesPanel
+                        key={`fit-run-${fitRunId}`}
+                        recommendations={fitResult.recommendations}
+                        subtitle={fitSubtitle}
+                        disabled={isBusy}
+                        busyLabel={busyLabelFor(fitState)}
+                        onApply={handleFitApplyApproved}
+                      />
+                    )}
+                  </div>
 
                   {/* Right: job inputs + fit score rail */}
                   <div className="lg:sticky lg:top-4 self-start space-y-4">
@@ -1171,20 +1140,7 @@ const ResumePage = () => {
                       </div>
                     )}
 
-                    {(fitState === "scored" ||
-                      fitState === "applying" ||
-                      fitState === "rescoring") &&
-                      fitResult &&
-                      renderScoredRail({
-                        result: fitResult,
-                        delta: fitDelta,
-                        state: fitState,
-                        selectedIds: fitSelectedIds,
-                        count: fitSelectedCount,
-                        onToggle: toggleFitRec,
-                        onRescore: handleFitScore,
-                        onApply: handleFitApplySelected,
-                      })}
+                    {fitScored && fitRail && renderScoreCard(fitRail)}
                   </div>
                 </div>
               )}

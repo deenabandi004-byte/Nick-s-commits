@@ -25,12 +25,13 @@ import {
   Forward,
 } from "lucide-react";
 import ShareScout from "@/assets/share-scout.jpeg";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { useTour } from "@/contexts/TourContext";
 import { firebaseApi, type ManualFirm } from "@/services/firebaseApi";
 import { apiService, type Firm, type OutboxThread, type ShareKind } from "@/services/api";
 import { getCompanyLogoUrl } from "@/utils/suggestionChips";
+import { outboxThreadToProto } from "@/pages/trackerAdapter";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -356,6 +357,7 @@ const AddPersonRow: React.FC<{
         placeholder="School"
         style={ADD_INPUT_STYLE}
       />
+      <div /> {/* status slot */}
       <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
         <button
           type="button"
@@ -479,6 +481,30 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [generatingMailId, setGeneratingMailId] = useState<string | null>(null);
+
+  // Outbox threads power the Status column: a contact with no thread (or a
+  // thread still in the "Saved" stage) gets a Draft button; once a draft
+  // exists the cell shows the same pipeline stage chip the inbox spreadsheet
+  // renders (via outboxThreadToProto). Shares the ["trackerContacts"] cache
+  // key with the tracker and with handleMailClick's dedupe below.
+  const { user: authedUser } = useFirebaseAuth();
+  const { data: outboxThreads } = useQuery({
+    queryKey: ["trackerContacts"],
+    queryFn: async () => {
+      const res = await apiService.getOutboxThreads();
+      if ("error" in res) throw new Error(res.error);
+      return res.threads;
+    },
+    enabled: !!authedUser,
+  });
+  const threadByEmail = useMemo(() => {
+    const m = new Map<string, OutboxThread>();
+    for (const t of outboxThreads || []) {
+      const e = (t.email || "").trim().toLowerCase();
+      if (e && !m.has(e)) m.set(e, t);
+    }
+    return m;
+  }, [outboxThreads]);
 
   // Scroll the ?contact= deep-link target into view once the rows are present.
   // The row's ring-highlight comes from rowBaseBg; this just brings it on
@@ -661,12 +687,13 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
     );
   };
 
-  // Column widths - 7 columns: checkbox | company logo | name+linkedin |
-  // company text | role | school | actions. The logo sits in its own column
-  // right after the checkbox so the row visually echoes the Companies tab.
-  // Each cell uses overflow truncation so long values don't bleed into
-  // adjacent cells.
-  const COLS = "28px 36px minmax(180px, 1.5fr) minmax(140px, 1.1fr) minmax(140px, 1fr) minmax(150px, 1.1fr) 104px";
+  // Column widths - 8 columns: checkbox | company logo | name+linkedin |
+  // company text | role | school | status | actions. The logo sits in its own
+  // column right after the checkbox so the row visually echoes the Companies
+  // tab. Status shows a Draft button (no thread yet) or the inbox pipeline
+  // stage chip. Each cell uses overflow truncation so long values don't bleed
+  // into adjacent cells.
+  const COLS = "28px 36px minmax(180px, 1.5fr) minmax(140px, 1.1fr) minmax(140px, 1fr) minmax(150px, 1.1fr) 100px 104px";
 
   const HeaderRow = (
     <div
@@ -703,6 +730,9 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
           School<SortIcon col="school" />
         </span>
       </button>
+      <span className="font-sans text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3">
+        Status
+      </span>
       <span className="font-sans text-[9px] font-medium uppercase tracking-[0.12em] text-ink-3 text-right">
         Actions
       </span>
@@ -731,6 +761,14 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
     const draftValue = noteDrafts[row.id] ?? row.notes ?? "";
     const hasNote = !!(row.notes && row.notes.trim());
     const isFocused = !!(focusContactId && row.id === focusContactId);
+    // Status column state. proto mirrors the inbox spreadsheet's stage
+    // vocabulary (Saved/Drafted/Contacted/Connected/Interviewing/Offer +
+    // terminal labels). "Saved" means a thread doc exists but nothing was
+    // ever drafted, so it gets the Draft button just like a missing thread.
+    const rowThread = row.email ? threadByEmail.get(row.email.trim().toLowerCase()) : undefined;
+    const rowProto = rowThread ? outboxThreadToProto(rowThread) : null;
+    const showDraftButton = !rowProto || rowProto.pipelineLabel === "Saved";
+    const isTerminalStage = !!rowProto && rowProto.stage === null;
     return (
       <React.Fragment key={row.id}>
         <div
@@ -808,6 +846,60 @@ const PeopleTable: React.FC<PeopleTableProps> = ({
       <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>{row.role || " - "}</div>
       <div className="text-[12px] text-ink-2 truncate" style={{ minWidth: 0 }}>
         {row.school || (row.location ? <span className="text-ink-3">{row.location}</span> : " - ")}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        {/* Blank until threads load so a Draft button never flashes on a row
+            that already has a conversation. Rows without an email can't be
+            drafted to, so they stay blank too. */}
+        {row.email && outboxThreads !== undefined && (
+          showDraftButton ? (
+            <button
+              type="button"
+              title={generatingMailId === row.id ? "Drafting first email…" : "Draft an intro email"}
+              disabled={generatingMailId === row.id}
+              className="inline-flex items-center gap-1.5 rounded-full border border-line bg-white px-2.5 py-1 text-[11px] font-medium text-ink-2 hover:border-[#4A60A8] hover:text-[#4A60A8] disabled:cursor-wait disabled:opacity-60"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMailClick(row);
+              }}
+            >
+              {generatingMailId === row.id ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Mail className="h-3 w-3" />
+              )}
+              Draft
+            </button>
+          ) : (
+            <button
+              type="button"
+              title="Open conversation"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMailClick(row);
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                maxWidth: "100%",
+                padding: "3px 10px",
+                borderRadius: 9999,
+                border: "none",
+                cursor: "pointer",
+                fontSize: 11,
+                fontWeight: 500,
+                fontFamily: "inherit",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                background: isTerminalStage ? "#F1F5F9" : "rgba(74,96,168,0.10)",
+                color: isTerminalStage ? "#64748B" : "var(--accent, #4A60A8)",
+              }}
+            >
+              {rowProto!.pipelineLabel}
+            </button>
+          )
+        )}
       </div>
       <div className="flex items-center justify-end gap-1.5 text-ink-3">
         {onShare && (

@@ -14,6 +14,10 @@ interface UpgradeModalProps {
   feature: string;
   reason?: string;
   currentTier: Tier;
+  /** Override the auto-resolved required tier (use when `feature` isn't a TierLimits key). */
+  requiredTier?: Tier;
+  /** Override the human-readable feature label shown in the heading. */
+  featureLabel?: string;
 }
 
 export function UpgradeModal({
@@ -22,9 +26,11 @@ export function UpgradeModal({
   feature,
   reason,
   currentTier,
+  requiredTier: requiredTierProp,
+  featureLabel,
 }: UpgradeModalProps) {
   const navigate = useNavigate();
-  const requiredTier = getRequiredTier(feature as keyof typeof TIER_LIMITS.free);
+  const requiredTier = requiredTierProp ?? getRequiredTier(feature as keyof typeof TIER_LIMITS.free);
 
   if (!open) return null;
 
@@ -39,6 +45,7 @@ export function UpgradeModal({
   };
 
   const getFeatureDescription = () => {
+    if (featureLabel) return featureLabel;
     const featureMap: Record<string, string> = {
       firm_search: 'Full Firm Search',
       smart_filters: 'Smart Filters',

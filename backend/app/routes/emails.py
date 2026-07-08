@@ -228,7 +228,49 @@ def generate_and_draft():
 
         # Extract just the contact dicts for generation
         contacts_to_generate = [contact for _, contact in contacts_needing_emails]
-        
+
+        # Enrich on demand. Contact search now runs in preview mode (fast, no
+        # enrichment), so this is where the rich personalization context is
+        # gathered: Perplexity web-presence + Apify LinkedIn posts + company
+        # news. Each pass is best-effort — drafts still generate if it fails.
+        enrichment_data = {}
+        try:
+            from app.services.perplexity_client import batch_enrich_contacts, batch_enrich_company_news
+            from app.services.apify_client import batch_enrich_linkedin_posts_via_apify
+            enrichment_data = batch_enrich_contacts(contacts_to_generate) or {}
+            for idx, contact in enumerate(contacts_to_generate):
+                enrich = enrichment_data.get(idx, {})
+                if enrich.get("talking_points"):
+                    contact["enrichment_talking_points"] = enrich["talking_points"]
+                if enrich.get("recent_activity"):
+                    contact["enrichment_recent_activity"] = enrich["recent_activity"]
+                if enrich.get("media_appearances"):
+                    contact["perplexity_media_appearances"] = enrich["media_appearances"]
+                if enrich.get("published_writing"):
+                    contact["perplexity_published_writing"] = enrich["published_writing"]
+                if enrich.get("news_mentions"):
+                    contact["perplexity_news_mentions"] = enrich["news_mentions"]
+            try:
+                apify_results = batch_enrich_linkedin_posts_via_apify(contacts_to_generate) or {}
+                for idx, contact in enumerate(contacts_to_generate):
+                    payload = apify_results.get(idx, {})
+                    if payload.get("linkedin_recent_posts"):
+                        contact["linkedin_recent_posts"] = payload["linkedin_recent_posts"]
+            except Exception:
+                print("⚠️ [EmailGen] Apify LinkedIn enrichment failed, continuing", flush=True)
+            try:
+                company_enrichment = batch_enrich_company_news(contacts_to_generate) or {}
+                for idx, contact in enumerate(contacts_to_generate):
+                    co = company_enrichment.get(idx, {})
+                    if co.get("company_recent_news"):
+                        contact["company_recent_news"] = co["company_recent_news"]
+                    if co.get("company_description"):
+                        contact["company_description"] = co["company_description"]
+            except Exception:
+                print("⚠️ [EmailGen] Perplexity company enrichment failed, continuing", flush=True)
+        except Exception as _enrich_err:
+            print(f"⚠️ [EmailGen] Enrichment failed, drafting without it: {_enrich_err}", flush=True)
+
         # 1) Generate emails with fit context and user's template/signoff
         auth_display_name = (getattr(request, "firebase_user", None) or {}).get("name") or ""
         warmth_data = score_contacts_for_email(user_data, contacts_to_generate)
@@ -250,6 +292,7 @@ def generate_and_draft():
             dream_companies=dream_companies,
             warmth_data=warmth_data,
             uid=uid,
+            enrichment_data=enrichment_data,
         )
         print(f"🧪 batch_generate_emails returned: type={type(generated_results)}, "
           f"len={len(generated_results) if hasattr(generated_results, '__len__') else 'n/a'}, "
@@ -536,7 +579,11 @@ def generate_and_draft():
                 "draftId": draft_id,
                 "messageId": message_id,
                 "threadId": thread_id,
-                "gmailUrl": gmail_url
+                "gmailUrl": gmail_url,
+                # Return the generated copy so the Find page can render the draft
+                # inline (View draft) without a second round-trip to Gmail.
+                "subject": r["subject"],
+                "body": body,
             })
             
             # Save/update contact in Firestore with draft info (even if no threadId yet)

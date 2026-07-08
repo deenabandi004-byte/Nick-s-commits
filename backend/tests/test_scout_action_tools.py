@@ -272,6 +272,150 @@ def test_cover_letter_chip_carries_job_url():
     assert out["cta"]["prefill"]["job_url"] == "https://databricks.com/jobs/123"
 
 
+@pytest.mark.unit
+def test_cover_letter_chip_carries_the_letter_itself():
+    # The workshop page must show the ALREADY-generated letter (and its PDF
+    # preview) on arrival — without this, the user lands on an empty form
+    # and would have to spend credits regenerating what Scout already wrote.
+    result = {"tool": "answer", "message": "letter", "cta": None}
+    helpers = [{"name": "generate_cover_letter", "result": {
+        "cover_letter": "Dear Hiring Team, ...", "job_title": "AI Engineer",
+        "company": "Databricks", "job_url": "https://databricks.com/jobs/123"}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["prefill"]["letter"] == "Dear Hiring Team, ..."
+
+
+# ---------------------------------------------------------------------------
+# Cover letter prefill normalization: a MODEL-AUTHORED chip routed to
+# /cover-letter must also carry the letter (field bug 2026-07-08: "Open the
+# Jane Street cover letter" chip landed on an empty form).
+# ---------------------------------------------------------------------------
+
+_CL_HELPERS = [{"name": "generate_cover_letter", "result": {
+    "cover_letter": "Dear Jane Street Team, ...",
+    "job_title": "Trading Desk Operations Engineer",
+    "company": "Jane Street"}}]
+
+
+@pytest.mark.unit
+def test_model_authored_cover_letter_chip_gets_letter_injected():
+    result = {"tool": "answer", "message": "here it is", "cta": {
+        "label": "Open the Jane Street cover letter",
+        "route": "/cover-letter",
+        "prefill": {"company": "Jane Street"},
+    }}
+    out = _svc()._ensure_cover_letter_prefill(result, _CL_HELPERS)
+    assert out["cta"]["prefill"]["letter"] == "Dear Jane Street Team, ..."
+    assert out["cta"]["prefill"]["job_title"] == "Trading Desk Operations Engineer"
+    # Model-authored values win over helper backfill.
+    assert out["cta"]["prefill"]["company"] == "Jane Street"
+
+
+@pytest.mark.unit
+def test_cover_letter_prefill_untouched_for_other_routes():
+    result = {"tool": "answer", "message": "found jobs", "cta": {
+        "label": "See more on the Job Board", "route": "/job-board", "prefill": {}}}
+    out = _svc()._ensure_cover_letter_prefill(result, _CL_HELPERS)
+    assert "letter" not in out["cta"]["prefill"]
+
+
+@pytest.mark.unit
+def test_cover_letter_prefill_noop_without_helper():
+    result = {"tool": "answer", "message": "hi", "cta": {
+        "label": "Open the workshop", "route": "/cover-letter", "prefill": {}}}
+    out = _svc()._ensure_cover_letter_prefill(result, [])
+    assert "letter" not in out["cta"]["prefill"]
+
+
+# ---------------------------------------------------------------------------
+# Broken-promise guard: an `answer` claiming cover-letter work that no tool
+# performed is detected (the loop rejects it once and forces the tool call).
+# Claim strings below are verbatim from the 2026-07-08 field recording.
+# ---------------------------------------------------------------------------
+
+def _promise(text, helpers=(), user="choose one, write a cover letter for it"):
+    return _svc()._is_broken_cover_letter_promise(
+        "answer", {"text": text}, list(helpers), {"recent_user_text": user})
+
+
+@pytest.mark.unit
+def test_promise_guard_catches_future_claim():
+    assert _promise(
+        "Sure - I'll pick the Trading Desk Operations Engineer role at Jane "
+        "Street in NYC and generate a tailored cover letter for it now.")
+
+
+@pytest.mark.unit
+def test_promise_guard_catches_ready_claim():
+    assert _promise(
+        "You asked for the Trading Desk Operations Engineer cover letter - "
+        "I've generated it and it's ready on the Cover Letter page.",
+        user="where's the cover letter")
+
+
+@pytest.mark.unit
+def test_promise_guard_ignores_offers():
+    assert not _promise("I can write a cover letter once you pick a role.")
+
+
+@pytest.mark.unit
+def test_promise_guard_cleared_when_tool_ran():
+    helpers = [{"name": "generate_cover_letter", "result": {"error": "x",
+                "code": "NEEDS_JOB_DESCRIPTION"}}]
+    assert not _promise(
+        "I couldn't generate the cover letter without the posting - paste "
+        "the URL and I'll write it.", helpers=helpers)
+
+
+@pytest.mark.unit
+def test_promise_guard_needs_user_to_have_asked():
+    assert not _promise(
+        "I'll generate a tailored cover letter for it now.",
+        user="what should I do next")
+
+
+def _nav_promise(reasoning, route="/cover-letter", helpers=(),
+                 user="refresh the cover letter"):
+    return _svc()._is_broken_cover_letter_promise(
+        "navigate", {"route": route, "reasoning": reasoning},
+        list(helpers), {"recent_user_text": user})
+
+
+@pytest.mark.unit
+def test_promise_guard_catches_navigate_claiming_refreshed_letter():
+    # Verbatim from the 2026-07-08 screenshot (DO-mode navigate).
+    assert _nav_promise(
+        "Sure thing, setting up a refreshed cover letter for the Jane Street "
+        "Trading Desk Operations Engineer role focused on your systems and "
+        "data engineering strengths from Offerloop; open the editor to "
+        "review and tweak tone or add a project.")
+
+
+@pytest.mark.unit
+def test_promise_guard_catches_navigate_naming_a_specific_letter():
+    assert _nav_promise(
+        "Done, opening the Jane Street Trading Desk Operations Engineer "
+        "cover letter in the editor for you to review and edit.",
+        user="okay where is it, the letter")
+    assert _nav_promise(
+        "Opening the Jane Street Trading Desk Operations Engineer cover "
+        "letter editor so you can review and edit the refreshed draft.",
+        user="where's my letter")
+
+
+@pytest.mark.unit
+def test_promise_guard_allows_honest_page_open():
+    assert not _nav_promise(
+        "Opening the cover letter editor so you can generate one for this role.")
+
+
+@pytest.mark.unit
+def test_promise_guard_ignores_navigate_to_other_routes():
+    assert not _nav_promise(
+        "Opening the Job Board with your refreshed cover letter search.",
+        route="/job-board")
+
+
 # ---------------------------------------------------------------------------
 # Network cta normalization: find-only turns chip to My Network (an Inbox
 # chip is a false promise); draft turns carry BOTH chips via `ctas`.

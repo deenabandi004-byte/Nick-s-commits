@@ -244,33 +244,54 @@ async def build_resume_pdf_from_text(resume_text: str) -> bytes:
 
 
 def generate_cover_letter_pdf(content: str) -> BytesIO:
-    """Generate a PDF from cover letter text content"""
+    """Generate a PDF from cover letter text content.
+
+    US business-letter block format per career-center style guides: US Letter
+    page, 1" margins, Times 11pt single-spaced, left-aligned, no paragraph
+    indentation, one blank line between paragraphs, date line above the
+    salutation. Times matches the resume PDF so the application package reads
+    as one document set.
+    """
+    # Final backstop on the no-em-dash guarantee: this also catches text the
+    # user edited client-side before requesting the PDF.
+    from app.utils.em_dash import strip_em_dashes
+    content = strip_em_dashes(content)
+
     try:
         buffer = BytesIO()
         doc = SimpleDocTemplate(
             buffer,
             pagesize=letter,
-            topMargin=36,
-            bottomMargin=36
+            topMargin=1 * inch,
+            bottomMargin=1 * inch,
+            leftMargin=1 * inch,
+            rightMargin=1 * inch,
         )
         styles = getSampleStyleSheet()
         story: List = []
 
         body_style = ParagraphStyle(
-            "Body",
+            "CoverLetterBody",
             parent=styles["BodyText"],
+            fontName="Times-Roman",
             fontSize=11,
             leading=14,
             alignment=TA_LEFT,
-            spaceAfter=6,
+            textColor=colors.black,
+            spaceAfter=11,  # one blank line between paragraphs (block format)
+            spaceBefore=0,
+            firstLineIndent=0,
         )
+
+        # Date line, one blank line above the salutation (block format).
+        now = datetime.now()
+        story.append(_safe_paragraph(f"{now:%B} {now.day}, {now.year}", body_style))
 
         paragraphs = content.split('\n\n')
         for para in paragraphs:
             if para.strip():
                 para_text = para.replace('\n', '<br/>')
                 story.append(_safe_paragraph(para_text, body_style))
-                story.append(Spacer(1, 0.1 * inch))
 
         doc.build(story)
         buffer.seek(0)

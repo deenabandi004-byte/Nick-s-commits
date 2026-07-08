@@ -32,7 +32,9 @@ const CoverLetterPage = () => {
 
   // Scout handoff: the "Open the Cover Letter workshop" chip after an
   // in-chat cover letter carries the job context (posting URL, title,
-  // company) through the bridge; paste it into the form on arrival.
+  // company) AND the generated letter itself through the bridge. Setting
+  // `letter` here makes the finished letter and its PDF preview render on
+  // arrival — no empty form, no paying credits to regenerate.
   const location = useLocation();
   useEffect(() => {
     const applyHandoff = () => {
@@ -41,6 +43,7 @@ const CoverLetterPage = () => {
       if (prefill.job_url) setJobUrl(prefill.job_url);
       if (prefill.job_title) setJobTitle(prefill.job_title);
       if (prefill.company) setCompany(prefill.company);
+      if (prefill.letter) setLetter(prefill.letter);
     };
     applyHandoff();
     window.addEventListener(SCOUT_PREFILL_EVENT, applyHandoff);
@@ -51,6 +54,40 @@ const CoverLetterPage = () => {
   const [downloading, setDownloading] = useState(false);
   const [letter, setLetter] = useState<string | null>(null);
   const [needsResume, setNeedsResume] = useState(false);
+
+  // Paper preview: render the letter through the real /cover-letter-pdf
+  // endpoint (free, no credits) so what the user sees is the exact PDF they
+  // download. Debounced so typing in Edit mode doesn't spam the backend;
+  // the previous preview stays up until the new blob is ready.
+  const [viewMode, setViewMode] = useState<"preview" | "edit">("preview");
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const previewUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (letter === null) return;
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      try {
+        const blob = await apiService.downloadCoverLetterPdf(letter, company.trim() || undefined);
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+        previewUrlRef.current = url;
+        setPreviewUrl(url);
+      } catch {
+        // Keep the last good preview; the next edit retries.
+      }
+    }, 700);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [letter]);
+  useEffect(() => {
+    return () => {
+      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    };
+  }, []);
 
   const canGenerate =
     !generating && (!!jobUrl.trim() || jobDescription.trim().length >= MIN_JD_LENGTH);
@@ -117,8 +154,20 @@ const CoverLetterPage = () => {
           <AppHeader title="Cover Letter" />
           <div className="flex-1 overflow-y-auto">
             <div className="max-w-[900px] mx-auto px-6 py-6 space-y-6">
+              <h1
+                style={{
+                  fontFamily: "'Libre Baskerville', Georgia, serif",
+                  fontSize: 30,
+                  fontWeight: 400,
+                  lineHeight: "36px",
+                  color: "#1e2d4d",
+                  margin: 0,
+                }}
+              >
+                Generate a cover letter
+              </h1>
+
               <div className="rounded-xl border border-line bg-white p-5">
-                <h2 className="text-[15px] font-semibold text-ink mb-1">Generate a cover letter</h2>
                 <p className="text-[12.5px] text-muted-foreground mb-4">
                   Paste a job posting URL or the job description and we'll write one from your stored resume.
                 </p>
@@ -166,9 +215,23 @@ const CoverLetterPage = () => {
 
               {letter !== null && (
                 <div className="rounded-xl border border-line bg-white p-5">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <h2 className="text-[15px] font-semibold text-ink">Your cover letter</h2>
                     <div className="flex items-center gap-2">
+                      <Button
+                        variant={viewMode === "preview" ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("preview")}
+                      >
+                        Preview
+                      </Button>
+                      <Button
+                        variant={viewMode === "edit" ? "secondary" : "outline"}
+                        size="sm"
+                        onClick={() => setViewMode("edit")}
+                      >
+                        Edit text
+                      </Button>
                       <Button variant="outline" size="sm" onClick={handleCopy}>
                         <Copy className="w-4 h-4 mr-1.5" />
                         Copy
@@ -179,13 +242,40 @@ const CoverLetterPage = () => {
                       </Button>
                     </div>
                   </div>
-                  <Textarea
-                    value={letter}
-                    onChange={(e) => setLetter(e.target.value)}
-                    className="min-h-[380px] font-mono text-[13px] leading-relaxed"
-                  />
+                  {viewMode === "preview" ? (
+                    <div
+                      className="rounded-lg border border-line overflow-hidden"
+                      style={{ background: "#525659" }}
+                    >
+                      {previewUrl ? (
+                        <iframe
+                          src={`${previewUrl}#toolbar=0&navpanes=0&view=FitH`}
+                          title="Cover letter PDF preview"
+                          style={{
+                            width: "100%",
+                            aspectRatio: "8.5 / 11",
+                            border: "none",
+                            display: "block",
+                          }}
+                        />
+                      ) : (
+                        <div
+                          className="flex items-center justify-center text-sm text-white/80"
+                          style={{ width: "100%", aspectRatio: "8.5 / 11" }}
+                        >
+                          Rendering preview…
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Textarea
+                      value={letter}
+                      onChange={(e) => setLetter(e.target.value)}
+                      className="min-h-[380px] font-mono text-[13px] leading-relaxed"
+                    />
+                  )}
                   <p className="text-[12px] text-muted-foreground mt-2">
-                    Generated from your stored resume. Edits here appear in the PDF.
+                    Generated from your stored resume. The preview is the exact PDF you'll download.
                   </p>
                 </div>
               )}

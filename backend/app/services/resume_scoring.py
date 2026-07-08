@@ -27,8 +27,8 @@ from app.services.openai_client import get_openai_client
 MODEL = "gpt-4o"
 # Low temperature: grading should be strict and repeatable, not creative.
 TEMPERATURE = 0.2
-MAX_TOKENS = 3000
-MAX_RECOMMENDATIONS = 8
+MAX_TOKENS = 4500
+MAX_RECOMMENDATIONS = 12
 # Job-fit mode input limits.
 MIN_JOB_DESCRIPTION_CHARS = 50
 MAX_JOB_DESCRIPTION_CHARS = 4000
@@ -117,7 +117,12 @@ potential; grade the text on the page.
 
 ## RECOMMENDATIONS — HARD RULES (violating these gets a recommendation discarded)
 
-- Return AT MOST 8 recommendations, ordered by impact (highest-impact first).
+- Return AT MOST 12 recommendations, ordered by impact (highest-impact first).
+- Scale the count to the overall score: below 60, return 10-12; between 60 \
+and 79, return at least 8; 80+, return only the changes that still matter. \
+A weak resume has many fixable bullets — finding only 3-4 problems on a \
+sub-80 resume means you stopped looking too early. Return fewer than the \
+floor ONLY when the resume genuinely has too few target bullets to rewrite.
 - Every recommendation MUST target exactly one of these two shapes:
   - {"section": "experience", "index": <int>, "bullet": <int>} — rewrites \
 one bullet in experience[index].bullets[bullet]
@@ -232,7 +237,12 @@ potential; grade the text on the page against this posting.
 
 ## RECOMMENDATIONS — HARD RULES (violating these gets a recommendation discarded)
 
-- Return AT MOST 8 recommendations, ordered by impact (highest-impact first).
+- Return AT MOST 12 recommendations, ordered by impact (highest-impact first).
+- Scale the count to the overall score: below 60, return 10-12; between 60 \
+and 79, return at least 8; 80+, return only the changes that still matter. \
+A weak resume has many fixable bullets — finding only 3-4 problems on a \
+sub-80 resume means you stopped looking too early. Return fewer than the \
+floor ONLY when the resume genuinely has too few target bullets to rewrite.
 - Every recommendation MUST target exactly one of these two shapes:
   - {"section": "experience", "index": <int>, "bullet": <int>} — rewrites \
 one bullet in experience[index].bullets[bullet]
@@ -389,12 +399,14 @@ def _build_user_prompt(parsed: Dict[str, Any], job_context: Optional[Dict[str, A
     if job_context:
         job_block = _build_job_posting_block(job_context)
         closing = ("Score this resume's fit for the job posting above against "
-                   "the rubric and propose up to 8 path-targeted recommendations "
-                   "that tailor it toward that posting.")
+                   "the rubric and propose up to 12 path-targeted recommendations "
+                   "that tailor it toward that posting (at least 8 when the fit "
+                   "score lands below 80).")
     else:
         job_block = ""
-        closing = ("Score this resume against the rubric and propose up to 8 "
-                   "path-targeted recommendations.")
+        closing = ("Score this resume against the rubric and propose up to 12 "
+                   "path-targeted recommendations (at least 8 when the score "
+                   "lands below 80).")
 
     return f"""{job_block}## INDEXED EXPERIENCE / PROJECTS (recommendation targets MUST use these exact paths and verbatim text)
 

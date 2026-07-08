@@ -1,30 +1,23 @@
 /**
- * FindHumansModal — Find the Humans surface.
+ * FindHumansModal — Find the Humans surface (job board).
  *
  *   - Skips JD parser via no_parse=true (uses job card's structured fields).
  *   - source='find_humans' opts the request into the Pro/Elite gate and
  *     the per-user hourly cap.
- *   - Backend already auto-creates Gmail drafts and saves recruiters; the
- *     modal renders the result with per-candidate evidence receipts.
- *
- * Composes ContactCardBase primitives (ContactAvatar / ContactIdentity /
- * CardAccentBorder / StatusLine).
+ *   - PREVIEW FIRST: the search finds the people (name, title, email) without
+ *     generating emails or Gmail drafts, so it returns fast. The user then
+ *     chooses to Draft or Send from the result — mirroring Find People.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { AlertTriangle, ExternalLink, Inbox, Loader2, Mail, MailCheck, Users, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, Inbox, Linkedin, Loader2, Mail, Send, Table2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { SteppedLoadingBar } from "@/components/ui/LoadingBar";
-import {
-  CardAccentBorder,
-  ContactAvatar,
-  ContactIdentity,
-  StatusLine,
-} from "@/components/tracker/shared/ContactCardBase";
+import { SendConfirmDialog } from "@/components/SendConfirmDialog";
+import { toast } from "@/hooks/use-toast";
 import {
   apiService,
-  type FindHumansReceipt,
   type FindRecruiterResponse,
   type Recruiter,
 } from "@/services/api";
@@ -62,94 +55,109 @@ interface FindHumansModalProps {
 
 type ModalState = "idle" | "loading" | "success" | "error";
 
+// Per-person draft state, keyed by lowercased email. Populated on demand when
+// the user clicks Draft / Send — not during the (fast) preview search.
+interface DraftInfo {
+  draftId?: string;
+  gmailUrl?: string;
+  subject?: string;
+  sent?: boolean;
+}
+
 const LOADING_STEPS = [
   { id: "read", label: "Reading job posting…" },
-  { id: "search", label: "Searching for hiring teams…" },
+  { id: "search", label: "Searching for the right people…" },
   { id: "match", label: "Cross-referencing your background…" },
-  { id: "draft", label: "Drafting emails…" },
 ] as const;
 
-// Aesthetic constant from the agentic queue design (non-negotiable per design doc).
-const ACCENT_BLUE = "#3B82F6";
+const AVATAR_COLORS = ["#5965D8", "#8B5CF6", "#0D9488", "#D97706", "#DB2777", "#2563EB"];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function recruiterFullName(r: Recruiter): string {
-  return `${r.FirstName ?? ""} ${r.LastName ?? ""}`.trim() || r.Email || "Unknown";
+  return `${r.FirstName ?? ""} ${r.LastName ?? ""}`.trim() || cleanEmail(r) || "Unknown";
 }
 
+// The backend sets Email to "Not available" / Title to "unknown" when those
+// couldn't be resolved. Treat both as absent so the card never shows junk.
+function cleanEmail(r: Recruiter): string {
+  const e = (r.Email || r.WorkEmail || "").trim();
+  return e.toLowerCase() === "not available" ? "" : e;
+}
+function cleanTitle(r: Recruiter): string {
+  const t = (r.Title || "").trim();
+  return t.toLowerCase() === "unknown" ? "" : t;
+}
 function recruiterSubtitle(r: Recruiter): string {
-  const parts: string[] = [];
-  if (r.Title) parts.push(r.Title);
-  if (r.Company) parts.push(r.Company);
-  return parts.join(" · ");
+  return [cleanTitle(r), r.Company].filter(Boolean).join(" · ");
+}
+function initialsOf(name: string): string {
+  return name.split(" ").map((n) => n[0]).slice(0, 2).join("").toUpperCase();
 }
 
-function recruiterLocation(r: Recruiter): string {
-  const parts: string[] = [];
-  if (r.City) parts.push(r.City);
-  if (r.State) parts.push(r.State);
-  return parts.join(", ");
-}
+// ---------------------------------------------------------------------------
+// Candidate card — clean identity row with a LinkedIn button and, once the
+// user drafts, an inline View-draft / Sent affordance.
+// ---------------------------------------------------------------------------
 
-// Phase 1 receipts have NO href field — they are pure provenance text.
-function ReceiptRow({ receipt }: { receipt: FindHumansReceipt }) {
-  const dotClass =
-    receipt.strength === "high"
-      ? "bg-[#3B82F6]"
-      : receipt.strength === "medium"
-        ? "border border-[#3B82F6] bg-transparent"
-        : "bg-transparent";
-
-  return (
-    <li className="flex items-start gap-2 text-xs text-gray-600">
-      <span
-        aria-hidden
-        className={`mt-1 inline-block h-1.5 w-1.5 rounded-full flex-shrink-0 ${dotClass}`}
-      />
-      <span>{receipt.label}</span>
-    </li>
-  );
-}
-
-function CandidateReceiptCard({ recruiter }: { recruiter: Recruiter }) {
+function CandidateCard({ recruiter, draft, index }: { recruiter: Recruiter; draft?: DraftInfo; index: number }) {
   const name = recruiterFullName(recruiter);
   const subtitle = recruiterSubtitle(recruiter);
-  const location = recruiterLocation(recruiter);
-  const receipts = recruiter.findHumansReceipts ?? [];
+  const email = cleanEmail(recruiter);
+  const linkedin = recruiter.LinkedIn
+    ? (recruiter.LinkedIn.startsWith("http") ? recruiter.LinkedIn : `https://${recruiter.LinkedIn}`)
+    : "";
+  const bg = AVATAR_COLORS[index % AVATAR_COLORS.length];
 
   return (
-    <CardAccentBorder accentColor={ACCENT_BLUE} as="div" className="items-start">
-      <ContactAvatar name={name} size="md" />
+    <div className="flex items-center gap-3 rounded-2xl border border-[#ECEEF3] bg-white p-3.5">
+      <div
+        className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-[13px] font-semibold text-white"
+        style={{ background: bg }}
+      >
+        {initialsOf(name)}
+      </div>
       <div className="min-w-0 flex-1">
-        <ContactIdentity
-          name={name}
-          subtitle={subtitle}
-          status={location ? <StatusLine text={location} tone="muted" /> : undefined}
-        />
-
-        {receipts.length > 0 && (
-          <ul className="mt-2 space-y-1">
-            {receipts.slice(0, 4).map((r, i) => (
-              <ReceiptRow key={`${r.type}-${i}`} receipt={r} />
-            ))}
-          </ul>
-        )}
-
-        {recruiter.LinkedIn && (
+        <div className="truncate text-[14px] font-bold text-[#0F172A]">{name}</div>
+        <div className="truncate text-[12.5px] text-[#64748B]">
+          {subtitle}
+          {subtitle && (email || true) && <span className="text-[#CBD5E1]"> · </span>}
+          {email
+            ? <span className="text-[#94A3B8]">{email}</span>
+            : <span className="italic text-[#B45309]">No email found</span>}
+        </div>
+      </div>
+      <div className="flex flex-shrink-0 items-center gap-2">
+        {linkedin && (
           <a
-            href={recruiter.LinkedIn.startsWith('http') ? recruiter.LinkedIn : `https://${recruiter.LinkedIn}`}
+            href={linkedin}
             target="_blank"
             rel="noreferrer noopener"
-            className="mt-2 inline-flex items-center gap-1 text-xs text-[#2563EB] hover:underline"
+            title="View LinkedIn profile"
+            aria-label="View LinkedIn profile"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-[9px] border border-[#E2E8F0] bg-white text-[#0A66C2] hover:bg-[#F1F5F9]"
           >
-            View LinkedIn <ExternalLink className="h-3 w-3" />
+            <Linkedin className="h-4 w-4" />
           </a>
         )}
+        {draft?.sent ? (
+          <span className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#BBF7D0] bg-white px-3 text-[12.5px] font-semibold text-[#15803D]">
+            <CheckCircle className="h-4 w-4" /> Sent
+          </span>
+        ) : draft?.draftId ? (
+          <a
+            href={draft.gmailUrl || "https://mail.google.com/mail/u/0/#drafts"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-9 items-center gap-1.5 rounded-[9px] border border-[#C7CCF0] bg-white px-3.5 text-[12.5px] font-semibold text-[#4A60A8] hover:bg-[#F2F3FC]"
+          >
+            <Mail className="h-4 w-4" /> View draft
+          </a>
+        ) : null}
       </div>
-    </CardAccentBorder>
+    </div>
   );
 }
 
@@ -166,18 +174,10 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
         : "Find the Humans";
   const personNoun = (n: number) =>
     n === 1
-      ? kind === "employee"
-        ? "person"
-        : "human"
-      : kind === "employee"
-        ? "people"
-        : "humans";
+      ? kind === "employee" ? "person" : "human"
+      : kind === "employee" ? "people" : "humans";
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
-  // People (employee flow) land in My Network → People; hiring managers /
-  // recruiters land in the Hiring Managers tab. Both tabs blue-highlight rows
-  // saved within the last 60s, so saving below makes the just-found contacts
-  // glow when "View in Spreadsheet" navigates there.
   const isPeople = kind === "employee";
   const networkTab = isPeople ? "people" : "managers";
   const outboxSegment = isPeople ? "people" : "hiringManagers";
@@ -187,10 +187,15 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
   const [error, setError] = useState<string | null>(null);
   const [loadingStepId, setLoadingStepId] = useState<string>(LOADING_STEPS[0].id);
 
+  // On-demand draft/send state (keyed by lowercased email).
+  const [draftInfo, setDraftInfo] = useState<Record<string, DraftInfo>>({});
+  const [drafting, setDrafting] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [confirmSend, setConfirmSend] = useState(false);
+
   // Token to ignore stale responses if the modal is closed/reopened mid-flight.
   const requestTokenRef = useRef(0);
   const stepTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  // Guards a one-time save per successful search.
   const persistedTokenRef = useRef(0);
 
   const clearStepTimer = useCallback(() => {
@@ -208,93 +213,54 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
       i = Math.min(i + 1, LOADING_STEPS.length - 1);
       setLoadingStepId(LOADING_STEPS[i].id);
       if (i === LOADING_STEPS.length - 1) clearStepTimer();
-    }, 2500);
+    }, 2200);
   }, [clearStepTimer]);
 
-  // Map of lowercased recruiter email -> draft info (for draft/email lookups).
-  const buildDraftMap = (result: FindRecruiterResponse) => {
-    const m = new Map<string, { draft_id?: string; draft_url?: string; message_id?: string }>();
-    for (const d of result.draftsCreated ?? []) {
-      const key = (d.recruiter_email || "").trim().toLowerCase();
-      if (key) m.set(key, { draft_id: d.draft_id, draft_url: d.draft_url, message_id: d.message_id });
-    }
-    return m;
-  };
+  const recruiters = response?.recruiters ?? [];
+  const withEmail = useMemo(() => recruiters.filter((r) => cleanEmail(r)), [recruiters]);
+  const draftedCount = withEmail.filter((r) => draftInfo[cleanEmail(r).toLowerCase()]?.draftId).length;
+  const sentCount = withEmail.filter((r) => draftInfo[cleanEmail(r).toLowerCase()]?.sent).length;
+  const allSent = withEmail.length > 0 && sentCount === withEmail.length;
+  const allDrafted = withEmail.length > 0 && draftedCount === withEmail.length;
 
-  const buildEmailMap = (result: FindRecruiterResponse) => {
-    const m = new Map<string, { subject?: string; body?: string }>();
-    for (const e of result.emails ?? []) {
-      const key = (e.to_email || e.recruiter?.Email || "").trim().toLowerCase();
-      if (key) m.set(key, { subject: e.subject, body: e.plain_body || e.body });
-    }
-    return m;
-  };
+  const focusEmail = (): string | undefined =>
+    (withEmail.find((r) => draftInfo[cleanEmail(r).toLowerCase()]?.draftId) || withEmail[0])
+      ? cleanEmail(withEmail.find((r) => draftInfo[cleanEmail(r).toLowerCase()]?.draftId) || withEmail[0]) || undefined
+      : undefined;
 
-  // The first found person's email is what the Inbox button focuses; prefer a
-  // person who actually got a draft so the tracker opens a real conversation.
-  const focusEmailFor = (result: FindRecruiterResponse | null): string | undefined => {
-    if (!result) return undefined;
-    const draftMap = buildDraftMap(result);
-    const list = result.recruiters ?? [];
-    const drafted = list.find((r) => r.Email && draftMap.has(r.Email.trim().toLowerCase()));
-    return (drafted?.Email || list.find((r) => r.Email)?.Email || "").trim() || undefined;
-  };
-
-  // Persist found contacts so they show up (and blue-highlight) in My Network.
-  // People → contacts subcollection (backend /contacts/bulk dedupes); hiring
-  // managers / recruiters → recruiters subcollection (dedupe client-side here).
+  // Persist found people so they appear (and blue-highlight) in My Network.
+  // Preview search has no draft info yet — they save as Not Contacted.
   const persistResults = useCallback(
     async (result: FindRecruiterResponse) => {
       const uid = user?.uid;
       const found = result.recruiters ?? [];
       if (!uid || found.length === 0) return;
-
-      const draftMap = buildDraftMap(result);
-      const emailMap = buildEmailMap(result);
       const today = new Date().toLocaleDateString("en-US");
-
       try {
         if (isPeople) {
-          const mapped: Omit<FirebaseContact, "id">[] = found.map((r) => {
-            const email = (r.Email || r.WorkEmail || "").trim();
-            const key = email.toLowerCase();
-            const draft = key ? draftMap.get(key) : undefined;
-            const em = key ? emailMap.get(key) : undefined;
-            const location = [r.City, r.State].filter(Boolean).join(", ");
-            // Sent over fetch+JSON to /contacts/bulk, so undefined fields drop out.
-            return {
-              firstName: r.FirstName || "",
-              lastName: r.LastName || "",
-              linkedinUrl: r.LinkedIn || "",
-              email,
-              company: r.Company || job?.company || "",
-              jobTitle: r.Title || "",
-              college: "",
-              location,
-              firstContactDate: today,
-              lastContactDate: today,
-              status: "Not Contacted",
-              emailSubject: em?.subject,
-              emailBody: em?.body,
-              gmailDraftId: draft?.draft_id,
-              gmailDraftUrl: draft?.draft_url,
-              gmailMessageId: draft?.message_id,
-            };
-          });
+          const mapped: Omit<FirebaseContact, "id">[] = found.map((r) => ({
+            firstName: r.FirstName || "",
+            lastName: r.LastName || "",
+            linkedinUrl: r.LinkedIn || "",
+            email: cleanEmail(r),
+            company: r.Company || job?.company || "",
+            jobTitle: cleanTitle(r),
+            college: "",
+            location: [r.City, r.State].filter(Boolean).join(", "),
+            firstContactDate: today,
+            lastContactDate: today,
+            status: "Not Contacted",
+          }));
           await firebaseApi.bulkCreateContacts(uid, mapped);
         } else {
           const mapped: Omit<FirebaseRecruiter, "id">[] = found.map((r) => {
-            const email = (r.Email || r.WorkEmail || "").trim();
-            const key = email.toLowerCase();
-            const draft = key ? draftMap.get(key) : undefined;
-            // batch.set rejects undefined, so only attach optional fields when set.
             const rec: Omit<FirebaseRecruiter, "id"> = {
               firstName: r.FirstName || "",
               lastName: r.LastName || "",
               linkedinUrl: r.LinkedIn || "",
-              email,
+              email: cleanEmail(r),
               company: r.Company || job?.company || "",
-              jobTitle: r.Title || "",
+              jobTitle: cleanTitle(r),
               location: [r.City, r.State].filter(Boolean).join(", "),
               dateAdded: new Date().toISOString(),
               status: "Not Contacted",
@@ -304,19 +270,11 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
             if (r.PersonalEmail) rec.personalEmail = r.PersonalEmail;
             if (job?.title) rec.associatedJobTitle = job.title;
             if (job?.url) rec.associatedJobUrl = job.url;
-            if (draft?.draft_id) rec.gmailDraftId = draft.draft_id;
-            if (draft?.draft_url) rec.gmailDraftUrl = draft.draft_url;
-            if (draft?.message_id) rec.gmailMessageId = draft.message_id;
             return rec;
           });
-
           const existing = await firebaseApi.getRecruiters(uid);
-          const existingEmails = new Set(
-            existing.map((r) => (r.email || "").trim().toLowerCase()).filter(Boolean),
-          );
-          const existingLinkedIns = new Set(
-            existing.map((r) => (r.linkedinUrl || "").trim()).filter(Boolean),
-          );
+          const existingEmails = new Set(existing.map((r) => (r.email || "").trim().toLowerCase()).filter(Boolean));
+          const existingLinkedIns = new Set(existing.map((r) => (r.linkedinUrl || "").trim()).filter(Boolean));
           const toSave = mapped.filter((r) => {
             const e = (r.email || "").trim().toLowerCase();
             const li = (r.linkedinUrl || "").trim();
@@ -327,8 +285,6 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
           if (toSave.length > 0) await firebaseApi.bulkCreateRecruiters(uid, toSave);
         }
       } catch (e) {
-        // Non-fatal: the results are still shown; they just may not appear in
-        // My Network. Surface in dev for debugging.
         if (import.meta.env.DEV) console.error("[FindHumansModal] persist failed:", e);
       }
     },
@@ -346,7 +302,14 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
     setState("loading");
     setError(null);
     setResponse(null);
+    setDraftInfo({});
     startStepAnimation();
+
+    // Preview: find the people only. No email generation, no Gmail drafts — the
+    // user drafts/sends afterward. Faster, and matches the Find People flow.
+    // All three endpoints read generateEmails/createDrafts (default true), so
+    // setting them false is what makes the search find-only.
+    const previewFlags = { generateEmails: false, createDrafts: false };
 
     try {
       let result: FindRecruiterResponse;
@@ -359,8 +322,7 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
           jobUrl: job.url || undefined,
           jobId: job.id || undefined,
           maxResults: count ?? 3,
-          generateEmails: true,
-          createDrafts: true,
+          ...previewFlags,
         });
       } else if (kind === "hiring-manager") {
         const hm = await apiService.findHiringManagers({
@@ -370,11 +332,8 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
           location: job.location || undefined,
           jobUrl: job.url || undefined,
           maxResults: count ?? 3,
-          generateEmails: true,
-          createDrafts: true,
+          ...previewFlags,
         });
-        // Normalize the hiring-manager response (people in `hiringManagers`)
-        // into the shared shape the rest of this modal renders (`recruiters`).
         result = { ...hm, recruiters: hm.hiringManagers } as unknown as FindRecruiterResponse;
       } else {
         result = await apiService.findRecruiters({
@@ -383,17 +342,14 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
           jobDescription: job.description || undefined,
           location: job.location || undefined,
           jobUrl: job.url || undefined,
-          generateEmails: true,
-          createDrafts: true,
           no_parse: true,
           source: "find_humans",
           maxResults: 3,
+          ...previewFlags,
         });
       }
 
-      // Stale response — caller already moved on.
       if (token !== requestTokenRef.current) return;
-
       clearStepTimer();
 
       if (result.error) {
@@ -401,7 +357,6 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
         setState("error");
         return;
       }
-
       if (!result.recruiters || result.recruiters.length === 0) {
         setError(
           kind === "employee"
@@ -415,8 +370,6 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
       setResponse(result);
       setState("success");
 
-      // Save the found people once so they appear (and blue-highlight) in My
-      // Network. Fire-and-forget — never blocks the result UI.
       if (persistedTokenRef.current !== token) {
         persistedTokenRef.current = token;
         void persistResults(result);
@@ -424,24 +377,90 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
     } catch (e) {
       if (token !== requestTokenRef.current) return;
       clearStepTimer();
-      const message =
-        e instanceof Error ? e.message : "Something went wrong. No credits were charged.";
+      const message = e instanceof Error ? e.message : "Something went wrong. No credits were charged.";
       setError(message);
       setState("error");
     }
   }, [clearStepTimer, job, startStepAnimation, kind, count, persistResults]);
 
+  // Draft a personalized email to every found person with an email.
+  const ensureDrafts = useCallback(
+    async (): Promise<Record<string, DraftInfo> | null> => {
+      const need = withEmail.filter((r) => !draftInfo[cleanEmail(r).toLowerCase()]?.draftId);
+      if (need.length === 0) return draftInfo;
+      const contacts = need.map((r) => ({
+        ...r,
+        Name: recruiterFullName(r),
+        Email: cleanEmail(r),
+        Title: cleanTitle(r),
+      }));
+      const res = await apiService.generateAndDraftEmails({ contacts });
+      if ("error" in res) {
+        toast({
+          title: "Couldn't create drafts",
+          description: res.message || res.error || "Reconnect your Gmail account and try again.",
+          variant: "destructive",
+        });
+        return null;
+      }
+      const next: Record<string, DraftInfo> = { ...draftInfo };
+      for (const d of res.drafts || []) {
+        const k = (d.to || "").trim().toLowerCase();
+        if (k) next[k] = { ...next[k], draftId: d.draftId, gmailUrl: d.gmailUrl, subject: d.subject };
+      }
+      setDraftInfo(next);
+      return next;
+    },
+    [withEmail, draftInfo],
+  );
+
+  const handleDraftAll = async () => {
+    if (drafting || sending) return;
+    setDrafting(true);
+    try {
+      const next = await ensureDrafts();
+      if (next) {
+        const n = Object.values(next).filter((d) => d.draftId).length;
+        toast({ title: "Drafts ready", description: `${n} draft${n === 1 ? "" : "s"} created in your Gmail.` });
+      }
+    } finally {
+      setDrafting(false);
+    }
+  };
+
+  const handleSendAll = async () => {
+    if (drafting || sending) return;
+    setSending(true);
+    try {
+      const info = await ensureDrafts();
+      if (!info) return;
+      const next = { ...info };
+      let sent = 0;
+      for (const r of withEmail) {
+        const k = cleanEmail(r).toLowerCase();
+        const di = next[k];
+        if (di?.draftId && !di.sent) {
+          const sres = await apiService.sendDraft(di.draftId);
+          if (sres.success) {
+            next[k] = { ...di, sent: true };
+            sent += 1;
+          }
+        }
+      }
+      setDraftInfo(next);
+      toast({ title: sent > 0 ? "Emails sent" : "Nothing sent", description: `${sent} email${sent === 1 ? "" : "s"} sent from your Gmail.` });
+    } finally {
+      setSending(false);
+    }
+  };
+
   // Kick off the search the first time the modal opens for a given job.
   useEffect(() => {
     if (!open) {
-      // Cancel any pending step animation when modal closes.
       clearStepTimer();
       return;
     }
-    if (state === "idle") {
-      void runSearch();
-    }
-    // Intentionally only depend on `open` so we don't re-run on every state change.
+    if (state === "idle") void runSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
@@ -452,38 +471,41 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
         setState("idle");
         setResponse(null);
         setError(null);
+        setDraftInfo({});
         setLoadingStepId(LOADING_STEPS[0].id);
       }, 200);
       return () => clearTimeout(t);
     }
   }, [open]);
 
-  // ----- render -----
-
-  const draftCount = response?.draftsCreated?.length ?? 0;
-  const recruiters = response?.recruiters ?? [];
-
-  // Inbox → open the first found person's conversation in the tracker.
   const handleInbox = () => {
-    navigate("/outbox", { state: { focusEmail: focusEmailFor(response), segment: outboxSegment } });
+    navigate("/outbox", { state: { focusEmail: focusEmail(), segment: outboxSegment } });
     onOpenChange(false);
   };
-  // View in Spreadsheet → My Network, on the matching tab, where the freshly
-  // saved rows blue-highlight via the 60s recency window.
   const handleViewSpreadsheet = () => {
     navigate(`/my-network/${networkTab}`);
     onOpenChange(false);
   };
 
+  const busy = drafting || sending;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
+        <SendConfirmDialog
+          open={confirmSend}
+          count={withEmail.length}
+          loading={sending}
+          onCancel={() => setConfirmSend(false)}
+          onConfirm={() => {
+            setConfirmSend(false);
+            void handleSendAll();
+          }}
+        />
         <DialogHeader className="px-5 pt-5 pb-3 border-b border-gray-100">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <DialogTitle className="text-base font-semibold text-gray-900">
-                {heading}
-              </DialogTitle>
+              <DialogTitle className="text-base font-semibold text-gray-900">{heading}</DialogTitle>
               {job?.title && job?.company && (
                 <p className="mt-0.5 text-xs text-gray-500 truncate">
                   {job.title} · {job.company}
@@ -491,8 +513,7 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
               )}
               {state === "success" && response && (
                 <p className="mt-1 text-xs text-gray-500">
-                  Charged: {response.creditsCharged} credits for {recruiters.length}{" "}
-                  {personNoun(recruiters.length)}
+                  Charged: {response.creditsCharged} credits for {recruiters.length} {personNoun(recruiters.length)}
                 </p>
               )}
             </div>
@@ -514,53 +535,57 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
                 steps={LOADING_STEPS as unknown as { id: string; label: string }[]}
                 currentStepId={loadingStepId}
               />
-              <p className="mt-4 text-xs text-gray-500 text-center">
-                Hang tight — usually under 15 seconds.
-              </p>
+              <p className="mt-4 text-xs text-gray-500 text-center">Hang tight — usually under 10 seconds.</p>
             </div>
           )}
 
           {state === "success" && recruiters.length > 0 && (
             <>
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {recruiters.map((r, i) => (
-                  <CandidateReceiptCard
-                    key={`${r.Email || r.LinkedIn || "r"}-${i}`}
+                  <CandidateCard
+                    key={`${cleanEmail(r) || r.LinkedIn || "r"}-${i}`}
                     recruiter={r}
+                    draft={draftInfo[cleanEmail(r).toLowerCase()]}
+                    index={i}
                   />
                 ))}
               </div>
 
-              {/* Post-search actions — mirror the Find People results bar. */}
-              <div className="mt-4 flex items-center gap-2">
-                {draftCount > 0 && (
-                  <Button
-                    asChild
-                    size="sm"
-                    className="flex-1 bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+              {/* Draft / Send — outreach happens here, on demand. */}
+              {withEmail.length > 0 && (
+                <div className="mt-4 flex items-center justify-center gap-2.5">
+                  <button
+                    type="button"
+                    disabled={busy || allDrafted}
+                    onClick={handleDraftAll}
+                    className="inline-flex items-center gap-2 rounded-[10px] px-5 py-2.5 text-[14px] font-semibold text-white disabled:opacity-60"
+                    style={{ background: "linear-gradient(180deg, #5965D8 0%, #4B55C4 100%)", boxShadow: "0 1px 2px rgba(74,96,168,0.18), 0 8px 20px rgba(74,96,168,0.24)" }}
                   >
-                    <a
-                      href="https://mail.google.com/mail/u/0/#drafts"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Mail className="h-3.5 w-3.5 mr-1.5" />
-                      Gmail drafts
-                    </a>
-                  </Button>
-                )}
+                    {drafting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mail className="h-4 w-4" />}
+                    {allDrafted ? "Drafts ready" : `Draft ${withEmail.length} email${withEmail.length === 1 ? "" : "s"}`}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busy || allSent}
+                    onClick={() => setConfirmSend(true)}
+                    className="inline-flex items-center gap-2 rounded-[10px] border border-[#E2E8F0] bg-white px-5 py-2.5 text-[14px] font-semibold text-[#0F172A] disabled:opacity-60"
+                  >
+                    {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {allSent ? "Emails sent" : "Send emails"}
+                  </button>
+                </div>
+              )}
+
+              {/* Destinations */}
+              <div className="mt-3 flex items-center gap-2">
                 <Button size="sm" variant="outline" className="flex-1" onClick={handleInbox}>
                   <Inbox className="h-3.5 w-3.5 mr-1.5" />
-                  Inbox
+                  Open inbox
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={handleViewSpreadsheet}
-                >
-                  <Users className="h-3.5 w-3.5 mr-1.5" />
-                  View in Spreadsheet
+                <Button size="sm" variant="outline" className="flex-1" onClick={handleViewSpreadsheet}>
+                  <Table2 className="h-3.5 w-3.5 mr-1.5" />
+                  View in spreadsheet
                 </Button>
               </div>
             </>
@@ -577,10 +602,13 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
         </div>
 
         <div className="border-t border-gray-100 px-5 py-3 flex items-center justify-between gap-2">
-          {state === "success" && draftCount > 0 ? (
+          {state === "success" && (sentCount > 0 || draftedCount > 0) ? (
             <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-              <MailCheck className="h-3.5 w-3.5 text-[#3B82F6]" />
-              {draftCount} draft{draftCount === 1 ? "" : "s"} ready in Gmail
+              {sentCount > 0 ? (
+                <><CheckCircle className="h-3.5 w-3.5 text-[#15803D]" /> {sentCount} sent</>
+              ) : (
+                <><Mail className="h-3.5 w-3.5 text-[#4A60A8]" /> {draftedCount} draft{draftedCount === 1 ? "" : "s"} ready in Gmail</>
+              )}
             </span>
           ) : (
             <span />
@@ -595,7 +623,7 @@ export function FindHumansModal({ open, onOpenChange, job, kind = "recruiter", c
             {state === "loading" ? (
               <Button size="sm" disabled>
                 <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                Searching…
+                Finding…
               </Button>
             ) : (
               <Button size="sm" onClick={() => onOpenChange(false)}>

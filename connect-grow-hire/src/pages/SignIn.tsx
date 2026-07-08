@@ -30,7 +30,15 @@ const SignIn: React.FC = () => {
     navigate(dest, { replace: true });
     setTimeout(() => {
       const at = window.location.pathname;
-      if (at !== dest) {
+      // Only hard-redirect if the SPA nav genuinely never moved us off the
+      // sign-in page. The previous guard compared `at !== dest`, but several
+      // dests are redirect aliases (e.g. /home → /dashboard), so the path the
+      // router lands on legitimately differs from `dest`. That made the guard
+      // fire a full window.location.replace() on every normal sign-in —
+      // wiping the freshly-rendered dashboard and re-bootstrapping the whole
+      // app (the visible "load → reload" flash). If we've left /signin, the
+      // navigation worked, regardless of which final path we settled on.
+      if (at === "/signin") {
         console.warn("[signin] router nav didn't apply, forcing hard redirect", { at, dest });
         window.location.replace(dest);
       }

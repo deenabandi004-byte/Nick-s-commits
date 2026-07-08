@@ -1070,6 +1070,7 @@ class ScoutAssistantService:
             result = self._enrich_cover_letter_report(result, helper_results)
             result = self._enrich_workflow_ctas(result, helper_results)
             result = self._enrich_network_ctas(result, helper_results)
+            result = self._ensure_cover_letter_prefill(result, helper_results)
             # An answer colored by user-specific state must never be promoted
             # into the shared answer cache. That covers reading or writing
             # the active strategy this turn (strategy_touched), AND any
@@ -1438,6 +1439,9 @@ class ScoutAssistantService:
         usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
         helper_calls: List[Dict[str, Any]] = []
         helper_results: List[Dict[str, Any]] = []
+        # One-shot: a rejected broken-promise answer gets exactly one forced
+        # retry, so a stubborn model can never loop.
+        promise_retry_used = False
 
         for step in range(MAX_STEPS):
             final_step = step == MAX_STEPS - 1
@@ -1479,6 +1483,52 @@ class ScoutAssistantService:
             name = call.function.name
 
             if name in TERMINAL_TOOL_NAMES:
+                # Broken-promise guard: a terminal (answer OR navigate to
+                # /cover-letter) that claims cover-letter work no tool
+                # performed is rejected once, forcing the model to actually
+                # call generate_cover_letter (or respond honestly that
+                # nothing exists yet). Field bugs 2026-07-08: Scout said
+                # "I'll generate a tailored cover letter for it now", ran
+                # nothing, claimed it was "ready on the Cover Letter page",
+                # and later navigated there "opening the Jane Street cover
+                # letter" — every path opened onto an empty form.
+                if (
+                    not final_step
+                    and not promise_retry_used
+                    and self._is_broken_cover_letter_promise(name, args, helper_results, context)
+                ):
+                    promise_retry_used = True
+                    convo.append({
+                        "role": "assistant",
+                        "content": message.content or None,
+                        "tool_calls": [{
+                            "id": call.id,
+                            "type": "function",
+                            "function": {
+                                "name": name,
+                                "arguments": call.function.arguments or "{}",
+                            },
+                        }],
+                    })
+                    convo.append({
+                        "role": "tool",
+                        "tool_call_id": call.id,
+                        "content": json.dumps({
+                            "error": (
+                                "REJECTED: this response claims a cover letter exists or "
+                                "is being generated, but generate_cover_letter did not run "
+                                "this turn — nothing exists for the user to open. Call "
+                                "generate_cover_letter NOW (resolve the job via a job_id "
+                                "from this chat's find_jobs results, a pasted URL, or a "
+                                "pasted description), then deliver the letter in your "
+                                "answer. If you cannot generate it, respond honestly that "
+                                "the letter is not written yet and say exactly what you "
+                                "need. Never tell the user a letter is ready, refreshed, "
+                                "or waiting on a page when it is not."
+                            ),
+                        }),
+                    })
+                    continue
                 return {"name": name, "args": args}, usage, helper_calls, helper_results
 
             if name in HELPER_TOOL_NAMES:
@@ -1975,6 +2025,128 @@ class ScoutAssistantService:
             print(f"[ScoutChat] cover letter enrichment failed: {e}")
         return result
 
+    def _ensure_cover_letter_prefill(
+        self,
+        result: Dict[str, Any],
+        helper_results: Optional[List[Dict[str, Any]]],
+    ) -> Dict[str, Any]:
+        """Every chip pointing at /cover-letter carries the letter generated
+        this turn.
+
+        Model-authored chips ("Open the Jane Street cover letter") drop the
+        letter from their prefill, so the workshop page opened onto an empty
+        form and the user had to spend credits regenerating what Scout just
+        wrote. Runs AFTER the cta enrichments so it covers both the fallback
+        chip and model-authored ones.
+        """
+        try:
+            entry = next(
+                (
+                    h["result"] for h in reversed(helper_results or [])
+                    if h.get("name") == "generate_cover_letter"
+                    and isinstance(h.get("result"), dict)
+                    and h["result"].get("cover_letter")
+                ),
+                None,
+            )
+            if not entry:
+                return result
+            chips = []
+            if isinstance(result.get("cta"), dict):
+                chips.append(result["cta"])
+            if isinstance(result.get("ctas"), list):
+                chips.extend(c for c in result["ctas"] if isinstance(c, dict))
+            for chip in chips:
+                route = str(chip.get("route") or "").split("?")[0]
+                if route != "/cover-letter":
+                    continue
+                prefill = chip.get("prefill") if isinstance(chip.get("prefill"), dict) else {}
+                prefill.setdefault("letter", str(entry["cover_letter"]))
+                for key in ("job_title", "company", "job_url"):
+                    if entry.get(key):
+                        prefill.setdefault(key, str(entry[key]))
+                chip["prefill"] = prefill
+        except Exception as e:
+            print(f"[ScoutChat] cover letter prefill normalization failed: {e}")
+        return result
+
+    # Claim-of-work detectors for the broken-promise guard. Shapes seen in
+    # the 2026-07-08 field recordings:
+    #   1. First-person commitment: "I'll ... generate/write/draft ... cover
+    #      letter" ("I can write one" does NOT match — offers are fine).
+    #   2. Completion claim: "cover letter ... generated/ready/done/waiting".
+    #   3. In-progress claim: "generating/setting up ... cover letter".
+    #   4. Finished-adjective claim: "a refreshed cover letter",
+    #      "the refreshed draft".
+    _COVER_LETTER_CLAIM_RES = (
+        re.compile(
+            r"\bi\s*(?:'|’)?\s*(?:ll|will|ve|have|am|m)\b[^.!?]*?"
+            r"(?:generat|writ|draft)\w*[^.!?]{0,80}?\bcover letter",
+            re.I,
+        ),
+        re.compile(
+            r"\bcover letter\b[^.!?]{0,120}?\b(?:generated|drafted|written|ready|done|waiting)\b",
+            re.I,
+        ),
+        re.compile(
+            r"\b(?:generating|writing|drafting|setting up)\b[^.!?]{0,80}?\bcover letter\b",
+            re.I,
+        ),
+        re.compile(
+            r"\b(?:refreshed|updated|tailored|personalized|polished|finished)\s+"
+            r"(?:cover letter|draft|letter)\b",
+            re.I,
+        ),
+    )
+    # Navigate-only: "opening the Jane Street ... cover letter" names a
+    # SPECIFIC letter as if it exists. "the cover letter page/editor/
+    # workshop/tool" is the surface, not a letter — excluded.
+    _COVER_LETTER_NAV_CLAIM_RE = re.compile(
+        r"\b(?:the|your)\s+(?:[\w&'’-]+\s+){0,8}?cover letter\b"
+        r"(?!\s+(?:page|editor|workshop|tool)\b)",
+        re.I,
+    )
+
+    def _is_broken_cover_letter_promise(
+        self,
+        name: str,
+        args: Dict[str, Any],
+        helper_results: List[Dict[str, Any]],
+        context: Dict[str, Any],
+    ) -> bool:
+        """True when a terminal claims cover-letter work that never happened.
+
+        gpt-5-mini ends turns on "I'll generate the letter now", "it's ready
+        on the Cover Letter page", or a navigate to /cover-letter announcing
+        "opening the Jane Street cover letter" — all without ever calling
+        generate_cover_letter. The user then opens the workshop to an empty
+        form. Detects the claim so the loop can reject the terminal and
+        force the tool call. Guards: the user must have asked for a letter
+        (offers and bare page-opens never trigger), and any
+        generate_cover_letter run this turn (success OR error) clears it —
+        error turns legitimately talk about the letter not existing.
+        """
+        if any(h.get("name") == "generate_cover_letter" for h in helper_results):
+            return False
+        recent_user = str(context.get("recent_user_text") or "").lower()
+        if "letter" not in recent_user:
+            return False
+        if name == "answer":
+            text = " ".join(str((args or {}).get("text") or "").split())
+            if "cover letter" not in text.lower():
+                return False
+            return any(p.search(text) for p in self._COVER_LETTER_CLAIM_RES)
+        if name == "navigate":
+            route = str((args or {}).get("route") or "").split("?")[0]
+            if route != "/cover-letter":
+                return False
+            text = " ".join(str((args or {}).get("reasoning") or "").split())
+            return bool(
+                any(p.search(text) for p in self._COVER_LETTER_CLAIM_RES)
+                or self._COVER_LETTER_NAV_CLAIM_RE.search(text)
+            )
+        return False
+
     def _enrich_workflow_ctas(
         self,
         result: Dict[str, Any],
@@ -2052,7 +2224,11 @@ class ScoutAssistantService:
                     }
                     return result
                 if name == "generate_cover_letter" and res.get("cover_letter"):
-                    prefill = {}
+                    # Carry the ALREADY-generated letter to the workshop so
+                    # the page shows it (and its PDF preview) on arrival —
+                    # otherwise the user lands on an empty form and has to
+                    # spend credits regenerating what Scout just wrote.
+                    prefill = {"letter": str(res["cover_letter"])}
                     if res.get("job_title"):
                         prefill["job_title"] = str(res["job_title"])
                     if res.get("company"):

@@ -274,18 +274,26 @@ export const OnboardingTrial = ({ onStartTrial, onContinueFree, submitting, isSt
         })}
       </div>
 
-      {/* Free plan — de-emphasized secondary option so the trial leads */}
-      <div className="mt-5 text-center">
+      {/* Free plan — secondary option, but visible enough to be an obvious out */}
+      <div className="mt-6 flex justify-center">
         <button
           type="button"
           onClick={onContinueFree}
           disabled={submitting}
-          className="text-sm font-medium transition-colors disabled:opacity-50"
-          style={{ color: C_FS.muted, background: "none", border: "none", cursor: "pointer" }}
-          onMouseEnter={(e) => (e.currentTarget.style.color = C_FS.ink)}
-          onMouseLeave={(e) => (e.currentTarget.style.color = C_FS.muted)}
+          className="inline-flex items-center gap-1.5 rounded-lg border px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50"
+          style={{ color: C_FS.body, borderColor: "#CBD5E1", background: "#FFFFFF" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = C_FS.brand;
+            e.currentTarget.style.color = C_FS.ink;
+            e.currentTarget.style.background = "#F8FAFF";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = "#CBD5E1";
+            e.currentTarget.style.color = C_FS.body;
+            e.currentTarget.style.background = "#FFFFFF";
+          }}
         >
-          Continue on the free plan
+          Continue on the free plan →
         </button>
       </div>
     </div>

@@ -24,6 +24,7 @@ from __future__ import annotations
 import logging
 
 from app.services.openai_client import get_openai_client
+from app.utils.em_dash import strip_em_dashes
 
 logger = logging.getLogger(__name__)
 
@@ -277,9 +278,10 @@ def generate_letter(
     )
     text = (response.choices[0].message.content or "").strip()
 
-    # Belt and suspenders: strip em dashes if the model snuck one in.
-    if "—" in text:
-        text = text.replace("—", ", ")
+    # Belt and suspenders: strip em dashes if the model snuck one in (the
+    # shared sanitizer also catches ―/⸺ variants, "--", and spaced en
+    # dashes, and cleans up punctuation around the replacement).
+    text = strip_em_dashes(text)
     # Strip any markdown code-fence wrapping if the model added one.
     if text.startswith("```"):
         lines = [l for l in text.splitlines() if not l.strip().startswith("```")]

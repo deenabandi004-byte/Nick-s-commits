@@ -19,6 +19,7 @@
 // People CTA opens existing FindHumansModal.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
@@ -143,13 +144,57 @@ const INITIAL_RENDER = 30;
 // transient failure can be retried.
 const descriptionCache = new Map<string, JobDescriptionState>();
 
-export const JobBoardPage: React.FC = () => {
+interface JobBoardPageProps {
+  // Supplied when hosted inside the Job Board tab so the board can render the
+  // List/Gallery toggle. Standalone use (no props) just hides the toggle.
+  view?: JobBoardView;
+  onViewChange?: (view: JobBoardView) => void;
+}
+
+export const JobBoardPage: React.FC<JobBoardPageProps> = ({ view = "list", onViewChange }) => {
   const { user, isLoading: authLoading } = useFirebaseAuth();
   const creditsView = useCreditsView();
 
   // ---- Server data --------------------------------------------------------
-  const [feed, setFeed] = useState<JobFeedResponse | null>(null);
-  const [feedLoading, setFeedLoading] = useState(true);
+  // The feed is fetched through React Query so navigating away from and back
+  // to /job-board serves the cached response instantly (staleTime 5min,
+  // matching the app default) instead of re-hitting the backend and re-showing
+  // the skeleton every time. The page previously used raw useState/useEffect
+  // and refetched the whole feed on every mount.
+  //
+  // The refresh button keeps its old semantics via refreshRef: when the user
+  // presses it we ask the backend to rotate the ranked slice (refresh=true)
+  // and surface the "Back to your top picks" wrap toast. A normal mount/
+  // background revalidation sends refresh=false.
+  const refreshRef = useRef(false);
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const feedQuery = useQuery<JobFeedResponse>({
+    queryKey: jobFeedQueryKey(user?.uid),
+    enabled: !!user,
+    staleTime: JOB_FEED_STALE_MS,
+    queryFn: async () => {
+      const isRefresh = refreshRef.current;
+      refreshRef.current = false;
+      const data = await apiService.getJobFeed({ refresh: isRefresh });
+      // Refresh-rotation toast. The backend advances an offset into the
+      // user's cached ranked list on every refresh and signals feed_wrapped
+      // when that offset wraps back to the top. Show the user a brief notice
+      // so a wrap does not look like "nothing changed".
+      if (isRefresh && data.feed_wrapped) {
+        toast({
+          title: "Back to your top picks",
+          description:
+            "You have seen the freshest matches. Starting over from the top of your ranking.",
+        });
+      }
+      return data;
+    },
+  });
+  const feed = feedQuery.data ?? null;
+  // Show the skeleton only while there is no data yet (initial load) or during
+  // an explicit refresh-button press — NOT during a silent background
+  // revalidation, so a return visit with cached data paints immediately.
+  const feedLoading = (feedQuery.isPending && !!user) || isManualRefreshing;
   // Progressive render gate. False on each fresh load so the first paint is
   // capped to INITIAL_RENDER cards; flipped true on the next idle tick to
   // render the remainder.
@@ -278,33 +323,36 @@ export const JobBoardPage: React.FC = () => {
   }, [showAddDropdown]);
 
   // ---- Data loaders -------------------------------------------------------
-  const loadFeed = useCallback(async (refresh = false) => {
-    try {
-      setFeedLoading(true);
-      setRevealAll(false);
-      const data = await apiService.getJobFeed({ refresh });
-      setFeed(data);
-      // Refresh-rotation toast. The backend advances an offset into the
-      // user's cached ranked list on every refresh and signals feed_wrapped
-      // when that offset wraps back to the top. Show the user a brief
-      // notice so a wrap does not look like "nothing changed".
-      if (refresh && data.feed_wrapped) {
-        toast({
-          title: "Back to your top picks",
-          description: "You have seen the freshest matches. Starting over from the top of your ranking.",
-        });
+  // refetch is referentially stable in React Query v5, so the callback below
+  // keeps a stable identity.
+  const refetchFeed = feedQuery.refetch;
+  const loadFeed = useCallback(
+    async (refresh = false) => {
+      if (refresh) {
+        refreshRef.current = true;
+        setRevealAll(false);
+        setIsManualRefreshing(true);
       }
-    } catch (err) {
-      console.error("getJobFeed failed", err);
+      try {
+        await refetchFeed();
+      } finally {
+        if (refresh) setIsManualRefreshing(false);
+      }
+    },
+    [refetchFeed],
+  );
+
+  // Surface a toast on fetch failure (the error itself lives in feedQuery.error).
+  useEffect(() => {
+    if (feedQuery.isError) {
+      console.error("getJobFeed failed", feedQuery.error);
       toast({
         title: "Couldn't load jobs",
         description: "Try again in a moment.",
         variant: "destructive",
       });
-    } finally {
-      setFeedLoading(false);
     }
-  }, []);
+  }, [feedQuery.isError, feedQuery.error]);
 
   const loadSaved = useCallback(async () => {
     try {
@@ -316,11 +364,12 @@ export const JobBoardPage: React.FC = () => {
     }
   }, []);
 
+  // Feed itself is fetched by feedQuery (enabled on user). Only the saved-jobs
+  // list still needs an imperative load on mount.
   useEffect(() => {
     if (!user) return;
-    loadFeed();
     loadSaved();
-  }, [user, loadFeed, loadSaved]);
+  }, [user, loadSaved]);
 
   // ---- Adapter ------------------------------------------------------------
   const sections = useMemo(() => buildSectionedJobs(feed), [feed]);
@@ -407,6 +456,10 @@ export const JobBoardPage: React.FC = () => {
     if (!user) return;
     let cancelled = false;
     const refresh = async () => {
+      // Don't poll while the tab is backgrounded — these three endpoints add
+      // up to constant load over a session for state the user can't see. We
+      // catch up immediately on visibilitychange below.
+      if (document.hidden) return;
       try {
         const api = await import("@/services/api");
         const [na, nv, all] = await Promise.all([
@@ -428,10 +481,17 @@ export const JobBoardPage: React.FC = () => {
       }
     };
     refresh();
-    const id = window.setInterval(refresh, 8000);
+    // 30s (was 8s). The auto-apply queues are not real-time surfaces; an 8s
+    // cadence was constant background load while the user read the feed.
+    const id = window.setInterval(refresh, 30000);
+    const onVisible = () => {
+      if (!document.hidden) refresh();
+    };
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, [user]);
 
@@ -881,10 +941,12 @@ export const JobBoardPage: React.FC = () => {
             <div className="jb-editorial">
               {/* ---- FilterBar (pinned) ---- */}
               <div className="jb-fb">
-                <div className="jb-fb-row">
-                  <div>
-                    <h1 className="jb-fb-title">Browse all jobs</h1>
-                  </div>
+                <div
+                  className="jb-fb-row"
+                  style={{ display: "flex", alignItems: "center", justifyContent: "flex-start", gap: 16, flexWrap: "wrap" }}
+                >
+                  <h1 className="jb-fb-title" style={{ margin: 0 }}>Browse all jobs</h1>
+                  {onViewChange && <JobBoardViewToggle view={view} onChange={onViewChange} />}
                 </div>
 
                 {/* Top-level tabs — Outbox-style segmented control */}
