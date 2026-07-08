@@ -18,18 +18,18 @@ import {
   ArrowUp,
   Briefcase,
   Building2,
+  Coffee,
   FileText,
   History,
-  KanbanSquare,
   Loader2,
   Lock,
-  MessageSquare,
   MessageSquarePlus,
+  PenLine,
+  Search,
   Send,
-  SlidersHorizontal,
   Target,
   Trash2,
-  UserSearch,
+  Users,
   type LucideIcon,
 } from 'lucide-react';
 import { formatMessage } from '@/hooks/useScoutChat';
@@ -70,15 +70,18 @@ type Capability = {
   prompt: string;
 };
 
+// Icons mirror the sidebar item for the same feature (Job Board, Search,
+// Meeting Prep, Cover Letter, Resume Workshop, My Network) so the abilities
+// read as the app's own surfaces.
 const CAPABILITIES: Capability[] = [
   { icon: Briefcase, title: 'Apply to jobs', sub: 'Find roles that fit & apply', prompt: 'Find software roles I should apply to this week' },
-  { icon: UserSearch, title: 'Find people at companies', sub: 'Names + verified emails', prompt: 'Find 10 people at Stripe I could email' },
+  { icon: Search, title: 'Find people at companies', sub: 'Names + verified emails', prompt: 'Find 10 people at Stripe I could email' },
   { icon: Target, title: 'Reach the hiring manager', sub: 'Find who owns the role', prompt: "Who's the hiring manager for this role?" },
   { icon: Building2, title: 'Research companies', sub: 'Know them before you reach out', prompt: 'Give me a briefing on McKinsey before I reach out' },
-  { icon: MessageSquare, title: 'Prep for meetings', sub: 'Walk in confident', prompt: 'Prep me for my coffee chat with a Bain consultant' },
-  { icon: FileText, title: 'Write a cover letter', sub: 'Personalized in seconds', prompt: 'Write a cover letter for this job posting' },
-  { icon: SlidersHorizontal, title: 'Tailor your resume', sub: 'Match any job description', prompt: 'Tailor my resume to this job description' },
-  { icon: KanbanSquare, title: 'Track everything', sub: 'Contacts & conversations', prompt: 'Show me what’s waiting on me right now' },
+  { icon: Coffee, title: 'Prep for meetings', sub: 'Walk in confident', prompt: 'Prep me for my coffee chat with a Bain consultant' },
+  { icon: PenLine, title: 'Write a cover letter', sub: 'Personalized in seconds', prompt: 'Write a cover letter for this job posting' },
+  { icon: FileText, title: 'Tailor your resume', sub: 'Match any job description', prompt: 'Tailor my resume to this job description' },
+  { icon: Users, title: 'Track everything', sub: 'Contacts & conversations', prompt: 'Show me what’s waiting on me right now' },
 ];
 
 // Example prompts that type themselves out and delete in the composer while

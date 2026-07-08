@@ -99,7 +99,7 @@ const engageNavItems: NavItemDef[] = [
 
 const applicationsNavItems: NavItemDef[] = [
   { title: "Applications", url: "/applications", LucideIcon: ClipboardList },
-  { title: "Resume",       url: "/resume",       LucideIcon: FileText },
+  { title: "Resume Workshop", url: "/resume",    LucideIcon: FileText },
   { title: "Cover Letter", url: "/cover-letter", LucideIcon: PenLine },
 ];
 
@@ -166,7 +166,7 @@ export function AppSidebar() {
   const agentStatus = useAgentSidebarStatus();
   const applicationsAttention = useApplicationsAttention();
   const gettingStartedItem: NavItemDef = {
-    title: "Getting Started",
+    title: "Home",
     url: "/dashboard",
     LucideIcon: Home,
   };

@@ -35,7 +35,7 @@ export default function DashboardPage() {
       <div className="flex h-screen w-full font-sans" style={{ color: "var(--brand-ink)" }}>
         <AppSidebar />
         <MainContentWrapper flush>
-          <AppHeader title="Getting Started" />
+          <AppHeader title="Home" />
 
           {/* Cool-paper canvas with a faint slate-blue radial glow at
               top-center (design: Scout home direction 1a). */}
