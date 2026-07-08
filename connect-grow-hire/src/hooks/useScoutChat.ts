@@ -801,9 +801,21 @@ export function useScoutChat(currentPageOverride?: string): UseScoutChatReturn {
         if (status?.status === 'completed') {
           setPill('Meeting prep ready', true, `packet for ${contactName}`);
           const fullName = status.contactData?.fullName || status.contactName || contactName;
-          const questions: string[] = Array.isArray(status.coffeeQuestions)
-            ? status.coffeeQuestions.slice(0, 3)
-            : [];
+          // coffeeQuestions is a list of category groups ({questions: [...]}),
+          // not plain strings; flatten to the question text or the digest
+          // renders "[object Object]".
+          const questions: string[] = (Array.isArray(status.coffeeQuestions)
+            ? status.coffeeQuestions
+            : []
+          )
+            .flatMap((q: any) => {
+              if (typeof q === 'string') return [q];
+              if (Array.isArray(q?.questions)) return q.questions;
+              if (typeof q?.question === 'string') return [q.question];
+              return [];
+            })
+            .filter((q: any) => typeof q === 'string' && q.trim())
+            .slice(0, 3);
           const lines = [
             `Your meeting prep for **${fullName}** is ready.`,
             ...(questions.length
