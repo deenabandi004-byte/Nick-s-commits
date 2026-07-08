@@ -620,9 +620,9 @@ GET_COMPANY_INTEL_TOOL: Dict[str, Any] = {
         "from the user's school work there (pass user_school when known "
         "from context). Use it when the user asks about a specific firm "
         "('tell me about Jane Street', 'is Databricks hiring new grads?') "
-        "and answer IN THE CHAT with the specifics. Only navigate to "
-        "/find?tab=companies when the user wants to discover or compare "
-        "multiple companies rather than research one."
+        "and answer IN THE CHAT with the specifics. For discovering "
+        "MULTIPLE companies matching criteria, call discover_companies "
+        "instead."
     ),
     "input_schema": {
         "type": "object",
@@ -641,6 +641,47 @@ GET_COMPANY_INTEL_TOOL: Dict[str, Any] = {
             },
         },
         "required": ["company"],
+    },
+}
+
+DISCOVER_COMPANIES_TOOL: Dict[str, Any] = {
+    "name": "discover_companies",
+    "description": (
+        "EXECUTE ACTION - runs a live company discovery search (the same "
+        "engine as the Companies tab), saves it to the user's firm search "
+        "history, and spends 2 credits per company returned. Use this when "
+        "the user asks to FIND or LIST multiple companies matching criteria "
+        "('find 10 smaller telecom startups on the west coast', 'list "
+        "boutique healthcare banks in Chicago') - pass their full ask as "
+        "query; the engine parses industry, size, and location from natural "
+        "language. Surface the results IN THE CHAT: each company's name, "
+        "industry, location, and size. COUNT IS REQUIRED: if the user gave "
+        "no number, clarify once for it before calling (this search spends "
+        "credits per company). Navigate to /find?tab=companies only when "
+        "the user wants to browse or refine filters themselves, not when "
+        "they asked for companies. For researching ONE named company, use "
+        "get_company_intel instead. Error codes: COUNT_REQUIRED -> the user "
+        "never said how many, ask them for a count (once) and call again "
+        "next turn; INSUFFICIENT_CREDITS -> say what the search costs vs "
+        "their balance; a zero-count result means nothing matched - say so "
+        "and suggest broadening the criteria, never pretend."
+    ),
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "query": {
+                "type": "string",
+                "description": (
+                    "The user's company ask in natural language, e.g. "
+                    "'smaller telecom startups on the west coast'."
+                ),
+            },
+            "count": {
+                "type": "integer",
+                "description": "How many companies the user asked for (required by the count rule).",
+            },
+        },
+        "required": ["query", "count"],
     },
 }
 
@@ -785,6 +826,7 @@ HELPER_TOOLS: List[Dict[str, Any]] = [
     RUN_MEETING_PREP_TOOL,
     FIND_CONTACTS_TOOL,
     GET_COMPANY_INTEL_TOOL,
+    DISCOVER_COMPANIES_TOOL,
     FIND_HIRING_MANAGERS_TOOL,
     GENERATE_COVER_LETTER_TOOL,
     TAILOR_RESUME_TOOL,
@@ -982,6 +1024,8 @@ async def run_helper_tool(
         return await _run_find_contacts(args, ctx)
     if name == "get_company_intel":
         return await _run_company_intel(args, ctx)
+    if name == "discover_companies":
+        return await _run_discover_companies(args, ctx)
     if name == "find_hiring_managers":
         return await _run_find_hiring_managers(args, ctx)
     if name == "generate_cover_letter":
@@ -1162,6 +1206,42 @@ async def _run_find_contacts(args: Dict[str, Any], context: Dict[str, Any]) -> D
         print(f"[ScoutTools] find_contacts failed: {e}")
         return {"count": 0, "contacts": [],
                 "error": "contact search failed", "code": "INTERNAL"}
+
+
+async def _run_discover_companies(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:
+    """Multi-company discovery saved to firm search history. Marks
+    workflow_state_touched so the turn is never cached or served cross-user.
+
+    Same harness-enforced count rule as find_contacts: the search spends
+    credits per company, so the quantity must come from the user."""
+    uid = context.get("uid")
+    if not uid:
+        return {"count": 0, "companies": [],
+                "error": "sign in required", "code": "AUTH_REQUIRED"}
+    user_message = str(context.get("user_message") or "")
+    if user_message and not _COUNT_TOKEN_RE.search(user_message):
+        return {
+            "count": 0, "companies": [],
+            "error": ("the user has not said how many companies to find; "
+                      "this search costs 2 credits per company, so ask them "
+                      "for a count before searching"),
+            "code": "COUNT_REQUIRED",
+        }
+    try:
+        from app.services.scout.company_actions import discover_companies_for_chat
+        result = await asyncio.to_thread(
+            discover_companies_for_chat,
+            uid,
+            context.get("tier"),
+            str(args.get("query") or ""),
+            args.get("count") or 10,
+        )
+        context["workflow_state_touched"] = True
+        return result
+    except Exception as e:
+        print(f"[ScoutTools] discover_companies failed: {e}")
+        return {"count": 0, "companies": [],
+                "error": "company discovery failed", "code": "INTERNAL"}
 
 
 async def _run_company_intel(args: Dict[str, Any], context: Dict[str, Any]) -> Dict[str, Any]:

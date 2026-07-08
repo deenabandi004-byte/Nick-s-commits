@@ -240,3 +240,163 @@ def test_gate_open_without_chat_context():
     are not gated; the gate protects the chat loop."""
     from app.services.scout.tools import _user_authorized, _DRAFT_KEYWORDS
     assert _user_authorized({"uid": "u1"}, _DRAFT_KEYWORDS) is True
+
+
+# ---------------------------------------------------------------------------
+# discover_companies: multi-company discovery executes in chat. Same gates
+# as find_contacts (auth + harness-enforced count), same credit rules as the
+# Companies tab (2 credits per company returned, none on a zero result).
+# ---------------------------------------------------------------------------
+
+@pytest.mark.unit
+def test_discover_companies_requires_auth():
+    out = _run("discover_companies", {"query": "telecom startups", "count": 10},
+               {"uid": None, "tier": "pro"})
+    assert out["code"] == "AUTH_REQUIRED"
+    assert out["count"] == 0
+
+
+@pytest.mark.unit
+def test_discover_companies_requires_user_count():
+    ctx = {"uid": "u1", "tier": "pro",
+           "user_message": "find smaller telecom startups on the west coast"}
+    out = _run("discover_companies", {"query": "telecom startups", "count": 10}, ctx)
+    assert out["code"] == "COUNT_REQUIRED"
+    assert out["count"] == 0
+
+
+@pytest.mark.unit
+def test_discover_companies_dispatches_with_user_count():
+    from unittest.mock import patch
+    ctx = {"uid": "u1", "tier": "pro",
+           "user_message": "find 10 smaller telecom startups on the west coast"}
+    with patch("app.services.scout.company_actions.discover_companies_for_chat",
+               return_value={"count": 1, "companies": [{"name": "Acme"}],
+                             "query": "telecom startups", "credits_charged": 2}) as m:
+        out = _run("discover_companies",
+                   {"query": "smaller telecom startups on the west coast", "count": 10}, ctx)
+    assert m.called
+    args = m.call_args[0]
+    assert args[0] == "u1"
+    assert args[3] == 10
+    assert out["count"] == 1
+    assert ctx.get("workflow_state_touched") is True
+
+
+@pytest.mark.unit
+def test_prompt_advertises_discover_companies():
+    from app.services.scout_assistant_service import _build_static_system_prompt
+    prompt = _build_static_system_prompt()
+    assert "discover_companies" in prompt
+    assert "Finding companies from chat" in prompt
+
+
+@pytest.mark.unit
+def test_workflow_cta_fallback_for_discovered_companies():
+    result = {"tool": "answer", "message": "10 companies", "cta": None}
+    helpers = [{"name": "discover_companies",
+                "result": {"count": 10, "companies": [], "query": "telecom startups"}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["route"] == "/find?tab=companies"
+    assert out["cta"]["prefill"] == {"prompt": "telecom startups"}
+
+
+# ---------------------------------------------------------------------------
+# discover_companies_for_chat guard sequence (no network: search + credits
+# + history are all patched at their source modules).
+# ---------------------------------------------------------------------------
+
+class _FakeUserDoc:
+    def __init__(self, exists=True, data=None):
+        self.exists = exists
+        self._data = data or {}
+
+    def to_dict(self):
+        return dict(self._data)
+
+
+class _FakeUserRef:
+    def __init__(self, doc):
+        self._doc = doc
+
+    def get(self):
+        return self._doc
+
+
+class _FakeUsersDb:
+    def __init__(self, doc):
+        self._doc = doc
+
+    def collection(self, name):
+        return self
+
+    def document(self, uid):
+        return _FakeUserRef(self._doc)
+
+
+def _discover(monkeypatch, search_result, credits=100, deduct_ok=True):
+    from unittest.mock import MagicMock
+    from app.services.scout import company_actions
+    import app.services.company_search as company_search
+    import app.services.auth as auth
+    import app.routes.firm_search as firm_search
+
+    monkeypatch.setattr(company_actions, "_db",
+                        lambda: _FakeUsersDb(_FakeUserDoc(data={"credits": credits})))
+    monkeypatch.setattr(auth, "check_and_reset_credits", lambda ref, data: credits)
+    deduct = MagicMock(return_value=(deduct_ok, credits))
+    monkeypatch.setattr(auth, "deduct_credits_atomic", deduct)
+    save = MagicMock(return_value="hist-1")
+    monkeypatch.setattr(firm_search, "save_search_to_history", save)
+    monkeypatch.setattr(company_search, "search_firms",
+                        lambda query, limit: search_result)
+
+    out = company_actions.discover_companies_for_chat(
+        "u1", "pro", "smaller telecom startups on the west coast", 10)
+    return out, deduct, save
+
+
+@pytest.mark.unit
+def test_discover_companies_charges_per_firm_and_saves_history(monkeypatch):
+    firms = [
+        {"name": "Beta Telecom", "industry": "telecom", "employeeCount": 40,
+         "sizeBucket": "small", "location": {"display": "Seattle, WA"}},
+        {"name": "Acme Wireless", "industry": "telecom", "employeeCount": 120,
+         "sizeBucket": "mid", "location": {"display": "Portland, OR"}},
+    ]
+    out, deduct, save = _discover(
+        monkeypatch, {"success": True, "firms": firms, "parsedFilters": {"industry": "telecom"}})
+    assert out["count"] == 2
+    assert out["credits_charged"] == 4
+    assert out["saved_to_history"] is True
+    # Largest firm first, mirroring the Companies tab ordering.
+    assert out["companies"][0]["name"] == "Acme Wireless"
+    assert out["companies"][0]["location"] == "Portland, OR"
+    deduct.assert_called_once_with("u1", 4, "firm_search")
+    assert save.called
+
+
+@pytest.mark.unit
+def test_discover_companies_zero_results_charge_nothing(monkeypatch):
+    out, deduct, save = _discover(monkeypatch, {"success": True, "firms": []})
+    assert out["count"] == 0
+    assert "error" not in out
+    assert not deduct.called
+    assert not save.called
+
+
+@pytest.mark.unit
+def test_discover_companies_insufficient_credits(monkeypatch):
+    out, deduct, _ = _discover(
+        monkeypatch, {"success": True, "firms": [{"name": "Acme"}]}, credits=1)
+    assert out["code"] == "INSUFFICIENT_CREDITS"
+    assert not deduct.called
+
+
+@pytest.mark.unit
+def test_discover_companies_parse_failure_is_bad_request(monkeypatch):
+    out, deduct, _ = _discover(
+        monkeypatch,
+        {"success": False, "error": "Failed to understand the search query"})
+    assert out["code"] == "BAD_REQUEST"
+    assert not deduct.called

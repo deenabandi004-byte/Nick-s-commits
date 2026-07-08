@@ -330,7 +330,7 @@ Skip the count clarify ONLY when scope is already clear in the user's message ("
 
 AUTO-SUBMIT (Scout drives the workflow end to end):
 
-Scout is the orchestrator. The destination page is a display surface; you should not be asking the user to click Search a second time when the query is complete. On /find and /find?tab=companies, set `auto_submit: true` on the navigate so the page populates the prompt AND fires the search automatically.
+THIS SECTION ONLY APPLIES WHEN A NAVIGATE IS THE RIGHT RESPONSE, which is rare now: a concrete "find me N people/companies" ask executes IN THE CHAT via find_contacts / discover_companies (see the workflow sections below), never via navigate. Navigate to /find or /find?tab=companies only for explicit browse or filter asks, and when you do, apply these rules. The destination page is a display surface; you should not be asking the user to click Search a second time when the query is complete. On /find and /find?tab=companies, set `auto_submit: true` on the navigate so the page populates the prompt AND fires the search automatically.
 
 Set auto_submit=true when ALL of these are true:
 - The query is complete - a clear target plus a specific count (either the user named one, or you confirmed one via clarify).
@@ -441,7 +441,10 @@ You CAN draft outreach emails yourself with draft_outreach_emails, for contacts 
 ## Finding people from chat
 You CAN run the people search yourself with find_contacts. When the user asks for people at a NAMED company ("find me 3 software engineers at Spotify", "get me USC alumni at Bain"), call find_contacts and SURFACE THE RESULTS IN THE CHAT: each contact's name, title, company, and the alumni or warmth hook when present. The contacts are saved to My Network automatically, so draft_outreach_emails can email them by name right after - when one message asks to find AND email ("find 3 Spotify engineers and email them"), run find_contacts then draft_outreach_emails in the same turn and report both. It costs 5 credits per contact returned. Do NOT answer a concrete people ask with a bare navigate to /find - that hands the user an empty form instead of the people they asked for. The decision is mechanical: named company + count -> call find_contacts now; named company + NO count -> clarify once for the count (the search spends credits per contact), then call find_contacts with their answer next turn. Navigate to /find only for explicit browse or filter asks ("open contact search", "let me adjust the filters"). A zero-result search is reported honestly with a widening suggestion, never re-run silently.
 
-You can also research a single company in chat with get_company_intel (free): overview, recent news, recruiting signals, divisions, and alumni density at the user's school (pass user_school when you know it). Use it for "tell me about X" and "is X hiring" asks; keep /find?tab=companies for multi-company discovery.
+You can also research a single company in chat with get_company_intel (free): overview, recent news, recruiting signals, divisions, and alumni density at the user's school (pass user_school when you know it). Use it for "tell me about X" and "is X hiring" asks; use discover_companies for multi-company discovery.
+
+## Finding companies from chat
+You CAN run the company discovery search yourself with discover_companies. When the user asks for multiple companies matching criteria ("find 10 smaller telecom startups on the west coast", "list mid-size healthcare banks in Chicago"), call discover_companies with their full ask as the query and SURFACE THE RESULTS IN THE CHAT: each company's name, industry, location, and size. The search is saved to their firm search history automatically and costs 2 credits per company returned. Do NOT answer a concrete companies ask with a bare navigate to /find?tab=companies - that hands the user an empty form instead of the companies they asked for. The decision is mechanical: criteria + count -> call discover_companies now; criteria + NO count -> clarify once for the count (the search spends credits per company), then call it with their answer next turn. Navigate to /find?tab=companies only for explicit browse or filter asks ("open the companies tab", "let me adjust the filters"). Research one NAMED company with get_company_intel instead. A zero-result search is reported honestly with a broadening suggestion, never re-run silently.
 
 You CAN find hiring managers yourself with find_hiring_managers. "Who's the hiring manager for the PM role at Stripe", "find recruiters at Google for SWE" - call it with the company (plus role/location when given), surface each manager IN THE CHAT (name, title, email when available), and mention they were saved to the Hiring Manager tracker. Costs 5 credits per manager, default 3. Navigate to /find?tab=hiring-managers only to browse the tracker.
 
@@ -1969,6 +1972,16 @@ class ScoutAssistantService:
                         "credit_cost": None,
                     }
                     return result
+                if name == "discover_companies" and (res.get("count") or 0) > 0:
+                    query = str(res.get("query") or "").strip()
+                    result["cta"] = {
+                        "label": "Open the Companies tab",
+                        "route": "/find?tab=companies",
+                        "prefill": {"prompt": query} if query else {},
+                        "credit_spending": False,
+                        "credit_cost": None,
+                    }
+                    return result
                 if name == "get_company_intel" and res.get("company") and not res.get("error"):
                     result["cta"] = {
                         "label": f"Find people at {res['company']}"[:60],
@@ -2234,6 +2247,7 @@ class ScoutAssistantService:
         "run_meeting_prep": "Starting your meeting prep",
         "find_contacts": "Searching for people",
         "get_company_intel": "Researching the company",
+        "discover_companies": "Searching for companies",
         "find_hiring_managers": "Finding hiring managers",
         "generate_cover_letter": "Writing your cover letter",
         "tailor_resume_to_job": "Scoring your resume against the job",
@@ -2306,6 +2320,11 @@ class ScoutAssistantService:
             if company and not result.get("error"):
                 return f"intel on {company}"
             return result.get("code") or "no intel"
+        if name == "discover_companies":
+            count = result.get("count") or 0
+            if count:
+                return f"{count} companies found"
+            return result.get("code") or "no matches"
         if name == "find_hiring_managers":
             count = result.get("count") or 0
             if count:

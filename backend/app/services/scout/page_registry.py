@@ -275,7 +275,9 @@ PAGE_REGISTRY: List[Dict[str, Any]] = [
 # version it was built against. A lookup ignores entries from an older
 # version, and stale entries are evicted on the next write cycle. Bumping this
 # is how a registry change invalidates the caches without a manual flush.
-REGISTRY_VERSION = 3
+# v4: discover_companies executes multi-company discovery in chat; cached
+# navigate answers for those phrasings must not serve.
+REGISTRY_VERSION = 4
 
 
 # ---------------------------------------------------------------------------
