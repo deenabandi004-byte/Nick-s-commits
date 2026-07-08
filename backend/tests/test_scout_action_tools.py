@@ -242,6 +242,36 @@ def test_gate_open_without_chat_context():
     assert _user_authorized({"uid": "u1"}, _DRAFT_KEYWORDS) is True
 
 
+@pytest.mark.unit
+def test_tailor_chip_with_job_url_opens_tailor_tab():
+    result = {"tool": "answer", "message": "fit 75", "cta": None}
+    helpers = [{"name": "tailor_resume_to_job", "result": {
+        "fit_score": 75, "job_url": "https://databricks.com/jobs/123"}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["route"] == "/resume?tab=tailor"
+    assert out["cta"]["prefill"] == {"job_url": "https://databricks.com/jobs/123"}
+
+
+@pytest.mark.unit
+def test_tailor_chip_without_job_url_opens_edit_resume():
+    result = {"tool": "answer", "message": "fit 75", "cta": None}
+    helpers = [{"name": "tailor_resume_to_job", "result": {"fit_score": 75, "job_url": ""}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["route"] == "/resume"
+    assert out["cta"]["prefill"] == {}
+
+
+@pytest.mark.unit
+def test_cover_letter_chip_carries_job_url():
+    result = {"tool": "answer", "message": "letter", "cta": None}
+    helpers = [{"name": "generate_cover_letter", "result": {
+        "cover_letter": "Dear...", "job_title": "AI Engineer",
+        "company": "Databricks", "job_url": "https://databricks.com/jobs/123"}}]
+    out = _svc()._enrich_workflow_ctas(result, helpers)
+    assert out["cta"]["route"] == "/cover-letter"
+    assert out["cta"]["prefill"]["job_url"] == "https://databricks.com/jobs/123"
+
+
 # ---------------------------------------------------------------------------
 # Network cta normalization: find-only turns chip to My Network (an Inbox
 # chip is a false promise); draft turns carry BOTH chips via `ctas`.

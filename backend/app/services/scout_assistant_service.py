@@ -2057,6 +2057,8 @@ class ScoutAssistantService:
                         prefill["job_title"] = str(res["job_title"])
                     if res.get("company"):
                         prefill["company"] = str(res["company"])
+                    if res.get("job_url"):
+                        prefill["job_url"] = str(res["job_url"])
                     result["cta"] = {
                         "label": "Open the Cover Letter workshop",
                         "route": "/cover-letter",
@@ -2066,10 +2068,14 @@ class ScoutAssistantService:
                     }
                     return result
                 if name == "tailor_resume_to_job" and res.get("fit_score") is not None:
+                    # Job-specific tailoring lands on the Tailor tab with the
+                    # posting URL pasted in; general resume help (no job URL
+                    # resolved) keeps landing on the Edit tab.
+                    job_url = str(res.get("job_url") or "").strip()
                     result["cta"] = {
                         "label": "Open your resume",
-                        "route": "/resume",
-                        "prefill": {},
+                        "route": "/resume?tab=tailor" if job_url else "/resume",
+                        "prefill": {"job_url": job_url} if job_url else {},
                         "credit_spending": False,
                         "credit_cost": None,
                     }

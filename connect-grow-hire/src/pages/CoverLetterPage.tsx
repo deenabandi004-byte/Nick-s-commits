@@ -3,8 +3,9 @@
 // it, or download it as a PDF. Hits the same job-board endpoints the Chrome
 // extension already uses (generate-cover-letter, cover-letter-pdf) — see
 // api.ts's generateCoverLetter / downloadCoverLetterPdf.
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -28,6 +29,23 @@ const CoverLetterPage = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
+
+  // Scout handoff: the "Open the Cover Letter workshop" chip after an
+  // in-chat cover letter carries the job context (posting URL, title,
+  // company) through the bridge; paste it into the form on arrival.
+  const location = useLocation();
+  useEffect(() => {
+    const applyHandoff = () => {
+      const prefill = readScoutPrefill(location.pathname + location.search);
+      if (!prefill) return;
+      if (prefill.job_url) setJobUrl(prefill.job_url);
+      if (prefill.job_title) setJobTitle(prefill.job_title);
+      if (prefill.company) setCompany(prefill.company);
+    };
+    applyHandoff();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyHandoff);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyHandoff);
+  }, [location.pathname, location.search]);
 
   const [generating, setGenerating] = useState(false);
   const [downloading, setDownloading] = useState(false);

@@ -329,6 +329,7 @@ async def cover_letter_for_chat(
         "cover_letter": letter.strip(),
         "job_title": job_title,
         "company": company,
+        "job_url": job_url,
         "credits_charged": COVER_LETTER_CREDIT_COST,
     }
 
@@ -420,4 +421,5 @@ def tailor_resume_for_chat(
         "edits": (analysis.get("edits") or [])[:4],
         "job_title": job_title,
         "company": company,
+        "job_url": job_url,
     }

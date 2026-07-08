@@ -23,6 +23,8 @@
 // resumeParsed) -> persist the file to Storage + resumeUrl/resumeFileName/
 // resumeUpdatedAt -> re-read the user doc so the preview repopulates.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation } from "react-router-dom";
+import { readScoutPrefill, SCOUT_PREFILL_EVENT } from "@/lib/scoutBridge";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -180,6 +182,27 @@ const ResumePage = () => {
   const [jobDescription, setJobDescription] = useState("");
   const [jobTitle, setJobTitle] = useState("");
   const [company, setCompany] = useState("");
+
+  // Scout handoff: a ?tab=tailor arrival selects the Tailor tab, and a
+  // bridge prefill (Scout's "Open your resume" chip after a job-specific
+  // tailoring) pastes the job posting URL into the Tailor input. Re-runs on
+  // URL changes and on the in-place prefill event so an already-mounted page
+  // picks it up too.
+  const location = useLocation();
+  useEffect(() => {
+    const applyHandoff = () => {
+      const tab = new URLSearchParams(location.search).get("tab");
+      if (tab === "tailor") setActiveTab("tailor");
+      const prefill = readScoutPrefill(location.pathname + location.search);
+      if (prefill?.job_url) {
+        setActiveTab("tailor");
+        setJobUrl(prefill.job_url);
+      }
+    };
+    applyHandoff();
+    window.addEventListener(SCOUT_PREFILL_EVENT, applyHandoff);
+    return () => window.removeEventListener(SCOUT_PREFILL_EVENT, applyHandoff);
+  }, [location.pathname, location.search]);
 
   // ---- Score-and-approve state ---------------------------------------------
   const [scoreState, setScoreState] = useState<ScoreState>("idle");
