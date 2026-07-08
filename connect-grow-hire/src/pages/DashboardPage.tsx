@@ -9,6 +9,7 @@
 
 import { Loader2 } from "lucide-react";
 
+import MountainsLake from "@/assets/for-students/mountains-lake.png";
 import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { AppHeader } from "@/components/AppHeader";
@@ -45,7 +46,28 @@ export default function DashboardPage() {
               backgroundImage: "radial-gradient(1200px 380px at 50% -140px, rgba(74,96,168,.10), transparent)",
             }}
           >
-            <div className="relative flex min-h-0 flex-1 flex-col">
+            {/* Watercolor mountains, same treatment as the Find surface:
+                bottom-anchored band with a soft vertical mask so content
+                reads on clean paper at the top and bottom edges. */}
+            <div
+              aria-hidden
+              style={{
+                position: "absolute",
+                inset: 0,
+                pointerEvents: "none",
+                zIndex: 0,
+                backgroundImage: `url(${MountainsLake})`,
+                backgroundSize: "120% auto",
+                backgroundPosition: "center bottom",
+                backgroundRepeat: "no-repeat",
+                opacity: 0.38,
+                maskImage:
+                  "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 20%, #000 60%, #000 100%)",
+                WebkitMaskImage:
+                  "linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 20%, #000 60%, #000 100%)",
+              }}
+            />
+            <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
               <ScoutChatThread variant="page" />
             </div>
           </div>

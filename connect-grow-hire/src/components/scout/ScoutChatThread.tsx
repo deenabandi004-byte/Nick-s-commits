@@ -41,7 +41,10 @@ import {
   ScoutCtaChip,
 } from '@/components/ScoutChatExtras';
 import { SUGGESTED_QUESTIONS, SCOUT_CHIPS_BY_PAGE } from '@/data/scout-knowledge';
+import { ScribbleUnderline } from '@/components/ScribbleUnderline';
 import ScoutYetiHead from '@/assets/scouts/scout-yeti-head.png';
+import DoodleBurstLeft from '@/assets/for-students/doodle-burst-left.png';
+import DoodleLoopArrow from '@/assets/for-students/doodle-loop-arrow.png';
 
 interface ScoutChatThreadProps {
   variant: 'panel' | 'page';
@@ -74,12 +77,13 @@ const CAPABILITIES: Capability[] = [
   { icon: KanbanSquare, title: 'Track everything', sub: 'Contacts & conversations', prompt: 'Show me what’s waiting on me right now' },
 ];
 
-// Composer placeholder rotation (2.8s cadence while the box is empty).
+// Example prompts that type themselves out and delete in the composer while
+// it is empty (same type-and-delete idiom the old Getting Started box used).
 const HERO_PLACEHOLDERS = [
-  'Find software roles I should apply to this week…',
-  'Find 10 people at Google I could email…',
-  "Who's the hiring manager for this job?…",
-  'Give me a briefing on a company before I reach out…',
+  'Find software roles I should apply to this week',
+  'Find 10 people at Google I could email',
+  "Who's the hiring manager for this job?",
+  'Give me a briefing on a company before I reach out',
 ];
 
 // Scoped styles for the hero's hover states (inline styles can't express
@@ -90,9 +94,11 @@ const HERO_CSS = `
 .sh-send:disabled{opacity:.5;cursor:not-allowed}
 .sh-chip{display:flex;align-items:center;gap:12px;padding:13px 15px;background:#fff;border:1px solid #E5E7EC;border-radius:12px;cursor:pointer;text-align:left;transition:transform .2s cubic-bezier(0.16,1,0.3,1),box-shadow .2s,border-color .2s}
 .sh-chip:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(26,26,26,.06);border-color:var(--primary-200,#B6C3E8)}
-.sh-chip-ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--primary-100,#E4E9F5);color:var(--accent,#4A60A8)}
-.sh-chip.lead .sh-chip-ic{background:var(--action-bg,#FBE6D6);color:#C9652C}
+.sh-chip-ic{flex:none;width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:#fff;border:1px solid rgba(15,37,69,0.08);color:var(--accent,#4A60A8)}
+.sh-chip.lead .sh-chip-ic{color:#C9652C}
 .sh-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.sh-caret{display:inline-block;width:1px;height:1em;margin-left:1px;background:currentColor;vertical-align:text-bottom;animation:sh-caret-blink 1s steps(2) infinite}
+@keyframes sh-caret-blink{50%{opacity:0}}
 @media (max-width:960px){.sh-grid{grid-template-columns:repeat(2,1fr)}}
 @media (prefers-reduced-motion:reduce){.sh-chip:hover{transform:none}}
 `;
@@ -144,17 +150,34 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
     }
   };
 
-  // Hero composer (page variant, empty state): rotating placeholder +
-  // capability tiles that pre-fill the box.
+  // Hero composer (page variant, empty state): example prompts type
+  // themselves out and delete while the box is empty, then the next one
+  // starts (same idiom as the old Getting Started box). Static placeholder
+  // for reduced-motion users.
   const heroTaRef = useRef<HTMLTextAreaElement>(null);
-  const [phIndex, setPhIndex] = useState(0);
+  const reducedMotion =
+    typeof window !== 'undefined' &&
+    !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const [typed, setTyped] = useState('');
+  const [typeIdx, setTypeIdx] = useState(0);
+  const [deleting, setDeleting] = useState(false);
   useEffect(() => {
-    if (variant !== 'page') return;
-    // Respect prefers-reduced-motion: no placeholder rotation.
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
-    const t = setInterval(() => setPhIndex((i) => i + 1), 2800);
-    return () => clearInterval(t);
-  }, [variant]);
+    if (variant !== 'page' || reducedMotion) return;
+    if (messages.length > 0 || input !== '') return;
+    const full = HERO_PLACEHOLDERS[typeIdx % HERO_PLACEHOLDERS.length];
+    let t: ReturnType<typeof setTimeout>;
+    if (!deleting && typed === full) {
+      t = setTimeout(() => setDeleting(true), 1500);
+    } else if (deleting && typed === '') {
+      setDeleting(false);
+      setTypeIdx((i) => (i + 1) % HERO_PLACEHOLDERS.length);
+    } else {
+      t = setTimeout(() => {
+        setTyped((prev) => (deleting ? full.slice(0, prev.length - 1) : full.slice(0, prev.length + 1)));
+      }, deleting ? 30 : 55);
+    }
+    return () => clearTimeout(t);
+  }, [variant, reducedMotion, messages.length, input, typed, deleting, typeIdx]);
 
   const fillFromTile = (prompt: string) => {
     setInput(prompt);
@@ -167,28 +190,53 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
   // ------------------------------------------------------------------
   if (variant === 'page' && messages.length === 0) {
     return (
-      <div className="flex-1 overflow-y-auto">
+      <div className="relative flex-1 overflow-y-auto">
         <style>{HERO_CSS}</style>
+
+        {/* Design-system doodles in the margins (watermark weight). Hidden
+            below lg where there is no margin to live in. */}
+        <img
+          src={DoodleBurstLeft}
+          alt=""
+          aria-hidden
+          className="hidden lg:block"
+          style={{
+            position: 'absolute', top: 110, left: '4.5%',
+            width: 90, height: 'auto', transform: 'rotate(-6deg)',
+            opacity: 0.45, pointerEvents: 'none',
+          }}
+        />
+        <img
+          src={DoodleLoopArrow}
+          alt=""
+          aria-hidden
+          className="hidden lg:block"
+          style={{
+            position: 'absolute', top: 330, right: '4.5%',
+            width: 130, height: 'auto', transform: 'rotate(6deg)',
+            opacity: 0.5, pointerEvents: 'none',
+          }}
+        />
+
         <div
           className="mx-auto flex w-full max-w-[900px] flex-col px-7 sm:px-16"
           style={{ paddingTop: 64, paddingBottom: 80, fontFamily: 'var(--font-body)' }}
         >
-          {/* Headline + subhead */}
+          {/* Headline + subhead — same serif treatment as PageTitle
+              (Libre Baskerville, italic navy accent, scribble underline). */}
           <div className="mx-auto mb-[26px] flex max-w-[720px] flex-col items-center text-center" style={{ marginTop: 32 }}>
             <h1
-              style={{
-                fontFamily: "'Lora', Georgia, serif",
-                fontWeight: 600,
-                fontSize: 46,
-                lineHeight: 1.08,
-                letterSpacing: '-0.025em',
-                color: 'var(--heading, #1E2D4D)',
-                margin: '0 0 12px',
-              }}
+              className="font-serif text-[44px] leading-[1.05] tracking-[-0.015em]"
+              style={{ color: 'var(--ink)', margin: '0 0 12px' }}
             >
-              What should we <em style={{ fontStyle: 'italic', color: 'var(--accent, #4A60A8)' }}>work on</em> today?
+              What should we{' '}
+              <em className="font-serif relative inline-block" style={{ fontStyle: 'italic', fontWeight: 400, color: '#003262' }}>
+                work on
+                <ScribbleUnderline />
+              </em>{' '}
+              today?
             </h1>
-            <p style={{ font: "400 17px/1.6 var(--font-body, 'Inter', sans-serif)", color: '#64748B', margin: 0, maxWidth: 560 }}>
+            <p style={{ font: "400 15px/1.6 var(--font-body, 'Inter', sans-serif)", color: 'var(--ink-2, #4A4F5B)', margin: 0, maxWidth: 560 }}>
               Tell Scout what you're after and it handles the busywork: finding the
               people, writing the outreach, and tracking every conversation, so you
               can focus on landing the offer.
@@ -207,19 +255,33 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
               marginBottom: 22,
             }}
           >
-            <textarea
-              ref={heroTaRef}
-              autoFocus
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={HERO_PLACEHOLDERS[phIndex % HERO_PLACEHOLDERS.length]}
-              aria-label="Ask Scout"
-              rows={2}
-              disabled={isLoading}
-              className="w-full resize-none bg-transparent outline-none"
-              style={{ border: 'none', font: "400 17px/1.5 var(--font-body, 'Inter', sans-serif)", color: 'var(--ink, #0A0A0A)' }}
-            />
+            <div className="relative">
+              {/* Type-and-delete example overlay, only while the box is
+                  empty. Reduced-motion users get a static placeholder. */}
+              {!reducedMotion && input === '' && (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute left-0 top-0"
+                  style={{ font: "400 17px/1.5 var(--font-body, 'Inter', sans-serif)", color: '#94A3B8', whiteSpace: 'pre-wrap' }}
+                >
+                  {typed}
+                  <span className="sh-caret" />
+                </div>
+              )}
+              <textarea
+                ref={heroTaRef}
+                autoFocus
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={reducedMotion ? HERO_PLACEHOLDERS[0] : undefined}
+                aria-label="Ask Scout"
+                rows={2}
+                disabled={isLoading}
+                className="w-full resize-none bg-transparent outline-none"
+                style={{ border: 'none', font: "400 17px/1.5 var(--font-body, 'Inter', sans-serif)", color: 'var(--ink, #0A0A0A)' }}
+              />
+            </div>
             <div className="flex items-center justify-between">
               <span style={{ font: "400 13px var(--font-body, 'Inter', sans-serif)", color: '#94A3B8' }}>
                 Pick a task below, or just start typing
