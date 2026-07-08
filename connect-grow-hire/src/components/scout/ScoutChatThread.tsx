@@ -335,16 +335,18 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
   }
 
   // ------------------------------------------------------------------
-  // Thread layout (panel always; page once messages exist)
+  // Thread layout (panel always; page once messages exist). The page
+  // variant wraps the whole conversation in a white chat card so it reads
+  // as a contained chat surface over the mountain backdrop.
   // ------------------------------------------------------------------
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden">
+  const threadColumn = (
+    <div className="flex-1 flex flex-col overflow-hidden min-h-0">
       {/* Persistent active-strategy card in the chat column header so step
           progress is always-on context while the user scrolls older
           messages. Hidden when there is no strategy yet. */}
       {activeStrategy && <ActiveStrategyCard strategy={activeStrategy} />}
       <div className="flex-1 overflow-y-auto">
-        <div className={variant === 'page' ? 'mx-auto w-full max-w-[760px] px-5 py-6' : 'px-5 py-4'}>
+        <div className={variant === 'page' ? 'px-6 py-5' : 'px-5 py-4'}>
           {/* Empty state (only the panel variant reaches here when empty) */}
           {messages.length === 0 && (
             <div className="flex flex-col">
@@ -399,6 +401,20 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                 const showModePill = message.role === 'assistant' && !!message.mode && !message.isStreaming;
                 const liveEvents = (message.toolEvents || []).filter(e => !e.done);
                 const doneEvents = (message.toolEvents || []).filter(e => e.done);
+                // A streaming assistant turn with nothing to show yet would
+                // render as a bare floating avatar; the "Thinking…"
+                // indicator below covers that state instead.
+                if (
+                  message.role === 'assistant' &&
+                  !message.content &&
+                  liveEvents.length === 0 &&
+                  doneEvents.length === 0 &&
+                  !message.plan &&
+                  !message.cta &&
+                  !showCard
+                ) {
+                  return null;
+                }
                 return (
                   <div
                     key={message.id}
@@ -486,7 +502,7 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                       </div>
                     ) : (
                       <div className="max-w-[85%]">
-                        <div className="bg-[var(--brand-blue)] text-white rounded-3xl rounded-br-md px-4 py-2.5">
+                        <div className="text-white rounded-3xl rounded-br-md px-4 py-2.5" style={{ background: 'var(--accent, #4A60A8)' }}>
                           <p className="text-sm leading-relaxed">{message.content}</p>
                         </div>
                       </div>
@@ -516,7 +532,10 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
       </div>
 
       {/* Composer */}
-      <div className={variant === 'page' ? 'mx-auto w-full max-w-[760px] px-5 py-4 flex-shrink-0' : 'px-5 py-4 flex-shrink-0'}>
+      <div
+        className="px-5 py-4 flex-shrink-0"
+        style={variant === 'page' ? { borderTop: '1px solid #EFF0F3', background: '#fff' } : undefined}
+      >
         <div className="relative">
           <input
             ref={localInputRef}
@@ -525,13 +544,16 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ask Scout anything..."
-            className="w-full pl-4 pr-12 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent"
+            className="w-full pl-4 pr-12 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent,#4A60A8)] focus:border-transparent"
             disabled={isLoading}
           />
           <button
             onClick={() => sendMessage()}
             disabled={!input.trim() || isLoading}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white transition-colors"
+            style={{ background: 'var(--accent, #4A60A8)' }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = '#3C4F8E')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--accent, #4A60A8)')}
             aria-label="Send message"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
@@ -541,4 +563,26 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
       </div>
     </div>
   );
+
+  if (variant === 'page') {
+    return (
+      <div className="flex flex-1 min-h-0 px-4 sm:px-8" style={{ paddingTop: 20, paddingBottom: 20 }}>
+        {/* Chat card: the conversation lives in a contained surface over the
+            mountain backdrop instead of floating on it. */}
+        <div
+          className="mx-auto flex w-full max-w-[860px] min-h-0 flex-col overflow-hidden"
+          style={{
+            background: '#FFFFFF',
+            border: '1px solid #E5E7EC',
+            borderRadius: 16,
+            boxShadow: '0 4px 16px rgba(26,26,26,0.06)',
+          }}
+        >
+          {threadColumn}
+        </div>
+      </div>
+    );
+  }
+
+  return threadColumn;
 }
