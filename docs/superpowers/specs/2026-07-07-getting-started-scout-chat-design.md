@@ -21,13 +21,11 @@ checklists, tool pills, suggestion chips.
   button).
 - **Getting Started, after first send:** the page becomes a full-height Scout
   chat — thread in the middle column, composer pinned at the bottom.
-- **Side panel everywhere else:** unchanged behavior, but it now displays the
-  same live conversation. Type on the page, open the panel on another screen,
-  and the thread is there (and vice versa).
-- **On `/dashboard`:** the Ask Scout header button and Cmd+K focus the page's
-  composer instead of sliding the panel open over an identical chat.
-  Navigating to `/dashboard` while the panel is open closes the panel — the
-  page *is* the chat there.
+- **Side panel:** unchanged behavior everywhere, including on Getting
+  Started — Ask Scout / Cmd+K always slides the panel open. It displays the
+  same live conversation as the page. Both views can be open at once (panel
+  over the Getting Started page); they stay in sync because they render the
+  same state.
 
 ## Architecture
 
@@ -80,9 +78,6 @@ chat-history sidebar (history stays panel-only), search-help mode (legacy
 failed-search recovery), the tried-and-failed hint, and the tour's seeded
 Scout demo. Its chat area becomes `<ScoutChatThread variant="panel" />`.
 
-Panel-closing rule: an effect (in `App.tsx` or the panel) closes the panel
-when `location.pathname === '/dashboard'`.
-
 ### 4. `DashboardPage` rewrite
 
 Keeps: `SidebarProvider`/`AppSidebar`/`AppHeader` frame, auth gate, watercolor
@@ -94,9 +89,8 @@ routes searches via its navigate tool.
 
 ### 5. Shortcut / button behavior
 
-In `App.tsx`'s Cmd+K handler and the Ask Scout header button: if on
-`/dashboard`, focus the shared `inputRef` (the page composer) instead of
-`togglePanel()`. Everywhere else, unchanged.
+Unchanged. Ask Scout header button and Cmd+K open the panel on every page,
+including `/dashboard`.
 
 ## Out of scope
 
@@ -108,18 +102,20 @@ In `App.tsx`'s Cmd+K handler and the Ask Scout header button: if on
 
 ## Risks / edge cases
 
-- **Two views mounted at once** (panel open while on `/dashboard`): prevented
-  by the panel-closing rule; singleton effects live in the provider anyway, so
-  even a transient double-mount can't double-fire navigations or duplicate
-  celebration messages.
-- **Refs:** `useScoutChat` exposes one `inputRef`/`messagesEndRef`. With the
-  panel-closing rule only one thread view is mounted at a time, so the refs
-  bind unambiguously.
+- **Two views mounted at once** (panel open while on `/dashboard`) is a
+  supported state. All once-only behavior (navigate auto-execute, celebration
+  listener, pending-message send) lives in the provider, so a dual mount can't
+  double-fire navigations or duplicate messages.
+- **Refs:** `useScoutChat`'s single `inputRef`/`messagesEndRef` can't serve
+  two mounted composers. `ScoutChatThread` owns its own local input and
+  scroll-anchor refs (auto-scroll moves into the thread component); the
+  hook-level refs remain for the panel's focus-on-open behavior via the
+  panel's own instance of the thread, or are focused per-variant. Exact
+  mechanics settled in the implementation plan.
 - **Tour demo:** unchanged — it opens the panel and seeds synthetic messages
   through the shared instance. If the tour runs while on `/dashboard`, the
-  seeded thread simply shows on the page too (acceptable; same conversation by
-  design). The panel-close-on-dashboard effect must not fight the tour's
-  `openPanel()` — gate it on `demoSurface !== 'scout'`.
+  seeded thread also shows on the page (acceptable; same conversation by
+  design).
 
 ## Testing
 
@@ -127,7 +123,6 @@ No frontend test framework exists; verification is manual:
 1. Getting Started empty state renders heading + box + chips; send works.
 2. Send on page → reply streams in; approve card / CTA chip actions navigate.
 3. Type on page, go to `/find`, open panel → same thread. Reverse direction too.
-4. Cmd+K and Ask Scout button on `/dashboard` focus the page box; on other
-   pages they open the panel.
-5. Panel closes when navigating to `/dashboard`.
-6. Failed-search help (panel) and onboarding tour Scout step still work.
+4. Open the panel while on `/dashboard`: both views show the same thread;
+   sending from either updates both live.
+5. Failed-search help (panel) and onboarding tour Scout step still work.
