@@ -313,10 +313,10 @@ export function AppSidebar() {
 
   return (
     <TooltipProvider>
-      <Sidebar
-        className={isCollapsed ? "w-16" : "w-[232px]"}
-        collapsible="icon"
-      >
+      {/* Width comes from ui/sidebar's SIDEBAR_WIDTH / SIDEBAR_WIDTH_ICON so
+          the layout spacer and the visible rail always agree; a className
+          width here only resizes the rail and leaves a white gap. */}
+      <Sidebar collapsible="icon">
         <SidebarContent
           className="flex flex-col h-full overflow-hidden"
           style={{

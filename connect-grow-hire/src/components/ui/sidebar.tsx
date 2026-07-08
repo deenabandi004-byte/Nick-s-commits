@@ -19,9 +19,13 @@ import {
 
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
-const SIDEBAR_WIDTH = "260px"
+// These MUST match the visible rail widths in AppSidebar: the first div in
+// Sidebar is a layout spacer sized by these vars, and the fixed rail sits on
+// top of it. A mismatch shows as a white strip between the rail and the page
+// (spacer wider than rail) or the rail overlapping content (narrower).
+const SIDEBAR_WIDTH = "232px"
 const SIDEBAR_WIDTH_MOBILE = "260px"
-const SIDEBAR_WIDTH_ICON = "3rem"
+const SIDEBAR_WIDTH_ICON = "4rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
 type SidebarContext = {
