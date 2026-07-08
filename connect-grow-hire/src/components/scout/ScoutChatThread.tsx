@@ -12,19 +12,23 @@
  *           suggestion chips centered mid-page); once messages exist, a
  *           centered column with the composer pinned at the bottom.
  */
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   ArrowUp,
   Briefcase,
   Building2,
   FileText,
+  History,
   KanbanSquare,
   Loader2,
+  Lock,
   MessageSquare,
+  MessageSquarePlus,
   Send,
   SlidersHorizontal,
   Target,
+  Trash2,
   UserSearch,
   type LucideIcon,
 } from 'lucide-react';
@@ -41,6 +45,8 @@ import {
   ScoutCtaChip,
 } from '@/components/ScoutChatExtras';
 import { SUGGESTED_QUESTIONS, SCOUT_CHIPS_BY_PAGE } from '@/data/scout-knowledge';
+import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
+import { listScoutChats, formatRelativeTime, type ScoutChatSummary } from '@/services/scoutChats';
 import { ScribbleUnderline } from '@/components/ScribbleUnderline';
 import ScoutYetiHead from '@/assets/scouts/scout-yeti-head.png';
 import DoodleBurstLeft from '@/assets/for-students/doodle-burst-left.png';
@@ -180,6 +186,53 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
     setInput(prompt);
     heroTaRef.current?.focus();
   };
+
+  // Chat history (page variant only — the panel manages its own sidebar).
+  // Refetched on mount and when the active chat changes; the small delay
+  // lets the backend finish writing the auto-generated title first.
+  const { user } = useFirebaseAuth();
+  const userTier = (user?.tier as 'free' | 'pro' | 'elite' | undefined) ?? 'free';
+  const isPaidTier = userTier === 'pro' || userTier === 'elite';
+  const {
+    chatId,
+    startNewChat,
+    loadChat,
+    isLoadingChat,
+    clearChat,
+  } = useScoutChatShared();
+  const [chats, setChats] = useState<ScoutChatSummary[]>([]);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const refreshChats = useCallback(async () => {
+    if (!user?.uid) {
+      setChats([]);
+      return;
+    }
+    try {
+      setChats(await listScoutChats(20));
+    } catch {
+      /* history list is best-effort on the page surface */
+    }
+  }, [user?.uid]);
+  useEffect(() => {
+    if (variant !== 'page') return;
+    const t = setTimeout(() => {
+      void refreshChats();
+    }, chatId ? 1500 : 0);
+    return () => clearTimeout(t);
+  }, [variant, chatId, refreshChats]);
+
+  const handleChatRowClick = useCallback(
+    async (id: string) => {
+      if (id === chatId) return;
+      setActiveRowId(id);
+      try {
+        await loadChat(id);
+      } finally {
+        setActiveRowId(null);
+      }
+    },
+    [chatId, loadChat],
+  );
 
   // ------------------------------------------------------------------
   // Page hero: Scout home empty state (design 1a "Ability grid") —
@@ -328,6 +381,42 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
                 );
               })}
             </div>
+
+            {/* Recent chats — pick a past conversation back up from the
+                landing without opening the side panel. */}
+            {chats.length > 0 && (
+              <div className="mx-auto mt-8 w-full max-w-[760px]">
+                <div className="mb-3 flex items-center gap-2.5">
+                  <span style={{ font: "600 12px var(--font-body, 'Inter', sans-serif)", letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--accent, #4A60A8)' }}>
+                    Recent chats
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: '#E5E7EC' }} />
+                </div>
+                <div
+                  className="flex flex-col overflow-hidden"
+                  style={{ background: '#fff', border: '1px solid #E5E7EC', borderRadius: 12 }}
+                >
+                  {chats.slice(0, 4).map((row) => (
+                    <button
+                      key={row.chat_id}
+                      type="button"
+                      onClick={() => void handleChatRowClick(row.chat_id)}
+                      disabled={isLoadingChat}
+                      className="flex items-center justify-between gap-3 border-t border-[#EFF0F3] px-4 py-3 text-left transition-colors first:border-t-0 hover:bg-[#FAFBFF]"
+                    >
+                      <span className="min-w-0 flex-1 truncate" style={{ font: "500 13.5px var(--font-body, 'Inter', sans-serif)", color: 'var(--ink, #0A0A0A)' }}>
+                        {row.title || 'New chat'}
+                      </span>
+                      <span className="flex-shrink-0" style={{ font: "400 12px var(--font-body, 'Inter', sans-serif)", color: '#94A3B8' }}>
+                        {activeRowId === row.chat_id && isLoadingChat
+                          ? 'Opening…'
+                          : formatRelativeTime(row.last_active_at)}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -566,11 +655,12 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
 
   if (variant === 'page') {
     return (
-      <div className="flex flex-1 min-h-0 px-4 sm:px-8" style={{ paddingTop: 20, paddingBottom: 20 }}>
+      <div className="flex flex-1 min-h-0 overflow-hidden px-3 sm:px-6" style={{ paddingTop: 16, paddingBottom: 16 }}>
         {/* Chat card: the conversation lives in a contained surface over the
-            mountain backdrop instead of floating on it. */}
+            mountain backdrop, mirroring the Ask Scout panel — header with
+            new-chat/clear actions, chat-history rail, thread, composer. */}
         <div
-          className="mx-auto flex w-full max-w-[860px] min-h-0 flex-col overflow-hidden"
+          className="mx-auto flex w-full max-w-[1080px] min-h-0 flex-col overflow-hidden"
           style={{
             background: '#FFFFFF',
             border: '1px solid #E5E7EC',
@@ -578,7 +668,87 @@ export function ScoutChatThread({ variant, emptyStateExtra }: ScoutChatThreadPro
             boxShadow: '0 4px 16px rgba(26,26,26,0.06)',
           }}
         >
-          {threadColumn}
+          {/* Card header */}
+          <div className="flex flex-shrink-0 items-center justify-between px-5 py-3" style={{ borderBottom: '1px solid #EFF0F3' }}>
+            <span className="font-serif" style={{ fontSize: 17, color: 'var(--ink)' }}>Ask Scout</span>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={startNewChat}
+                className="flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+                aria-label="Start a new chat"
+              >
+                <MessageSquarePlus className="h-4 w-4" />
+                New chat
+              </button>
+              <button
+                type="button"
+                onClick={clearChat}
+                className="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+                aria-label="Clear chat"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            {/* Chat-history rail (hidden on small screens) */}
+            <aside className="hidden w-48 flex-shrink-0 flex-col border-r border-gray-100 bg-white md:flex">
+              <div className="flex items-center gap-1.5 px-3 pb-2 pt-3 text-xs font-medium uppercase tracking-wide text-gray-500">
+                <History className="h-3.5 w-3.5" />
+                <span>Chats</span>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-2">
+                {chats.length === 0 ? (
+                  <div className="px-2 py-3 text-xs text-gray-400">No chats yet.</div>
+                ) : (
+                  <ul className="space-y-0.5">
+                    {chats.map((row) => {
+                      const isActive = row.chat_id === chatId;
+                      const isLoadingRow = activeRowId === row.chat_id && isLoadingChat;
+                      return (
+                        <li key={row.chat_id}>
+                          <button
+                            type="button"
+                            onClick={() => void handleChatRowClick(row.chat_id)}
+                            disabled={isLoadingRow}
+                            className={
+                              'w-full rounded-md px-2.5 py-2 text-left transition-colors ' +
+                              (isActive
+                                ? 'border border-[#E0EAFF] bg-[#FAFBFF]'
+                                : 'border border-transparent hover:bg-gray-50')
+                            }
+                            title={row.title}
+                          >
+                            <div className="truncate text-xs font-medium text-gray-900">
+                              {row.title || 'New chat'}
+                            </div>
+                            <div className="flex items-center gap-1 text-[11px] text-gray-400">
+                              {isLoadingRow ? (
+                                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                              ) : (
+                                <span>{formatRelativeTime(row.last_active_at)}</span>
+                              )}
+                            </div>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+              {!isPaidTier && (
+                <div className="flex items-start gap-1.5 border-t border-gray-100 px-3 py-2.5 text-[11px] leading-snug text-gray-500">
+                  <Lock className="mt-0.5 h-3 w-3 flex-shrink-0" />
+                  <span>Upgrade to Pro to keep chat history beyond today.</span>
+                </div>
+              )}
+            </aside>
+
+            {/* Thread + composer */}
+            {threadColumn}
+          </div>
         </div>
       </div>
     );
