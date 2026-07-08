@@ -14,33 +14,15 @@
  */
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { X, Send, Loader2, Trash2, MessageSquarePlus, History, Lock } from 'lucide-react';
+import { X, Loader2, Trash2, MessageSquarePlus, History, Lock } from 'lucide-react';
 import { useScout, SearchHelpResponse } from '@/contexts/ScoutContext';
-import { useScoutChat, formatMessage, type ScoutNavigate, type ScoutMode, type ScoutCta, type ScoutPlanStep, type ScoutActiveStrategy } from '@/hooks/useScoutChat';
-import { BriefingButton } from '@/components/scout/BriefingButton';
-import { CompletenessGauge } from '@/components/scout/CompletenessGauge';
-import { ActiveStrategyCard } from '@/components/scout/ActiveStrategyCard';
-import { SUGGESTED_QUESTIONS, SCOUT_CHIPS_BY_PAGE } from '@/data/scout-knowledge';
+import { useScoutChatShared } from '@/contexts/ScoutChatContext';
+import { ScoutChatThread } from '@/components/scout/ScoutChatThread';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 // Tour demo orchestration — local addition, not in loops-setup-v2.
 import { useTour } from '@/contexts/TourContext';
-import { toast } from '@/hooks/use-toast';
-import { ScoutApproveCard } from '@/components/ScoutApproveCard';
-import {
-  ScoutModePill,
-  ScoutToolPill,
-  ScoutPlanChecklist,
-  ScoutCtaChip,
-  ScoutTriedFailedHint,
-} from '@/components/ScoutChatExtras';
-import {
-  writeScoutPrefill,
-  SCOUT_PREFILL_EVENT,
-  SCOUT_SEARCH_COMPLETED_EVENT,
-  isSameScoutPage,
-  scoutPageIdentity,
-  type ScoutSearchCompletedDetail,
-} from '@/lib/scoutBridge';
+import { ScoutTriedFailedHint } from '@/components/ScoutChatExtras';
+import { isSameScoutPage } from '@/lib/scoutBridge';
 import ScoutYetiHead from '@/assets/scouts/scout-yeti-head.png';
 import { BACKEND_URL } from '@/services/api';
 import {
@@ -57,36 +39,6 @@ const AUTO_POPULATE_KEY = 'scout_auto_populate';
 // to surface the same dismissed prompt twice in the same session.
 const TRIED_HINT_DISMISSED_KEY = 'scout_tried_hint_dismissed';
 const TRIED_PROMPTS_KEY = 'ofl_tried_prompts';
-
-// ---------------------------------------------------------------------------
-// Three-rule decision for a navigate tool call.
-// Mode is the new primary signal (Change 7 - the Haiku intent classifier).
-// The legacy 0.9+imperative rule remains a fallback so local dev still works
-// when CLAUDE_API_KEY is unset and Haiku falls back silently.
-// ---------------------------------------------------------------------------
-type NavAction = 'in-place' | 'skip-approve' | 'approve-card';
-
-function decideNavAction(nav: ScoutNavigate, mode?: ScoutMode | null): NavAction {
-  if (nav.already_on_page) return 'in-place';
-  // DO mode means the user gave a directive; executing it IS the product,
-  // credit-spending searches included (product call 2026-07-07: no approve
-  // card between an explicit ask and the action). The undo toast and the
-  // destination page's own controls are the escape hatches.
-  if (mode === 'do') return 'skip-approve';
-  // Fallback: when the classifier was unavailable (no key, timeout, parse
-  // error) the mode pill defaults to 'chat' regardless of navigate intent;
-  // honor the model's own user_was_imperative + confidence so a clear
-  // command still skips the card.
-  if (!mode && nav.user_was_imperative && nav.confidence >= 0.9) {
-    return 'skip-approve';
-  }
-  return 'approve-card';
-}
-
-function summarizePrefill(prefill: Record<string, string>): string {
-  const vals = Object.values(prefill || {}).filter(Boolean);
-  return vals.join(', ');
-}
 
 // Picks the most recent zero-result prompt from localStorage that has not
 // already been dismissed this session. Used by the proactive hint at the
@@ -131,8 +83,6 @@ export function ScoutSidePanel() {
     searchHelpResponse,
     setSearchHelpResponse,
     clearSearchHelp,
-    pendingMessage,
-    clearPendingMessage,
   } = useScout();
   // Tour demo orchestration — local addition, not in loops-setup-v2.
   // `demoSurface === 'scout'` means the onboarding tour reached the Ask-Scout
@@ -142,57 +92,23 @@ export function ScoutSidePanel() {
   const panelRef = useRef<HTMLDivElement>(null);
   const [isLoadingSearchHelp, setIsLoadingSearchHelp] = useState(false);
 
-  // Navigate messages that have been acted on (approved, skipped, or
-  // populated in place), so the auto-execute effect does not re-fire and the
-  // approve card renders collapsed. Lives in component state, which persists
-  // because the panel never unmounts.
-  const [resolvedIds, setResolvedIds] = useState<Set<string>>(new Set());
-
-  // Page context sent to Scout. The bare pathname collapses the Find tabs
-  // (people / companies / hiring-managers) into one page, so carry the tab
-  // param when present. Other query params are deliberately dropped: they are
-  // noise for the model and would churn the backend's context cache.
-  const tabParam = new URLSearchParams(location.search).get('tab');
-  const scoutCurrentPage = tabParam
-    ? `${location.pathname}?tab=${tabParam}`
-    : location.pathname;
-
+  // The conversation itself lives in ScoutChatProvider (shared with the
+  // Getting Started page); the panel only needs the slices its chrome uses.
   const {
     messages,
-    input,
-    setInput,
-    isLoading,
     sendMessage,
     clearChat,
-    messagesEndRef,
-    inputRef,
     chatId,
     startNewChat,
     loadChat,
     isLoadingChat,
     appendSyntheticAssistant,
     appendSyntheticUser,
-    requestBriefing,
-  } = useScoutChat(scoutCurrentPage);
+  } = useScoutChatShared();
 
   // The strategist briefing is OPT-IN only (the BriefingButton in the empty
-  // state). It used to auto-fire on "first open" gated by a per-browser
-  // localStorage flag, which ambushed every existing user on a new device or
-  // cleared storage with an unsolicited wall of Loop pitches before they had
-  // said anything. A chat never starts with unrequested output: the cold
-  // open is the short greeting plus suggestion chips.
-
-  // The most-recent message carrying an active_strategy payload becomes the
-  // source for the header card. Looking at messages in reverse so a fresh
-  // briefing supersedes an older one without us tracking strategy state
-  // separately.
-  const activeStrategy: ScoutActiveStrategy | null = (() => {
-    for (let i = messages.length - 1; i >= 0; i--) {
-      const s = messages[i]?.activeStrategy;
-      if (s) return s;
-    }
-    return null;
-  })();
+  // state, rendered by ScoutChatThread). A chat never starts with
+  // unrequested output: the cold open is the greeting plus suggestion chips.
 
   // -------------------------------------------------------------------------
   // Sidebar (Phase 5 Stage 3): persisted chat history
@@ -301,121 +217,9 @@ export function ScoutSidePanel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scoutDemoActive]);
 
-  // -------------------------------------------------------------------------
-  // Navigate execution + the auto-execute effect
-  // -------------------------------------------------------------------------
-
-  /** Carry a navigate to its destination: write the bridge, then either
-   *  navigate or (if in place) tell the current page to re-read the bridge.
-   *  Auto-fired actions (skip-approve, in-place) drop a 5s undo toast that
-   *  reverses the navigation - this is the trust hook that lets us be
-   *  aggressive about skip-approve without spooking the user (Change 4).
-   *  Approve-card actions skip the toast since they were already an explicit
-   *  confirmation. */
-  const runNavigate = (nav: ScoutNavigate, prefill: Record<string, string>, action: NavAction) => {
-    const previousPath = location.pathname + location.search;
-    writeScoutPrefill(nav.route, prefill, { auto_submit: !!nav.auto_submit });
-    const summary = summarizePrefill(prefill);
-    const wasInPlace = action === 'in-place';
-    if (wasInPlace) {
-      window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
-    } else {
-      navigate(nav.route);
-    }
-    if (action === 'approve-card') return;
-    // Toast copy depends on whether the page is going to run the search
-    // automatically or just populate the form. Auto-submit means "Scout is
-    // running it for you"; non-auto means "Scout set it up, you click Search."
-    const title = nav.auto_submit
-      ? `Scout is running your search`
-      : wasInPlace
-      ? `Scout filled in ${nav.route}`
-      : `Scout took you to ${nav.route}`;
-    toast({
-      title,
-      description: summary || undefined,
-      duration: 5000,
-      action: (
-        <button
-          type="button"
-          onClick={() => {
-            // Clear the prefill envelope first so a stray re-mount of the
-            // destination page does not pick it up after we leave.
-            try {
-              sessionStorage.removeItem('scout_prefill');
-            } catch {
-              /* sessionStorage may be disabled */
-            }
-            if (!wasInPlace && previousPath) {
-              navigate(previousPath);
-            }
-          }}
-          className="text-xs font-medium text-[var(--brand-blue)] hover:underline"
-        >
-          Undo
-        </button>
-      ) as React.ReactElement,
-    });
-  };
-
-  // Auto-run the navigates that need no card: in-place populate and
-  // skip-approve. Fires once per navigate message; approve-card navigates wait
-  // for the user to click Approve on the card.
-  useEffect(() => {
-    const last = messages[messages.length - 1];
-    if (!last || last.role !== 'assistant' || last.isStreaming) return;
-    if (last.tool !== 'navigate' || !last.navigate) return;
-    if (resolvedIds.has(last.id)) return;
-    const action = decideNavAction(last.navigate, last.mode);
-    if (action === 'approve-card') return;
-    setResolvedIds((prev) => new Set(prev).add(last.id));
-    runNavigate(last.navigate, last.navigate.prefill, action);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [messages, resolvedIds]);
-
-  /** Approve-card click: the user OK'd (and maybe edited) the prefill.
-   *  runNavigate handles the bridge write + navigation; passing
-   *  'approve-card' as the action suppresses the undo toast since this was
-   *  already an explicit confirmation. */
-  const handleApprove = (id: string, nav: ScoutNavigate, prefill: Record<string, string>) => {
-    setResolvedIds((prev) => new Set(prev).add(id));
-    runNavigate(nav, prefill, 'approve-card');
-  };
-
-  /** CTA chip click (Change 6): single-chip bridge to a workflow. */
-  const handleCtaAction = useCallback((cta: ScoutCta) => {
-    writeScoutPrefill(cta.route, cta.prefill || {});
-    // A route carrying query params beyond `tab` is a deep link the
-    // destination page reads from the URL (/outbox?contact=...,
-    // /coffee-chat-prep?prepId=...). Those must always navigate, even when
-    // the user is already on the page, or the param never lands.
-    const query = new URLSearchParams(cta.route.split('?')[1] || '');
-    query.delete('tab');
-    const hasDeepLinkParams = [...query.keys()].length > 0;
-    // Identity-aware: /find on the companies tab is NOT the same page as
-    // /find (people), so a mismatched tab does a real navigate that also
-    // switches the tab.
-    if (!hasDeepLinkParams && isSameScoutPage(location.pathname + location.search, cta.route)) {
-      window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
-    } else {
-      navigate(cta.route);
-    }
-    closePanel();
-  }, [location.pathname, location.search, navigate, closePanel]);
-
-  /** Plan-checklist "Do this" click (Change 5): take a single step to its
-   *  page. The step's route is the same shape as a navigate route, so we use
-   *  the bridge. */
-  const handlePlanStep = useCallback((step: ScoutPlanStep) => {
-    if (!step.route) return;
-    writeScoutPrefill(step.route, {});
-    if (isSameScoutPage(location.pathname + location.search, step.route)) {
-      window.dispatchEvent(new CustomEvent(SCOUT_PREFILL_EVENT));
-    } else {
-      navigate(step.route);
-    }
-    closePanel();
-  }, [location.pathname, location.search, navigate, closePanel]);
+  // Navigate execution, approve/CTA/plan handlers, and the celebration
+  // listener all moved to ScoutChatProvider (shared with the Getting Started
+  // page, and singleton so a dual mount can't double-fire them).
 
   // -------------------------------------------------------------------------
   // Tried-and-failed proactive hint (Change 3)
@@ -443,59 +247,6 @@ export function ScoutSidePanel() {
     if (triedHint) markTriedFailedDismissed(triedHint);
     setTriedHint(null);
   }, [triedHint]);
-
-  // -------------------------------------------------------------------------
-  // Post-result celebration: when a Scout-driven workflow (auto_submit
-  // contact / firm search) lands its results on the destination page, the
-  // page dispatches SCOUT_SEARCH_COMPLETED_EVENT. We listen here and post a
-  // synthetic assistant message into the chat with a CTA chip back to the
-  // results page. The chat is the orchestrator surface: even when the user
-  // is on the destination page, the celebration belongs in the chat so the
-  // round trip is visible from Scout.
-  // -------------------------------------------------------------------------
-  useEffect(() => {
-    const onCompleted = (e: Event) => {
-      const detail = (e as CustomEvent<ScoutSearchCompletedDetail>).detail;
-      if (!detail) return;
-      const count = typeof detail.count === 'number' ? detail.count : 0;
-      // Default to the My Network tab matching the source page. The
-      // unified /my-network/{tab} view is the canonical home for saved
-      // people and companies (legacy standalone trackers were retired),
-      // so anything Scout drives points there. Identity-based: the firm
-      // search is /find?tab=companies; every other source is people.
-      const sourceId = scoutPageIdentity(detail.route || '');
-      const wasContacts = !(sourceId.path === '/find' && sourceId.tab === 'companies');
-      const resultsRoute = detail.results_route
-        || (wasContacts ? '/my-network/people' : '/my-network/companies');
-      const subject = wasContacts ? 'contact' : 'firm';
-      const subjectPlural = wasContacts ? 'contacts' : 'firms';
-      const chipLabel = wasContacts ? 'Open your network' : 'Open your companies';
-      // Cite who was found when the page told us, not just a count.
-      const names = Array.isArray(detail.names) ? detail.names.filter(Boolean) : [];
-      const namesLine = names.length
-        ? ` ${names.slice(0, 3).join(', ')}${count > 3 ? ` and ${count - 3} more` : ''}.`
-        : '';
-      const content = count === 0
-        ? `Search ran, no ${subjectPlural} this time. Want me to widen it?`
-        : count === 1
-        ? `Found 1 ${subject}:${namesLine || ' pick who to reach out to or open your full list.'}`
-        : `Found ${count} ${subjectPlural}:${namesLine} Pick who to reach out to or open your full list.`;
-      appendSyntheticAssistant(content, {
-        mode: 'do',
-        cta: count === 0
-          ? null
-          : {
-              label: chipLabel,
-              route: resultsRoute,
-              prefill: {},
-              credit_spending: false,
-              credit_cost: null,
-            },
-      });
-    };
-    window.addEventListener(SCOUT_SEARCH_COMPLETED_EVENT, onCompleted);
-    return () => window.removeEventListener(SCOUT_SEARCH_COMPLETED_EVENT, onCompleted);
-  }, [appendSyntheticAssistant]);
 
   // -------------------------------------------------------------------------
   // Search help (failed-search recovery) - unchanged, legacy channel
@@ -600,32 +351,9 @@ export function ScoutSidePanel() {
     }
   }, [isPanelOpen]);
 
-  useEffect(() => {
-    if (isPanelOpen && !searchHelpContext) {
-      const timer = setTimeout(() => inputRef.current?.focus(), 100);
-      return () => clearTimeout(timer);
-    }
-  }, [isPanelOpen, inputRef, searchHelpContext]);
-
-  // Auto-send a pending message (the home-page "Ask Scout" box, briefing
-  // chips). The message is captured and sent synchronously: clearPendingMessage
-  // sets pendingMessage to null, which re-runs this effect, so a deferred send
-  // (setTimeout) would be cancelled by this effect's own cleanup before it
-  // fired. The re-run hits the early return below, so the send happens once.
-  useEffect(() => {
-    if (!isPanelOpen || !pendingMessage) return;
-    const msg = pendingMessage;
-    clearPendingMessage();
-    void sendMessage(msg);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPanelOpen, pendingMessage]);
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
+  // Input focus lives in ScoutChatThread (it autofocuses on mount, and the
+  // panel mounts a fresh thread on every open). The pending-message auto-send
+  // moved to ScoutChatProvider.
 
   const isSearchHelpMode = !!searchHelpContext;
 
@@ -893,233 +621,20 @@ export function ScoutSidePanel() {
                 )}
               </aside>
 
-              {/* Chat column */}
-              <div className="flex-1 flex flex-col overflow-hidden">
-              {/* Phase 4B (D2-A): persistent active-strategy card lives in
-                  the chat column header so step progress is always-on context
-                  while the user scrolls older messages. Hidden when there is
-                  no strategy yet, so the empty-state hero is uncluttered. */}
-              {activeStrategy && (
-                <ActiveStrategyCard strategy={activeStrategy} />
-              )}
-              <div className="flex-1 overflow-y-auto">
-                <div className="px-5 py-4">
-                  {/* Empty state */}
-                  {messages.length === 0 && (
-                    <div className="flex flex-col">
-                      <div className="flex justify-center mb-6 pt-4">
-                        <div className="w-14 h-14 rounded-full bg-[#FFF7EA] flex items-center justify-center overflow-hidden">
-                          <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
-                        </div>
-                      </div>
-                      <div className="flex gap-3 mb-5">
-                        <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                          <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
-                        </div>
-                        <div className="max-w-[85%]">
-                          <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
-                            <p className="text-sm text-gray-900 leading-relaxed">
-                              Need help finding people, companies, or something else?
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Phase 4B: primary briefing CTA above the suggested
-                          chips. Auto-fires once for new users via the effect
-                          above; this button is the manual re-fire path. */}
-                      <div className="ml-10 mb-3">
-                        <BriefingButton
-                          onClick={() => void requestBriefing()}
-                          isLoading={isLoading}
-                        />
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 ml-10">
-                        {(SCOUT_CHIPS_BY_PAGE[scoutCurrentPage] ?? SCOUT_CHIPS_BY_PAGE[location.pathname] ?? SUGGESTED_QUESTIONS).map((question, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => sendMessage(question)}
-                            className="text-left px-3 py-2.5 rounded-xl bg-white border border-gray-200 hover:border-[#3B82F6] hover:bg-[#FAFBFF]/50 text-sm text-gray-700 transition-colors"
-                          >
-                            {question}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tried-and-failed proactive hint (Change 3). Only on a
-                      fresh empty chat. */}
-                  {messages.length === 0 && triedHint && (
+              {/* Chat column - the shared thread (same conversation as the
+                  Getting Started page). */}
+              <ScoutChatThread
+                variant="panel"
+                emptyStateExtra={
+                  messages.length === 0 && triedHint ? (
                     <ScoutTriedFailedHint
                       triedPrompt={triedHint}
                       onWiden={handleHintWiden}
                       onDismiss={handleHintDismiss}
                     />
-                  )}
-
-                  {/* Messages */}
-                  {messages.length > 0 && (
-                    <div className="space-y-4">
-                      {messages.map((message) => {
-                        const showCard =
-                          message.role === 'assistant' &&
-                          message.tool === 'navigate' &&
-                          !!message.navigate &&
-                          decideNavAction(message.navigate, message.mode) === 'approve-card';
-                        const showModePill = message.role === 'assistant' && !!message.mode && !message.isStreaming;
-                        const liveEvents = (message.toolEvents || []).filter(e => !e.done);
-                        const doneEvents = (message.toolEvents || []).filter(e => e.done);
-                        return (
-                          <div
-                            key={message.id}
-                            className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                          >
-                            {message.role === 'assistant' ? (
-                              <div className="flex gap-3 max-w-[85%]">
-                                <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                                  <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
-                                </div>
-                                <div className="flex flex-col gap-1.5">
-                                  {/* Mode receipt pill above the response */}
-                                  {showModePill && (
-                                    <div>
-                                      <ScoutModePill mode={message.mode!} />
-                                    </div>
-                                  )}
-                                  {/* Done tool pills (Change 1) - sit above
-                                      the prose so the user sees what Scout
-                                      looked at before reading the answer. */}
-                                  {doneEvents.length > 0 && (
-                                    <div className="flex flex-col gap-1">
-                                      {doneEvents.map(evt => (
-                                        <ScoutToolPill key={evt.id} event={evt} />
-                                      ))}
-                                    </div>
-                                  )}
-                                  {message.content && (
-                                    <div className="bg-gray-100 rounded-3xl rounded-bl-md px-4 py-2.5">
-                                      <div
-                                        className="text-sm text-gray-900 leading-relaxed [overflow-wrap:anywhere] break-words"
-                                        // Intercept clicks on chips marked
-                                        // data-scout-link so they route via
-                                        // react-router instead of triggering
-                                        // a full page reload (which would
-                                        // close the Scout panel).
-                                        onClick={(e) => {
-                                          const target = e.target as HTMLElement
-                                          const link = target.closest('a[data-scout-link]') as HTMLAnchorElement | null
-                                          if (!link) return
-                                          const href = link.getAttribute('href') || ''
-                                          if (!href.startsWith('/')) return
-                                          e.preventDefault()
-                                          closePanel()
-                                          navigate(href)
-                                        }}
-                                        dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
-                                      />
-                                      {/* Phase 4B (E1): inline coverage gauge
-                                          on briefing messages. The component
-                                          self-hides above 90% so finished
-                                          profiles don't see ambient noise. */}
-                                      {message.coverage && !message.isStreaming && (
-                                        <CompletenessGauge coverage={message.coverage} />
-                                      )}
-                                    </div>
-                                  )}
-                                  {/* Live tool pills (still running) - shown
-                                      below the prose so they animate without
-                                      pushing earlier content up. */}
-                                  {liveEvents.length > 0 && (
-                                    <div className="flex flex-col gap-1">
-                                      {liveEvents.map(evt => (
-                                        <ScoutToolPill key={evt.id} event={evt} />
-                                      ))}
-                                    </div>
-                                  )}
-                                  {/* Plan checklist (Change 5) */}
-                                  {message.plan && (
-                                    <ScoutPlanChecklist
-                                      plan={message.plan}
-                                      onStepAction={handlePlanStep}
-                                    />
-                                  )}
-                                  {/* CTA chip (Change 6) - single bridge,
-                                      never paragraphed prose. */}
-                                  {message.cta && (
-                                    <ScoutCtaChip
-                                      cta={message.cta}
-                                      onAction={handleCtaAction}
-                                    />
-                                  )}
-                                  {showCard && message.navigate && (
-                                    <ScoutApproveCard
-                                      navigate={message.navigate}
-                                      resolved={resolvedIds.has(message.id)}
-                                      onApprove={(prefill) => handleApprove(message.id, message.navigate!, prefill)}
-                                    />
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="max-w-[85%]">
-                                <div className="bg-[var(--brand-blue)] text-white rounded-3xl rounded-br-md px-4 py-2.5">
-                                  <p className="text-sm leading-relaxed">{message.content}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-
-                      {/* Loading indicator (Change 1). The old cycling
-                          SCOUT_LOADING_MESSAGES is gone: live tool pills
-                          render inline on each assistant message instead.
-                          We still show a minimal "thinking" dot while we
-                          wait for the very first event of the turn so the
-                          panel does not feel frozen. */}
-                      {isLoading && !messages.some((m) => m.isStreaming && (m.content || (m.toolEvents && m.toolEvents.length > 0))) && (
-                        <div className="flex gap-3">
-                          <div className="w-7 h-7 rounded-full bg-[#FFF7EA] flex-shrink-0 flex items-center justify-center overflow-hidden">
-                            <img src={ScoutYetiHead} alt="" className="w-full h-full object-contain" />
-                          </div>
-                          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--brand-border)] bg-[var(--brand-bg-surface)] px-2.5 py-1 text-xs text-[var(--brand-ink-secondary)]">
-                            <Loader2 className="h-3 w-3 animate-spin text-[var(--brand-blue)]" />
-                            <span>Thinking…</span>
-                          </div>
-                        </div>
-                      )}
-
-                      <div ref={messagesEndRef} />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Input */}
-              <div className="px-5 py-4 flex-shrink-0">
-                <div className="relative">
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Ask Scout anything..."
-                    className="w-full pl-4 pr-12 py-3 rounded-xl border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-[#3B82F6] focus:border-transparent"
-                    disabled={isLoading}
-                  />
-                  <button
-                    onClick={() => sendMessage()}
-                    disabled={!input.trim() || isLoading}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg text-white bg-[#0F172A] hover:bg-[#1E293B] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                    aria-label="Send message"
-                  >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </button>
-                </div>
-                <p className="text-xs text-gray-400 text-center mt-2">Free to chat</p>
-              </div>
-              </div>
+                  ) : null
+                }
+              />
             </div>
           )}
         </div>
