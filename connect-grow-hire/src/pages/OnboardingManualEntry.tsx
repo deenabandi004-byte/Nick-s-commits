@@ -1,7 +1,5 @@
 import { useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { OB, obFieldLabel, obInput, obPrimaryButton, obFocus } from "./onboardingTheme";
 
 export interface ManualEntryData {
   university: string;
@@ -19,8 +17,8 @@ interface OnboardingManualEntryProps {
  * Manual fallback for users who don't upload a résumé or LinkedIn. Collects the
  * academic fields the parse would otherwise provide (university, major,
  * graduation year) so the email engine, Find recs, and job board still have what
- * they need. Name/email/phone are already collected on the Profile step and
- * career track on the Track step, so this form only fills the gap.
+ * they need. Name/email are already collected on the Profile step and career
+ * track on the Track step, so this form only fills the gap.
  */
 export const OnboardingManualEntry = ({ onNext, initial }: OnboardingManualEntryProps) => {
   const [university, setUniversity] = useState(initial?.university || "");
@@ -49,56 +47,74 @@ export const OnboardingManualEntry = ({ onNext, initial }: OnboardingManualEntry
   };
 
   return (
-    <div>
-      <h1
-        className="text-2xl font-semibold tracking-tight text-[#0F172A] mb-1.5 text-center"
-        style={{ fontFamily: "'Lora', Georgia, serif" }}
-      >
-        Enter your details
-      </h1>
-      <p className="text-sm text-[#475569] leading-relaxed mb-8 text-center">
-        Fill these in so we can personalize your contacts, emails, and job feed.
-      </p>
+    <form onSubmit={handleSubmit}>
+      <div style={{ marginBottom: 16 }}>
+        <label style={obFieldLabel} htmlFor="m-university">University</label>
+        <input
+          id="m-university"
+          style={obInput}
+          {...obFocus}
+          value={university}
+          onChange={(e) => setUniversity(e.target.value)}
+          placeholder="University of Southern California"
+          required
+        />
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
         <div>
-          <Label htmlFor="m-university">University</Label>
-          <Input className="focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]" id="m-university" value={university} onChange={(e) => setUniversity(e.target.value)} placeholder="University of Southern California" required />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="m-major">Major</Label>
-            <Input className="focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]" id="m-major" value={major} onChange={(e) => setMajor(e.target.value)} placeholder="Business Administration" required />
-          </div>
-          <div>
-            <Label htmlFor="m-degree">
-              Degree <span className="text-[#94A3B8] font-normal">(optional)</span>
-            </Label>
-            <Input className="focus-visible:ring-[#1E3A8A] focus-visible:border-[#1E3A8A]" id="m-degree" value={degree} onChange={(e) => setDegree(e.target.value)} placeholder="Bachelor of Science" />
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="m-gradYear">Graduation year</Label>
-          <select
-            id="m-gradYear"
-            value={graduationYear}
-            onChange={(e) => setGraduationYear(e.target.value)}
+          <label style={obFieldLabel} htmlFor="m-major">Major</label>
+          <input
+            id="m-major"
+            style={obInput}
+            {...obFocus}
+            value={major}
+            onChange={(e) => setMajor(e.target.value)}
+            placeholder="Business Administration"
             required
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1E3A8A] focus-visible:ring-offset-2"
-          >
-            <option value="" disabled>Select year</option>
-            {years.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
+          />
         </div>
+        <div>
+          <label style={obFieldLabel} htmlFor="m-degree">
+            Degree <span style={{ color: OB.ink4, fontWeight: 400 }}>(optional)</span>
+          </label>
+          <input
+            id="m-degree"
+            style={obInput}
+            {...obFocus}
+            value={degree}
+            onChange={(e) => setDegree(e.target.value)}
+            placeholder="Bachelor of Science"
+          />
+        </div>
+      </div>
 
-        <Button type="submit" disabled={!valid} className="w-full bg-[#1E3A8A] hover:bg-[#172554] mt-2">
-          Continue
-        </Button>
-      </form>
-    </div>
+      <div style={{ marginBottom: 22 }}>
+        <label style={obFieldLabel} htmlFor="m-gradYear">Graduation year</label>
+        <select
+          id="m-gradYear"
+          value={graduationYear}
+          onChange={(e) => setGraduationYear(e.target.value)}
+          required
+          style={{ ...obInput, appearance: "auto", color: graduationYear ? OB.ink : OB.ink4 }}
+          {...obFocus}
+        >
+          <option value="" disabled>Select year</option>
+          {years.map((y) => (
+            <option key={y} value={y}>{y}</option>
+          ))}
+        </select>
+      </div>
+
+      <button
+        type="submit"
+        disabled={!valid}
+        style={{ ...obPrimaryButton, opacity: valid ? 1 : 0.5, cursor: valid ? "pointer" : "default" }}
+        onMouseEnter={(e) => valid && (e.currentTarget.style.background = OB.primaryDark)}
+        onMouseLeave={(e) => (e.currentTarget.style.background = OB.primary)}
+      >
+        Continue
+      </button>
+    </form>
   );
 };

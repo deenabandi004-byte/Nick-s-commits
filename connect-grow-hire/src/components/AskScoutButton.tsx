@@ -126,9 +126,10 @@ export const AskScoutButton: React.FC<AskScoutButtonProps> = ({
  *   • /dashboard — Scout prompt inline in the hero
  *   • / and /for-students — public landing pages, no pill
  *   • /agent and /agent/** — Loops surfaces have ScoutGuide / inline Scouts
+ *   • /onboarding — signup flow; no app chrome until onboarding completes
  */
 const HIDE_PILL_ON = new Set(["/dashboard", "/", "/for-students"]);
-const HIDE_PILL_PREFIXES = ["/agent"];
+const HIDE_PILL_PREFIXES = ["/agent", "/onboarding"];
 
 const FloatingAskScoutButton: React.FC = () => {
   const { openPanel, isPanelOpen } = useScout();

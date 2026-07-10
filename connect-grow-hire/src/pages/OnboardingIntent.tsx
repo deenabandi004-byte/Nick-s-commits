@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { OB, obPrimaryButton } from "./onboardingTheme";
 
 export interface IntentData {
   intent: string;
@@ -11,13 +11,16 @@ interface OnboardingIntentProps {
   initial?: string;
 }
 
-// Placeholder options — these will change later.
+// "How did you hear about us?" — acquisition source, single-select. Saved to
+// Firestore as `referralSource` for marketing attribution. No preselection so
+// the attribution data stays honest.
 const INTENT_OPTIONS = [
-  "Land a job through networking",
-  "Break into a competitive field",
-  "Find and track applications",
-  "Improve my outreach and emails",
-  "Just exploring",
+  "Instagram",
+  "TikTok",
+  "LinkedIn",
+  "From a friend",
+  "In person",
+  "Other",
 ];
 
 export const OnboardingIntent = ({ onNext, initial }: OnboardingIntentProps) => {
@@ -25,39 +28,72 @@ export const OnboardingIntent = ({ onNext, initial }: OnboardingIntentProps) => 
 
   return (
     <div>
-      <h1
-        className="text-2xl font-semibold tracking-tight text-[#0F172A] mb-1.5 text-center"
-        style={{ fontFamily: "'Lora', Georgia, serif" }}
-      >
-        What brings you to Offerloop?
-      </h1>
-      <p className="text-sm text-[#475569] leading-relaxed mb-6 text-center">
-        Pick what fits best — we'll tailor your experience around it.
-      </p>
-
-      <div className="space-y-3">
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }} role="radiogroup">
         {INTENT_OPTIONS.map((opt) => {
           const selected = intent === opt;
           return (
             <button
               key={opt}
               type="button"
-              onClick={() => setIntent(selected ? "" : opt)}
-              className="w-full text-left rounded-lg border p-4 flex items-center justify-between transition-all"
-              style={{ borderColor: selected ? "#1E3A8A" : "#E2E8F0", background: selected ? "#EFF6FF" : "#FFFFFF" }}
+              role="radio"
+              aria-checked={selected}
+              onClick={() => setIntent(opt)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                border: selected ? `1.5px solid ${OB.primary}` : `1px solid ${OB.border}`,
+                background: selected ? OB.primary50 : "#fff",
+                borderRadius: 11,
+                padding: "14px 16px",
+                fontSize: 14,
+                fontFamily: OB.fontBody,
+                fontWeight: selected ? 600 : 400,
+                color: selected ? OB.heading : OB.ink,
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "border-color .15s, background .15s",
+                width: "100%",
+              }}
             >
-              <span className="text-[15px] font-medium" style={{ color: selected ? "#1E3A8A" : "#0F172A" }}>
-                {opt}
+              <span
+                aria-hidden
+                style={{
+                  width: 20,
+                  height: 20,
+                  borderRadius: "50%",
+                  flexShrink: 0,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  ...(selected
+                    ? { background: OB.primary, color: "#fff" }
+                    : { border: `1.5px solid ${OB.border}` }),
+                }}
+              >
+                {selected && <Check size={12} strokeWidth={3} />}
               </span>
-              {selected && <Check className="h-5 w-5 text-[#1E3A8A]" />}
+              {opt}
             </button>
           );
         })}
       </div>
 
-      <Button type="button" onClick={() => onNext({ intent })} className="w-full bg-[#1E3A8A] hover:bg-[#172554] mt-8">
+      <button
+        type="button"
+        disabled={!intent}
+        onClick={() => onNext({ intent })}
+        style={{
+          ...obPrimaryButton,
+          marginTop: 20,
+          opacity: intent ? 1 : 0.5,
+          cursor: intent ? "pointer" : "default",
+        }}
+        onMouseEnter={(e) => intent && (e.currentTarget.style.background = OB.primaryDark)}
+        onMouseLeave={(e) => (e.currentTarget.style.background = OB.primary)}
+      >
         Continue
-      </Button>
+      </button>
     </div>
   );
 };
