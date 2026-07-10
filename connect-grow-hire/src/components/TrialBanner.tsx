@@ -16,6 +16,7 @@ import { getAuth } from 'firebase/auth';
 import { BACKEND_URL } from '@/services/api';
 import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 import { useTierConfig } from '@/hooks/useTierConfig';
+import { useTour } from '@/contexts/TourContext';
 
 interface TrialStatus {
   is_active: boolean;
@@ -56,6 +57,7 @@ const C = {
 export function TrialBanner({ variant = 'full', onStartTrial, onUpgrade }: TrialBannerProps) {
   const { user } = useFirebaseAuth();
   const { config: tierConfig } = useTierConfig();
+  const { run: tourRunning } = useTour();
   const trialDays = tierConfig.trial.days_non_student;
   const [data, setData] = useState<TrialStatusResponse | null>(null);
   const [activating, setActivating] = useState(false);
@@ -118,8 +120,11 @@ export function TrialBanner({ variant = 'full', onStartTrial, onUpgrade }: Trial
     }
   };
 
-  // Don't render anything until we have data
-  if (!data) return null;
+  // Don't render anything until we have data. Also stay hidden while the
+  // product tour is running: the banner loads async and pushes the whole page
+  // down when it appears, which strands the tour tooltip mid-viewport (and a
+  // trial pitch is noise inside a walkthrough anyway).
+  if (!data || tourRunning) return null;
 
   const status = data.status;
   const hasUsedTrial = data.has_trial_used;

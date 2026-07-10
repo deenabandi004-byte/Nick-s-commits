@@ -14,6 +14,61 @@ import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { AutoSubmissionTab } from "@/components/jobs/AutoSubmissionTab";
 import { NeedsAttentionTab } from "@/components/jobs/NeedsAttentionTab";
 import { NeedsVerificationTab } from "@/components/jobs/NeedsVerificationTab";
+import { useTour } from "@/contexts/TourContext";
+
+// Inert demo rows shown ONLY during the product tour's Applications step, so
+// a brand-new user (who has zero applications and may be on the free tier)
+// sees what a live auto-apply pipeline looks like. Never rendered outside
+// the tour; nothing here is clickable or persisted.
+const TOUR_DEMO_APPLICATIONS = [
+  {
+    role: "Data Analyst Intern",
+    company: "Spotify",
+    when: "Submitted 2h ago",
+    status: "Submitted",
+    chip: { bg: "#E8F5E9", fg: "#2E7D32" },
+  },
+  {
+    role: "Software Engineer Intern",
+    company: "Stripe",
+    when: "Submitted yesterday",
+    status: "In review",
+    chip: { bg: "#E4E9F5", fg: "#3C4F8E" },
+  },
+  {
+    role: "Strategy & Ops Intern",
+    company: "Disney",
+    when: "Paused 10m ago",
+    status: "Needs your answer",
+    chip: { bg: "#FEF3C7", fg: "#B45309" },
+  },
+] as const;
+
+const TourDemoApplications = () => (
+  <div className="flex flex-col gap-2" aria-hidden="true">
+    {TOUR_DEMO_APPLICATIONS.map((a) => (
+      <div
+        key={a.company}
+        className="flex items-center justify-between rounded-xl border border-line bg-white px-4 py-3.5"
+      >
+        <div>
+          <div className="text-[14px] font-semibold" style={{ color: "#1e2d4d" }}>
+            {a.role}
+          </div>
+          <div className="text-[12.5px] text-muted-foreground">
+            {a.company} · {a.when}
+          </div>
+        </div>
+        <span
+          className="text-[11px] font-semibold px-2.5 py-1 rounded-full whitespace-nowrap"
+          style={{ background: a.chip.bg, color: a.chip.fg }}
+        >
+          {a.status}
+        </span>
+      </div>
+    ))}
+  </div>
+);
 
 type AppsTab = "all" | "needs-answers" | "finish-browser";
 
@@ -28,6 +83,11 @@ const TAB_HINTS: Record<AppsTab, string> = {
 const ApplicationsPage = () => {
   const { user } = useFirebaseAuth();
   const navigate = useNavigate();
+  // Product-tour choreography: while the tour's Applications step is active,
+  // show seeded demo rows (and bypass the free-tier lock) so the spotlight
+  // has something real-looking to highlight.
+  const { demoSurface } = useTour();
+  const tourDemo = demoSurface === "applications";
   // subscriptionTier is the source of truth (CLAUDE.md); tier is the legacy
   // fallback. Both are already typed on the User interface, so no `as any`
   // is needed here.
@@ -80,7 +140,10 @@ const ApplicationsPage = () => {
         <MainContentWrapper>
           <AppHeader title="Applications" />
           <div className="flex-1 overflow-y-auto">
-            <div className="max-w-[900px] mx-auto px-6 py-6">
+            {/* data-tour lives on the always-mounted container (not the demo
+                block) so the tour's element-ready wait resolves before the
+                demoSurface flag flips on and swaps in the seeded rows. */}
+            <div className="max-w-[900px] mx-auto px-6 py-6" data-tour="tour-applications-list">
               {/* Page header, same serif display treatment as the other pages
                   (Browse all jobs, Who do you want to meet?). */}
               <h1
@@ -96,7 +159,12 @@ const ApplicationsPage = () => {
               >
                 Applications
               </h1>
-              {locked ? (
+              {tourDemo ? (
+                <div>
+                  <p className="text-[12.5px] text-muted-foreground mt-1 mb-4">{TAB_HINTS.all}</p>
+                  <TourDemoApplications />
+                </div>
+              ) : locked ? (
                 <div className="rounded-xl border border-line bg-white p-8 text-center">
                   <h2 className="text-[16px] font-semibold mb-2">Auto Apply is a Pro feature</h2>
                   <p className="text-[13px] text-muted-foreground mb-4">

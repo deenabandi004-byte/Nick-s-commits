@@ -1,6 +1,6 @@
 /**
  * TourContext — In-app guided walkthrough (product tour) using react-joyride.
- * Persists completion in Firestore; auto-starts for new users or after 7 days away.
+ * Persists completion in Firestore; auto-starts once for brand-new accounts.
  */
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -19,7 +19,6 @@ import { useFirebaseAuth } from '@/contexts/FirebaseAuthContext';
 const TOUR_ELEMENT_POLL_MS = 100;
 const TOUR_ELEMENT_MAX_WAIT_MS = 5000;
 const COMPLETION_AUTO_DISMISS_MS = 3000;
-const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 const AUTO_START_DELAY_MS = 800;
 
 // -----------------------------------------------------------------------------
@@ -33,7 +32,8 @@ export type TourDemoSurface =
   | 'inbox'
   | 'meeting-prep'
   | 'scout'
-  | 'loops';
+  | 'loops'
+  | 'applications';
 
 export interface TourStepConfig {
   // Stable identifier for steps that need explicit per-step handling (e.g.
@@ -62,7 +62,7 @@ export interface TourStepConfig {
 // each land on an anchor that exists today. Future phases will splice
 // Job Board, Ask Scout, and Loop steps in without reworking the order.
 export const TOUR_STEPS: TourStepConfig[] = [
-  // 0 — Welcome (centered modal, no anchor). Shares Find People's route so
+  // Welcome (centered modal, no anchor). Shares Find People's route so
   // there's no navigation between this step and the next.
   {
     id: 'welcome',
@@ -74,7 +74,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     placement: 'center',
     nextLabel: 'Get Started',
   },
-  // 1 — Find People
+  // Find People
   {
     target: '[data-tour="tour-search-form"]',
     title: 'Find People',
@@ -83,7 +83,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     tab: 'contact-search',
     demoSurface: 'people',
   },
-  // 2 — Find Companies
+  // Find Companies
   {
     target: '[data-tour="tour-find-companies"]',
     title: 'Find Companies',
@@ -91,7 +91,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     route: '/find?tab=companies',
     demoSurface: 'companies',
   },
-  // 3 — Find Hiring Manager
+  // Find Hiring Manager
   {
     target: '[data-tour="tour-find-hiring-managers"]',
     title: 'Find Hiring Manager',
@@ -99,29 +99,48 @@ export const TOUR_STEPS: TourStepConfig[] = [
     route: '/find?tab=hiring-managers',
     demoSurface: 'hiring-managers',
   },
-  // 4-6 — Job Board, broken into three sub-steps. The page auto-selects the
-  // first job on mount (JobBoardPage.redesign.tsx ~287-298), so the Find People
-  // panel is in the DOM by the time the user reaches step 6 without any
-  // programmatic expansion from the tour.
+  // Job Board block: list → find-people → auto-apply → applications. The page
+  // auto-selects the first job on mount (JobBoardPage.redesign.tsx ~287-298),
+  // so the detail panel (and its find-people + action-row anchors) is in the
+  // DOM without any programmatic expansion from the tour.
+  //
+  // ?view=list is load-bearing: /job-board mounts EITHER the personalized list
+  // (JobBoardPage.redesign — has all three anchors) OR the gallery
+  // (BrowseJobsPage — has none) based on URL param then localStorage. A user
+  // whose last visit was gallery would land there and all three steps would
+  // vanish, so the tour pins the view explicitly.
   {
     target: '[data-tour="tour-job-board-list"]',
     title: 'Job Board',
     content: "Hundreds of roles handpicked for you, including any you've already saved. Click any job to see the full posting.",
-    route: '/job-board',
-  },
-  {
-    target: '[data-tour="tour-job-board-filters"]',
-    title: 'Filter the Feed',
-    content: "Search by keyword, or narrow the feed by location, role type, salary, and more.",
-    route: '/job-board',
+    route: '/job-board?view=list',
   },
   {
     target: '[data-tour="tour-job-board-find-people"]',
     title: 'Find People for the Role',
     content: "For each job, we'll surface the hiring manager and people on the team: your fastest path to a warm intro.",
-    route: '/job-board',
+    route: '/job-board?view=list',
   },
-  // 7 — My Network. Trimmed: the inbox/Gmail story now lives in its own step.
+  // Auto-apply: anchored on the job detail's action row (always present when
+  // a job is selected; the Auto-apply button itself only renders on eligible
+  // postings, so the row is the reliable anchor).
+  {
+    target: '[data-tour="tour-job-actions"]',
+    title: 'Auto-Apply',
+    content: "One click and we fill out the entire application for you, straight from your resume and profile. No more retyping the same answers into Workday.",
+    route: '/job-board?view=list',
+  },
+  // Applications: the receipts. The page seeds inert demo rows during this
+  // step (demoSurface 'applications') so a brand-new user sees what a live
+  // pipeline of auto-submitted applications looks like.
+  {
+    target: '[data-tour="tour-applications-list"]',
+    title: 'Applications',
+    content: "Every application we submit lands here with a live status. If one needs you, a question we couldn't answer or a captcha to finish, we flag it so nothing falls through.",
+    route: '/applications',
+    demoSurface: 'applications',
+  },
+  // My Network. Trimmed: the inbox/Gmail story now lives in its own step.
   {
     target: '[data-tour="tour-network-table"]',
     title: 'My Network',
@@ -129,7 +148,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     route: '/my-network/people',
     demoSurface: 'my-network',
   },
-  // 8 — Inbox. Was implicit in the old My Network copy; now a step of its own
+  // Inbox. Was implicit in the old My Network copy; now a step of its own
   // anchored on the /outbox surface so the spotlight matches the language.
   {
     target: '[data-tour="tour-inbox"]',
@@ -138,7 +157,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     route: '/outbox',
     demoSurface: 'inbox',
   },
-  // 9 — Meeting Prep
+  // Meeting Prep
   {
     target: '[data-tour="tour-coffee-chat-prep"]',
     title: 'Meeting Prep',
@@ -146,7 +165,7 @@ export const TOUR_STEPS: TourStepConfig[] = [
     route: '/coffee-chat-prep',
     demoSurface: 'meeting-prep',
   },
-  // 10 — Ask Scout. The orchestration in ScoutSidePanel opens the panel
+  // Ask Scout. The orchestration in ScoutSidePanel opens the panel
   // and seeds a Mark Cuban conversation so the user sees both the trigger
   // and the assistant's strategist behavior. Route is /agent because the
   // FloatingAskScoutButton is suppressed on /dashboard and we'll already
@@ -163,15 +182,26 @@ export const TOUR_STEPS: TourStepConfig[] = [
     placement: 'center',
     demoSurface: 'scout',
   },
-  // 11 — Loops. The closer. Seeds a single running Loop into the React
-  // Query cache so the user sees the "works while you sleep" proposition
-  // through live mid-funnel metrics on the seeded card.
+  // Loops. Seeds a single running Loop into the React Query cache so the
+  // user sees the "works while you sleep" proposition through live
+  // mid-funnel metrics on the seeded card.
   {
     target: '[data-tour="tour-loops-grid"]',
     title: 'Loops',
     content: "Run the whole flow on autopilot. Describe who you want to reach, and a Loop keeps finding contacts, drafting emails, and surfacing replies 24/7.",
     route: '/agent',
     demoSurface: 'loops',
+  },
+  // Closer — centered send-off on Home so the tour ends where the user will
+  // actually live, not parked on the Loops setup page.
+  {
+    id: 'closing',
+    target: 'body',
+    title: "You're ready",
+    content: "Home shows your next moves, replies to answer, and everything running for you. Start by finding one person you want to talk to.",
+    route: '/dashboard',
+    placement: 'center',
+    nextLabel: 'Finish',
   },
 ];
 
@@ -318,11 +348,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     (data: { action: string; index: number; status: string; type: string }) => {
       const { action, index, status, type } = data;
 
-      // X (close) button: mark complete and stop tour
+      // X (close) button: mark complete and stop tour. Bailing generally
+      // leaves the user where they were, EXCEPT on /agent (the Scout/Loops
+      // steps): nobody should be stranded on the Loop setup page, so those
+      // exits land on Home.
       if (action === ACTIONS.CLOSE) {
         markTourCompleteInFirestore();
         setRun(false);
         pendingStepRef.current = null;
+        if (location.pathname.startsWith('/agent')) navigate('/dashboard');
         return;
       }
 
@@ -344,7 +378,20 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           setRun(false);
           completionTimerRef.current = setTimeout(dismissCompletion, COMPLETION_AUTO_DISMISS_MS);
         } else {
-          setStepIndex(nextIdx);
+          // Advance the same way STEP_AFTER+NEXT does: if the next step lives
+          // on a different route, navigate and wait for its anchor. A bare
+          // setStepIndex here left us on the old page, so every later step's
+          // anchor was also "not found" and one missing anchor unwound the
+          // entire rest of the tour in a silent cascade.
+          const nextStep = TOUR_STEPS[nextIdx];
+          const nextPath = buildPath(nextStep.route, nextStep.tab);
+          if (currentPath !== nextPath) {
+            setRun(false);
+            pendingStepRef.current = nextIdx;
+            navigate(nextPath);
+          } else {
+            setStepIndex(nextIdx);
+          }
         }
         return;
       }
@@ -397,41 +444,87 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
           // Mirror the STEP_AFTER+NEXT finish branch above. Joyride emits a
           // STATUS.FINISHED event in some completion paths in addition to the
           // STEP_AFTER+NEXT we already navigate from, so this is a belt-and-
-          // suspenders home-route nav for the natural finish. Skip path
-          // (STATUS.SKIPPED) deliberately does not navigate.
+          // suspenders home-route nav for the natural finish.
           navigate('/dashboard');
           completionTimerRef.current = setTimeout(dismissCompletion, COMPLETION_AUTO_DISMISS_MS);
+        } else if (location.pathname.startsWith('/agent')) {
+          // Skip path stays put EXCEPT on /agent: never strand the user on
+          // the Loops setup page; send them Home instead.
+          navigate('/dashboard');
         }
       }
     },
     [currentPath, navigate, markTourCompleteInFirestore, dismissCompletion]
   );
 
-  // Auto-start: once per session when user is logged in and past onboarding
+  // Auto-start: once per session when user is logged in and past onboarding.
+  //
+  // startTour lives in a ref, NOT in this effect's dep list. Its identity
+  // changes on every navigation (it closes over currentPath), so having it
+  // as a dep meant any redirect inside the start window re-ran the effect,
+  // cancelled the in-flight check/timer, and hit the hasChecked guard on the
+  // re-run — the tour never appeared. That's exactly the /home → /find hop
+  // every brand-new account makes right after onboarding, i.e. the one user
+  // the tour exists for was the one most likely to lose the race.
   const autoStartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startTourRef = useRef(startTour);
+  useEffect(() => {
+    startTourRef.current = startTour;
+  }, [startTour]);
+
   useEffect(() => {
     if (!user?.uid || user?.needsOnboarding || hasCheckedTriggerRef.current) return;
     hasCheckedTriggerRef.current = true;
 
     let cancelled = false;
-    (async () => {
-      try {
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        if (cancelled) return;
-        const data = snap.data();
-        let hasCompletedTour = data?.hasCompletedTour === true;
-        const lastLogin = data?.lastLoginDate;
-        if (lastLogin) {
-          const last = new Date(lastLogin).getTime();
-          if (Date.now() - last > SEVEN_DAYS_MS) hasCompletedTour = false;
-        }
-        if (!hasCompletedTour) {
-          autoStartTimerRef.current = setTimeout(startTour, AUTO_START_DELAY_MS);
-        }
-      } catch (e) {
-        console.error('[Tour] Auto-start check failed:', e);
+
+    // Only fire on a surface the tour can own. Starting while the user is
+    // still on /onboarding or mid-Stripe (/payment-success) would yank them
+    // to /find at the worst moment, so poll until they land in the app.
+    const attemptAutoStart = () => {
+      if (cancelled) return;
+      const path = window.location.pathname;
+      if (path.startsWith('/onboarding') || path.startsWith('/payment')) {
+        autoStartTimerRef.current = setTimeout(attemptAutoStart, 1000);
+        return;
       }
-    })();
+      startTourRef.current();
+    };
+
+    // A user who just completed onboarding this session is definitionally
+    // new: start the tour immediately, no Firestore round-trip to lose a
+    // race against. OnboardingFlow sets this flag as it finishes.
+    let isFreshSignup = false;
+    try {
+      isFreshSignup = sessionStorage.getItem('onboarding_just_completed') === 'true';
+      if (isFreshSignup) sessionStorage.removeItem('onboarding_just_completed');
+    } catch {
+      /* sessionStorage unavailable */
+    }
+
+    if (isFreshSignup) {
+      autoStartTimerRef.current = setTimeout(attemptAutoStart, AUTO_START_DELAY_MS);
+    } else {
+      (async () => {
+        try {
+          const snap = await getDoc(doc(db, 'users', user.uid));
+          if (cancelled) return;
+          const data = snap.data();
+          // First-time only: once the tour has been completed (or dismissed —
+          // both mark hasCompletedTour), it never auto-starts again. It used
+          // to re-trigger after 7 days away; that was more annoying than
+          // helpful. The user dropdown's "Take the tour" remains the manual
+          // re-entry point.
+          const hasCompletedTour = data?.hasCompletedTour === true;
+          if (!hasCompletedTour) {
+            autoStartTimerRef.current = setTimeout(attemptAutoStart, AUTO_START_DELAY_MS);
+          }
+        } catch (e) {
+          console.error('[Tour] Auto-start check failed:', e);
+        }
+      })();
+    }
+
     return () => {
       cancelled = true;
       if (autoStartTimerRef.current) {
@@ -439,7 +532,9 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         autoStartTimerRef.current = null;
       }
     };
-  }, [user?.uid, user?.needsOnboarding, startTour]);
+    // startTour intentionally omitted — consumed via startTourRef (see above).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid, user?.needsOnboarding]);
 
   // Cleanup completion timer on unmount
   useEffect(() => {
@@ -479,8 +574,12 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
     content: s.content,
     disableBeacon: true,
     placement: (s.placement ?? 'bottom') as 'bottom' | 'center',
-    ...(s.nextLabel ? { locale: { next: s.nextLabel } } : {}),
-    ...(s.id === 'welcome' ? { styles: WELCOME_STEP_STYLES } : {}),
+    // showProgress must be off on steps with a custom next label or Joyride
+    // renders its nextLabelWithProgress format ("Next (Step 1 of 14)") and
+    // the custom label ("Get Started" / "Finish") never appears.
+    ...(s.nextLabel ? { locale: { next: s.nextLabel }, showProgress: false } : {}),
+    // Welcome + closing share the large centered-modal treatment.
+    ...(s.id === 'welcome' || s.id === 'closing' ? { styles: WELCOME_STEP_STYLES } : {}),
   }));
 
   // Demo surface is live only while the tour is actually running on a step
@@ -516,7 +615,15 @@ export function TourProvider({ children }: { children: React.ReactNode }) {
         disableOverlayClose={false}
         locale={{ back: 'Back', close: 'Close', last: 'Done', next: 'Next', skip: 'Skip tour' }}
         styles={{
-          options: { primaryColor: '#2563EB', zIndex: 10000 },
+          // Soft overlay: the page stays readable around the spotlight instead
+          // of vanishing into a near-black void (the old default 50% black
+          // read as "one white box floating in darkness").
+          options: {
+            primaryColor: '#2563EB',
+            zIndex: 10000,
+            overlayColor: 'rgba(15, 23, 42, 0.30)',
+          },
+          spotlight: { borderRadius: 12 },
           tooltip: {
             backgroundColor: '#fff',
             borderRadius: 12,

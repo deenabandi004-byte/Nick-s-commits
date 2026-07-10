@@ -13,7 +13,6 @@ import {
   FileText,
   Users,
   Home,
-  Repeat,
   Search,
   Coffee,
   Inbox,
@@ -32,7 +31,6 @@ import {
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
 import { trackNavClick, trackUpgradeClick } from "../lib/analytics";
-import { useAgentSidebarStatus } from "@/hooks/useAgent";
 import { useTour } from "@/contexts/TourContext";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useApplicationsAttention } from "@/hooks/useApplicationsAttention";
@@ -92,7 +90,6 @@ const discoverNavItems: NavItemDef[] = [
 ];
 
 const engageNavItems: NavItemDef[] = [
-  { title: "Loops",        url: "/agent",            LucideIcon: Repeat },
   { title: "Inbox",        url: "/outbox",           LucideIcon: Inbox,  dataTour: "tour-track-email" },
   { title: "Meeting Prep", url: "/coffee-chat-prep", LucideIcon: Coffee, dataTour: "tour-coffee-chat-prep" },
 ];
@@ -163,7 +160,6 @@ export function AppSidebar() {
   const unreadCount =
     notifications.unreadReplyCount + notifications.unreadLoopRunCount;
 
-  const agentStatus = useAgentSidebarStatus();
   const applicationsAttention = useApplicationsAttention();
   const gettingStartedItem: NavItemDef = {
     title: "Home",
@@ -277,25 +273,8 @@ export function AppSidebar() {
       >
         <span className="relative">
           {iconEl}
-          {item.title === "Loops" && agentStatus.status === "active" && (
-            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-green-500" />
-          )}
-          {item.title === "Loops" && agentStatus.status === "paused" && (
-            <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-400" />
-          )}
         </span>
         <span className="flex-1">{item.title}</span>
-        {item.title === "Loops" && agentStatus.pendingCount > 0 && (
-          <span
-            className="ml-auto text-[10px] font-medium rounded-full px-1.5 py-0.5 leading-none"
-            style={{
-              background: "rgba(252,211,77,0.15)",
-              color: "#FCD34D",
-            }}
-          >
-            {agentStatus.pendingCount}
-          </span>
-        )}
         {item.title === "Applications" && applicationsAttention > 0 && (
           <span
             className="ml-auto text-[10px] font-medium rounded-full px-1.5 py-0.5 leading-none"

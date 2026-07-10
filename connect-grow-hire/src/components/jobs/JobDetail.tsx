@@ -137,7 +137,7 @@ export function JobDetail({
             </div>
           </div>
         </div>
-        <div className="jb-detail-actions">
+        <div className="jb-detail-actions" data-tour="tour-job-actions">
           <div className="jb-action-row">
             {job.autoApplyEligible && onAutoApply && (
               <button

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useTour } from "@/contexts/TourContext";
 
 const DISMISS_KEY = "goals_banner_dismissed_at";
 const RESHOW_DAYS = 7;
@@ -10,6 +11,7 @@ const RESHOW_DAYS = 7;
 export function GoalsPromptBanner() {
   const navigate = useNavigate();
   const { user } = useFirebaseAuth();
+  const { run: tourRunning } = useTour();
 
   const [dismissed, setDismissed] = useState(() => {
     try {
@@ -28,8 +30,10 @@ export function GoalsPromptBanner() {
     setDismissed(true);
   };
 
-  // Don't show if dismissed, no user, or user already has careerTrack set
-  if (dismissed || !user) return null;
+  // Don't show if dismissed, no user, or user already has careerTrack set.
+  // Hidden during the product tour too: it mounts async above the page body
+  // and the layout shift knocks the tour tooltip off its anchor.
+  if (dismissed || !user || tourRunning) return null;
 
   // Check if goals data exists (careerTrack loaded in auth context from Firestore)
   if (user.careerTrack) return null;

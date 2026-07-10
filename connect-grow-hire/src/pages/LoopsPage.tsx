@@ -91,7 +91,10 @@ export default function LoopsPage() {
               }}
             />
 
-            <div style={{ position: "relative", zIndex: 1 }}>
+            {/* data-tour anchors the tour's final Loops step. It sits on this
+                always-mounted wrapper (not LoopGrid) because a new user has
+                zero Loops and sees the empty state instead of the grid. */}
+            <div data-tour="tour-loops-grid" style={{ position: "relative", zIndex: 1 }}>
               <div
                 style={{
                   height: 3,

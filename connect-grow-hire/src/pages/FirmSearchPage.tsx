@@ -163,7 +163,10 @@ const FirmSearchPage: React.FC<{
         setSearchProgress(null);
         setResults([COMPANIES_DEMO_FIRM]);
         setHasSearched(true);
-        setSearchComplete(true);
+        // Deliberately NOT setSearchComplete(true): that opens the full-screen
+        // success modal, which stacks a second dialog under the tour tooltip
+        // and its View Companies button navigates away mid-tour. The seeded
+        // card in the results list is the whole payoff here.
       }, typingDoneAt + SEARCHING_HOLD_MS),
     );
 
@@ -1506,7 +1509,7 @@ const FirmSearchPage: React.FC<{
               <div className="w-16 h-16 bg-green-100 flex items-center justify-center mx-auto mb-4" style={{ borderRadius: 3 }}>
                 <CheckCircle className="w-10 h-10 text-green-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-1" style={{ color: '#0F172A', fontFamily: "'Lora', Georgia, serif" }}>Found {results.length} companies!</h3>
+              <h3 className="text-xl font-semibold mb-1" style={{ color: '#0F172A', fontFamily: "'Lora', Georgia, serif" }}>Found {results.length} {results.length === 1 ? 'company' : 'companies'}!</h3>
               <p className="mb-2" style={{ color: '#6B7280' }}>Matching your criteria</p>
               <p className="text-sm font-medium mb-6" style={{ color: '#3B82F6' }}>Saved to your Company Tracker</p>
 
