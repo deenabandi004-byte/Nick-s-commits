@@ -6,8 +6,9 @@ export type Tier = 'free' | 'pro' | 'elite';
 
 /**
  * Outreach mode for the Find search: what we do after finding contacts.
- *  - "preview": return contact info only (no email written, no draft). Free tier.
- *  - "draft": write the email and create a Gmail draft. Pro and Elite.
+ *  - "preview": return contact info only (no email written, no draft).
+ *  - "draft": write the email and create a Gmail draft. ALL tiers (Free's
+ *    monthly credit budget is the meter, not the feature gate).
  *  - "send": write and send the email. Elite only.
  * The backend (runs.py prompt_search) is the source of truth and re-validates
  * the chosen mode against the user tier. These helpers exist only to drive the
@@ -16,7 +17,7 @@ export type Tier = 'free' | 'pro' | 'elite';
 export type OutreachMode = 'preview' | 'draft' | 'send';
 
 const TIER_ALLOWED_MODES: Record<Tier, OutreachMode[]> = {
-  free: ['preview'],
+  free: ['preview', 'draft'],
   pro: ['preview', 'draft'],
   elite: ['preview', 'draft', 'send'],
 };
@@ -36,8 +37,8 @@ export function canUseOutreachMode(tier: Tier, mode: OutreachMode): boolean {
 }
 
 /**
- * The mode a tier should land on by default: draft for anyone who can draft,
- * otherwise preview (Free, whose only option is preview).
+ * The mode a tier should land on by default: draft for anyone who can draft
+ * (every tier today), preview as the safety fallback.
  */
 export function getDefaultOutreachMode(tier: Tier): OutreachMode {
   return canUseOutreachMode(tier, 'draft') ? 'draft' : 'preview';
@@ -64,7 +65,8 @@ export const TIER_LIMITS: Record<Tier, TierLimits> = {
     coffeeChatPreps: 3,
     firmSearch: false,
     smartFilters: false,
-    bulkDrafting: false,
+    // 2026-07: Free can draft (batch of 3) — credits are the meter.
+    bulkDrafting: true,
     exportEnabled: false,
     priorityQueue: false,
     personalizedTemplates: false,

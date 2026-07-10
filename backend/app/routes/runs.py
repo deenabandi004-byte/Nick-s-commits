@@ -197,17 +197,18 @@ def prompt_search():
         max_contacts = batch_size if batch_size and 1 <= batch_size <= tier_max else tier_max
 
         # Outreach mode: "preview" (contacts only, no email, no draft),
-        # "draft" (generate email plus create Gmail draft, current behavior),
-        # or "send" (generate then send, Elite only, wired in a later chunk).
-        # Validated against tier here on the server. We never trust the client
-        # mode value: Free is clamped to preview, Pro to draft, Elite to send.
+        # "draft" (generate email plus create Gmail draft), or "send"
+        # (generate then send, Elite only). Validated against tier here on
+        # the server; we never trust the client mode value. Free gets draft
+        # too (2026-07: activation change — the monthly credit budget is the
+        # meter, not the feature gate); send stays Elite.
         TIER_ALLOWED_MODES = {
-            "free": {"preview"},
+            "free": {"preview", "draft"},
             "pro": {"preview", "draft"},
             "elite": {"preview", "draft", "send"},
         }
         allowed_modes = TIER_ALLOWED_MODES.get(user_tier, {"preview"})
-        default_mode = "preview" if user_tier == "free" else "draft"
+        default_mode = "draft"
         requested_mode = (data.get("mode") or "").strip().lower()
         if requested_mode not in ("preview", "draft", "send"):
             requested_mode = default_mode

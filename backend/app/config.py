@@ -436,7 +436,9 @@ TIER_CONFIGS = {
         'ai_drafts_per_month': FREE_DRAFTS_PER_MONTH,
         'firm_search': False,
         'smart_filters': False,
-        'bulk_drafting': False,
+        # 2026-07: Free drafts emails too (outreach mode 'draft' in runs.py) —
+        # the 300-credit monthly budget is the meter, not the feature gate.
+        'bulk_drafting': True,
         'export_enabled': False,
         'priority_queue': False,
         'personalized_templates': False,

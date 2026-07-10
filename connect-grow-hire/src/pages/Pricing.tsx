@@ -1145,13 +1145,13 @@ const Pricing = () => {
                 {' '}<span className="text-gray-400">(300 credits)</span>
               </FeatureItem>
               <FeatureItem>Up to 3 contacts per search</FeatureItem>
-              <FeatureItem>AI email drafting</FeatureItem>
+              <FeatureItem>AI email drafting, straight to Gmail</FeatureItem>
               <FeatureItem>Custom email templates</FeatureItem>
               <FeatureItem>Gmail integration + outreach tracking</FeatureItem>
               <FeatureItem>Meeting Prep</FeatureItem>
               <FeatureItem>Smart filters</FeatureItem>
               <DisabledFeatureItem>Find Hiring Managers</DisabledFeatureItem>
-              <DisabledFeatureItem>Bulk drafting + Export</DisabledFeatureItem>
+              <DisabledFeatureItem>Export (CSV)</DisabledFeatureItem>
               <DisabledFeatureItem>Firm search</DisabledFeatureItem>
               <DisabledFeatureItem>The Agent</DisabledFeatureItem>
             </div>
@@ -2059,7 +2059,7 @@ const Pricing = () => {
                     elite="Unlimited"
                   />
                   <ComparisonRow feature="Export to CSV" free={false} pro={true} elite={true} />
-                  <ComparisonRow feature="Bulk Drafting" free={false} pro={true} elite={true} />
+                  <ComparisonRow feature="Bulk Drafting" free={true} pro={true} elite={true} />
                   <ComparisonRow feature="Firm Search" free={false} pro={true} elite={true} />
                   <ComparisonRow feature="Top-Up Credit Packs" free={false} pro={true} elite={true} />
                   <ComparisonRow feature="Priority Queue + Support" free={false} pro={false} elite={true} />

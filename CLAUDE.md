@@ -243,7 +243,7 @@ Three tiers defined in `backend/app/config.py` (frontend mirror in `connect-grow
 | Coffee chat preps | 3 lifetime | 10/mo | Unlimited |
 | Alumni searches | 10 | Unlimited | Unlimited |
 | Smart filters | No | Yes | Yes |
-| Bulk drafting | No | Yes | Yes |
+| Bulk drafting | Yes (credit-metered) | Yes | Yes |
 | Export | No | Yes | Yes |
 | Priority queue | No | No | Yes |
 | Personalized templates | No | No | Yes |
