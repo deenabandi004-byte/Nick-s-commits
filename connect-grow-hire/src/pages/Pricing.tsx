@@ -1,13 +1,25 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, Fragment } from "react";
 import { Helmet } from "react-helmet-async";
-import { Check, ArrowLeft, Settings, Shield, ChevronDown, X, Menu, Sparkles, Zap, Clock, Plus } from "lucide-react";
+import {
+  Check,
+  ArrowLeft,
+  ArrowRight,
+  Settings,
+  Shield,
+  ChevronDown,
+  X,
+  Menu,
+  Sparkles,
+  Zap,
+  Clock,
+  Plus,
+  Star,
+  GraduationCap,
+  Lock,
+} from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import { useFirebaseAuth } from "../contexts/FirebaseAuthContext";
 import OfferloopLogo from '@/assets/offerloop_logo2.png';
-import MountainsLake from '@/assets/for-students/mountains-lake.png';
-import HighlightWash from '@/assets/for-students/highlight-wash.png';
-// ScoutSticky + LandingThumbtack assets are now retired from this page (the
-// Scout's Pick sticky-note was replaced with a clean "★ Most Popular" ribbon).
 import { loadStripe } from "@stripe/stripe-js";
 import { getAuth } from 'firebase/auth';
 import { BACKEND_URL } from '@/services/api';
@@ -23,7 +35,6 @@ import {
   resolveSeasonPassPriceId,
   percentOff,
   annualMonthlyEquivalent,
-  annualSavings,
   seasonPassVisible,
   emailsFromCredits,
 } from "@/hooks/useTierConfig";
@@ -31,104 +42,47 @@ import { CreditSlider } from "@/components/CreditSlider";
 import { TopUpModal } from "@/components/TopUpModal";
 import { useCreditsView } from "@/hooks/useCreditsView";
 
-// For Students palette — matches /for-students and /about so the marketing
-// surfaces read as one design system.
-const C_FS = {
-  ink: '#003262',
-  inkSubtle: '#4D619F',
-  brand: '#2563EB',
-  body: '#475569',
-  muted: '#64748B',
-  eyebrow: '#6478B4',
-  cardBorder: '#E2E8F0',
+// Design tokens — from the Offerloop design-system handoff (Lora display +
+// Inter body on paper-2, with the vibrant purple/magenta accent layer used
+// across the live product).
+const T = {
+  heading: '#1E2D4D',
+  ink: '#0A0A0A',
+  ink2: '#475569',
+  ink3: '#64748B',
+  ink4: '#94A3B8',
+  paper: '#FFFFFF',
+  paper2: '#F5F6F8',
+  night: '#1A1A1A',
+  border: '#E5E7EC',
+  borderLight: '#EFF0F3',
+  primary: '#4A60A8',
+  primaryDark: '#3C4F8E',
+  primary100: '#E4E9F5',
+  purple: '#7C3AED',
+  purpleDeep: '#8B3DE0',
+  purpleLight: '#B478FF',
+  magentaDeep: '#C4267E',
+  pinkTint: '#FBE4EF',
+  greenFg: '#2E7D32',
+  greenBg: '#E8F5E9',
+  serif: "'Lora', Georgia, serif",
+  sans: "'Inter', sans-serif",
 };
 
-// Vibrant accents — Higgsfield-inspired. Used sparingly for discount badges,
-// savings tags, "Most Popular" ribbons, and CTA gradients. The For-Students
-// palette stays the base; these are the loud notes on top.
-const C_POP = {
-  magenta:       '#EC4899',  // hot pink — % OFF discount badges
-  magentaDeep:   '#DB2777',  // darker pink for gradient stops
-  magentaSoft:   '#FCE7F3',  // pink-100 background for soft badges
-  lime:          '#A3E635',  // neon lime — savings tags
-  limeDeep:      '#65A30D',  // text-on-lime
-  limeSoft:      '#ECFCCB',  // lime-100 soft background
-  purple:        '#7C3AED',  // mid-stop in tier-name gradients
-};
+const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+const CTA_GRADIENT = 'linear-gradient(135deg, #7C3AED 0%, #3457C4 100%)';
+const ELITE_CTA_GRADIENT = 'linear-gradient(135deg, #8B3DE0 0%, #4364D6 100%)';
+const MAGENTA_GRADIENT = 'linear-gradient(135deg, #E5397F, #C4267E)';
+const TIER_NAME_GRADIENT = 'linear-gradient(120deg, #7C3AED, #4A60A8)';
+const ELITE_NAME_GRADIENT = 'linear-gradient(120deg, #B478FF, #7C3AED)';
+const NAVY_GRADIENT = 'linear-gradient(135deg, #1E2D4D 0%, #2C3F6B 60%, #3B3070 100%)';
+const BADGE_NAVY_GRADIENT = 'linear-gradient(135deg, #1E2D4D 0%, #34457A 100%)';
+// Gradient-border card (double-background trick) — Pro card + Best-value pack.
+const GRADIENT_BORDER_BG = `linear-gradient(${T.paper}, ${T.paper}), linear-gradient(135deg, #7C3AED, #4A60A8)`;
 
-// Reusable discount/savings pill — used inline next to tier names, on toggles,
-// and on feature rows. Pop colors with high contrast on white.
-const PopBadge: React.FC<{
-  tone?: 'magenta' | 'lime' | 'inverse-magenta';
-  children: React.ReactNode;
-  size?: 'sm' | 'md';
-}> = ({ tone = 'magenta', children, size = 'sm' }) => {
-  const styles = {
-    magenta: {
-      background: `linear-gradient(135deg, ${C_POP.magenta} 0%, ${C_POP.magentaDeep} 100%)`,
-      color: '#fff',
-      boxShadow: `0 4px 10px -2px ${C_POP.magenta}55`,
-    },
-    'inverse-magenta': {
-      background: C_POP.magentaSoft,
-      color: C_POP.magentaDeep,
-      boxShadow: 'none',
-    },
-    lime: {
-      background: C_POP.limeSoft,
-      color: C_POP.limeDeep,
-      boxShadow: 'none',
-      border: `1px solid ${C_POP.lime}66`,
-    },
-  } as const;
-  const padY = size === 'md' ? 4 : 3;
-  const padX = size === 'md' ? 9 : 7;
-  const fontSize = size === 'md' ? 10 : 9;
-  return (
-    <span
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: 3,
-        padding: `${padY}px ${padX}px`,
-        borderRadius: 999,
-        fontFamily: "'Inter', sans-serif",
-        fontSize,
-        fontWeight: 800,
-        letterSpacing: '0.12em',
-        textTransform: 'uppercase',
-        whiteSpace: 'nowrap',
-        ...styles[tone],
-      }}
-    >
-      {children}
-    </span>
-  );
-};
-
-// Italic-blue serif accent — same component pattern as ForStudentsPage/AboutUs.
-const Hl: React.FC<React.PropsWithChildren> = ({ children }) => (
-  <span style={{ fontStyle: 'italic', color: C_FS.inkSubtle }}>{children}</span>
-);
-
-// Watercolor highlight strike using the Figma asset. Used here on ".edu" to
-// make the student discount the most catchy detail on the page.
-const Wash: React.FC<React.PropsWithChildren> = ({ children }) => (
-  <span
-    style={{
-      position: 'relative',
-      display: 'inline',
-      backgroundImage: `url(${HighlightWash})`,
-      backgroundSize: '100% 70%',
-      backgroundRepeat: 'no-repeat',
-      backgroundPosition: '0 88%',
-      padding: '0 0.05em',
-      fontWeight: 700,
-    }}
-  >
-    {children}
-  </span>
-);
+// Prices: integers plain, otherwise 2 decimals ($14.99, $99).
+const fmt = (n: number) => `$${Number.isInteger(n) ? n : n.toFixed(2)}`;
 
 const STRIPE_PUBLISHABLE_KEY = "pk_live_51S4BB8ERY2WrVHp1acXrKE6RBG7NBlfHcMZ2kf7XhCX2E5g8Lasedx6ntcaD1H4BsoUMBGYXIcKHcAB4JuohLa2B00j7jtmWnB";
 const stripePromise = loadStripe(STRIPE_PUBLISHABLE_KEY);
@@ -151,105 +105,126 @@ interface SubscriptionStatus {
   cancelAtPeriodEnd?: boolean;
 }
 
-// Feature Item Component
-interface FeatureItemProps {
+// One feature line on a plan card: check icon + label.
+const FeatureRow: React.FC<{
   children: React.ReactNode;
-  highlight?: boolean;
-  muted?: boolean;
-}
-
-const FeatureItem: React.FC<FeatureItemProps> = ({ children, highlight, muted }) => (
-  <div className="flex items-start gap-3">
-    <div className={`
-      w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5
-      ${highlight ? 'bg-cyan-100' : muted ? 'bg-gray-100' : 'bg-[#FAFBFF]'}
-    `}>
-      <Check className={`
-        w-3 h-3
-        ${highlight ? 'text-cyan-600' : muted ? 'text-gray-400' : 'text-[#3B82F6]'}
-      `} />
-    </div>
-    <span className={`
-      text-sm
-      ${highlight ? 'font-semibold text-gray-900' : muted ? 'text-gray-400' : 'text-gray-600'}
-    `}>
-      {children}
-    </span>
+  checkColor?: string;
+  textColor?: string;
+  weight?: number;
+}> = ({ children, checkColor = T.primary, textColor = T.ink2, weight = 400 }) => (
+  <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', fontSize: 13, color: textColor, fontWeight: weight, fontFamily: T.sans }}>
+    <Check size={15} strokeWidth={2.4} style={{ color: checkColor, flexShrink: 0, marginTop: 1 }} />
+    <span>{children}</span>
   </div>
 );
 
-const DisabledFeatureItem: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="flex items-start gap-3">
-    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-gray-100">
-      <X className="w-3 h-3 text-gray-300" />
-    </div>
-    <span className="text-sm text-gray-400">{children}</span>
+// Small pill chip under the price block (.edu required / trial / cancel anytime).
+const Chip: React.FC<{
+  color: string;
+  background: string;
+  icon?: React.ReactNode;
+  children: React.ReactNode;
+}> = ({ color, background, icon, children }) => (
+  <span
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 5,
+      fontSize: 11.5,
+      fontWeight: 600,
+      color,
+      background,
+      padding: '5px 10px',
+      borderRadius: 100,
+      fontFamily: T.sans,
+      whiteSpace: 'nowrap',
+    }}
+  >
+    {icon}
+    {children}
+  </span>
+);
+
+// Section eyebrow (uppercase kicker above section headlines).
+const Eyebrow: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div
+    style={{
+      fontFamily: T.sans,
+      fontSize: 12,
+      fontWeight: 700,
+      letterSpacing: '0.1em',
+      textTransform: 'uppercase',
+      color: T.primary,
+      marginBottom: 12,
+    }}
+  >
+    {children}
   </div>
 );
 
-// FAQ Item Component
-interface FAQItemProps {
+// Italic serif accent inside headlines.
+const Em: React.FC<{ color?: string; children: React.ReactNode }> = ({ color = T.primary, children }) => (
+  <em style={{ fontStyle: 'italic', color }}>{children}</em>
+);
+
+// FAQ item — controlled so the accordion is single-open.
+const FAQItem: React.FC<{
   question: string;
   answer: string;
-  isProminent?: boolean;
-}
+  isOpen: boolean;
+  onToggle: () => void;
+}> = ({ question, answer, isOpen, onToggle }) => (
+  <div style={{ borderBottom: `1px solid ${T.border}` }}>
+    <button
+      onClick={onToggle}
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 16,
+        background: 'none',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '20px 4px',
+        textAlign: 'left',
+        fontFamily: T.sans,
+        fontSize: 16,
+        fontWeight: 600,
+        color: T.heading,
+      }}
+    >
+      <span>{question}</span>
+      <ChevronDown
+        size={18}
+        style={{
+          flexShrink: 0,
+          color: T.primary,
+          transition: `transform .3s ${EASE}`,
+          transform: isOpen ? 'rotate(180deg)' : 'none',
+        }}
+      />
+    </button>
+    {isOpen && (
+      <p style={{ margin: 0, padding: '0 4px 20px', fontSize: 14.5, lineHeight: 1.65, color: T.ink2, maxWidth: 620, fontFamily: T.sans }}>
+        {answer}
+      </p>
+    )}
+  </div>
+);
 
-const FAQItem: React.FC<FAQItemProps> = ({ question, answer, isProminent = false }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  
+// One cell of the comparison table: true → check, false → em dash, string → text.
+type CompareCell = boolean | string;
+
+const CompareCellValue: React.FC<{ value: CompareCell; isPro?: boolean }> = ({ value, isPro }) => {
+  if (value === true) return <Check size={17} strokeWidth={2.4} style={{ color: T.purple, display: 'inline' }} />;
+  if (value === false) return <span style={{ color: T.ink4, fontSize: 16 }}>—</span>;
   return (
-    <div className="border-b border-gray-100 last:border-b-0">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between py-4 text-left hover:bg-gray-50/50 transition-colors"
-      >
-        <span className={`${isProminent ? 'font-semibold text-gray-900' : 'font-medium text-gray-700'}`}>{question}</span>
-        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform duration-200 flex-shrink-0 ml-4 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      
-      {isOpen && (
-        <div className={`pb-4 text-gray-600 leading-relaxed ${isProminent ? 'text-base' : 'text-sm'}`}>
-          {answer}
-        </div>
-      )}
-    </div>
+    <span style={{ fontSize: 13, fontWeight: isPro ? 600 : 500, color: isPro ? T.purple : T.ink, fontFamily: T.sans }}>
+      {value}
+    </span>
   );
 };
-
-// Comparison Row Component
-interface ComparisonRowProps {
-  feature: string;
-  free: boolean | string;
-  pro: boolean | string;
-  elite: boolean | string;
-}
-
-const ComparisonRow: React.FC<ComparisonRowProps> = ({ feature, free, pro, elite }) => (
-  <tr className="hover:bg-gray-50">
-    <td className="py-4 px-6 text-gray-700">{feature}</td>
-    <td className="text-center py-4 px-6">
-      {typeof free === 'boolean' ? (
-        free ? <Check className="w-5 h-5 text-green-500 mx-auto" /> : <X className="w-5 h-5 text-gray-300 mx-auto" />
-      ) : (
-        <span className="text-gray-600">{free}</span>
-      )}
-    </td>
-    <td className="text-center py-4 px-6 bg-[#FAFBFF]/30">
-      {typeof pro === 'boolean' ? (
-        pro ? <Check className="w-5 h-5 text-cyan-500 mx-auto" /> : <X className="w-5 h-5 text-gray-300 mx-auto" />
-      ) : (
-        <span className="font-medium text-gray-900">{pro}</span>
-      )}
-    </td>
-    <td className="text-center py-4 px-6">
-      {typeof elite === 'boolean' ? (
-        elite ? <Check className="w-5 h-5 text-green-500 mx-auto" /> : <X className="w-5 h-5 text-gray-300 mx-auto" />
-      ) : (
-        <span className="text-gray-600">{elite}</span>
-      )}
-    </td>
-  </tr>
-);
 
 const Pricing = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -266,10 +241,9 @@ const Pricing = () => {
   const [proStopIdx, setProStopIdx] = useState(1);
   const [eliteStopIdx, setEliteStopIdx] = useState(1);
   const [topUpModalOpen, setTopUpModalOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
   const navigate = useNavigate();
   const { user, updateUser, checkCredits, isLoading: authLoading } = useFirebaseAuth();
-  // isStudent is on the Firestore user doc; not yet typed on the auth-context User shape.
-  const isStudent = Boolean((user as { isStudent?: boolean } | null)?.isStudent);
 
   // Pull runtime tier config (cached via React Query). Drives prices, slider
   // stops, Stripe SKUs, trial days, active promos, top-up packs. Falls back to
@@ -338,17 +312,6 @@ const Pricing = () => {
   // price discount, not a longer trial. Simpler to communicate, less confusing.
   const trialDays = tierConfig.trial.days_non_student;
 
-  // Annual savings math — tracks the active audience so the badge reflects
-  // the actual savings the user would see at checkout (student vs list).
-  const proAnnualSave = annualSavings(
-    audience === 'student' ? proStop.student : proStop.list,
-    proAnnualPrice,
-  );
-  const eliteAnnualSave = annualSavings(
-    audience === 'student' ? eliteStop.student : eliteStop.list,
-    eliteAnnualPrice,
-  );
-
   useEffect(() => {
     if (user) {
       fetchSubscriptionStatus();
@@ -384,11 +347,11 @@ const Pricing = () => {
     try {
       const auth = getAuth();
       const firebaseUser = auth.currentUser;
-      
+
       if (!firebaseUser) return;
 
       const token = await firebaseUser.getIdToken();
-      
+
       const API_URL = BACKEND_URL;
 
       const response = await fetch(`${API_URL}/api/subscription-status`, {
@@ -413,13 +376,13 @@ const Pricing = () => {
     try {
       const auth = getAuth();
       const firebaseUser = auth.currentUser;
-      
+
       if (!firebaseUser) {
         throw new Error('No Firebase user found');
       }
 
       const token = await firebaseUser.getIdToken();
-      
+
       const API_URL = BACKEND_URL;
 
       const response = await fetch(`${API_URL}/api/create-portal-session`, {
@@ -443,13 +406,13 @@ const Pricing = () => {
       if (!url) {
         throw new Error('No portal URL received from server');
       }
-      
+
       window.location.href = url;
 
     } catch (error) {
       console.error('Portal error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to open subscription management. Please try again.';
-      
+
       // Show more helpful error message
       if (errorMessage.includes('mode mismatch') || errorMessage.includes('test mode') || errorMessage.includes('live mode')) {
         alert('Stripe Configuration Error: There is a mismatch between test and live mode keys. Please contact support or check your Stripe configuration.');
@@ -464,7 +427,7 @@ const Pricing = () => {
 
   const handleResetCredits = async (tier: 'free' | 'pro' | 'elite') => {
     if (!user) return;
-    
+
     // Credit amounts based on tier (matches backend/app/config.py TIER_CONFIGS,
     // doubled 2026-06-10 — see lib/constants.ts TIER_CONFIGS)
     const creditMap = {
@@ -472,21 +435,21 @@ const Pricing = () => {
       'pro': 2000,
       'elite': 5000
     };
-    
+
     const maxCredits = creditMap[tier];
-    
+
     try {
       console.log(`🔄 Resetting credits for ${tier} tier to ${maxCredits}`);
-      await updateUser({ 
+      await updateUser({
         credits: maxCredits,
         maxCredits: maxCredits
       });
-      
+
       // Refresh credits to update UI
       if (checkCredits) {
         await checkCredits();
       }
-      
+
       // No popup - just silently reset credits
     } catch (error) {
       console.error("Error resetting credits:", error);
@@ -629,17 +592,17 @@ const Pricing = () => {
     }
 
     setIsLoading(true);
-    
+
     try {
       const auth = getAuth();
       const firebaseUser = auth.currentUser;
-      
+
       if (!firebaseUser) {
         throw new Error('No Firebase user found');
       }
 
       const token = await firebaseUser.getIdToken();
-      
+
       const API_URL = BACKEND_URL;
 
       // Resolve Stripe Price ID from the runtime catalog. Falls back to the
@@ -661,7 +624,7 @@ const Pricing = () => {
           cancelUrl: `${window.location.origin}/pricing`,
         }),
       });
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Checkout session creation failed:', response.status, errorText);
@@ -670,7 +633,7 @@ const Pricing = () => {
 
       const responseData = await response.json();
       console.log('Checkout session response:', responseData);
-      
+
       const sessionId = responseData.sessionId;
       if (!sessionId) {
         console.error('No sessionId in response:', responseData);
@@ -778,42 +741,120 @@ const Pricing = () => {
   }, [user, authLoading]);
 
   // Format renewal date
-  const renewalDate = subscriptionStatus?.currentPeriodEnd 
+  const renewalDate = subscriptionStatus?.currentPeriodEnd
     ? new Date(subscriptionStatus.currentPeriodEnd * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
     : null;
 
+  const periodLabel = billingCadence === 'annual' ? '/mo, billed yearly' : '/mo';
+
+  const freeEmails = emailsFromCredits(300, tierConfig.credit_costs.find_contact).toLocaleString();
+  const proEmails = emailsFromCredits(proStop.credits, tierConfig.credit_costs.find_contact).toLocaleString();
+  const eliteEmails = emailsFromCredits(eliteStop.credits, tierConfig.credit_costs.find_contact).toLocaleString();
+
+  // Displayed price per tier: annual shows the per-month equivalent with the
+  // monthly-cadence price struck through; student mode strikes the list price.
+  const proShown = billingCadence === 'annual' ? annualMonthlyEquivalent(proAnnualPrice) : proMonthlyPrice;
+  const proStruck = billingCadence === 'annual' ? proMonthlyPrice : (showStudentPrice ? proListMonthly : null);
+  const eliteShown = billingCadence === 'annual' ? annualMonthlyEquivalent(eliteAnnualPrice) : eliteMonthlyPrice;
+  const eliteStruck = billingCadence === 'annual' ? eliteMonthlyPrice : (showStudentPrice ? eliteListMonthly : null);
+
+  const scrollToCompare = () => {
+    document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Comparison-table data. Grouped by workflow stage; values over checkmarks
+  // wherever the tiers differ by amount, not by access.
+  const compareGroups: [string, [string, CompareCell, CompareCell, CompareCell][]][] = [
+    ['Discovery & credits', [
+      ['Emails / month', `~${freeEmails}`, `~${proEmails}`, `~${eliteEmails}`],
+      ['Monthly credits', '300', proStop.credits.toLocaleString(), eliteStop.credits.toLocaleString()],
+      ['Contacts per search', '3', '8', '15'],
+      ['Concurrent agents', false, '1', 'Up to 5'],
+      ['Find hiring managers', false, true, true],
+      ['Firm & company search', false, true, true],
+    ]],
+    ['Outreach', [
+      ['AI email drafting, straight to Gmail', true, true, true],
+      ['Custom email templates', true, true, 'Resume-tailored'],
+      ['Bulk drafting', true, true, true],
+      ['Export (CSV & Gmail)', false, true, true],
+      ['Unlimited directory saving', false, true, true],
+    ]],
+    ['Tracking & prep', [
+      ['Outreach pipeline tracking', true, true, true],
+      ['Meeting prep', true, true, true],
+      ['Weekly personalized firm insights', false, false, true],
+      ['Top-up credit packs', false, true, true],
+    ]],
+    ['Access & support', [
+      ['.edu student pricing', false, true, true],
+      ['Priority queue', false, false, true],
+      ['Early access to new AI tools', false, false, true],
+      [`${trialDays}-day free trial`, false, true, false],
+    ]],
+  ];
+
+  const faqs: [string, string][] = [
+    [
+      'How does the free trial work?',
+      `You get ${trialDays} days of Pro access with 600 credits to spend, no credit card required. Use them on contact searches, firm search, hiring-manager lookups, and drafts. You can cancel anytime, and at the end of the window you drop to the Free plan automatically (no surprise charges). The trial is for Pro only; Elite users sign up directly or come in via the one-time upgrade offer right after checkout.`,
+    ],
+    [
+      "What's the .edu student discount?",
+      'The student price is the price you see - roughly 50% off the public list rate. As long as you signed up with a verified .edu email, you keep that student price for life, even after you graduate.',
+    ],
+    [
+      'What happens when I run out of credits?',
+      "Searches pause until your plan renews (the 1st of the next month) or you upgrade. Pro and Elite subscribers can also top up with a credit pack, and purchased credits never expire. All your saved contacts and drafts stay put.",
+    ],
+    [
+      'Can I change plans anytime?',
+      'Yep, anytime. Upgrading? You get access immediately. Downgrading? Takes effect at your next billing cycle. Takes 10 seconds to switch.',
+    ],
+    [
+      'Monthly vs annual - which should I pick?',
+      "Annual saves ~20% - more than two months free. If you're committed to recruiting for the year, annual is the better deal whether or not you have a .edu email. If you're testing it out, start monthly and switch later.",
+    ],
+    [
+      'Do credits roll over?',
+      "Nope, they reset on the 1st of each month. Use 'em or lose 'em - but honestly, most students use them up well before the month is over during peak recruiting.",
+    ],
+    [
+      "What's the Recruiting Season Pass?",
+      `A one-time charge for ${tierConfig.season_pass.months} months of Pro-level access with ${tierConfig.season_pass.credits_per_month.toLocaleString()} credits refilled monthly, and no auto-renewal. Ideal for a focused recruiting sprint.`,
+    ],
+    [
+      "What if I don't have a .edu email?",
+      `You can still sign up and use Offerloop - you'll just get the standard ${trialDays}-day Pro trial and pay the public list price. Already a paid alumni? Reach out and we'll verify your old school manually.`,
+    ],
+    [
+      "What's your refund policy?",
+      "Pro and Elite are refundable for 7 days from your first charge, whether monthly or annual. The Recruiting Season Pass has a 14-day window, provided you haven't used more than half of your month-1 credits. Top-up credit packs are non-refundable (your credits never expire, so there's no reason they should). Email support@offerloop.ai or request a refund from your account settings. We typically respond within 24 hours.",
+    ],
+  ];
+
   return (
-    <div style={{ background: '#FAFBFF', minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {/* Page-root mountains backdrop — full-bleed, sits behind everything.
-          Sized larger than viewport to overlap the pricing cards and create
-          the "bleeding into the choices" effect the brand calls for. Mask fades
-          the bottom so the FAQ + footer sit on clean #FAFBFF. */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: '-15%',
-          right: '-15%',
-          height: '180vh',
-          backgroundImage: `url(${MountainsLake})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center top',
-          backgroundRepeat: 'no-repeat',
-          opacity: 0.55,
-          pointerEvents: 'none',
-          zIndex: 0,
-          maskImage:
-            'linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,0.7) 75%, rgba(0,0,0,0.25) 90%, transparent 100%)',
-          WebkitMaskImage:
-            'linear-gradient(180deg, #000 0%, #000 55%, rgba(0,0,0,0.7) 75%, rgba(0,0,0,0.25) 90%, transparent 100%)',
-        }}
-      />
+    <div style={{ fontFamily: T.sans, color: T.ink, background: T.paper2, minHeight: '100vh' }}>
       <Helmet>
         <title>Offerloop Pricing - Student Plans for College Networking</title>
         <meta name="description" content={`Students save ~50% with a .edu email. Pro $14.99/mo with ${trialDays}-day free trial, Elite $34.99/mo, plus annual plans. Offerloop helps college students network into consulting, investment banking, and tech.`} />
         <link rel="canonical" href="https://offerloop.ai/pricing" />
       </Helmet>
+
+      <style>{`
+        @keyframes ofUp { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+        .of-up { animation: ofUp .7s ${EASE} both; }
+        .of-card { transition: transform .25s ${EASE}, box-shadow .25s ${EASE}; }
+        .of-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(15, 37, 69, 0.14); }
+        .of-pro-card { transition: box-shadow .25s ${EASE}; }
+        .of-pro-card:hover { box-shadow: 0 24px 54px rgba(124, 58, 237, 0.26); }
+        .of-cta { transition: all .2s ${EASE}; }
+        .of-cta-grad:hover:not(:disabled) { filter: brightness(1.07); transform: translateY(-2px); box-shadow: 0 8px 22px rgba(124, 58, 237, 0.4); }
+        .of-cta-outline:hover:not(:disabled) { background: ${T.paper2}; border-color: ${T.ink4} !important; transform: translateY(-2px); }
+        .of-cta-white:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(0, 0, 0, 0.2); }
+        .of-link { transition: color .2s ${EASE}; }
+        .of-link:hover { color: ${T.primary}; }
+      `}</style>
 
       {/* Pill header - logged-out (marketing) visitors only. In-app pricing keeps its own nav. */}
       {!user && (
@@ -894,485 +935,470 @@ const Pricing = () => {
         </>
       )}
 
-      <div className="w-full px-3 py-6 sm:px-6 sm:py-12" style={{ maxWidth: '900px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
+      {/* ======= ABOVE THE FOLD: toggles + plan cards, no hero copy. The buy
+          buttons sit inside each card directly under the price block, before
+          the feature list, so price + CTA are visible without scrolling. ======= */}
+      <section style={{ position: 'relative', overflow: 'hidden', padding: '22px 24px 44px' }}>
+        {/* Soft radial washes behind the cards */}
+        <div
+          aria-hidden
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background: 'radial-gradient(900px 460px at 50% -6%, rgba(124,58,237,0.12), transparent 62%), radial-gradient(700px 400px at 84% 8%, rgba(74,96,168,0.10), transparent 60%)',
+            pointerEvents: 'none',
+          }}
+        />
 
-        {/* Back navigation — always lands on home. Logged-in users go to the
-            dashboard; logged-out marketing visitors go to the landing page.
-            Never navigate(-1): a Stripe-cancel bounce would otherwise dump them
-            back on Stripe. */}
-        <div className="mb-6 animate-fadeInUp" style={{ position: 'relative', zIndex: 2 }}>
+        <div style={{ position: 'relative', maxWidth: 1180, margin: '0 auto' }}>
+          {/* Back navigation — always lands on home. Logged-in users go to the
+              dashboard; logged-out marketing visitors go to the landing page.
+              Never navigate(-1): a Stripe-cancel bounce would otherwise dump them
+              back on Stripe. */}
           <button
             onClick={() => navigate(user ? '/dashboard' : '/')}
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors group"
+            className="of-link"
             style={{
-              fontFamily: "'Inter', sans-serif",
-              fontSize: 13,
-              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 7,
+              fontSize: 13.5,
+              fontWeight: 500,
+              color: T.ink3,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              padding: 0,
+              marginBottom: 22,
+              fontFamily: T.sans,
             }}
           >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to home</span>
+            <ArrowLeft size={15} />
+            Back to home
           </button>
-        </div>
 
-        {/* Subscription Status Banner */}
-        {hasActiveSubscription && (
-          <div className="mb-10 bg-[#0F172A] rounded-[3px] p-[2px] animate-fadeInUp" style={{ animationDelay: '50ms' }}>
-            <div className="bg-white rounded-[3px] px-6 py-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-gray-900">
-                      {isEliteUser ? 'Elite' : 'Pro'} Subscription{subscriptionStatus?.status === 'trialing' ? ' - Free Trial' : ' Active'}
-                    </h3>
-                    {subscriptionStatus?.status === 'trialing' ? (
-                      <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">Trial</span>
-                    ) : (
-                      <span className="px-2 py-0.5 bg-green-100 text-green-700 text-xs font-medium rounded-full">Active</span>
-                    )}
-                  </div>
-                  <p className="text-sm text-gray-500">
-                    {creditsView.balance.toLocaleString()} credits {creditsView.isTrialing ? 'today' : 'remaining'}
-                    {renewalDate && !subscriptionStatus?.cancelAtPeriodEnd && ` • Renews ${renewalDate}`}
-                    {subscriptionStatus?.cancelAtPeriodEnd && renewalDate && ` • Cancels ${renewalDate}`}
-                  </p>
+          {/* Subscription Status Banner */}
+          {hasActiveSubscription && (
+            <div
+              className="of-up"
+              style={{
+                background: T.paper,
+                border: `1px solid ${T.border}`,
+                borderRadius: 16,
+                padding: '16px 22px',
+                marginBottom: 22,
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 14,
+                boxShadow: '0 1px 3px rgba(15,37,69,0.06)',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontFamily: T.serif, fontSize: 17, fontWeight: 600, color: T.heading }}>
+                    {isEliteUser ? 'Elite' : 'Pro'} subscription
+                  </span>
+                  {subscriptionStatus?.status === 'trialing' ? (
+                    <Chip color="#92600A" background="#FDF3DC">Trial</Chip>
+                  ) : (
+                    <Chip color={T.greenFg} background={T.greenBg}>Active</Chip>
+                  )}
                 </div>
+                <p style={{ margin: '4px 0 0', fontSize: 13, color: T.ink3 }}>
+                  {creditsView.balance.toLocaleString()} credits {creditsView.isTrialing ? 'today' : 'remaining'}
+                  {renewalDate && !subscriptionStatus?.cancelAtPeriodEnd && ` · Renews ${renewalDate}`}
+                  {subscriptionStatus?.cancelAtPeriodEnd && renewalDate && ` · Cancels ${renewalDate}`}
+                </p>
               </div>
-              
-              <button 
+              <button
                 onClick={handleManageSubscription}
                 disabled={isLoading}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#0F172A] text-white font-medium rounded-[3px] hover:shadow-lg hover:shadow-[#3B82F6]/30 transition-all disabled:opacity-50"
+                className="of-cta of-cta-grad"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '10px 18px',
+                  borderRadius: 10,
+                  background: T.night,
+                  color: '#fff',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: 13.5,
+                  cursor: 'pointer',
+                  fontFamily: T.sans,
+                  opacity: isLoading ? 0.5 : 1,
+                }}
               >
-                <Settings className="w-4 h-4" />
-                Manage Subscription
+                <Settings size={14} />
+                Manage subscription
               </button>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Header Section — For Students aesthetic. Mountains live at page-root
-            level now (see below), not scoped to the hero, so they consume the
-            full page and bleed behind the cards. */}
-        <div style={{ position: 'relative', textAlign: 'center', marginBottom: '32px', paddingTop: 16, paddingBottom: 32 }}>
-
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <p
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 14,
-                fontWeight: 700,
-                letterSpacing: '0.18em',
-                color: C_FS.eyebrow,
-                textTransform: 'uppercase',
-                margin: '0 0 16px',
-              }}
-            >
-              Pricing
-            </p>
-            <h1
-              style={{
-                fontFamily: "'Libre Baskerville', Georgia, serif",
-                fontSize: 'clamp(38px, 5.4vw, 58px)',
-                fontWeight: 400,
-                letterSpacing: '-0.015em',
-                color: C_FS.ink,
-                textAlign: 'center',
-                margin: '0 auto 18px',
-                lineHeight: 1.1,
-                maxWidth: 760,
-              }}
-            >
-              Plans that <Hl>pay for themselves</Hl>
-            </h1>
-            <p
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 17,
-                color: C_FS.body,
-                textAlign: 'center',
-                margin: '0 auto 16px',
-                lineHeight: 1.65,
-                maxWidth: 620,
-              }}
-            >
-              {isStudent ? (
-                <>Welcome, student — your <Wash>.edu</Wash> unlocks <Hl>~50% off</Hl>. {trialDays}-day free trial on Pro.</>
-              ) : (
-                <>Built for college students. Use a <Wash>.edu</Wash> to unlock <Hl>~50% off</Hl>. {trialDays}-day free trial on Pro.</>
-              )}
-            </p>
-
-            {/* Live coupon banner — vibrant magenta when a real Stripe coupon ID
-                is wired via env. No fake scarcity. Per project standing rule. */}
-            {hasActivePromo && tierConfig.active_promos.pricing_recapture && (
+          {/* Live coupon banner — vibrant magenta when a real Stripe coupon ID
+              is wired via env. No fake scarcity. Per project standing rule. */}
+          {hasActivePromo && tierConfig.active_promos.pricing_recapture && (
+            <div className="of-up" style={{ textAlign: 'center', marginBottom: 18 }}>
               <div
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 10,
-                  padding: '11px 20px',
-                  marginTop: 14,
-                  background: `linear-gradient(135deg, ${C_POP.magenta} 0%, ${C_POP.magentaDeep} 100%)`,
-                  border: 'none',
-                  borderRadius: 999,
-                  fontFamily: "'Inter', sans-serif",
+                  padding: '10px 20px',
+                  background: MAGENTA_GRADIENT,
+                  borderRadius: 100,
                   fontSize: 13,
                   fontWeight: 700,
                   color: '#fff',
-                  boxShadow: `0 10px 26px -8px ${C_POP.magenta}88, 0 0 0 3px #fff`,
+                  boxShadow: '0 8px 22px -8px rgba(196,38,126,0.6)',
                 }}
               >
                 <Sparkles size={14} />
                 <span style={{ letterSpacing: '0.04em' }}>
-                  Code <strong style={{ letterSpacing: '0.16em' }}>STAYHIRED</strong> — 20% off your first month
+                  Code <strong style={{ letterSpacing: '0.16em' }}>STAYHIRED</strong>: 20% off your first month
                 </span>
               </div>
-            )}
-          </div>
-          {/* Toggles - billing cadence + student-price visual */}
-          <div className="flex flex-col items-center gap-4" style={{ position: 'relative', zIndex: 1 }}>
+            </div>
+          )}
 
+          {/* Page header — one strong line, no subheader, so the plan CTAs stay above the fold */}
+          <div className="of-up" style={{ textAlign: 'center', marginBottom: 26 }}>
+            <h1
+              style={{
+                fontFamily: T.serif,
+                fontSize: 'clamp(38px, 4.6vw, 54px)',
+                fontWeight: 600,
+                letterSpacing: '-0.025em',
+                lineHeight: 1.08,
+                color: T.heading,
+                margin: 0,
+              }}
+            >
+              Pick a plan. <Em>Land the offer.</Em>
+            </h1>
+          </div>
+
+          {/* Toggles: .edu student price stacked above billing cadence, both centered */}
+          <div
+            className="of-up"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 12,
+              marginBottom: 30,
+              animationDelay: '.05s',
+            }}
+          >
             {/* .edu Student Price toggle - the primary discount lever */}
-            <div className={`
-              flex items-center gap-3 px-4 py-3 rounded-full border-2 transition-all
-              ${showStudentPrice
-                ? 'bg-[#EFF6FF] border-blue-300 shadow-sm'
-                : 'bg-white border-gray-200'
-              }
-            `}>
-              <span className="text-base">🎓</span>
-              <span className={`text-sm font-semibold ${showStudentPrice ? 'text-blue-900' : 'text-gray-600'}`}>
-                {showStudentPrice ? 'Showing .edu student price - save ~50%' : 'Show .edu student price (~50% off)'}
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 10,
+                background: showStudentPrice ? T.primary100 : T.paper,
+                border: `1px solid ${showStudentPrice ? T.primary : T.border}`,
+                borderRadius: 100,
+                padding: '8px 14px',
+                boxShadow: '0 1px 3px rgba(15,37,69,0.06)',
+                transition: `all .2s ${EASE}`,
+              }}
+            >
+              <GraduationCap size={15} style={{ color: showStudentPrice ? T.primary : T.ink3 }} />
+              <span style={{ fontSize: 13, fontWeight: 600, color: showStudentPrice ? T.heading : T.ink3 }}>
+                {showStudentPrice ? '.edu student price, ~50% off' : 'Show .edu student price (~50% off)'}
               </span>
               <button
                 onClick={() => setShowStudentPrice(!showStudentPrice)}
                 role="switch"
                 aria-checked={showStudentPrice}
                 aria-label="Toggle student price display"
-                className={`
-                  relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors
-                  ${showStudentPrice ? 'bg-blue-600' : 'bg-gray-300'}
-                `}
+                style={{
+                  position: 'relative',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  width: 40,
+                  height: 22,
+                  borderRadius: 100,
+                  border: 'none',
+                  cursor: 'pointer',
+                  background: showStudentPrice ? T.primary : '#CBD5E1',
+                  transition: `background .2s ${EASE}`,
+                  flexShrink: 0,
+                }}
               >
-                <span
-                  className={`
-                    inline-block h-5 w-5 transform rounded-full bg-white shadow transition
-                    ${showStudentPrice ? 'translate-x-5' : 'translate-x-0.5'}
-                  `}
-                />
-              </button>
-            </div>
-
-            {/* Monthly / Annual toggle */}
-            <div className="inline-flex items-center bg-white border border-gray-200 rounded-full p-1 shadow-sm">
-              <button
-                onClick={() => setBillingCadence('monthly')}
-                className={`px-5 py-2 text-sm font-semibold rounded-full transition-all ${
-                  billingCadence === 'monthly'
-                    ? 'bg-[#0F172A] text-white shadow'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => annualAvailable && setBillingCadence('annual')}
-                disabled={!annualAvailable}
-                title={annualAvailable ? undefined : 'Annual billing is available on the default credit amount. Reset the credit slider to its default to pay annually.'}
-                className={`px-5 py-2 text-sm font-semibold rounded-full transition-all flex items-center gap-2 ${
-                  billingCadence === 'annual'
-                    ? 'bg-[#0F172A] text-white shadow'
-                    : 'text-gray-600 hover:text-gray-900'
-                } ${!annualAvailable ? 'opacity-40 cursor-not-allowed' : ''}`}
-              >
-                Annual
                 <span
                   style={{
-                    fontSize: 10,
-                    fontWeight: 800,
-                    padding: '3px 8px',
-                    borderRadius: 999,
-                    letterSpacing: '0.14em',
-                    background: `linear-gradient(135deg, ${C_POP.magenta} 0%, ${C_POP.magentaDeep} 100%)`,
-                    color: '#fff',
-                    boxShadow: `0 3px 8px -2px ${C_POP.magenta}66`,
+                    display: 'inline-block',
+                    width: 18,
+                    height: 18,
+                    borderRadius: '50%',
+                    background: '#fff',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.25)',
+                    transform: showStudentPrice ? 'translateX(19px)' : 'translateX(3px)',
+                    transition: `transform .2s ${EASE}`,
+                  }}
+                />
+              </button>
+            </div>
+
+            {/* Monthly / Annual pill with sliding navy thumb */}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  position: 'relative',
+                  display: 'inline-flex',
+                  background: T.paper,
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 100,
+                  padding: 4,
+                  boxShadow: '0 1px 3px rgba(15,37,69,0.06)',
+                }}
+              >
+                <div
+                  aria-hidden
+                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    left: 4,
+                    width: 'calc(50% - 4px)',
+                    height: 'calc(100% - 8px)',
+                    background: T.night,
+                    borderRadius: 100,
+                    transition: `transform .3s ${EASE}`,
+                    transform: billingCadence === 'annual' ? 'translateX(100%)' : 'translateX(0)',
+                  }}
+                />
+                <button
+                  onClick={() => setBillingCadence('monthly')}
+                  style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    border: 'none',
+                    background: 'none',
+                    cursor: 'pointer',
+                    fontFamily: T.sans,
+                    fontWeight: 600,
+                    fontSize: 13.5,
+                    padding: '8px 22px',
+                    borderRadius: 100,
+                    color: billingCadence === 'monthly' ? '#fff' : T.ink3,
+                    transition: `color .3s ${EASE}`,
                   }}
                 >
-                  SAVE 20%
-                </span>
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto mt-12 mb-16 animate-fadeInUp" style={{ animationDelay: '200ms' }}>
-
-          {/* Free Plan Card — translucent so the mountains backdrop bleeds through */}
-          <div
-            className="rounded-[3px] border border-gray-200 p-8 flex flex-col h-full hover:border-gray-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-            style={{ background: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
-          >
-            {/* Plan Header */}
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">Free</h2>
-              <p className="text-gray-500">Try it out for free</p>
-            </div>
-            
-            {/* Price */}
-            <div className="text-center mb-6">
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl font-bold text-gray-900">$0</span>
-                <span className="text-gray-500">/forever</span>
+                  Monthly
+                </button>
+                <button
+                  onClick={() => annualAvailable && setBillingCadence('annual')}
+                  disabled={!annualAvailable}
+                  title={annualAvailable ? undefined : 'Annual billing is available on the default credit amount. Reset the credit slider to its default to pay annually.'}
+                  style={{
+                    position: 'relative',
+                    zIndex: 1,
+                    border: 'none',
+                    background: 'none',
+                    cursor: annualAvailable ? 'pointer' : 'not-allowed',
+                    fontFamily: T.sans,
+                    fontWeight: 600,
+                    fontSize: 13.5,
+                    padding: '8px 22px',
+                    borderRadius: 100,
+                    color: billingCadence === 'annual' ? '#fff' : T.ink3,
+                    opacity: annualAvailable ? 1 : 0.4,
+                    transition: `color .3s ${EASE}`,
+                  }}
+                >
+                  Annual
+                </button>
               </div>
-              <p className="text-sm text-gray-500 mt-2">
-                <strong style={{ color: C_FS.ink }}>
-                  ~{emailsFromCredits(300, tierConfig.credit_costs.find_contact).toLocaleString()} emails
-                </strong>
-                {' '}/ month · 300 credits
-              </p>
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-gray-100 my-6"></div>
-
-            {/* Features */}
-            <div className="flex-1 space-y-4">
-              <FeatureItem>
-                ~{emailsFromCredits(300, tierConfig.credit_costs.find_contact).toLocaleString()} emails / month
-                {' '}<span className="text-gray-400">(300 credits)</span>
-              </FeatureItem>
-              <FeatureItem>Up to 3 contacts per search</FeatureItem>
-              <FeatureItem>AI email drafting, straight to Gmail</FeatureItem>
-              <FeatureItem>Custom email templates</FeatureItem>
-              <FeatureItem>Gmail integration + outreach tracking</FeatureItem>
-              <FeatureItem>Meeting Prep</FeatureItem>
-              <FeatureItem>Smart filters</FeatureItem>
-              <DisabledFeatureItem>Find Hiring Managers</DisabledFeatureItem>
-              <DisabledFeatureItem>Export (CSV)</DisabledFeatureItem>
-              <DisabledFeatureItem>Firm search</DisabledFeatureItem>
-              <DisabledFeatureItem>The Agent</DisabledFeatureItem>
-            </div>
-            
-            {/* CTA Button */}
-            <div className="mt-8">
-              {!ctaReady ? (
-                <div className="w-full py-3.5 px-6 rounded-[3px] font-semibold border-2 border-gray-100 bg-gray-50 text-transparent animate-pulse select-none" aria-hidden="true">
-                  &nbsp;
-                </div>
-              ) : (
-              <button
-                onClick={() => {
-                  if (!user) {
-                    navigate('/signin?next=/pricing&plan=free');
-                  } else if (currentTier === 'free') {
-                    handleResetCredits('free');
-                  } else {
-                    handleUpgrade('free', 'pricing_page');
-                  }
+              <span
+                style={{
+                  fontSize: 11.5,
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  color: '#fff',
+                  background: MAGENTA_GRADIENT,
+                  padding: '6px 11px',
+                  borderRadius: 100,
+                  textTransform: 'uppercase',
                 }}
-                className="w-full py-3.5 px-6 rounded-[3px] font-semibold border-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition-all"
               >
-                {!user ? 'Sign up free' : currentTier === 'free' ? 'Current Plan' : 'Start for Free'}
-              </button>
-              )}
+                Save 20%
+              </span>
             </div>
           </div>
 
-          {/* Pro Plan Card (Featured) — gradient border + Scout sticky badge */}
+          {/* ======= PLAN CARDS ======= */}
           <div
-            className="relative rounded-[10px] p-[2px] flex flex-col hover:-translate-y-1 transition-all duration-300"
-            style={{
-              background: 'linear-gradient(135deg, #2563EB 0%, #60A5FA 45%, #818CF8 100%)',
-              boxShadow:
-                '0 12px 28px -8px rgba(37, 99, 235, 0.30), 0 6px 14px -6px rgba(37, 99, 235, 0.18)',
-              overflow: 'visible',
-            }}
+            className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start"
+            style={{ maxWidth: 1040, margin: '0 auto', paddingTop: 16 }}
           >
-            {/* Hot magenta gradient "MOST POPULAR" ribbon — Higgsfield-style pop. */}
+            {/* FREE */}
             <div
-              aria-hidden
+              className="of-card of-up"
               style={{
-                position: 'absolute',
-                top: -14,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                background: `linear-gradient(135deg, ${C_POP.magenta} 0%, ${C_POP.magentaDeep} 100%)`,
-                color: '#fff',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 11,
-                fontWeight: 800,
-                letterSpacing: '0.2em',
-                textTransform: 'uppercase',
-                padding: '6px 18px',
-                borderRadius: 999,
-                whiteSpace: 'nowrap',
-                boxShadow: `0 8px 20px -4px ${C_POP.magenta}66, 0 0 0 3px #fff`,
-                zIndex: 3,
+                background: T.paper,
+                border: `1px solid ${T.border}`,
+                borderRadius: 16,
+                padding: '28px 26px',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 1px 3px rgba(15,37,69,0.06)',
+                animationDelay: '.1s',
               }}
             >
-              ★ Most Popular
+              <div style={{ fontFamily: T.serif, fontSize: 24, fontWeight: 600, color: T.heading, marginBottom: 4 }}>Free</div>
+              <div style={{ fontSize: 13, color: T.ink3, marginBottom: 18 }}>Try it out for free</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 5, marginBottom: 2 }}>
+                <span style={{ fontFamily: T.serif, fontSize: 40, fontWeight: 600, color: T.heading, letterSpacing: '-0.02em' }}>$0</span>
+                <span style={{ fontSize: 14, color: T.ink3 }}>/forever</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: T.ink4, marginBottom: 20, minHeight: 16 }}>
+                <strong style={{ color: T.ink3, fontWeight: 600 }}>~{freeEmails} emails</strong> / month · 300 credits
+              </div>
+
+              {!ctaReady ? (
+                <div aria-hidden style={{ padding: 12, borderRadius: 10, background: T.paper2, color: 'transparent' }} className="animate-pulse select-none">&nbsp;</div>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (!user) {
+                      navigate('/signin?next=/pricing&plan=free');
+                    } else if (currentTier === 'free') {
+                      handleResetCredits('free');
+                    } else {
+                      handleUpgrade('free', 'pricing_page');
+                    }
+                  }}
+                  className="of-cta of-cta-outline"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: 12,
+                    borderRadius: 10,
+                    background: 'transparent',
+                    color: T.ink,
+                    border: `1.5px solid ${T.border}`,
+                    fontWeight: 600,
+                    fontSize: 14.5,
+                    cursor: 'pointer',
+                    fontFamily: T.sans,
+                  }}
+                >
+                  {!user ? 'Get started free' : currentTier === 'free' ? 'Current plan' : 'Start for free'}
+                </button>
+              )}
+
+              <div style={{ borderTop: `1px solid ${T.borderLight}`, marginTop: 22, paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <FeatureRow>~{freeEmails} emails / month (300 credits)</FeatureRow>
+                <FeatureRow>Up to 3 contacts per search</FeatureRow>
+                <FeatureRow>AI email drafting, straight to Gmail</FeatureRow>
+                <FeatureRow>Custom email templates</FeatureRow>
+                <FeatureRow>Smart filters & meeting prep</FeatureRow>
+              </div>
             </div>
 
-            {/* Card Content — translucent inner so mountains bleed through gradient border */}
+            {/* PRO — highlighted, gradient border, elevated. First in the stack
+                on mobile so the recommended plan is the thumb-first card. */}
             <div
-              className="rounded-[8px] p-8 flex flex-col h-full"
-              style={{ background: 'rgba(255, 255, 255, 0.94)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
+              className="of-pro-card of-up order-first md:order-none md:-translate-y-2"
+              style={{
+                position: 'relative',
+                border: '2px solid transparent',
+                borderRadius: 16,
+                padding: '28px 26px',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 18px 44px rgba(124,58,237,0.18)',
+                backgroundImage: GRADIENT_BORDER_BG,
+                backgroundOrigin: 'border-box',
+                backgroundClip: 'padding-box, border-box',
+                animationDelay: '.16s',
+              }}
             >
-              {/* Plan Header — vibrant gradient tier name + inline % OFF pop badge */}
-              <div className="text-center mb-6">
-                {currentTier === 'pro' && (
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 mb-3 bg-emerald-100 text-emerald-700 text-[10px] font-bold tracking-wider uppercase rounded-full border border-emerald-200">
-                    ✓ Your Plan
-                  </div>
-                )}
-                <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
-                  <h2
-                    style={{
-                      fontSize: 30,
-                      fontWeight: 800,
-                      letterSpacing: '-0.02em',
-                      margin: 0,
-                      fontFamily: "'Libre Baskerville', Georgia, serif",
-                      fontStyle: 'italic',
-                      background: `linear-gradient(135deg, ${C_FS.brand} 0%, ${C_POP.purple} 55%, ${C_POP.magenta} 100%)`,
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                    }}
-                  >
-                    Pro
-                  </h2>
-                  {showStudentPrice && percentOff(proListMonthly, proMonthlyPrice) > 0 && (
-                    <PopBadge tone="magenta" size="md">
-                      {percentOff(proListMonthly, proMonthlyPrice)}% OFF
-                    </PopBadge>
-                  )}
-                </div>
-                <p className="text-gray-500">Best for Students</p>
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -13,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: MAGENTA_GRADIENT,
+                  color: '#fff',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  padding: '6px 15px',
+                  borderRadius: 100,
+                  boxShadow: '0 3px 10px rgba(196,38,126,0.32)',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 5,
+                }}
+              >
+                <Star size={12} fill="currentColor" />
+                Most popular
               </div>
 
-              {/* Price — annual discount applies in BOTH student and list modes.
-                  The strikethrough shows the monthly-cadence price they'd pay
-                  on the same audience; the big number shows the annual-cadence
-                  per-month equivalent. */}
-              <div className="text-center mb-4">
-                {billingCadence === 'annual' ? (
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-lg text-gray-400 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      ${proMonthlyPrice}
-                    </span>
-                    <span className="text-4xl font-bold text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      ${annualMonthlyEquivalent(proAnnualPrice).toFixed(2)}
-                    </span>
-                    <span className="text-gray-500">/mo</span>
-                  </div>
-                ) : showStudentPrice ? (
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-lg text-gray-400 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      ${proListMonthly}
-                    </span>
-                    <span className="text-4xl font-bold text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      ${proMonthlyPrice}
-                    </span>
-                    <span className="text-gray-500">/mo</span>
-                  </div>
-                ) : (
-                  <div className="flex items-baseline justify-center gap-2">
-                    <span className="text-4xl font-bold text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                      ${proMonthlyPrice}
-                    </span>
-                    <span className="text-gray-500">/mo</span>
-                  </div>
-                )}
-                {/* Stacked discount math — real numbers only. Shown whenever
-                    there's a real discount to surface: student vs list, OR
-                    annual cadence vs monthly cadence. */}
-                <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
-                  {showStudentPrice && percentOff(proListMonthly, proMonthlyPrice) > 0 && (
-                    <PopBadge tone="inverse-magenta">
-                      {percentOff(proListMonthly, proMonthlyPrice)}% off list
-                    </PopBadge>
-                  )}
-                  {billingCadence === 'annual' && proAnnualSave > 0 && (
-                    <PopBadge tone="lime">save ${proAnnualSave.toFixed(0)}/yr</PopBadge>
-                  )}
-                </div>
-                <p className="text-sm text-gray-500 mt-2">
-                  {billingCadence === 'annual'
-                    ? `Billed yearly at $${proAnnualPrice}`
-                    : (
-                      <>
-                        <strong style={{ color: C_FS.ink }}>
-                          ~{emailsFromCredits(proStop.credits, tierConfig.credit_costs.find_contact).toLocaleString()} emails
-                        </strong>
-                        {' '}/ month · {proStop.credits.toLocaleString()} credits
-                      </>
-                    )}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-                  {showStudentPrice && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
-                      🎓 .edu required
-                    </span>
-                  )}
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-50 border border-green-200 rounded-full text-xs font-semibold text-green-700">
-                    {trialDays}-day free trial · no credit card
-                  </span>
-                </div>
-              </div>
-
-              {/* Credit slider — Higgsfield-style in-tier dial */}
-              <div className="mb-2 -mt-1">
-                <CreditSlider
-                  stops={proStops}
-                  selectedIndex={proStopIdx}
-                  onChange={(next) => {
-                    if (next !== proStopIdx) {
-                      trackSliderDragged({
-                        tier: 'pro',
-                        credits: proStops[next]?.credits ?? 0,
-                        from_index: proStopIdx,
-                        to_index: next,
-                      });
-                    }
-                    setProStopIdx(next);
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                <span
+                  style={{
+                    fontFamily: T.serif,
+                    fontStyle: 'italic',
+                    fontSize: 24,
+                    fontWeight: 600,
+                    background: TIER_NAME_GRADIENT,
+                    WebkitBackgroundClip: 'text',
+                    backgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                   }}
-                  accentColor="#3B82F6"
-                  compact
-                />
+                >
+                  Pro
+                </span>
+                {showStudentPrice && percentOff(proListMonthly, proMonthlyPrice) > 0 && (
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: T.magentaDeep, background: T.pinkTint, padding: '3px 8px', borderRadius: 100, letterSpacing: '0.03em' }}>
+                    {percentOff(proListMonthly, proMonthlyPrice)}% OFF
+                  </span>
+                )}
+                {currentTier === 'pro' && (
+                  <Chip color={T.greenFg} background={T.greenBg}>Your plan</Chip>
+                )}
               </div>
-
-              {/* Divider */}
-              <div className="border-t border-gray-100 my-6"></div>
-
-              {/* Features */}
-              <div className="flex-1 space-y-4">
-                <FeatureItem highlight>
-                  ~{emailsFromCredits(proStop.credits, tierConfig.credit_costs.find_contact).toLocaleString()} emails / month
-                  {' '}<span style={{ color: '#94A3B8', fontWeight: 500 }}>({proStop.credits.toLocaleString()} credits)</span>
-                </FeatureItem>
-                <FeatureItem>Up to 8 contacts per search</FeatureItem>
-                <FeatureItem><span className="font-semibold">Everything in Free, plus:</span></FeatureItem>
-                <FeatureItem>Single agent use</FeatureItem>
-                <FeatureItem>Find Hiring Managers</FeatureItem>
-                <FeatureItem>Firm Search</FeatureItem>
-                <FeatureItem>Bulk drafting + Export (CSV & Gmail)</FeatureItem>
-                <FeatureItem>Unlimited directory saving</FeatureItem>
-                <DisabledFeatureItem>Run multiple agents at once (Elite)</DisabledFeatureItem>
-                <DisabledFeatureItem>Priority queue + support</DisabledFeatureItem>
-                <FeatureItem highlight>Save ~210 hours/mo on research</FeatureItem>
+              <div style={{ fontSize: 13, color: T.ink3, marginBottom: 16 }}>Best for students</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginBottom: 2 }}>
+                {proStruck !== null && (
+                  <span style={{ fontSize: 17, color: T.ink4, textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(proStruck)}
+                  </span>
+                )}
+                <span style={{ fontFamily: T.serif, fontSize: 40, fontWeight: 600, color: T.heading, letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {fmt(proShown)}
+                </span>
+                <span style={{ fontSize: 14, color: T.ink3 }}>{periodLabel}</span>
               </div>
-              
-              {/* CTA Button */}
-              <div className="mt-8">
-                {!ctaReady ? (
-                  <div className="w-full py-3.5 px-6 rounded-lg font-bold bg-gray-100 text-transparent animate-pulse select-none" aria-hidden="true">
-                    &nbsp;
-                  </div>
+              <div style={{ fontSize: 12.5, color: T.ink4, marginBottom: 14, minHeight: 16 }}>
+                {billingCadence === 'annual' ? (
+                  <>Billed yearly at {fmt(proAnnualPrice)}</>
                 ) : (
+                  <><strong style={{ color: T.ink3, fontWeight: 600 }}>~{proEmails} emails</strong> / month · {proStop.credits.toLocaleString()} credits</>
+                )}
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                {showStudentPrice && (
+                  <Chip color={T.primary} background={T.primary100} icon={<GraduationCap size={12} />}>.edu required</Chip>
+                )}
+                <Chip color={T.greenFg} background={T.greenBg}>{trialDays}-day trial · no card</Chip>
+              </div>
+
+              {!ctaReady ? (
+                <div aria-hidden style={{ padding: 13, borderRadius: 10, background: T.paper2, color: 'transparent' }} className="animate-pulse select-none">&nbsp;</div>
+              ) : (
                 <button
                   onClick={
                     isLoading ? undefined :
@@ -1388,764 +1414,506 @@ const Pricing = () => {
                   }
                   disabled={isLoading || currentTier === 'elite'}
                   title={currentTier === 'pro' && hasRealStripeSub ? 'Click to manage subscription. Hold Shift+Click to reset credits.' : currentTier === 'elite' ? 'You are on Elite plan' : undefined}
-                  className={`
-                    w-full py-3.5 px-6 rounded-lg font-bold transition-all
-                    ${currentTier === 'elite'
-                      ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                      : currentTier === 'pro' && hasRealStripeSub
-                        ? 'text-white'
-                        : 'text-white hover:scale-[1.02] active:scale-100'
-                    }
-                    disabled:opacity-50
-                  `}
-                  style={
-                    currentTier === 'elite'
-                      ? undefined
-                      : {
-                          background: `linear-gradient(135deg, ${C_FS.brand} 0%, ${C_POP.purple} 60%, ${C_POP.magenta} 100%)`,
-                          boxShadow: `0 10px 28px -8px ${C_POP.magenta}55, 0 6px 14px -6px ${C_FS.brand}55`,
-                        }
-                  }
+                  className="of-cta of-cta-grad"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 7,
+                    padding: 13,
+                    borderRadius: 10,
+                    background: currentTier === 'elite' ? T.paper2 : CTA_GRADIENT,
+                    color: currentTier === 'elite' ? T.ink3 : '#fff',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: 15,
+                    cursor: currentTier === 'elite' ? 'not-allowed' : 'pointer',
+                    boxShadow: currentTier === 'elite' ? 'none' : '0 4px 14px rgba(124,58,237,0.32)',
+                    opacity: isLoading ? 0.6 : 1,
+                    fontFamily: T.sans,
+                  }}
                 >
                   {isLoading
                     ? 'Processing...'
                     : currentTier === 'elite'
-                      ? 'On Elite Plan'
+                      ? 'On Elite plan'
                       : currentTier === 'pro' && hasRealStripeSub
-                        ? 'Manage Subscription'
+                        ? 'Manage subscription'
                         : currentTier === 'pro'
                           ? 'Subscribe to Pro'
-                          : `Start ${trialDays}-Day Free Trial`}
+                          : `Start ${trialDays}-day free trial`}
+                  {currentTier !== 'elite' && !isLoading && <ArrowRight size={16} />}
                 </button>
-                )}
+              )}
+
+              {/* Credit slider — in-tier dial, below the CTA so price + button
+                  stay above the fold */}
+              <div style={{ marginTop: 6 }}>
+                <CreditSlider
+                  stops={proStops}
+                  selectedIndex={proStopIdx}
+                  onChange={(next) => {
+                    if (next !== proStopIdx) {
+                      trackSliderDragged({
+                        tier: 'pro',
+                        credits: proStops[next]?.credits ?? 0,
+                        from_index: proStopIdx,
+                        to_index: next,
+                      });
+                    }
+                    setProStopIdx(next);
+                  }}
+                  accentColor={T.purple}
+                  compact
+                />
+              </div>
+
+              <div style={{ borderTop: `1px solid ${T.borderLight}`, marginTop: 14, paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: T.ink3, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: -1 }}>
+                  Everything in Free, plus
+                </div>
+                <FeatureRow checkColor={T.purple} textColor={T.ink} weight={500}>Up to 8 contacts per search</FeatureRow>
+                <FeatureRow checkColor={T.purple} textColor={T.ink} weight={500}>Find hiring managers + firm search</FeatureRow>
+                <FeatureRow checkColor={T.purple} textColor={T.ink} weight={500}>Single agent use</FeatureRow>
+                <FeatureRow checkColor={T.purple} textColor={T.ink} weight={500}>Bulk drafting + CSV & Gmail export</FeatureRow>
+                <FeatureRow checkColor={T.purple} textColor={T.ink} weight={500}>Save ~210 hours/mo on research</FeatureRow>
               </div>
             </div>
-          </div>
 
-          {/* Elite Plan Card — translucent so mountains backdrop bleeds through */}
-          <div
-            className={`relative rounded-[3px] border p-8 flex flex-col h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 ${currentTier === 'elite' ? 'border-purple-300' : 'border-gray-200 hover:border-gray-300'}`}
-            style={{ background: 'rgba(255, 255, 255, 0.92)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)' }}
-          >
-            {/* Active Badge if current plan */}
-            {currentTier === 'elite' && (
-              <div className="absolute -top-3 right-6">
-                <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full border border-green-200">
-                  ACTIVE
-                </span>
-              </div>
-            )}
-            
-            {/* Plan Header — gradient italic + % OFF pop badge */}
-            <div className="text-center mb-6">
-              <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
-                <h2
+            {/* ELITE — night card */}
+            <div
+              className="of-card of-up"
+              style={{
+                position: 'relative',
+                background: T.night,
+                border: `1px solid ${T.night}`,
+                borderRadius: 16,
+                padding: '28px 26px',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '0 6px 20px rgba(15,37,69,0.16)',
+                animationDelay: '.22s',
+              }}
+            >
+              {currentTier === 'elite' && (
+                <div style={{ position: 'absolute', top: -11, right: 20 }}>
+                  <Chip color={T.greenFg} background={T.greenBg}>Active</Chip>
+                </div>
+              )}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+                <span
                   style={{
-                    fontSize: 30,
-                    fontWeight: 800,
-                    letterSpacing: '-0.02em',
-                    margin: 0,
-                    fontFamily: "'Libre Baskerville', Georgia, serif",
+                    fontFamily: T.serif,
                     fontStyle: 'italic',
-                    background: `linear-gradient(135deg, ${C_FS.ink} 0%, ${C_POP.purple} 55%, ${C_POP.magentaDeep} 100%)`,
+                    fontSize: 24,
+                    fontWeight: 600,
+                    background: ELITE_NAME_GRADIENT,
                     WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
                   }}
                 >
                   Elite
-                </h2>
+                </span>
                 {showStudentPrice && percentOff(eliteListMonthly, eliteMonthlyPrice) > 0 && (
-                  <PopBadge tone="magenta" size="md">
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: '#E6A0FF', background: 'rgba(180,120,255,0.16)', padding: '3px 8px', borderRadius: 100, letterSpacing: '0.03em' }}>
                     {percentOff(eliteListMonthly, eliteMonthlyPrice)}% OFF
-                  </PopBadge>
+                  </span>
                 )}
               </div>
-              <p className="text-gray-500">For serious recruiting season</p>
-            </div>
-            
-            {/* Price — annual discount applies in BOTH student and list modes */}
-            <div className="text-center mb-4">
-              {billingCadence === 'annual' ? (
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-lg text-gray-400 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    ${eliteMonthlyPrice}
+              <div style={{ fontSize: 13, color: '#A9B2C4', marginBottom: 16 }}>For serious recruiting season</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, marginBottom: 2 }}>
+                {eliteStruck !== null && (
+                  <span style={{ fontSize: 17, color: '#6E7789', textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(eliteStruck)}
                   </span>
-                  <span className="text-4xl font-bold text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    ${annualMonthlyEquivalent(eliteAnnualPrice).toFixed(2)}
-                  </span>
-                  <span className="text-gray-500">/mo</span>
-                </div>
-              ) : showStudentPrice ? (
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-lg text-gray-400 line-through" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    ${eliteListMonthly}
-                  </span>
-                  <span className="text-4xl font-bold text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    ${eliteMonthlyPrice}
-                  </span>
-                  <span className="text-gray-500">/mo</span>
-                </div>
-              ) : (
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-4xl font-bold text-gray-900" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    ${eliteMonthlyPrice}
-                  </span>
-                  <span className="text-gray-500">/mo</span>
-                </div>
-              )}
-              {/* Stacked discount badges — real numbers only */}
-              <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5">
-                {showStudentPrice && percentOff(eliteListMonthly, eliteMonthlyPrice) > 0 && (
-                  <PopBadge tone="inverse-magenta">
-                    {percentOff(eliteListMonthly, eliteMonthlyPrice)}% off list
-                  </PopBadge>
                 )}
-                {billingCadence === 'annual' && eliteAnnualSave > 0 && (
-                  <PopBadge tone="lime">save ${eliteAnnualSave.toFixed(0)}/yr</PopBadge>
+                <span style={{ fontFamily: T.serif, fontSize: 40, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                  {fmt(eliteShown)}
+                </span>
+                <span style={{ fontSize: 14, color: '#A9B2C4' }}>{periodLabel}</span>
+              </div>
+              <div style={{ fontSize: 12.5, color: '#7C8595', marginBottom: 14, minHeight: 16 }}>
+                {billingCadence === 'annual' ? (
+                  <>Billed yearly at {fmt(eliteAnnualPrice)}</>
+                ) : (
+                  <><strong style={{ color: '#C3CAD6', fontWeight: 600 }}>~{eliteEmails} emails</strong> / month · {eliteStop.credits.toLocaleString()} credits</>
                 )}
               </div>
-              <p className="text-sm text-gray-500 mt-2">
-                {billingCadence === 'annual'
-                  ? `Billed yearly at $${eliteAnnualPrice}`
-                  : (
-                    <>
-                      <strong style={{ color: C_FS.ink }}>
-                        ~{emailsFromCredits(eliteStop.credits, tierConfig.credit_costs.find_contact).toLocaleString()} emails
-                      </strong>
-                      {' '}/ month · {eliteStop.credits.toLocaleString()} credits
-                    </>
-                  )}
-              </p>
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
                 {showStudentPrice && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full text-xs font-semibold text-blue-700">
-                    🎓 .edu required
-                  </span>
+                  <Chip color="#B9C4E4" background="rgba(156,168,205,0.16)" icon={<GraduationCap size={12} />}>.edu required</Chip>
                 )}
-                {/* No trial chip on Elite — users come into Elite via the
-                    post-checkout upsell from Pro, not a separate trial. */}
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 border border-slate-200 rounded-full text-xs font-semibold text-slate-700">
-                  Start anytime · cancel anytime
-                </span>
+                <Chip color="#B9C4E4" background="rgba(156,168,205,0.16)">Cancel anytime</Chip>
               </div>
-            </div>
 
-            {/* Credit slider — Higgsfield-style in-tier dial */}
-            <div className="mb-2 -mt-1">
-              <CreditSlider
-                stops={eliteStops}
-                selectedIndex={eliteStopIdx}
-                onChange={(next) => {
-                  if (next !== eliteStopIdx) {
-                    trackSliderDragged({
-                      tier: 'elite',
-                      credits: eliteStops[next]?.credits ?? 0,
-                      from_index: eliteStopIdx,
-                      to_index: next,
-                    });
-                  }
-                  setEliteStopIdx(next);
-                }}
-                accentColor="#0F172A"
-                compact
-              />
-            </div>
-
-              {/* Divider */}
-              <div className="border-t border-gray-100 my-6"></div>
-
-              {/* Features */}
-              <div className="flex-1 space-y-4">
-                <FeatureItem highlight>Run up to 5 Agents simultaneously</FeatureItem>
-                <FeatureItem highlight>
-                  ~{emailsFromCredits(eliteStop.credits, tierConfig.credit_costs.find_contact).toLocaleString()} emails / month
-                  {' '}<span style={{ color: '#94A3B8', fontWeight: 500 }}>({eliteStop.credits.toLocaleString()} credits)</span>
-                </FeatureItem>
-                <FeatureItem>Up to 15 contacts per search</FeatureItem>
-                <FeatureItem><span className="font-semibold">Everything in Pro, plus:</span></FeatureItem>
-                <FeatureItem>Priority queue for contact generation</FeatureItem>
-                <FeatureItem>Personalized templates tailored to your resume</FeatureItem>
-                <FeatureItem>Weekly personalized firm insights</FeatureItem>
-                <FeatureItem>Early access to new AI tools</FeatureItem>
-                <FeatureItem>Priority support</FeatureItem>
-                <FeatureItem highlight>Save ~1,120 hours/mo at max usage</FeatureItem>
-              </div>
-            
-            {/* CTA Button */}
-            <div className="mt-8">
               {!ctaReady ? (
-                <div className="w-full py-3.5 px-6 rounded-lg font-bold bg-gray-100 text-transparent animate-pulse select-none" aria-hidden="true">
-                  &nbsp;
-                </div>
+                <div aria-hidden style={{ padding: 13, borderRadius: 10, background: 'rgba(255,255,255,0.08)', color: 'transparent' }} className="animate-pulse select-none">&nbsp;</div>
               ) : (
-              <button
-                onClick={
-                  isLoading ? undefined :
-                  currentTier === 'elite' && hasRealStripeSub
-                    ? (e: React.MouseEvent) => {
-                        if (e.shiftKey) {
-                          handleResetCredits('elite');
-                        } else {
-                          handleManageSubscription();
+                <button
+                  onClick={
+                    isLoading ? undefined :
+                    currentTier === 'elite' && hasRealStripeSub
+                      ? (e: React.MouseEvent) => {
+                          if (e.shiftKey) {
+                            handleResetCredits('elite');
+                          } else {
+                            handleManageSubscription();
+                          }
                         }
-                      }
-                    : () => handleUpgrade('elite', 'pricing_page')
-                }
-                disabled={isLoading}
-                title={currentTier === 'elite' && hasRealStripeSub ? 'Click to manage subscription. Hold Shift+Click to reset credits.' : undefined}
-                className={`
-                  w-full py-3.5 px-6 rounded-lg font-bold transition-all hover:scale-[1.02] active:scale-100
-                  ${currentTier === 'elite' && hasRealStripeSub
-                    ? 'border-2 border-[#E2E8F0] text-[#3B82F6] hover:bg-[#FAFBFF]'
-                    : 'text-white'
+                      : () => handleUpgrade('elite', 'pricing_page')
                   }
-                `}
-                style={
-                  currentTier === 'elite' && hasRealStripeSub
-                    ? undefined
-                    : {
-                        background: `linear-gradient(135deg, ${C_FS.ink} 0%, ${C_POP.purple} 55%, ${C_POP.magentaDeep} 100%)`,
-                        boxShadow: `0 10px 28px -8px ${C_POP.magentaDeep}55, 0 6px 14px -6px ${C_FS.ink}55`,
-                      }
-                }
-              >
-                {isLoading
-                  ? 'Processing...'
-                  : currentTier === 'elite' && hasRealStripeSub
-                    ? 'Manage Subscription'
-                    : currentTier === 'elite'
-                      ? 'Subscribe to Elite'
-                      : currentTier === 'pro'
-                        ? 'Upgrade to Elite'
-                        : 'Get Elite'}
-              </button>
+                  disabled={isLoading}
+                  title={currentTier === 'elite' && hasRealStripeSub ? 'Click to manage subscription. Hold Shift+Click to reset credits.' : undefined}
+                  className="of-cta of-cta-grad"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 7,
+                    padding: 13,
+                    borderRadius: 10,
+                    background: ELITE_CTA_GRADIENT,
+                    color: '#fff',
+                    border: 'none',
+                    fontWeight: 600,
+                    fontSize: 15,
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(124,58,237,0.35)',
+                    opacity: isLoading ? 0.6 : 1,
+                    fontFamily: T.sans,
+                  }}
+                >
+                  {isLoading
+                    ? 'Processing...'
+                    : currentTier === 'elite' && hasRealStripeSub
+                      ? 'Manage subscription'
+                      : currentTier === 'elite'
+                        ? 'Subscribe to Elite'
+                        : currentTier === 'pro'
+                          ? 'Upgrade to Elite'
+                          : 'Get Elite'}
+                  {!isLoading && <ArrowRight size={16} />}
+                </button>
               )}
-            </div>
-          </div>
-        </div>
 
-        {/* Season Pass — 4-month one-time pre-paid pass. Date-gated visibility:
-            shown to all if past `new_users_only_until`, otherwise new users only. */}
-        {/* Season Pass is shown to everyone — subscribers and non-subscribers alike.
-            Passing isNewUser=true makes it always visible regardless of tier, and
-            it no longer depends on subscription state, so there's no flash. */}
-        {seasonPassVisible(tierConfig.season_pass, true) && (
-          <div
-            className="max-w-5xl mx-auto mb-16 animate-fadeInUp"
-            style={{ animationDelay: '250ms' }}
-          >
-            <div
-              style={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, #003262 0%, #1E3A8A 50%, #2563EB 100%)',
-                borderRadius: 14,
-                padding: '32px 28px',
-                color: '#fff',
-                overflow: 'hidden',
-                boxShadow: '0 12px 36px -10px rgba(0, 50, 98, 0.35)',
-              }}
-            >
-              {/* subtle decorative wash */}
-              <div
-                aria-hidden
-                style={{
-                  position: 'absolute',
-                  top: -60,
-                  right: -60,
-                  width: 240,
-                  height: 240,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 70%)',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'minmax(0, 1.4fr) minmax(0, 1fr)',
-                  gap: 28,
-                  alignItems: 'center',
-                  position: 'relative',
-                }}
-                className="md:grid-cols-[1.4fr_1fr] grid-cols-1"
-              >
-                <div>
-                  <div
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      background: 'rgba(255,255,255,0.15)',
-                      color: '#fff',
-                      fontSize: 10,
-                      fontWeight: 800,
-                      letterSpacing: '0.18em',
-                      textTransform: 'uppercase',
-                      padding: '5px 10px',
-                      borderRadius: 999,
-                      marginBottom: 14,
-                    }}
-                  >
-                    <Zap size={11} style={{ color: C_POP.lime }} /> Recruiting Season Pass
-                  </div>
-                  <h3
-                    style={{
-                      fontFamily: "'Libre Baskerville', Georgia, serif",
-                      fontSize: 'clamp(26px, 3.2vw, 34px)',
-                      fontWeight: 400,
-                      lineHeight: 1.2,
-                      margin: '0 0 10px',
-                      letterSpacing: '-0.012em',
-                      color: '#fff',
-                    }}
-                  >
-                    Four months.{' '}
-                    <em
-                      style={{
-                        background: `linear-gradient(135deg, ${C_POP.lime} 0%, #FDE047 100%)`,
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                        fontWeight: 700,
-                      }}
-                    >
-                      One charge.
-                    </em>
-                  </h3>
-                  <p
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 14.5,
-                      lineHeight: 1.6,
-                      color: 'rgba(255,255,255,0.92)',
-                      margin: '0 0 16px',
-                      maxWidth: 480,
-                    }}
-                  >
-                    Built for the 16 weeks your school's recruiting calendar actually burns hot.
-                    Pro-level access, {tierConfig.season_pass.credits_per_month.toLocaleString()} credits
-                    refilled every month, no renewal surprise. Pay once, hit the ground running.
-                  </p>
-                  <div className="flex flex-wrap items-center gap-2" style={{ fontSize: 12 }}>
-                    <span
-                      style={{
-                        padding: '5px 11px',
-                        background: `${C_POP.lime}22`,
-                        border: `1px solid ${C_POP.lime}66`,
-                        color: '#ECFCCB',
-                        borderRadius: 999,
-                        fontWeight: 700,
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <Clock size={11} style={{ marginRight: 4, color: C_POP.lime }} />
-                      4 months, one-time
-                    </span>
-                    <span
-                      style={{
-                        padding: '5px 11px',
-                        background: 'rgba(255,255,255,0.18)',
-                        borderRadius: 999,
-                        fontWeight: 700,
-                        color: '#fff',
-                      }}
-                    >
-                      No subscription
-                    </span>
-                    {showStudentPrice && (
-                      <span
-                        style={{
-                          padding: '5px 11px',
-                          background: `${C_POP.magenta}22`,
-                          border: `1px solid ${C_POP.magenta}66`,
-                          borderRadius: 999,
-                          fontWeight: 700,
-                          color: '#FBCFE8',
-                        }}
-                      >
-                        🎓 .edu price
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'center' }}>
-                  <div
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 11,
-                      fontWeight: 800,
-                      letterSpacing: '0.18em',
-                      textTransform: 'uppercase',
-                      color: C_POP.lime,
-                      marginBottom: 6,
-                    }}
-                  >
-                    Pay once
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'baseline',
-                      justifyContent: 'center',
-                      gap: 8,
-                      marginBottom: 4,
-                    }}
-                  >
-                    {showStudentPrice && (
-                      <span
-                        style={{
-                          fontSize: 18,
-                          color: '#FBCFE8',
-                          textDecoration: 'line-through',
-                          textDecorationColor: C_POP.magenta,
-                          textDecorationThickness: '2px',
-                          fontVariantNumeric: 'tabular-nums',
-                          fontWeight: 600,
-                        }}
-                      >
-                        ${tierConfig.season_pass.list}
-                      </span>
-                    )}
-                    <span
-                      style={{
-                        fontFamily: "'Libre Baskerville', Georgia, serif",
-                        fontSize: 52,
-                        fontWeight: 400,
-                        lineHeight: 1,
-                        letterSpacing: '-0.02em',
-                        fontVariantNumeric: 'tabular-nums',
-                        color: '#fff',
-                      }}
-                    >
-                      ${showStudentPrice ? tierConfig.season_pass.student : tierConfig.season_pass.list}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.92)', marginBottom: 18, fontWeight: 600 }}>
-                    {tierConfig.season_pass.months} months · ${(
-                      (showStudentPrice ? tierConfig.season_pass.student : tierConfig.season_pass.list) /
-                      tierConfig.season_pass.months
-                    ).toFixed(2)}/mo equivalent
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!seasonPassPriceId}
-                    onClick={() => {
-                      trackUpgradeClick('season_pass', {
-                        from_location: 'pricing_page',
-                        plan_selected: 'season_pass',
+              {/* Credit slider — dark variant for the night card */}
+              <div style={{ marginTop: 6 }}>
+                <CreditSlider
+                  stops={eliteStops}
+                  selectedIndex={eliteStopIdx}
+                  onChange={(next) => {
+                    if (next !== eliteStopIdx) {
+                      trackSliderDragged({
+                        tier: 'elite',
+                        credits: eliteStops[next]?.credits ?? 0,
+                        from_index: eliteStopIdx,
+                        to_index: next,
                       });
-                      trackSeasonPassClicked({ audience });
-                      // One-time Season Pass checkout (grants season_pass tier
-                      // via webhook). Gated on the SKU being wired in Stripe.
-                      if (seasonPassPriceId) handleSeasonPassCheckout();
-                    }}
-                    title={!seasonPassPriceId ? 'Season Pass SKU coming soon in Stripe' : undefined}
-                    style={{
-                      width: '100%',
-                      padding: '13px 18px',
-                      background: seasonPassPriceId ? '#fff' : 'rgba(255,255,255,0.4)',
-                      color: '#003262',
-                      border: 'none',
-                      borderRadius: 6,
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 14,
-                      fontWeight: 800,
-                      cursor: seasonPassPriceId ? 'pointer' : 'not-allowed',
-                      transition: 'all 160ms ease',
-                      boxShadow: seasonPassPriceId ? '0 8px 18px -6px rgba(0,0,0,0.25)' : 'none',
-                    }}
-                  >
-                    {seasonPassPriceId ? 'Get the Season Pass' : 'Coming soon'}
-                  </button>
+                    }
+                    setEliteStopIdx(next);
+                  }}
+                  accentColor={T.purpleLight}
+                  compact
+                  dark
+                />
+              </div>
+
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', marginTop: 14, paddingTop: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#7C8595', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: -1 }}>
+                  Everything in Pro, plus
                 </div>
+                <FeatureRow checkColor={T.purpleLight} textColor="#E4E7EC">Run up to 5 agents simultaneously</FeatureRow>
+                <FeatureRow checkColor={T.purpleLight} textColor="#E4E7EC">Up to 15 contacts per search</FeatureRow>
+                <FeatureRow checkColor={T.purpleLight} textColor="#E4E7EC">Priority queue for contact generation</FeatureRow>
+                <FeatureRow checkColor={T.purpleLight} textColor="#E4E7EC">Weekly personalized firm insights</FeatureRow>
+                <FeatureRow checkColor={T.purpleLight} textColor="#E4E7EC">Priority support + early AI access</FeatureRow>
               </div>
             </div>
           </div>
-        )}
 
-        {/* Two-pillar guarantee — free trial + money-back, stated plainly */}
-        <div className="max-w-3xl mx-auto mb-16 animate-fadeInUp" style={{ animationDelay: '300ms' }}>
-          <div
+          <button
+            onClick={scrollToCompare}
+            className="of-link"
             style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: 16,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 7,
+              margin: '30px auto 0',
+              fontSize: 14,
+              fontWeight: 600,
+              color: T.ink3,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: T.sans,
             }}
           >
-            {/* Pillar 1 — free trial (Season Pass styling, header only) */}
-            <div
-              style={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, #003262 0%, #1E3A8A 50%, #2563EB 100%)',
-                borderRadius: 14,
-                padding: '22px 22px 20px',
-                color: '#fff',
-                overflow: 'hidden',
-                boxShadow:
-                  '0 1px 2px rgba(15,37,69,.04), 0 8px 18px -8px rgba(15,37,69,.20)',
-              }}
-            >
-              <div
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: 'rgba(255,255,255,0.15)',
-                  color: '#fff',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: '0.18em',
-                  textTransform: 'uppercase',
-                  padding: '5px 10px',
-                  borderRadius: 999,
-                  marginBottom: 14,
-                  fontFamily: "'Inter', sans-serif",
-                }}
-              >
-                🎓 Free trial
-              </div>
-              <h3
-                style={{
-                  fontFamily: "'Libre Baskerville', Georgia, serif",
-                  fontSize: 20,
-                  lineHeight: 1.2,
-                  color: '#fff',
-                  margin: 0,
-                  fontWeight: 400,
-                }}
-              >
-                <em
-                  style={{
-                    background: `linear-gradient(135deg, ${C_POP.lime} 0%, #FDE047 100%)`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    fontWeight: 700,
-                  }}
-                >
-                  {trialDays} days free
-                </em>{' '}on Pro
-              </h3>
-            </div>
+            Compare every feature
+            <ChevronDown size={16} />
+          </button>
+        </div>
+      </section>
 
-            {/* Pillar 2 — money-back (Season Pass styling, header only) */}
-            <div
-              style={{
-                position: 'relative',
-                background: 'linear-gradient(135deg, #003262 0%, #1E3A8A 50%, #2563EB 100%)',
-                borderRadius: 14,
-                padding: '22px 22px 20px',
-                color: '#fff',
-                overflow: 'hidden',
-                boxShadow:
-                  '0 1px 2px rgba(15,37,69,.04), 0 8px 18px -8px rgba(15,37,69,.20)',
-              }}
-            >
-              <div
+      {/* ======= RECRUITING SEASON PASS ======= */}
+      {seasonPassVisible(tierConfig.season_pass, true) && (
+        <section style={{ padding: '8px 24px 20px' }}>
+          <div
+            style={{
+              maxWidth: 1040,
+              margin: '0 auto',
+              background: NAVY_GRADIENT,
+              borderRadius: 16,
+              padding: '34px 40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 32,
+              flexWrap: 'wrap',
+              boxShadow: '0 16px 40px rgba(15,37,69,0.28)',
+            }}
+          >
+            <div style={{ flex: '1 1 380px' }}>
+              <span
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  background: 'rgba(255,255,255,0.15)',
-                  color: '#fff',
-                  fontSize: 10,
-                  fontWeight: 800,
-                  letterSpacing: '0.18em',
+                  fontSize: 11,
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
                   textTransform: 'uppercase',
-                  padding: '5px 10px',
-                  borderRadius: 999,
+                  color: '#C9D3EE',
+                  background: 'rgba(255,255,255,0.1)',
+                  padding: '5px 11px',
+                  borderRadius: 100,
                   marginBottom: 14,
-                  fontFamily: "'Inter', sans-serif",
                 }}
               >
-                <Shield className="w-3 h-3" style={{ color: C_POP.lime }} /> Money-back
-              </div>
-              <h3
-                style={{
-                  fontFamily: "'Libre Baskerville', Georgia, serif",
-                  fontSize: 20,
-                  lineHeight: 1.2,
-                  color: '#fff',
-                  margin: 0,
-                  fontWeight: 400,
-                }}
-              >
-                <em
-                  style={{
-                    background: `linear-gradient(135deg, ${C_POP.lime} 0%, #FDE047 100%)`,
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text',
-                    fontWeight: 700,
-                  }}
-                >
-                  7-day refund
-                </em>{' '}on Pro &amp; Elite, 14 days on Season Pass
+                <Zap size={11} />
+                Recruiting season pass
+              </span>
+              <h3 style={{ fontFamily: T.serif, fontSize: 27, fontWeight: 600, color: '#fff', margin: '0 0 8px', letterSpacing: '-0.015em' }}>
+                Four months. <Em color={T.purpleLight}>One charge.</Em>
               </h3>
+              <p style={{ fontSize: 14, color: '#B7C0D4', margin: 0, maxWidth: 440, lineHeight: 1.6 }}>
+                Recruiting season burns hot. Get Pro-level access, {tierConfig.season_pass.credits_per_month.toLocaleString()} credits
+                refilled monthly, no renewal surprise. Pay once, hit the ground running.
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 14 }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, justifyContent: 'flex-end' }}>
+                  {showStudentPrice && (
+                    <span style={{ fontSize: 19, color: '#7C8595', textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums' }}>
+                      {fmt(tierConfig.season_pass.list)}
+                    </span>
+                  )}
+                  <span style={{ fontFamily: T.serif, fontSize: 46, fontWeight: 600, color: '#fff', letterSpacing: '-0.02em', fontVariantNumeric: 'tabular-nums' }}>
+                    {fmt(showStudentPrice ? tierConfig.season_pass.student : tierConfig.season_pass.list)}
+                  </span>
+                </div>
+                <div style={{ fontSize: 12.5, color: '#9AA4B8', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                  <Clock size={12} />
+                  {tierConfig.season_pass.months} months · ~{fmt(
+                    (showStudentPrice ? tierConfig.season_pass.student : tierConfig.season_pass.list) /
+                    tierConfig.season_pass.months
+                  )}/mo equivalent
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={!seasonPassPriceId}
+                onClick={() => {
+                  trackUpgradeClick('season_pass', {
+                    from_location: 'pricing_page',
+                    plan_selected: 'season_pass',
+                  });
+                  trackSeasonPassClicked({ audience });
+                  // One-time Season Pass checkout (grants season_pass tier
+                  // via webhook). Gated on the SKU being wired in Stripe.
+                  if (seasonPassPriceId) handleSeasonPassCheckout();
+                }}
+                title={!seasonPassPriceId ? 'Season Pass SKU coming soon in Stripe' : undefined}
+                className="of-cta of-cta-white"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 7,
+                  padding: '13px 26px',
+                  borderRadius: 10,
+                  background: seasonPassPriceId ? '#fff' : 'rgba(255,255,255,0.4)',
+                  color: T.heading,
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: 15,
+                  cursor: seasonPassPriceId ? 'pointer' : 'not-allowed',
+                  fontFamily: T.sans,
+                }}
+              >
+                {seasonPassPriceId ? 'Get the Season Pass' : 'Coming soon'}
+                {seasonPassPriceId && <ArrowRight size={16} />}
+              </button>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ======= TRUST BADGES ======= */}
+      <section style={{ padding: '20px 24px 0' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5" style={{ maxWidth: 1040, margin: '0 auto' }}>
+          <div style={{ background: BADGE_NAVY_GRADIENT, borderRadius: 16, padding: '22px 26px', boxShadow: '0 8px 24px rgba(15,37,69,0.2)' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#C9D3EE',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '5px 10px',
+                borderRadius: 100,
+                marginBottom: 12,
+              }}
+            >
+              <Clock size={12} />
+              Free trial
+            </span>
+            <div style={{ fontFamily: T.serif, fontSize: 18, color: '#fff', fontWeight: 500 }}>
+              <Em color={T.purpleLight}>{trialDays} days free</Em> on Pro
+            </div>
+          </div>
+          <div style={{ background: BADGE_NAVY_GRADIENT, borderRadius: 16, padding: '22px 26px', boxShadow: '0 8px 24px rgba(15,37,69,0.2)' }}>
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#C9D3EE',
+                background: 'rgba(255,255,255,0.1)',
+                padding: '5px 10px',
+                borderRadius: 100,
+                marginBottom: 12,
+              }}
+            >
+              <Shield size={12} />
+              Money-back
+            </span>
+            <div style={{ fontFamily: T.serif, fontSize: 18, color: '#fff', fontWeight: 500 }}>
+              <Em color={T.purpleLight}>7-day refund</Em> on Pro & Elite, 14 days on Season Pass
             </div>
           </div>
         </div>
+      </section>
 
-        {/* Compare every feature — collapsed by default to keep the page tight.
-            Click to expand inline. No separate full-bleed section anymore. */}
-        <div className="mb-12 animate-fadeInUp" style={{ animationDelay: '400ms' }}>
-          <details
-            style={{
-              maxWidth: 760,
-              margin: '0 auto',
-              background: '#fff',
-              border: `1px solid ${C_FS.cardBorder}`,
-              borderRadius: 12,
-              boxShadow: '0 1px 2px rgba(15,37,69,.04)',
-            }}
-          >
-            <summary
-              style={{
-                listStyle: 'none',
-                cursor: 'pointer',
-                padding: '16px 22px',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 14,
-                fontWeight: 700,
-                color: C_FS.ink,
-                userSelect: 'none',
-              }}
-              className="hover:bg-slate-50 transition-colors"
-            >
-              <span>
-                <span style={{ color: C_FS.eyebrow, fontSize: 11, fontWeight: 800, letterSpacing: '0.16em', textTransform: 'uppercase', marginRight: 10 }}>
-                  Side by side
-                </span>
-                Compare every feature
-              </span>
-              <ChevronDown size={16} style={{ color: C_FS.muted, transition: 'transform 160ms ease' }} className="details-chevron" />
-            </summary>
-            <div style={{ borderTop: `1px solid ${C_FS.cardBorder}`, overflowX: 'auto' }}>
-              <table className="w-full min-w-[600px]">
+      {/* ======= COMPARISON TABLE ======= */}
+      <section id="compare" style={{ padding: '60px 24px 70px' }}>
+        <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 40 }}>
+            <Eyebrow>Side by side</Eyebrow>
+            <h2 style={{ fontFamily: T.serif, fontSize: 32, fontWeight: 600, letterSpacing: '-0.02em', color: T.heading, margin: '0 0 10px' }}>
+              Compare <Em>every feature</Em>
+            </h2>
+            <p style={{ fontSize: 15, color: T.ink3, margin: '0 auto', maxWidth: 460, lineHeight: 1.6 }}>
+              The full picture of what Free, Pro, and Elite unlock across the workflow.
+            </p>
+          </div>
+
+          <div style={{ background: T.paper, border: `1px solid ${T.border}`, borderRadius: 16, overflow: 'hidden', boxShadow: '0 6px 20px rgba(15,37,69,0.08)' }}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', minWidth: 620, borderCollapse: 'collapse', fontSize: 14 }}>
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left py-3 px-6 font-semibold text-gray-900 text-sm">Feature</th>
-                    <th className="text-center py-3 px-6 font-semibold text-gray-900 text-sm">Free</th>
-                    <th className="text-center py-3 px-6 font-semibold text-[#3B82F6] text-sm">Pro</th>
-                    <th className="text-center py-3 px-6 font-semibold text-gray-900 text-sm">Elite</th>
+                  <tr>
+                    <th style={{ textAlign: 'left', padding: '20px 26px 16px', fontFamily: T.sans, fontSize: 12, fontWeight: 600, color: T.ink3, textTransform: 'uppercase', letterSpacing: '0.05em', width: '42%' }}>Feature</th>
+                    <th style={{ textAlign: 'center', padding: '20px 14px 16px', fontFamily: T.serif, fontSize: 17, fontWeight: 600, color: T.heading }}>Free</th>
+                    <th style={{ textAlign: 'center', padding: '20px 14px 16px', fontFamily: T.serif, fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: T.purple }}>Pro</th>
+                    <th style={{ textAlign: 'center', padding: '20px 14px 16px', fontFamily: T.serif, fontStyle: 'italic', fontSize: 17, fontWeight: 600, color: T.purpleDeep }}>Elite</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
-                  <ComparisonRow
-                    feature="Monthly Emails"
-                    free={`~${emailsFromCredits(300, tierConfig.credit_costs.find_contact)}`}
-                    pro={`~${emailsFromCredits(proStop.credits, tierConfig.credit_costs.find_contact)}`}
-                    elite={`~${emailsFromCredits(eliteStop.credits, tierConfig.credit_costs.find_contact)}`}
-                  />
-                  <ComparisonRow feature="Monthly Credits" free="300" pro={proStop.credits.toLocaleString()} elite={eliteStop.credits.toLocaleString()} />
-                  <ComparisonRow feature="Contacts per Search" free="3" pro="8" elite="15" />
-                  <ComparisonRow feature="Concurrent Agents" free=" - " pro="1" elite="Up to 5" />
-                  <ComparisonRow feature="Find Companies" free={false} pro={true} elite={true} />
-                  <ComparisonRow feature="Find Hiring Managers" free={false} pro={true} elite={true} />
-                  <ComparisonRow feature="Email Outreach Tracking" free={true} pro={true} elite={true} />
-                  <ComparisonRow feature="Gmail Integration" free={true} pro={true} elite={true} />
-                  <ComparisonRow feature="Custom Email Templates" free={true} pro={true} elite={true} />
-                  <ComparisonRow
-                    feature="AI Email Drafts"
-                    free={tierConfig.free_drafts_per_month > 0 ? `${tierConfig.free_drafts_per_month}/mo` : "Within credits"}
-                    pro="Unlimited"
-                    elite="Unlimited"
-                  />
-                  <ComparisonRow feature="Export to CSV" free={false} pro={true} elite={true} />
-                  <ComparisonRow feature="Bulk Drafting" free={true} pro={true} elite={true} />
-                  <ComparisonRow feature="Firm Search" free={false} pro={true} elite={true} />
-                  <ComparisonRow feature="Top-Up Credit Packs" free={false} pro={true} elite={true} />
-                  <ComparisonRow feature="Priority Queue + Support" free={false} pro={false} elite={true} />
-                  <ComparisonRow feature={`${trialDays}-Day Free Trial`} free={false} pro={true} elite={false} />
+                <tbody>
+                  {compareGroups.map(([groupLabel, rows]) => (
+                    <Fragment key={groupLabel}>
+                      <tr>
+                        <td colSpan={4} style={{ padding: '20px 26px 8px', fontFamily: T.sans, fontSize: 11.5, fontWeight: 700, color: T.ink3, textTransform: 'uppercase', letterSpacing: '0.07em', background: T.paper2, borderTop: `1px solid ${T.borderLight}` }}>
+                          {groupLabel}
+                        </td>
+                      </tr>
+                      {rows.map(([name, free, pro, elite]) => (
+                        <tr key={name} style={{ borderTop: `1px solid ${T.borderLight}` }}>
+                          <td style={{ padding: '14px 26px', color: T.ink2, fontSize: 13.5 }}>{name}</td>
+                          <td style={{ padding: '14px 14px', textAlign: 'center' }}><CompareCellValue value={free} /></td>
+                          <td style={{ padding: '14px 14px', textAlign: 'center', background: 'rgba(124,58,237,0.035)' }}><CompareCellValue value={pro} isPro /></td>
+                          <td style={{ padding: '14px 14px', textAlign: 'center' }}><CompareCellValue value={elite} /></td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  ))}
                 </tbody>
               </table>
             </div>
-          </details>
-          {/* Native open-state chevron rotation */}
-          <style>{`
-            details[open] .details-chevron { transform: rotate(180deg); }
-          `}</style>
-        </div>
+          </div>
 
-        {/* Top-Up Packs — Pro/Elite subscriber perk. Free users see a locked
-            state with an "Upgrade to unlock" CTA — keeps the paywall meaningful. */}
-        <div className="mb-16 animate-fadeInUp" style={{ animationDelay: '450ms' }}>
-          <div style={{ textAlign: 'center', maxWidth: 760, margin: '0 auto 28px' }}>
-            <p
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: '0.18em',
-                color: C_FS.eyebrow,
-                textTransform: 'uppercase',
-                margin: '0 0 12px',
-              }}
-            >
-              Credit packs · Pro &amp; Elite perk
-            </p>
-            <h2
-              style={{
-                fontFamily: "'Libre Baskerville', Georgia, serif",
-                fontSize: 'clamp(26px, 3.5vw, 36px)',
-                fontWeight: 400,
-                lineHeight: 1.15,
-                color: C_FS.ink,
-                letterSpacing: '-0.012em',
-                margin: 0,
-              }}
-            >
-              Need more credits? <Hl>Top up anytime.</Hl>
+          {!hasActiveSubscription && (
+            <div style={{ textAlign: 'center', marginTop: 40 }}>
+              <button
+                onClick={() => handleUpgrade('pro', 'compare_table')}
+                disabled={isLoading}
+                className="of-cta of-cta-grad"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: '15px 32px',
+                  borderRadius: 10,
+                  background: CTA_GRADIENT,
+                  color: '#fff',
+                  border: 'none',
+                  fontWeight: 600,
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 14px rgba(124,58,237,0.32)',
+                  opacity: isLoading ? 0.6 : 1,
+                  fontFamily: T.sans,
+                }}
+              >
+                Start your {trialDays}-day free trial
+                <ArrowRight size={18} />
+              </button>
+              <div style={{ fontSize: 13, color: T.ink3, marginTop: 13 }}>No card required for Free · cancel anytime</div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* ======= CREDIT PACKS — Pro/Elite subscriber perk. Free users see a
+          locked state that scrolls back up to start a trial. ======= */}
+      <section style={{ padding: '0 24px 20px' }}>
+        <div style={{ maxWidth: 1040, margin: '0 auto' }}>
+          <div style={{ textAlign: 'center', marginBottom: 36 }}>
+            <Eyebrow>Credit packs · Pro & Elite perk</Eyebrow>
+            <h2 style={{ fontFamily: T.serif, fontSize: 32, fontWeight: 600, letterSpacing: '-0.02em', color: T.heading, margin: '0 0 10px' }}>
+              Need more credits? <Em>Top up anytime.</Em>
             </h2>
-            <p
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 14,
-                color: C_FS.body,
-                marginTop: 12,
-                maxWidth: 540,
-                marginLeft: 'auto',
-                marginRight: 'auto',
-                lineHeight: 1.6,
-              }}
-            >
+            <p style={{ fontSize: 15, color: T.ink3, margin: '0 auto', maxWidth: 480, lineHeight: 1.6 }}>
               {hasActiveSubscription ? (
-                <>
-                  One-time top-up packs, available to Pro &amp; Elite subscribers. Credits you buy{' '}
-                  <strong style={{ color: C_FS.ink }}>never expire.</strong>
-                </>
+                <>One-time top-up packs, available to Pro & Elite subscribers. Credits you buy <strong style={{ color: T.ink2, fontWeight: 600 }}>never expire.</strong></>
               ) : (
-                <>
-                  Credit packs are a perk for Pro &amp; Elite subscribers. Start a Pro trial to
-                  unlock — and yes,{' '}
-                  <strong style={{ color: C_FS.ink }}>purchased credits never expire.</strong>
-                </>
+                <>Credit packs are a perk for Pro & Elite subscribers. Start a Pro trial to unlock. And yes, <strong style={{ color: T.ink2, fontWeight: 600 }}>purchased credits never expire.</strong></>
               )}
             </p>
           </div>
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: 14,
-              maxWidth: 760,
-              margin: '0 auto',
-              // Top padding so the "★ Best value" badge (top: -10 on its card)
-              // sits inside the grid's box and isn't clipped by the page root's
-              // overflow:hidden.
-              paddingTop: 14,
-            }}
-          >
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5" style={{ paddingTop: 14 }}>
             {tierConfig.topup_packs.map((pack) => {
               const locked = !hasActiveSubscription;
+              const featured = Boolean(pack.recommended);
               return (
                 <button
                   key={pack.id}
@@ -2158,113 +1926,57 @@ const Pricing = () => {
                       setTopUpModalOpen(true);
                     }
                   }}
+                  className="of-card"
                   style={{
                     position: 'relative',
                     textAlign: 'left',
-                    background: '#fff',
-                    border: `1.5px solid ${pack.recommended && !locked ? C_FS.brand : C_FS.cardBorder}`,
-                    borderRadius: 12,
-                    padding: '20px 18px 18px',
+                    borderRadius: 16,
+                    padding: 24,
                     cursor: 'pointer',
-                    transition: 'all 180ms ease',
-                    opacity: locked ? 0.72 : 1,
-                    boxShadow: pack.recommended && !locked
-                      ? `0 6px 18px -6px ${C_FS.brand}33`
-                      : '0 1px 2px rgba(15,37,69,.04)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = pack.recommended && !locked
-                      ? `0 10px 24px -8px ${C_FS.brand}44`
-                      : '0 6px 18px -8px rgba(15,37,69,.12)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = pack.recommended && !locked
-                      ? `0 6px 18px -6px ${C_FS.brand}33`
-                      : '0 1px 2px rgba(15,37,69,.04)';
+                    opacity: locked ? 0.75 : 1,
+                    fontFamily: T.sans,
+                    ...(featured
+                      ? {
+                          border: '2px solid transparent',
+                          backgroundImage: GRADIENT_BORDER_BG,
+                          backgroundOrigin: 'border-box',
+                          backgroundClip: 'padding-box, border-box',
+                          boxShadow: '0 12px 30px rgba(124,58,237,0.14)',
+                        }
+                      : {
+                          background: T.paper,
+                          border: `1px solid ${T.border}`,
+                          boxShadow: '0 1px 3px rgba(15,37,69,0.06)',
+                        }),
                   }}
                 >
-                  {pack.recommended && !locked && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: -10,
-                        right: 14,
-                        background: C_FS.brand,
-                        color: '#fff',
-                        fontSize: 9,
-                        fontWeight: 800,
-                        letterSpacing: '0.14em',
-                        textTransform: 'uppercase',
-                        padding: '3px 8px',
-                        borderRadius: 999,
-                      }}
-                    >
-                      ★ Best value
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: featured ? T.purple : T.ink3 }}>
+                      {pack.label}
                     </span>
-                  )}
-                  <div
-                    style={{
-                      fontFamily: "'Inter', sans-serif",
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: '0.14em',
-                      color: C_FS.muted,
-                      textTransform: 'uppercase',
-                      marginBottom: 8,
-                    }}
-                  >
-                    {pack.label}
+                    {featured && (
+                      <span style={{ fontSize: 10, fontWeight: 700, color: T.magentaDeep, background: T.pinkTint, padding: '3px 8px', borderRadius: 100 }}>
+                        Best value
+                      </span>
+                    )}
                   </div>
-                  <div
-                    style={{
-                      fontFamily: "'Libre Baskerville', Georgia, serif",
-                      fontSize: 28,
-                      fontWeight: 400,
-                      color: C_FS.ink,
-                      lineHeight: 1,
-                      letterSpacing: '-0.012em',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}
-                  >
+                  <div style={{ fontFamily: T.serif, fontSize: 34, fontWeight: 600, color: T.heading, lineHeight: 1, fontVariantNumeric: 'tabular-nums' }}>
                     {pack.credits.toLocaleString()}
                   </div>
-                  <div style={{ fontSize: 12, color: C_FS.muted, marginTop: 2, marginBottom: 12 }}>
-                    credits
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                      borderTop: `1px solid ${C_FS.cardBorder}`,
-                      paddingTop: 10,
-                    }}
-                  >
+                  <div style={{ fontSize: 13, color: T.ink4, marginBottom: 20 }}>credits</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: `1px solid ${T.borderLight}`, paddingTop: 16 }}>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: T.heading, fontVariantNumeric: 'tabular-nums' }}>${pack.price}</span>
                     <span
                       style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 18,
-                        fontWeight: 700,
-                        color: C_FS.ink,
-                        fontVariantNumeric: 'tabular-nums',
-                      }}
-                    >
-                      ${pack.price}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "'Inter', sans-serif",
-                        fontSize: 11,
-                        color: locked ? C_FS.brand : C_FS.muted,
-                        fontWeight: locked ? 700 : 500,
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: 4,
+                        gap: 5,
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: featured ? T.purple : T.primary,
                       }}
                     >
-                      {locked ? '🔒 Upgrade' : (<><Plus size={11} /> Add</>)}
+                      {locked ? (<><Lock size={12} /> Upgrade</>) : (<><Plus size={13} /> Add</>)}
                     </span>
                   </div>
                 </button>
@@ -2272,88 +1984,40 @@ const Pricing = () => {
             })}
           </div>
         </div>
+      </section>
 
-        {/* FAQ Section */}
-        <div className="max-w-3xl mb-16 animate-fadeInUp" style={{ animationDelay: '500ms' }}>
-          <div style={{ marginBottom: 28 }}>
-            <p
-              style={{
-                fontFamily: "'Inter', sans-serif",
-                fontSize: 13,
-                fontWeight: 700,
-                letterSpacing: '0.18em',
-                color: C_FS.eyebrow,
-                textTransform: 'uppercase',
-                margin: '0 0 10px',
-              }}
-            >
-              FAQ
-            </p>
-            <h2
-              style={{
-                fontFamily: "'Libre Baskerville', Georgia, serif",
-                fontSize: 'clamp(26px, 3.5vw, 36px)',
-                fontWeight: 400,
-                lineHeight: 1.15,
-                color: C_FS.ink,
-                letterSpacing: '-0.012em',
-                margin: 0,
-              }}
-            >
-              Things students <Hl>ask us</Hl>
+      {/* ======= FAQ ======= */}
+      <section style={{ padding: '60px 24px 60px' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <div style={{ marginBottom: 32 }}>
+            <Eyebrow>FAQ</Eyebrow>
+            <h2 style={{ fontFamily: T.serif, fontSize: 32, fontWeight: 600, letterSpacing: '-0.02em', color: T.heading, margin: 0 }}>
+              Things students <Em>ask us</Em>
             </h2>
           </div>
-          
           <div>
-            <FAQItem
-              question="How does the free trial work?"
-              answer={`You get ${trialDays} days of Pro access with 600 credits to spend — no credit card required. Use them on contact searches, firm search, hiring-manager lookups, and drafts. You can cancel anytime, and at the end of the window you drop to the Free plan automatically (no surprise charges). The trial is for Pro only; Elite users sign up directly or come in via the one-time upgrade offer right after checkout.`}
-              isProminent={true}
-            />
-            <FAQItem
-              question="What's the .edu student discount?"
-              answer="The student price is the price you see - roughly 50% off the public list rate. As long as you signed up with a verified .edu email, you keep that student price for life, even after you graduate."
-              isProminent={true}
-            />
-            <FAQItem
-              question="What happens when I run out of credits?"
-              answer="Searches pause until your plan renews (the 1st of the next month) or you upgrade. No waiting, no emails - just upgrade when you're ready. All your saved contacts and drafts stay put."
-              isProminent={true}
-            />
-            <FAQItem
-              question="Can I change plans anytime?"
-              answer="Yep, anytime. Upgrading? You get access immediately. Downgrading? Takes effect at your next billing cycle. Takes 10 seconds to switch."
-              isProminent={true}
-            />
-            <FAQItem
-              question="Monthly vs annual - which should I pick?"
-              answer="Annual saves ~20% - more than two months free. If you're committed to recruiting for the year, annual is the better deal whether or not you have a .edu email. If you're testing it out, start monthly and switch later."
-            />
-            <FAQItem
-              question="Do credits roll over?"
-              answer="Nope, they reset on the 1st of each month. Use 'em or lose 'em - but honestly, most students use them up well before the month is over during peak recruiting."
-            />
-            <FAQItem
-              question="What if I don't have a .edu email?"
-              answer={`You can still sign up and use Offerloop - you'll just get the standard ${trialDays}-day Pro trial and pay the public list price. Already a paid alumni? Reach out and we'll verify your old school manually.`}
-            />
-            <FAQItem
-              question="How do I cancel?"
-              answer="Cancel anytime from your subscription page. You keep access until the end of your billing period - no tricks."
-            />
-            <FAQItem
-              question="What's your refund policy?"
-              answer="Pro and Elite are refundable for 7 days from your first charge — whether monthly or annual. The Recruiting Season Pass has a 14-day window, provided you haven't used more than half of your month-1 credits. Top-up credit packs are non-refundable (your credits never expire, so there's no reason they should). Email support@offerloop.ai or request a refund from your account settings — we typically respond in 24 hours."
-            />
+            {faqs.map(([q, a], i) => (
+              <FAQItem
+                key={q}
+                question={q}
+                answer={a}
+                isOpen={openFaq === i}
+                onToggle={() => setOpenFaq(openFaq === i ? null : i)}
+              />
+            ))}
           </div>
-        </div>
 
-        {/* Footer Note */}
-        <div className="max-w-3xl text-sm text-gray-500 pb-8 animate-fadeInUp" style={{ animationDelay: '600ms' }}>
-          <p>Still unsure? <button onClick={() => window.open('mailto:support@offerloop.ai', '_blank')} className="text-[#3B82F6] hover:underline font-medium">Talk to us</button></p>
+          <p style={{ fontSize: 14, color: T.ink3, marginTop: 28 }}>
+            Still unsure?{' '}
+            <button
+              onClick={() => window.open('mailto:support@offerloop.ai', '_blank')}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: T.primary, fontWeight: 600, fontSize: 14, fontFamily: T.sans }}
+            >
+              Talk to us
+            </button>
+          </p>
         </div>
-
-      </div>
+      </section>
 
       {/* Top-Up Modal — one-time credit-pack purchase. Wired to /api/billing/
           create-topup-session in Wave 1 backend; cofounders enable Stripe SKUs. */}

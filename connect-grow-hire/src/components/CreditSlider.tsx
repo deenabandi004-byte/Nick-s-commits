@@ -21,6 +21,8 @@ interface CreditSliderProps {
   accentColor?: string;
   /** Compact mode: tighter padding for small cards. */
   compact?: boolean;
+  /** Dark-surface mode: swaps label/rail/pip colors for dark card backgrounds. */
+  dark?: boolean;
 }
 
 const KCOMP = (n: number) =>
@@ -32,6 +34,7 @@ export function CreditSlider({
   onChange,
   accentColor = '#3B82F6',
   compact = false,
+  dark = false,
 }: CreditSliderProps) {
   const defaultIdx = stops.findIndex((s) => s.default);
   const lastIdx = stops.length - 1;
@@ -60,7 +63,7 @@ export function CreditSlider({
             fontWeight: 700,
             letterSpacing: '0.14em',
             textTransform: 'uppercase',
-            color: '#64748B',
+            color: dark ? '#8E99AD' : '#64748B',
           }}
         >
           Credits / month
@@ -69,7 +72,7 @@ export function CreditSlider({
           style={{
             fontSize: 16,
             fontWeight: 700,
-            color: '#0F172A',
+            color: dark ? '#FFFFFF' : '#0F172A',
             fontVariantNumeric: 'tabular-nums',
           }}
         >
@@ -96,7 +99,7 @@ export function CreditSlider({
             transform: 'translateY(-50%)',
             height: 6,
             borderRadius: 999,
-            background: '#E2E8F0',
+            background: dark ? 'rgba(255,255,255,0.16)' : '#E2E8F0',
             pointerEvents: 'none',
           }}
         />
@@ -138,8 +141,8 @@ export function CreditSlider({
                   width: isSelected ? 18 : 10,
                   height: isSelected ? 18 : 10,
                   borderRadius: '50%',
-                  background: isPassed ? accentColor : '#CBD5E1',
-                  border: isSelected ? `3px solid #fff` : 'none',
+                  background: isPassed ? accentColor : dark ? 'rgba(255,255,255,0.3)' : '#CBD5E1',
+                  border: isSelected ? `3px solid ${dark ? '#1A1A1A' : '#fff'}` : 'none',
                   boxShadow: isSelected
                     ? `0 0 0 3px ${accentColor}33, 0 4px 8px rgba(15,37,69,0.18)`
                     : 'none',
@@ -207,7 +210,7 @@ export function CreditSlider({
           fontFamily: "'Inter', sans-serif",
           fontSize: 10,
           fontWeight: 600,
-          color: '#94A3B8',
+          color: dark ? '#7C8595' : '#94A3B8',
           fontVariantNumeric: 'tabular-nums',
         }}
       >
@@ -221,7 +224,7 @@ export function CreditSlider({
               border: 'none',
               padding: '2px 4px',
               cursor: 'pointer',
-              color: idx === selectedIndex ? accentColor : '#94A3B8',
+              color: idx === selectedIndex ? accentColor : dark ? '#7C8595' : '#94A3B8',
               fontWeight: idx === selectedIndex ? 800 : 600,
               fontSize: 10,
               fontVariantNumeric: 'tabular-nums',

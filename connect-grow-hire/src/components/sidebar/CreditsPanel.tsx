@@ -126,15 +126,15 @@ export function CreditsPanel({ remaining, total, onUpgrade, isTrialing = false, 
 
   const theme = THEMES[tierFor(pct)];
 
-  // Compact presentation: just the usage bar + % and the upgrade CTA. The
-  // exact balance lives in the bar's tooltip so the panel stays short and the
-  // nav sections above get the vertical room.
   return (
-    <div className={`rounded-xl border p-2.5 ${theme.wrap}`}>
-      <div
-        className="mb-2.5 flex items-center gap-2"
-        title={`${safeRemaining.toLocaleString()} of ${total.toLocaleString()} credits left`}
-      >
+    <div className={`rounded-xl border p-3 ${theme.wrap}`}>
+      <div className="mb-1.5 flex items-baseline gap-1.5">
+        <span className="text-[17px] font-medium leading-none tracking-tight text-slate-50">
+          {safeRemaining.toLocaleString()}
+        </span>
+        <span className="text-[11px] text-slate-400">of {total.toLocaleString()} credits</span>
+      </div>
+      <div className="mb-2.5 flex items-center gap-2">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.06]">
           <div
             className={`h-full rounded-full bg-gradient-to-r transition-all duration-500 ${theme.bar}`}
