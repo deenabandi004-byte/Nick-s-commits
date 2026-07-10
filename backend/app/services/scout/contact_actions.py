@@ -46,19 +46,29 @@ def find_contacts_for_chat(
     company: str,
     role: str = "",
     school: str = "",
+    location: str = "",
     count: int = 5,
 ) -> Dict[str, Any]:
     """Run a live people search and save the results to My Network.
 
     Same pipeline as the Claude-MCP find_contacts tool: costs 5 credits per
-    contact returned, clamped to the tier's per-search cap.
+    contact returned, clamped to the tier's per-search cap. Company is
+    optional: industry-wide searches ("IB analysts in LA from USC") work
+    with just role/school, optionally narrowed by location.
     """
     empty = {"count": 0, "contacts": []}
     if not uid:
         return {**empty, "error": "sign in required", "code": "AUTH_REQUIRED"}
     company = (company or "").strip()
-    if not company:
-        return {**empty, "error": "company required", "code": "BAD_REQUEST"}
+    role = (role or "").strip()
+    school = (school or "").strip()
+    location = (location or "").strip()
+    if not company and not role and not school:
+        return {
+            **empty,
+            "error": "need a company, role, or school to search on",
+            "code": "BAD_REQUEST",
+        }
     db = _db()
     if db is None:
         return {**empty, "error": "database unavailable", "code": "UNAVAILABLE"}
@@ -69,10 +79,12 @@ def find_contacts_for_chat(
         count = 5
 
     args: Dict[str, Any] = {"company": company, "count": count}
-    if (role or "").strip():
-        args["role"] = role.strip()
-    if (school or "").strip():
-        args["school"] = school.strip()
+    if role:
+        args["role"] = role
+    if school:
+        args["school"] = school
+    if location:
+        args["location"] = location
 
     try:
         from app.mcp_server.tools.find_contacts import handle

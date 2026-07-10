@@ -312,10 +312,18 @@ def _build_parsed_prompt(parsed: FindContactsInput) -> dict:
     # ways the school_aliases path doesn't expect). We trust the caller's
     # company/school strings as ground truth; we only need the LLM for
     # title_variations + company_context.
-    llm_parsed["companies"] = [{
-        "name": parsed.company,
-        "matched_titles": (llm_parsed.get("companies") or [{}])[0].get("matched_titles", []),
-    }]
+    if (parsed.company or "").strip():
+        llm_parsed["companies"] = [{
+            "name": parsed.company,
+            "matched_titles": (llm_parsed.get("companies") or [{}])[0].get("matched_titles", []),
+        }]
+    else:
+        # Company-less search: make sure the LLM didn't hallucinate a company
+        # (it would over-constrain PDL) and pin the caller's location.
+        llm_parsed["companies"] = []
+        loc = (getattr(parsed, "location", None) or "").strip()
+        if loc and not llm_parsed.get("locations"):
+            llm_parsed["locations"] = [loc]
     if parsed.school:
         llm_parsed["schools"] = [parsed.school]
     elif "schools" not in llm_parsed:
@@ -335,20 +343,33 @@ def _synthesize_prompt(parsed: FindContactsInput) -> str:
     """Build a natural-language prompt that captures all of MCP's structured
     inputs in a form the LLM parser handles well. The phrasing mirrors how
     users actually search on the website's natural-language bar."""
-    company = parsed.company
+    company = (parsed.company or "").strip()
     role = (parsed.role or "").strip()
     school = (parsed.school or "").strip()
     track = (parsed.career_track or "").strip()
+    location = (getattr(parsed, "location", None) or "").strip()
 
-    if role and school:
-        head = f"{role}s from {school} at {company}"
-    elif role:
-        head = f"{role}s at {company}"
-    elif school:
-        head = f"{school} alumni at {company}"
+    if company:
+        if role and school:
+            head = f"{role}s from {school} at {company}"
+        elif role:
+            head = f"{role}s at {company}"
+        elif school:
+            head = f"{school} alumni at {company}"
+        else:
+            head = f"people at {company}"
     else:
-        head = f"people at {company}"
+        # Company-less (industry-wide) search, e.g. "investment banking
+        # analysts in Los Angeles that graduated from USC".
+        if role and school:
+            head = f"{role}s that graduated from {school}"
+        elif role:
+            head = f"{role}s"
+        else:
+            head = f"{school} alumni"
 
+    if location:
+        head = f"{head} in {location}"
     if track and track.lower() not in role.lower():
         head = f"{head} in {track}"
     return head
@@ -358,11 +379,13 @@ def _build_parsed_prompt_manual(parsed: FindContactsInput) -> dict:
     """Original (pre-LLM-routing) parsed_prompt construction. Used as the
     fallback when the LLM parser is unavailable. Title list stays narrow
     so the retry ladder is the only broadening mechanism in that case."""
+    company = (parsed.company or "").strip()
+    location = (getattr(parsed, "location", None) or "").strip()
     return {
-        "companies": [{"name": parsed.company}],
+        "companies": [{"name": company}] if company else [],
         "schools": [parsed.school] if parsed.school else [],
         "title_variations": _build_title_variations(parsed.role, parsed.career_track),
-        "locations": [],
+        "locations": [location] if location else [],
         "industries": [],
     }
 

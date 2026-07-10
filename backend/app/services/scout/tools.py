@@ -573,27 +573,34 @@ FIND_CONTACTS_TOOL: Dict[str, Any] = {
         "the user's My Network, and spends 5 credits per contact returned. "
         "Use this when the user asks for people at a NAMED company ('find "
         "me 3 software engineers at Spotify', 'get me USC alumni at Bain') "
-        "- surface the results IN THE CHAT: name, title, company, and the "
-        "alumni/warmth hook when present. COUNT IS REQUIRED: if the user "
-        "gave no number, clarify once for it before calling (this search "
-        "spends credits per contact). CHAIN WHEN ASKED: if the same message "
-        "asks to find AND email people ('find 3 Spotify engineers and email "
-        "them'), call find_contacts first, then draft_outreach_emails with "
-        "the returned names, in the SAME turn. Navigate to /find only when "
-        "the user wants to browse or refine filters themselves, not when "
-        "they asked for people. Error codes: COUNT_REQUIRED -> the user "
-        "never said how many, ask them for a count (once) and call again "
-        "next turn; INSUFFICIENT_CREDITS -> say "
-        "what the search costs vs their balance; a zero-count result means "
-        "the search genuinely found nobody - say so and suggest widening "
-        "(different title wording, drop the school filter), never pretend."
+        "OR for an industry-wide search with no company ('find investment "
+        "banking analysts in Los Angeles that graduated from USC') - pass "
+        "role/school/location and leave company empty. At least one of "
+        "company, role, or school is required. Surface the results IN THE "
+        "CHAT: name, title, company, and the alumni/warmth hook when "
+        "present. COUNT IS REQUIRED: if the user gave no number, clarify "
+        "once for it before calling (this search spends credits per "
+        "contact). CHAIN WHEN ASKED: if the same message asks to find AND "
+        "email people ('find 3 Spotify engineers and email them'), call "
+        "find_contacts first, then draft_outreach_emails with the returned "
+        "names, in the SAME turn. Navigate to /find only when the user "
+        "wants to browse or refine filters themselves, not when they asked "
+        "for people. Error codes: COUNT_REQUIRED -> the user never said "
+        "how many, ask them for a count (once) and call again next turn; "
+        "INSUFFICIENT_CREDITS -> say what the search costs vs their "
+        "balance; a zero-count result means the search genuinely found "
+        "nobody - say so and suggest widening (different title wording, "
+        "drop the school filter), never pretend."
     ),
     "input_schema": {
         "type": "object",
         "properties": {
             "company": {
                 "type": "string",
-                "description": "Target company name, exactly as the user gave it.",
+                "description": (
+                    "Target company name, exactly as the user gave it. Leave "
+                    "empty for industry-wide searches with no named company."
+                ),
             },
             "role": {
                 "type": "string",
@@ -603,12 +610,16 @@ FIND_CONTACTS_TOOL: Dict[str, Any] = {
                 "type": "string",
                 "description": "School for the alumni filter, ONLY if the user asked for alumni.",
             },
+            "location": {
+                "type": "string",
+                "description": "City or metro filter, e.g. 'Los Angeles'. Omit if not given.",
+            },
             "count": {
                 "type": "integer",
                 "description": "How many contacts the user asked for (required by the count rule).",
             },
         },
-        "required": ["company", "count"],
+        "required": ["count"],
     },
 }
 
@@ -1199,6 +1210,7 @@ async def _run_find_contacts(args: Dict[str, Any], context: Dict[str, Any]) -> D
             str(args.get("company") or ""),
             str(args.get("role") or ""),
             str(args.get("school") or ""),
+            str(args.get("location") or ""),
             args.get("count") or 5,
         )
         context["workflow_state_touched"] = True

@@ -10,14 +10,28 @@ from __future__ import annotations
 
 from typing import List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 # ── find_contacts ────────────────────────────────────────────────────────────
 
 
 class FindContactsInput(BaseModel):
-    company: str = Field(..., description="Target company name. Required.")
+    company: str = Field(
+        "",
+        description=(
+            "Target company name. Optional: leave empty for industry-wide "
+            "searches (e.g. 'investment banking analysts in Los Angeles'), "
+            "but then role or school must be provided."
+        ),
+    )
+    location: Optional[str] = Field(
+        None,
+        description=(
+            "City or metro area filter, e.g. 'Los Angeles', 'New York'. "
+            "Especially useful for company-less searches."
+        ),
+    )
     school: Optional[str] = Field(
         None,
         description=(
@@ -45,6 +59,18 @@ class FindContactsInput(BaseModel):
             "anonymous tier handler clamps to 5."
         ),
     )
+
+    @model_validator(mode="after")
+    def _require_search_criteria(self):
+        """Company-less searches are allowed, but location alone is too broad
+        to spend PDL credits on — require a company, role, or school."""
+        if not (self.company or "").strip() and not (self.role or "").strip() \
+                and not (self.school or "").strip():
+            raise ValueError(
+                "provide a company, role, or school to search on "
+                "(location alone is too broad)"
+            )
+        return self
 
 
 class Contact(BaseModel):
