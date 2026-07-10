@@ -41,10 +41,13 @@ GMAIL_WEBHOOK_SECRET = os.getenv("GMAIL_WEBHOOK_SECRET", "")  # Random string fo
 # ========================================
 # Gmail OAuth Configuration
 # ========================================
+# NOTE: gmail.send is intentionally NOT requested — gmail.compose already
+# authorizes users.messages.send (all backend sends go through that endpoint),
+# and dropping it removes the scariest row ("Send email on your behalf") from
+# Google's consent screen. Existing tokens that were granted gmail.send keep it.
 GMAIL_SCOPES = [
     "https://www.googleapis.com/auth/gmail.compose",
-    "https://www.googleapis.com/auth/gmail.readonly", 
-    "https://www.googleapis.com/auth/gmail.send",
+    "https://www.googleapis.com/auth/gmail.readonly",
     "openid",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile"

@@ -1,7 +1,7 @@
 // src/pages/SignIn.tsx
 import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { apiService } from "@/services/api";
@@ -24,6 +24,8 @@ const SignIn: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<Tab>(initialTab);
   const [submitting, setSubmitting] = useState(false);
+  // True while we hand off to Google's Gmail consent screen (full-page redirect).
+  const [redirecting, setRedirecting] = useState(false);
   const autoCheckGmailRanRef = useRef(false); // Prevent multiple auto-checks
 
   const forceNavigate = (dest: string) => {
@@ -55,12 +57,15 @@ const SignIn: React.FC = () => {
     }
   };
 
-  const initiateGmailOAuth = async (autoClose = false) => {
+  const initiateGmailOAuth = async (autoClose = false, destinationOverride?: string) => {
     try {
       const authUrl = await apiService.startGmailOAuth();
       if (!authUrl) return;
 
-      const destination = user?.needsOnboarding ? '/onboarding' : '/home';
+      // Prefer the explicit destination: right after a fresh popup sign-in the
+      // context `user` state hasn't updated yet, so reading needsOnboarding
+      // here sent brand-new users to /home (→ bounced back to /onboarding).
+      const destination = destinationOverride ?? (user?.needsOnboarding ? '/onboarding' : '/home');
       localStorage.setItem('post_gmail_destination', destination);
 
       if (autoClose) {
@@ -166,6 +171,24 @@ const SignIn: React.FC = () => {
           duration: 10000,
         });
         return; // Don't proceed with auto-check if there's an error
+      } else if (gmailError === "scopes_declined") {
+        console.warn("📧 Gmail OAuth - user declined some permission scopes");
+        toast({
+          variant: "destructive",
+          title: "Gmail permissions incomplete",
+          description:
+            "Google needs all the permission boxes checked so Offerloop can create drafts and detect replies. Click Connect Gmail and check every box to try again.",
+          duration: 8000,
+        });
+        return;
+      } else if (gmailError) {
+        console.warn(`📧 Gmail OAuth failed: ${gmailError}`);
+        toast({
+          variant: "destructive",
+          title: "Gmail connection failed",
+          description: "Something went wrong connecting Gmail. Click Connect Gmail to try again.",
+        });
+        return;
       }
 
       const justConnectedGmail = params.get("connected") === "gmail";
@@ -224,29 +247,30 @@ const SignIn: React.FC = () => {
     setSubmitting(true);
     try {
       console.log("🔐 Initiating Google Sign-In...");
-      const next = await signIn({ prompt: "consent" });
+      // select_account forces Google's account picker every time — after
+      // backing out of onboarding (which signs the user out), sign-in must
+      // start fresh instead of silently reusing the last Google session.
+      const next = await signIn({ prompt: "select_account" });
       
       console.log("✅ Firebase sign-in completed, next step:", next);
       
-      // ✅ IMMEDIATELY check Gmail connection (no delay) and trigger OAuth if needed
-      // This prevents navigation to home before OAuth
       const isNewUser = next === "onboarding";
       console.log("🔍 User type check:", { isNewUser, next });
-      
-      // For both new and existing users, check Gmail connection immediately
-      console.log("🔍 Checking Gmail connection status...");
-      const needsGmail = await checkNeedsGmailConnection();
+
+      // Scopes consent stays BEFORE onboarding by design. New users can't have
+      // Gmail connected yet, so skip the needs-check round-trip and go straight
+      // to the OAuth redirect.
+      const needsGmail = isNewUser ? true : await checkNeedsGmailConnection();
       console.log("🔍 Gmail connection check result:", needsGmail);
-      
+
       if (needsGmail) {
         console.log("📧 Gmail not connected, starting OAuth flow IMMEDIATELY...");
-        console.log("📧 About to call initiateGmailOAuth(false)...");
-        // Immediately trigger Gmail OAuth - show permissions screen right away
-        // This redirects, so we don't navigate to home first
-        // CRITICAL: This should redirect to Gmail OAuth consent screen immediately
-        await initiateGmailOAuth(false); // false = redirect so user sees permissions screen
-        // This line should never execute because initiateGmailOAuth redirects
-        console.log("📧 initiateGmailOAuth completed (should have redirected)");
+        // Cover the handoff (OAuth-URL fetch + full-page redirect) with an
+        // explicit overlay so the wait reads as intentional, not a hang.
+        setRedirecting(true);
+        await initiateGmailOAuth(false, isNewUser ? "/onboarding" : "/home");
+        // Only reached if the redirect failed to fire.
+        setRedirecting(false);
         return; // OAuth redirects, stop here - don't navigate anywhere
       }
       
@@ -274,6 +298,24 @@ const SignIn: React.FC = () => {
         fontFamily: 'var(--font-body)',
       }}
     >
+      {/* Handoff overlay — shown while we redirect to Google's Gmail consent
+          screen so the wait reads as intentional instead of a frozen page. */}
+      {redirecting && (
+        <div
+          className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4"
+          style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(2px)' }}
+        >
+          <Loader2 className="h-8 w-8 animate-spin" style={{ color: '#2563EB' }} />
+          <div className="text-center px-6">
+            <p className="text-base font-semibold" style={{ color: '#1E2D4D' }}>
+              Taking you to Google…
+            </p>
+            <p className="text-sm mt-1" style={{ color: '#64748B' }}>
+              Approve the email permissions so Offerloop can create drafts for you.
+            </p>
+          </div>
+        </div>
+      )}
       {/* Background glow */}
       <div
         className="absolute top-[-200px] right-[-150px] w-[600px] h-[600px] rounded-full pointer-events-none"

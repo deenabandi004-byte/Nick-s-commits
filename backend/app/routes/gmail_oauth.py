@@ -296,9 +296,21 @@ def google_oauth_callback():
         return redirect(redirect_url)
 
     except Exception as e:
+        import traceback
         print(f"[gmail_oauth] OAuth token exchange failed: {e}")
         traceback.print_exc()
-        return jsonify({"error": f"Token exchange failed: {str(e)}"}), 500
+        # This runs on Google's redirect back to us, so the user's browser is
+        # sitting on the API URL — always send them back into the app instead
+        # of rendering JSON. IntegrationsPage/SignIn map gmail_error codes to
+        # user-facing toasts ("scopes_declined" already has copy).
+        error_code = (
+            "scopes_declined"
+            if "scope has changed" in str(e).lower()
+            else "token_exchange_failed"
+        )
+        redirect_url = get_frontend_redirect_uri()
+        sep = "&" if "?" in redirect_url else "?"
+        return redirect(f"{redirect_url}{sep}gmail_error={error_code}")
 
 
 
